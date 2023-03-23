@@ -5,7 +5,6 @@ import Coordinates from "../Coordinates";
 
 const Square = ({ color, textColor, rank, file }) => {
   return (
-
     <View
       style={{
         backgroundColor: color,

@@ -10,10 +10,17 @@ const NUMBER_OF_ROWS = 8;
 const Chessboard = () => {
   const { width } = useWindowDimensions();
 
+  // chess.com
   const colors = {
     dark: "#769656",
     light: "#eeeed2",
   };
+  //
+  // lichess.org
+  // const colors = {
+  //   dark: "#b58863",
+  //   light: "#f1d9b4",
+  // };
 
   return (
     <View

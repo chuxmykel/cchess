@@ -10,7 +10,7 @@ const Row = ({ colors, rank }) => {
   const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
   return (
-    <View style={{ ...styles.row }}>
+    <View style={{ ...styles.row }} testID="chessboard-row">
       {
         new Array(NUMBER_OF_COLUMNS)
           .fill("")
