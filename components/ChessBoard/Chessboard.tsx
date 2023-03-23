@@ -11,12 +11,15 @@ const Chessboard = () => {
   const { width } = useWindowDimensions();
 
   const colors = {
-    light: "white",
-    dark: "green",
+    dark: "#769656",
+    light: "#eeeed2",
   };
 
   return (
-    <View style={{ width, height: width, }}>
+    <View
+      style={{ width, height: width, }}
+      testID="chessboard"
+    >
       {new Array(NUMBER_OF_ROWS)
         .fill("")
         .map((_, idx) => (
