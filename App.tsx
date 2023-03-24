@@ -1,21 +1,31 @@
+import 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Text, Button } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 
-import ChessBoard from "./components/ChessBoard";
+import Home from './src/screens/Home';
+
+const {
+  Navigator,
+  Screen
+} = createDrawerNavigator();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <ChessBoard />
-      <StatusBar style="auto" />
-    </View>
+    <>
+      <NavigationContainer>
+        <Navigator
+          initialRouteName='Home'
+          screenOptions={{
+            // headerShown: false,
+          }}
+        >
+          <Screen name="Home" component={Home} />
+        </Navigator>
+        <StatusBar style="auto" />
+      </NavigationContainer>
+    </>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'black',
-    justifyContent: 'center',
-  },
-});
