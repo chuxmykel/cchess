@@ -6,6 +6,8 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 
 import Home from './src/screens/Home';
 
+import Square from './src/components/ChessBoard/components/Square';
+
 const {
   Navigator,
   Screen
@@ -17,9 +19,9 @@ export default function App() {
       <NavigationContainer>
         <Navigator
           initialRouteName='Home'
-          screenOptions={{
-            // headerShown: false,
-          }}
+        // screenOptions={{
+        // headerShown: false,
+        // }}
         >
           <Screen name="Home" component={Home} />
         </Navigator>

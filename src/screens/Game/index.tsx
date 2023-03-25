@@ -3,7 +3,6 @@ import { View, StyleSheet } from 'react-native';
 
 import Chessboard from '../../components/ChessBoard';
 
-// import { Container } from './styles';
 
 const Game: React.FC = () => {
   return (
