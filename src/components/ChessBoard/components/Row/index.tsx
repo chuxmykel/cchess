@@ -14,7 +14,7 @@ const Row = ({ colors, rank }) => {
       {
         new Array(NUMBER_OF_COLUMNS)
           .fill("")
-          .map((_square, idx) => {
+          .map((_, idx) => {
             return (
               <Square
                 key={idx}

@@ -1,40 +1,62 @@
-import { useState } from "react";
-import { View, StyleSheet, Text, LayoutChangeEvent } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Text,
+} from "react-native";
 
-import Coordinates from "../Coordinates";
-import Piece from "../Piece";
 
-
-const Square = ({ color, textColor, rank, file }) => {
-  const [width, setWidth] = useState(0);
-  function handleLayoutChange(layoutChangeEvent: LayoutChangeEvent) {
-    setWidth(layoutChangeEvent.nativeEvent.layout.width);
-  }
-
-  return (
+const Square = ({ color, textColor, rank, file }) => (
+  <View
+    style={{
+      backgroundColor: color,
+      ...styles.square,
+    }}
+  >
     <View
-      style={{
-        backgroundColor: color,
-        ...styles.square,
-      }}
-      onLayout={handleLayoutChange}
+      style={styles.coordinateContainer}
     >
-      <Coordinates
-        rank={rank}
-        file={file}
-        color={textColor}
-      />
-      <Piece width={width} />
+      <View>
+        <Text
+          style={{
+            ...styles.coordinateText,
+            color: textColor,
+            display: `${file === "a" ? "flex" : "none"}`
+          }}
+        >
+          {rank}
+        </Text >
+      </View>
+      <View style={styles.file}>
+        <Text
+          style={{
+            ...styles.coordinateText,
+            color: textColor,
+            display: `${rank === 1 ? "flex" : "none"}`
+          }}
+        >
+          {file}
+        </Text >
+      </View>
     </View>
-  );
-}
+  </View>
+);
 
 export default Square;
-
 
 const styles = StyleSheet.create({
   square: {
     flex: 1,
   },
+  coordinateContainer: {
+    padding: 4,
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  coordinateText: {
+    fontSize: 12,
+  },
+  file: {
+    alignItems: "flex-end"
+  }
 });
 

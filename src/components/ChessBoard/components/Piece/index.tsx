@@ -1,28 +1,81 @@
-import React from 'react';
-import { Text, View, Image, StyleSheet } from 'react-native';
+import { useRef } from 'react';
+import {
+  Image,
+  StyleSheet,
+  Animated,
+  PanResponder,
+} from 'react-native';
 
-// import { Container } from './styles';
 
 interface PieceProps {
   width: number,
+  position: {
+    x: number,
+    y: number,
+  },
+  id: string,
 };
 
-const Piece: React.FC<PieceProps> = ({ width }) => {
+const chessPiecesPath = "../../../../../assets/chess_pieces/";
+const Pieces = {
+  bk: require(`${chessPiecesPath}bk.png`),
+  bq: require(`${chessPiecesPath}bq.png`),
+  br: require(`${chessPiecesPath}br.png`),
+  bb: require(`${chessPiecesPath}bb.png`),
+  bn: require(`${chessPiecesPath}bn.png`),
+  bp: require(`${chessPiecesPath}bp.png`),
+  wk: require(`${chessPiecesPath}wk.png`),
+  wq: require(`${chessPiecesPath}wq.png`),
+  wr: require(`${chessPiecesPath}wr.png`),
+  wb: require(`${chessPiecesPath}wb.png`),
+  wn: require(`${chessPiecesPath}wn.png`),
+  wp: require(`${chessPiecesPath}wp.png`),
+};
+
+const Piece: React.FC<PieceProps> = ({ width, position, id }) => {
+  const pan = useRef(
+    new Animated.ValueXY({
+      x: position.x,
+      y: position.y
+    })
+  ).current;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant() {
+        pan.setOffset({
+          x: position.x,
+          y: position.y,
+        })
+      },
+      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y, }]),
+      onPanResponderRelease: (_, gestureState) => {
+        // TODO: Do some math to figure out where the piece should land.
+        pan.setValue({
+          x: gestureState.dx,
+          y: gestureState.dy,
+        });
+      },
+    }),
+  ).current;
+
   return (
-    <View>
-      {/* TODO: Fix this messy path! */}
+    <Animated.View
+      style={{
+        ...styles.chessPiece,
+        transform: [{ translateX: pan.x }, { translateY: pan.y }],
+      }}
+      {...panResponder.panHandlers}
+    >
       <Image
-        source={require("../../../../../assets/chess_pieces/wp.png")}
+        source={Pieces[id]}
         style={{
           width: width,
           height: width,
-          position: "absolute",
-          zIndex: 1,
-          bottom: 0,
-          left: 0,
         }}
       />
-    </View>
+    </Animated.View>
   );
 }
 
@@ -30,6 +83,6 @@ export default Piece;
 
 const styles = StyleSheet.create({
   chessPiece: {
-    flex: 1,
+    position: "absolute",
   }
 });
