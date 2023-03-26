@@ -49,7 +49,10 @@ const Piece: React.FC<PieceProps> = ({ width, position, id }) => {
           y: position.y,
         })
       },
-      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y, }]),
+      onPanResponderMove: Animated.event(
+        [null, { dx: pan.x, dy: pan.y, }],
+        { useNativeDriver: false, }
+      ),
       onPanResponderRelease: (_, gestureState) => {
         // TODO: Do some math to figure out where the piece should land.
         pan.setValue({

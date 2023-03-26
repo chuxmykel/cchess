@@ -42,7 +42,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ board, colors, width }) => {
         {
           board.map((row: any, rank: number) => {
             return row.map((piece: any, file: number) => {
-              return (
+              return piece === " " ? null : (
                 <Piece
                   key={`${piece}${file}${rank}`}
                   width={pieceWidth}
