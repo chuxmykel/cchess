@@ -22,7 +22,7 @@ interface PieceProps {
   game: Chess;
 };
 interface PieceState {
-  currentPosition: { x: number; y: number; };
+  currentPosition: Position;
   animatedPosition: Animated.ValueXY;
 };
 
@@ -125,7 +125,7 @@ const Piece: React.FC<PieceProps> = ({ width, position, game, id }) => {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute'
+    position: 'absolute',
   },
 });
 

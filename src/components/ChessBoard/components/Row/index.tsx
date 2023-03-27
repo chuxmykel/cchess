@@ -17,13 +17,14 @@ const Row = ({ colors, rank }) => {
         new Array(NUMBER_OF_COLUMNS)
           .fill("")
           .map((_, idx) => {
+            const file = String.fromCharCode(CHAR_CODE_FOR_LETTER_A + idx);
             return (
               <Square
-                key={idx}
+                key={`${file}${rank}`}
                 color={idx % 2 === 0 ? startColor : alternateColor}
                 textColor={idx % 2 === 0 ? alternateColor : startColor}
                 rank={rank}
-                file={String.fromCharCode(CHAR_CODE_FOR_LETTER_A + idx)}
+                file={file}
               />
             );
           })
