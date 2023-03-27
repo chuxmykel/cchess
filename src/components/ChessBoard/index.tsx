@@ -26,7 +26,7 @@ interface ChessboardProps {
 };
 
 
-const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width, onTurn }) => {
+const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
   const [board, setBoard] = useState<SquareDetails[][]>(game.board());
   const NUMBER_OF_ROWS = board.length;
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
