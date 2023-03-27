@@ -19,17 +19,19 @@ interface PieceProps {
   position: Position;
   id: string;
   game: Chess;
+  onTurn: () => void;
 };
 interface PieceState {
   currentPosition: Position;
   animatedPosition: Animated.ValueXY;
 };
 
-const Piece: React.FC<PieceProps> = ({ width, position, game, id }) => {
+const Piece: React.FC<PieceProps> = ({ width, position, game, id, onTurn }) => {
   const [state, setState] = useState<PieceState>({
     currentPosition: position,
     animatedPosition: new Animated.ValueXY(position),
   });
+  const animationDuration = 50;
 
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: () => true,
@@ -53,6 +55,9 @@ const Piece: React.FC<PieceProps> = ({ width, position, game, id }) => {
         y: newY,
       };
       moveTo(newPositon);
+      // FIXME: Fix flicker when pieces are moved
+      // Animate Capture, Castling, Checkmate and en-passant.
+      setTimeout(onTurn, animationDuration);
     }
   });
 
@@ -73,14 +78,14 @@ const Piece: React.FC<PieceProps> = ({ width, position, game, id }) => {
       // animate the piece to the new position
       Animated.timing(state.animatedPosition, {
         toValue: getXYFromSquare(toSquare),
-        duration: 150,
+        duration: animationDuration,
         useNativeDriver: true
       }).start();
     } else {
       // animate the piece back to its original position
       Animated.timing(state.animatedPosition, {
         toValue: state.currentPosition,
-        duration: 150,
+        duration: animationDuration,
         useNativeDriver: true
       }).start();
     }
@@ -115,6 +120,10 @@ const Piece: React.FC<PieceProps> = ({ width, position, game, id }) => {
         style={{
           width: width,
           height: width,
+          transform: [{
+            rotate: (id === `${game.turn()}k` && game.isCheckmate())
+              ? "120deg" : "0deg"
+          }]
         }}
       />
     </Animated.View>

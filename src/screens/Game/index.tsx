@@ -1,10 +1,8 @@
+import { useState } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
-
 import { Chess } from "chess.js";
 
 import Chessboard from '../../components/ChessBoard';
-import { useState } from 'react';
-
 
 const Game: React.FC = () => {
   // Use positon from FEN
@@ -14,10 +12,10 @@ const Game: React.FC = () => {
   const { width } = useWindowDimensions();
 
   // chess.com
-  const colors = {
-    dark: "#769656",
-    light: "#eeeed2",
-  };
+  // const colors = {
+  //   dark: "#769656",
+  //   light: "#eeeed2",
+  // };
 
 
   // lichess.org
@@ -25,6 +23,13 @@ const Game: React.FC = () => {
   //   dark: "#b58863",
   //   light: "#f1d9b4",
   // };
+
+  // black & white
+  const colors = {
+    dark: "#888",
+    light: "#fff"
+  };
+
 
   return (
     <View style={styles.container}>

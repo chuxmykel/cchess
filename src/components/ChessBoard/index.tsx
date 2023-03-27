@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from 'react';
 import { View } from 'react-native';
 import {
   Square,
@@ -25,11 +26,23 @@ interface ChessboardProps {
 };
 
 
-const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
-  const board: SquareDetails[][] = game.board();
+const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width, onTurn }) => {
+  const [board, setBoard] = useState<SquareDetails[][]>(game.board());
   const NUMBER_OF_ROWS = board.length;
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
 
+  // Random game demo
+  // useEffect(() => {
+  //   if (!game.isGameOver()) {
+  //     const legalMoves = game.moves();
+  //     game.move(legalMoves[Math.floor(Math.random() * legalMoves.length)]);
+  //     setTimeout(handleTurn, 0);
+  //   }
+  // }, [game.turn(), game.board()]);
+
+  function handleTurn() {
+    setBoard(game.board());
+  }
   return (
     <View
       style={{ width, height: width }}
@@ -65,6 +78,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
                   }}
                   id={`${square.color}${square.type}`}
                   game={game}
+                  onTurn={handleTurn}
                 />
               ) : null;
             });
