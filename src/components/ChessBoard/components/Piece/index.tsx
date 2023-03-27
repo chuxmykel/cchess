@@ -101,25 +101,24 @@ const Piece: React.FC<PieceProps> = ({ width, position, game, id }) => {
   }
 
   return (
-    <View style={styles.container}>
-      <Animated.View
+    <Animated.View
+      style={{
+        ...styles.container,
+        transform: [
+          { translateX: state.animatedPosition.x },
+          { translateY: state.animatedPosition.y }
+        ]
+      }}
+      {...panResponder.panHandlers}
+    >
+      <Image
+        source={PIECES[id]}
         style={{
-          transform: [
-            { translateX: state.animatedPosition.x },
-            { translateY: state.animatedPosition.y }
-          ]
+          width: width,
+          height: width,
         }}
-        {...panResponder.panHandlers}
-      >
-        <Image
-          source={PIECES[id]}
-          style={{
-            width: width,
-            height: width,
-          }}
-        />
-      </Animated.View>
-    </View>
+      />
+    </Animated.View>
   );
 };
 
