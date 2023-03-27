@@ -1,38 +1,35 @@
-import React from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 
+import { Chess } from "chess.js";
+
 import Chessboard from '../../components/ChessBoard';
+import { useState } from 'react';
 
 
 const Game: React.FC = () => {
+  // Use positon from FEN
+  // const [game] = useState(new Chess("r1bqk2r/pppp1ppp/2n2n2/2b1p1N1/2B1P3/8/PPPP1PPP/RNBQK2R w KQkq - 6 5"));
+
+  const [game] = useState(new Chess());
   const { width } = useWindowDimensions();
-  const board = [
-    ["br", "bn", "bb", "bq", "bk", "bb", "bn", "br"],
-    ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
-    [" ", " ", " ", " ", " ", " ", " ", " "],
-    [" ", " ", " ", " ", " ", " ", " ", " "],
-    [" ", " ", " ", " ", " ", " ", " ", " "],
-    [" ", " ", " ", " ", " ", " ", " ", " "],
-    ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp",],
-    ["wr", "wn", "wb", "wq", "wk", "wb", "wn", "wr"],
-  ];
 
   // chess.com
-  // const colors = {
-  //   dark: "#769656",
-  //   light: "#eeeed2",
-  // };
-  //
-  // lichess.org
   const colors = {
-    dark: "#b58863",
-    light: "#f1d9b4",
+    dark: "#769656",
+    light: "#eeeed2",
   };
+
+
+  // lichess.org
+  // const colors = {
+  //   dark: "#b58863",
+  //   light: "#f1d9b4",
+  // };
 
   return (
     <View style={styles.container}>
       <Chessboard
-        board={board}
+        game={game}
         colors={colors}
         width={width}
       />

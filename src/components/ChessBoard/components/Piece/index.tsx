@@ -1,91 +1,125 @@
-import { useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Image,
+  View,
   StyleSheet,
-  Animated,
   PanResponder,
+  Animated
 } from 'react-native';
+import { Chess, Square } from "chess.js";
+
+import { PIECES } from '../../../../constants';
 
 
+interface Position {
+  x: number;
+  y: number;
+};
 interface PieceProps {
-  width: number,
-  position: {
-    x: number,
-    y: number,
-  },
-  id: string,
+  width: number;
+  position: Position;
+  id: string;
+  game: Chess;
+};
+interface PieceState {
+  currentPosition: { x: number; y: number; };
+  animatedPosition: Animated.ValueXY;
 };
 
-const chessPiecesPath = "../../../../../assets/chess_pieces/";
-const Pieces = {
-  bk: require(`${chessPiecesPath}bk.png`),
-  bq: require(`${chessPiecesPath}bq.png`),
-  br: require(`${chessPiecesPath}br.png`),
-  bb: require(`${chessPiecesPath}bb.png`),
-  bn: require(`${chessPiecesPath}bn.png`),
-  bp: require(`${chessPiecesPath}bp.png`),
-  wk: require(`${chessPiecesPath}wk.png`),
-  wq: require(`${chessPiecesPath}wq.png`),
-  wr: require(`${chessPiecesPath}wr.png`),
-  wb: require(`${chessPiecesPath}wb.png`),
-  wn: require(`${chessPiecesPath}wn.png`),
-  wp: require(`${chessPiecesPath}wp.png`),
-};
+const Piece: React.FC<PieceProps> = ({ width, position, game, id }) => {
+  const [state, setState] = useState<PieceState>({
+    currentPosition: position,
+    animatedPosition: new Animated.ValueXY(position),
+  });
 
-const Piece: React.FC<PieceProps> = ({ width, position, id }) => {
-  const pan = useRef(
-    new Animated.ValueXY({
-      x: position.x,
-      y: position.y
-    })
-  ).current;
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant() {
-        pan.setOffset({
-          x: position.x,
-          y: position.y,
-        })
-      },
-      onPanResponderMove: Animated.event(
-        [null, { dx: pan.x, dy: pan.y, }],
-        { useNativeDriver: false, }
-      ),
-      onPanResponderRelease: (_, gestureState) => {
-        // TODO: Do some math to figure out where the piece should land.
-        pan.setValue({
-          x: gestureState.dx,
-          y: gestureState.dy,
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderMove: (_, gesture) => {
+      // update the position of the piece based on the gesture
+      state
+        .animatedPosition
+        .setValue({
+          x: state.currentPosition.x + gesture.dx,
+          y: state.currentPosition.y + gesture.dy,
         });
-      },
-    }),
-  ).current;
+    },
+    onPanResponderRelease: (_, gesture) => {
+      // calculate the new position of the piece based on the gesture
+      const newX = Math
+        .round((state.currentPosition.x + gesture.dx) / width) * width;
+      const newY = Math
+        .round((state.currentPosition.y + gesture.dy) / width) * width;
+      const newPositon: Position = {
+        x: newX,
+        y: newY,
+      };
+      moveTo(newPositon);
+    }
+  });
+
+  function moveTo(position: Position) {
+    const toSquare = getSquareFromXY(position);
+    const fromSquare = getSquareFromXY(state.currentPosition);
+    const legalMoves = game.moves({ square: fromSquare, verbose: true });
+    const legalMove = legalMoves.find(move => move.to === toSquare);
+
+    if (legalMove) {
+      // update the game state and the piece position based on the legal move
+      game.move(legalMove);
+      setState({
+        currentPosition: getXYFromSquare(toSquare),
+        animatedPosition: new Animated
+          .ValueXY(getXYFromSquare(toSquare)),
+      });
+      // animate the piece to the new position
+      Animated.timing(state.animatedPosition, {
+        toValue: getXYFromSquare(toSquare),
+        duration: 150,
+        useNativeDriver: true
+      }).start();
+    } else {
+      // animate the piece back to its original position
+      Animated.timing(state.animatedPosition, {
+        toValue: state.currentPosition,
+        duration: 150,
+        useNativeDriver: true
+      }).start();
+    }
+  }
+  // helper function to convert square notation to position
+  function getXYFromSquare(square: string): Position {
+    const file = square.charCodeAt(0) - 97;
+    const rank = 8 - parseInt(square.charAt(1), 10);
+    return { x: file * width, y: rank * width };
+  }
+
+  // helper function to convert position to square notation
+  function getSquareFromXY(position: Position): Square {
+    const file = String.fromCharCode(97 + Math.floor(position.x / width));
+    const rank = 8 - Math.floor(position.y / width);
+    return file + rank as Square;
+  }
 
   return (
-    <Animated.View
-      style={{
-        ...styles.chessPiece,
-        transform: [{ translateX: pan.x }, { translateY: pan.y }],
-      }}
-      {...panResponder.panHandlers}
-    >
-      <Image
-        source={Pieces[id]}
-        style={{
-          width: width,
-          height: width,
-        }}
-      />
-    </Animated.View>
+    <View style={styles.container}>
+      <Animated.View style={[styles.piece, { transform: [{ translateX: state.animatedPosition.x }, { translateY: state.animatedPosition.y }] }]} {...panResponder.panHandlers}>
+        <Image
+          source={PIECES[id]}
+          style={{
+            width: width,
+            height: width,
+          }}
+        />
+      </Animated.View>
+    </View>
   );
-}
+};
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute'
+  },
+});
 
 export default Piece;
 
-const styles = StyleSheet.create({
-  chessPiece: {
-    position: "absolute",
-  }
-});

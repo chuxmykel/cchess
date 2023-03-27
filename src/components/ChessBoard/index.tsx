@@ -1,29 +1,41 @@
+import { View } from 'react-native';
 import {
-  View,
-} from 'react-native';
-import Piece from './components/Piece';
+  Square,
+  PieceSymbol,
+  Color,
+  Chess
+} from "chess.js";
 
 import Row from './components/Row';
+import Piece from './components/Piece';
+
+type SquareDetails = ({
+  square: Square;
+  type: PieceSymbol;
+  color: Color;
+} | null);
 
 interface ChessboardProps {
-  board: string[][];
+  game: Chess;
   colors: {
     light: string;
     dark: string;
-  },
-  width: number,
+  };
+  width: number;
 };
 
-const NUMBER_OF_ROWS = 8;
 
-const Chessboard: React.FC<ChessboardProps> = ({ board, colors, width }) => {
-  const pieceWidth = width / NUMBER_OF_ROWS;
+const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
+  const board: SquareDetails[][] = game.board();
+  const NUMBER_OF_ROWS = board.length;
+  const PIECE_WIDTH = width / NUMBER_OF_ROWS;
 
   return (
     <View
-      style={{ width, height: width, }}
+      style={{ width, height: width }}
       testID="chessboard"
     >
+      {/* Board Surface */}
       <>
         {
           new Array(NUMBER_OF_ROWS)
@@ -38,21 +50,23 @@ const Chessboard: React.FC<ChessboardProps> = ({ board, colors, width }) => {
         }
       </>
 
+      {/* Pieces */}
       <>
         {
-          board.map((row: any, rank: number) => {
-            return row.map((piece: any, file: number) => {
-              return piece === " " ? null : (
+          board.map((row, rank: number) => {
+            return row.map((square, file: number) => {
+              return square ? (
                 <Piece
-                  key={`${piece}${file}${rank}`}
-                  width={pieceWidth}
+                  key={`${square.square}${square.color}${square.type}`}
+                  width={PIECE_WIDTH}
                   position={{
-                    x: file * pieceWidth,
-                    y: rank * pieceWidth,
+                    x: file * PIECE_WIDTH,
+                    y: rank * PIECE_WIDTH,
                   }}
-                  id={piece}
+                  id={`${square.color}${square.type}`}
+                  game={game}
                 />
-              );
+              ) : null;
             });
           })
         }
