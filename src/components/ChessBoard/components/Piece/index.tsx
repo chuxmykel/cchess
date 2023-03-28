@@ -31,7 +31,7 @@ const Piece: React.FC<PieceProps> = ({ width, position, game, id, onTurn }) => {
     currentPosition: position,
     animatedPosition: new Animated.ValueXY(position),
   });
-  const animationDuration = 50;
+  const animationDuration = 150;
 
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: () => true,
@@ -55,9 +55,6 @@ const Piece: React.FC<PieceProps> = ({ width, position, game, id, onTurn }) => {
         y: newY,
       };
       moveTo(newPositon);
-      // FIXME: Fix flicker when pieces are moved
-      // Animate Capture, Castling, Checkmate and en-passant.
-      setTimeout(onTurn, animationDuration);
     }
   });
 
@@ -69,12 +66,20 @@ const Piece: React.FC<PieceProps> = ({ width, position, game, id, onTurn }) => {
 
     if (legalMove) {
       // update the game state and the piece position based on the legal move
-      game.move(legalMove);
+      game.move({
+        from: legalMove.from,
+        to: legalMove.to,
+        promotion: "q",
+      });
       setState({
         currentPosition: getXYFromSquare(toSquare),
         animatedPosition: new Animated
           .ValueXY(getXYFromSquare(toSquare)),
       });
+      // FIXME: Fix flicker when pieces are moved
+      // Animate Capture, Castling, Checkmate and en-passant.
+      // onTurn();
+      // setTimeout(onTurn, 0);
       // animate the piece to the new position
       Animated.timing(state.animatedPosition, {
         toValue: getXYFromSquare(toSquare),
