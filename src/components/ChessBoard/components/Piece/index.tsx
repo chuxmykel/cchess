@@ -58,42 +58,54 @@ const Piece: React.FC<PieceProps> = ({ width, position, game, id, onTurn }) => {
     }
   });
 
+  function updatePositionState(position: Position) {
+    setState({
+      currentPosition: position,
+      animatedPosition: new Animated
+        .ValueXY(position),
+    });
+  }
+
   function moveTo(position: Position) {
     const toSquare = getSquareFromXY(position);
     const fromSquare = getSquareFromXY(state.currentPosition);
     const legalMoves = game.moves({ square: fromSquare, verbose: true });
     const legalMove = legalMoves.find(move => move.to === toSquare);
 
-    if (legalMove) {
-      // update the game state and the piece position based on the legal move
-      game.move({
-        from: legalMove.from,
-        to: legalMove.to,
-        promotion: "q",
-      });
-      setState({
-        currentPosition: getXYFromSquare(toSquare),
-        animatedPosition: new Animated
-          .ValueXY(getXYFromSquare(toSquare)),
-      });
-      // FIXME: Fix flicker when pieces are moved
-      // Animate Capture, Castling, Checkmate and en-passant.
-      // onTurn();
-      // setTimeout(onTurn, 0);
-      // animate the piece to the new position
-      Animated.timing(state.animatedPosition, {
-        toValue: getXYFromSquare(toSquare),
-        duration: animationDuration,
-        useNativeDriver: true
-      }).start();
-    } else {
+    if (!legalMove) {
       // animate the piece back to its original position
-      Animated.timing(state.animatedPosition, {
-        toValue: state.currentPosition,
-        duration: animationDuration,
-        useNativeDriver: true
-      }).start();
+      animateMovement(state.currentPosition).start();
+      return;
     }
+    // update the game state and the piece position based on the legal move
+    game.move({
+      ...legalMove,
+      promotion: "q", // FIXME: Give the users an option bro.
+    });
+
+    const newXYPosition = getXYFromSquare(toSquare);
+    updatePositionState(newXYPosition);
+
+    if (legalMove.captured) {
+      console.log(legalMove, "legalMove ==============> ")
+      console.log(legalMove, "legalMove ==============> ")
+      // Remove the piece currently on the square (Probably with an animation)
+    }
+
+    // FIXME: Fix flicker when pieces are moved
+    // Animate Capture, Castling, Checkmate and en-passant.
+    // onTurn();
+    // setTimeout(onTurn, 0);
+
+    // animate the piece to the new position
+    animateMovement(newXYPosition).start();
+  }
+  function animateMovement(toPosition: Position) {
+    return Animated.timing(state.animatedPosition, {
+      toValue: toPosition,
+      duration: animationDuration,
+      useNativeDriver: true,
+    });
   }
   // helper function to convert square notation to position
   function getXYFromSquare(square: string): Position {
@@ -127,7 +139,7 @@ const Piece: React.FC<PieceProps> = ({ width, position, game, id, onTurn }) => {
           height: width,
           transform: [{
             rotate: (id === `${game.turn()}k` && game.isCheckmate())
-              ? "120deg" : "0deg"
+              ? "120deg" : "0deg",
           }]
         }}
       />
