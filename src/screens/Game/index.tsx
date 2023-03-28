@@ -6,7 +6,13 @@ import Chessboard from '../../components/ChessBoard';
 
 const Game: React.FC = () => {
   // Use positon from FEN
+
+
+  // Fried liver attack
   // const [game] = useState(new Chess("r1bqk2r/pppp1ppp/2n2n2/2b1p1N1/2B1P3/8/PPPP1PPP/RNBQK2R w KQkq - 6 5"));
+
+  // Promotion
+  // const [game] = useState(new Chess("8/4P3/8/2k5/8/4K3/8/8 w - - 0 1"));
 
   const [game] = useState(new Chess());
   const { width } = useWindowDimensions();
@@ -19,16 +25,16 @@ const Game: React.FC = () => {
 
 
   // lichess.org
-  // const colors = {
-  //   dark: "#b58863",
-  //   light: "#f1d9b4",
-  // };
+  const colors = {
+    dark: "#b58863",
+    light: "#f1d9b4",
+  };
 
   // black & white
-  const colors = {
-    dark: "#888",
-    light: "#fff"
-  };
+  // const colors = {
+  //   dark: "#888",
+  //   light: "#fff"
+  // };
 
 
   return (
