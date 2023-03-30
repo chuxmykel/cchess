@@ -4,6 +4,7 @@ import { Position } from "../types";
 
 // helper function to convert square notation to position
 export function getXYFromSquare(square: string, width: number): Position {
+  // debugger;
   const file = square.charCodeAt(0) - 97;
   const rank = 8 - parseInt(square.charAt(1), 10);
   return { x: file * width, y: rank * width };
@@ -19,13 +20,15 @@ export function getSquareFromXY(position: Position, width): Square {
 export function isCaptureMove(move: Move): boolean {
   return move.flags.includes("c");
 }
-export function isCastlingMove(move: Move): boolean {
-  return move.flags.includes("q") || move.flags.includes("k");
-}
 export function isEnpassantMove(move: Move): boolean {
   return move.flags.includes("e");
 }
 export function isPromotion(move: Move): boolean {
   return move.flags.includes("p");
 }
-
+export function isKingSideCastlingMove(move: Move) {
+  return move.flags.includes("k");
+}
+export function isQueenSideCastlingMove(move: Move) {
+  return move.flags.includes("q");
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Image,
   StyleSheet,
@@ -19,6 +19,8 @@ interface PieceProps {
   id: string;
   game: Chess;
   onMove: (move: Move) => void;
+  opacity: Animated.Value;
+  captured: boolean;
 }
 
 const Piece: React.FC<PieceProps> = ({
@@ -28,13 +30,20 @@ const Piece: React.FC<PieceProps> = ({
   game,
   id,
   onMove,
+  opacity,
+  captured,
 }) => {
   const [state, setState] = useState({
     currentPosition: position,
   });
+
+  useEffect(() => {
+    updatePositionState(position);
+  }, [position.x, position.y]);
+
   const animationDuration = 150;
   const panResponder = PanResponder.create({
-    onMoveShouldSetPanResponder: () => game.turn() === id.charAt(0),
+    onMoveShouldSetPanResponder: () => (game.turn() === id.charAt(0)) && !captured,
     onPanResponderMove: (_, gesture) => {
       // update the position of the piece based on the gesture
       animatedPosition.setValue({
@@ -96,6 +105,7 @@ const Piece: React.FC<PieceProps> = ({
     <Animated.View
       style={{
         ...styles.container,
+        opacity,
         transform: [
           { translateX: animatedPosition.x },
           { translateY: animatedPosition.y },
