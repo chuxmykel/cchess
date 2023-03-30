@@ -17,6 +17,9 @@ const Game: React.FC = () => {
   // Promotion
   // const [game] = useState(new Chess("8/4P3/8/2k5/8/4K3/8/8 w - - 0 1"));
 
+  // Pre - en passant
+  // const [game] = useState(new Chess("rnbqkbnr/pppp1ppp/4p3/4P3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"))
+
   // New Game
   const [game] = useState(new Chess());
 

@@ -2,18 +2,19 @@ import { Square, Move } from "chess.js";
 
 import { Position } from "../types";
 
+import { CHAR_CODE_FOR_LETTER_A, NUMBER_OF_COLUMNS } from "../constants";
+
 // helper function to convert square notation to position
 export function getXYFromSquare(square: string, width: number): Position {
-  // debugger;
-  const file = square.charCodeAt(0) - 97;
-  const rank = 8 - parseInt(square.charAt(1), 10);
+  const file = square.charCodeAt(0) - CHAR_CODE_FOR_LETTER_A;
+  const rank = NUMBER_OF_COLUMNS - parseInt(square.charAt(1), 10);
   return { x: file * width, y: rank * width };
 }
 
 // helper function to convert position to square notation
 export function getSquareFromXY(position: Position, width): Square {
-  const file = String.fromCharCode(97 + Math.floor(position.x / width));
-  const rank = 8 - Math.floor(position.y / width);
+  const file = String.fromCharCode(CHAR_CODE_FOR_LETTER_A + Math.floor(position.x / width));
+  const rank = NUMBER_OF_COLUMNS - Math.floor(position.y / width);
   return (file + rank) as Square;
 }
 

@@ -19,6 +19,8 @@ import {
   BLACK_KING_SIDE_ROOK_INITIAL_SQUARE,
   BLACK_QUEEN_SIDE_CASTLE_SQUARE,
   BLACK_QUEEN_SIDE_ROOK_INITIAL_SQUARE,
+  CHAR_CODE_FOR_LETTER_A,
+  NUMBER_OF_COLUMNS,
   NUMBER_OF_ROWS,
   WHITE_KING_SIDE_CASTLE_SQUARE,
   WHITE_KING_SIDE_ROOK_INITIAL_SQUARE,
@@ -83,6 +85,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
     let queenSideRook = getQueenSideRook(move.color);
     let kingSideRook: PieceDetails;
     let capturedPiece: PieceDetails;
+    let capturedEnPassantPiece: PieceDetails;
 
     // Update the square of the moved piece
     updatedPieces.push({
@@ -94,11 +97,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
       capturedPiece = pieces.find((piece) => {
         return piece.square === toSquare && !piece.captured;
       });
-      animateCapture(capturedPiece);
-      updatedPieces.push({
-        ...capturedPiece,
-        captured: true,
-      });
+      capturePiece(capturedPiece, updatedPieces);
     }
 
     if (isKingSideCastlingMove(move)) {
@@ -124,8 +123,10 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
     }
 
     if (isEnpassantMove(move)) {
-      // TODO: Animate en passant
-      console.log(move, "en passant move ============> ");
+      capturedEnPassantPiece = pieces.find((piece) => {
+        return piece.square === getEnPassantSquare(toSquare);
+      });
+      capturePiece(capturedEnPassantPiece, updatedPieces);
     }
 
     if (isPromotion(move)) {
@@ -151,6 +152,14 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
     game.move(move);
   }
 
+  function capturePiece(capturedPiece: PieceDetails, updatedPieces: PieceDetails[]): void {
+    animateCapture(capturedPiece);
+    updatedPieces.push({
+      ...capturedPiece,
+      captured: true,
+    });
+  }
+
   function getKingSideRook(color: Color): PieceDetails {
     const kingSideRook = pieces
       .find(
@@ -165,6 +174,14 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
         (piece) => color === "w" ?
           piece.square === WHITE_QUEEN_SIDE_ROOK_INITIAL_SQUARE : piece.square === BLACK_QUEEN_SIDE_ROOK_INITIAL_SQUARE,
       );
+  }
+  function getEnPassantSquare(toSquare: Square): Square {
+    const toSquareXYCoordinate = getXYFromSquare(toSquare, PIECE_WIDTH);
+    const enPassantSquareXYCoordinate = {
+      ...toSquareXYCoordinate,
+      y: ((toSquareXYCoordinate.y / PIECE_WIDTH) + 1) * PIECE_WIDTH,
+    };
+    return getSquareFromXY(enPassantSquareXYCoordinate, PIECE_WIDTH);
   }
 
   function animatePieceToPosition(piece: PieceDetails, position: Position) {
