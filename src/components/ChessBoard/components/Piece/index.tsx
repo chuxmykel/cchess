@@ -3,7 +3,7 @@ import {
   Image,
   StyleSheet,
   PanResponder,
-  Animated
+  Animated,
 } from 'react-native';
 import { Chess, Move } from "chess.js";
 

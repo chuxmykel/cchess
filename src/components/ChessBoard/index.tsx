@@ -1,7 +1,18 @@
 import { useState } from "react";
-import { View, Animated } from "react-native";
-import { Square, PieceSymbol, Color, Chess, Move } from "chess.js";
-
+import {
+  View,
+  Animated,
+  StyleSheet,
+  Pressable,
+  Image,
+} from "react-native";
+import {
+  Square,
+  PieceSymbol,
+  Color,
+  Chess,
+  Move
+} from "chess.js";
 import Row from "./components/Row";
 import Piece from "./components/Piece";
 import {
@@ -19,13 +30,12 @@ import {
   BLACK_KING_SIDE_ROOK_INITIAL_SQUARE,
   BLACK_QUEEN_SIDE_CASTLE_SQUARE,
   BLACK_QUEEN_SIDE_ROOK_INITIAL_SQUARE,
-  CHAR_CODE_FOR_LETTER_A,
-  NUMBER_OF_COLUMNS,
   NUMBER_OF_ROWS,
   WHITE_KING_SIDE_CASTLE_SQUARE,
   WHITE_KING_SIDE_ROOK_INITIAL_SQUARE,
   WHITE_QUEEN_SIDE_CASTLE_SQUARE,
-  WHITE_QUEEN_SIDE_ROOK_INITIAL_SQUARE
+  WHITE_QUEEN_SIDE_ROOK_INITIAL_SQUARE,
+  PIECES,
 } from "../../constants";
 
 type PieceDetails = {
@@ -34,6 +44,7 @@ type PieceDetails = {
   color: Color;
   animatedPosition: Animated.ValueXY;
   key: string;
+  id: `${Color}${PieceSymbol}`,
   captured: boolean;
   // FIXME: This may not be useful. Investigate.
   opacity: Animated.Value;
@@ -68,15 +79,16 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
             captured: false,
             opacity,
             position: squareXYCoordinates,
+            id: `${piece.color}${piece.type}`
           })
         }
       }
     );
   });
-
   const [pieces, setPieces] = useState<PieceDetails[]>(boardPieces);
-
-
+  const [showPromotionMenu, setShowPromotionMenu] = useState<boolean>(false);
+  const [promotedPiece, setPromotedPiece] = useState<PieceDetails>(null);
+  const [promotionMove, setPromotionMove] = useState<Move>(null);
   function handleMove(move: Move) {
     const updatedPieces: PieceDetails[] = [];
     const toSquare = move.to;
@@ -130,8 +142,11 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
     }
 
     if (isPromotion(move)) {
-      // TODO: Animate / Handle promotion
-      console.log(move, "Promotion move ============> ");
+      setShowPromotionMenu(true);
+      setPromotedPiece(movedPiece);
+      setPromotionMove(move);
+      return;
+
     }
 
     // FIXME: Smoothen out the effect of this update on the animation
@@ -151,7 +166,6 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
     // Make the move
     game.move(move);
   }
-
   function capturePiece(capturedPiece: PieceDetails, updatedPieces: PieceDetails[]): void {
     animateCapture(capturedPiece);
     updatedPieces.push({
@@ -159,7 +173,6 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
       captured: true,
     });
   }
-
   function getKingSideRook(color: Color): PieceDetails {
     const kingSideRook = pieces
       .find(
@@ -183,7 +196,14 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
     };
     return getSquareFromXY(enPassantSquareXYCoordinate, PIECE_WIDTH);
   }
-
+  function getPromotionSquare(fromSquare: Square): Square {
+    const fromSquareXYCoordinate = getXYFromSquare(fromSquare, PIECE_WIDTH);
+    const promotionSquareXYCoordinate = {
+      ...fromSquareXYCoordinate,
+      y: ((fromSquareXYCoordinate.y / PIECE_WIDTH) - 1) * PIECE_WIDTH,
+    };
+    return getSquareFromXY(promotionSquareXYCoordinate, PIECE_WIDTH);
+  }
   function animatePieceToPosition(piece: PieceDetails, position: Position) {
     Animated.timing(piece.animatedPosition, {
       toValue: position,
@@ -191,7 +211,6 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
       useNativeDriver: true,
     }).start();
   }
-
   function animateCapture(piece: PieceDetails) {
     animatePieceToPosition(piece, { x: width / 2, y: 1000 });
     Animated.timing(piece.opacity, {
@@ -200,7 +219,6 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
       useNativeDriver: true,
     }).start();
   }
-
   function animateQueenSideCastle(rook: PieceDetails) {
     const newPosition = getXYFromSquare(
       rook.color === "w" ?
@@ -227,6 +245,24 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
     );
     return newPosition;
   }
+  function promotePiece(type: PieceSymbol) {
+    setPieces(prevPieces => {
+      const prevPiecesWithoutPromotedPiece = prevPieces
+        .filter(prevPiece => prevPiece.key !== promotedPiece.key);
+      return [
+        ...prevPiecesWithoutPromotedPiece,
+        {
+          ...promotedPiece,
+          id: `${game.turn()}${type}`,
+          square: getPromotionSquare(promotedPiece.square),
+        }
+      ];
+    });
+    setShowPromotionMenu(false);
+    setPromotedPiece(null);
+    game.move({ ...promotionMove, promotion: type });
+    setPromotionMove(null);
+  }
 
   return (
     <View style={{ width, height: width }} testID="chessboard">
@@ -237,13 +273,60 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
         ))}
       </>
 
+      {/* Promotion Menu */}
+      {showPromotionMenu && (
+        <>
+          <View
+            style={{
+              ...styles.promotionMenu,
+              height: width,
+              width: width,
+            }}
+          >
+            <View
+              style={{
+                height: PIECE_WIDTH * 2,
+                backgroundColor: "#000",
+                opacity: 1,
+                flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 15
+              }}
+            >
+              {
+                ["q", "r", "b", "n"].map((type: PieceSymbol) => {
+                  return (
+                    <Pressable
+                      onPress={() => {
+                        promotePiece(type);
+                      }}
+                      key={type}
+                    >
+                      <Image
+                        source={PIECES[`${game.turn()}${type}`]}
+                        style={{
+                          width: PIECE_WIDTH,
+                          height: PIECE_WIDTH,
+
+                        }}
+                      />
+                    </Pressable>
+                  );
+                })
+              }
+            </View>
+          </View>
+        </>
+      )}
+
       {/* Pieces */}
       <>
         {
           pieces.map((pieceDetails: PieceDetails) => (
             <Piece
               key={pieceDetails.key}
-              id={`${pieceDetails.color}${pieceDetails.type}`}
+              id={pieceDetails.id}
               width={PIECE_WIDTH}
               position={pieceDetails.position}
               animatedPosition={pieceDetails.animatedPosition}
@@ -255,9 +338,19 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
           ))
         }
       </>
-    </View>
+    </View >
   );
 };
 
 export default Chessboard;
 
+const styles = StyleSheet.create({
+  promotionMenu: {
+    position: "absolute",
+    backgroundColor: "#fff",
+    // backgroundColor: "#000",
+    zIndex: 100,
+    justifyContent: "center",
+    opacity: 0.8
+  }
+});

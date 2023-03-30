@@ -12,7 +12,7 @@ export function getXYFromSquare(square: string, width: number): Position {
 }
 
 // helper function to convert position to square notation
-export function getSquareFromXY(position: Position, width): Square {
+export function getSquareFromXY(position: Position, width: number): Square {
   const file = String.fromCharCode(CHAR_CODE_FOR_LETTER_A + Math.floor(position.x / width));
   const rank = NUMBER_OF_COLUMNS - Math.floor(position.y / width);
   return (file + rank) as Square;
