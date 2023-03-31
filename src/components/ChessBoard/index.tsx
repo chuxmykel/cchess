@@ -94,7 +94,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
     const toSquare = move.to;
     const fromSquare = move.from;
     const movedPiece = pieces.find(piece => piece.square === fromSquare);
-    let queenSideRook = getQueenSideRook(move.color);
+    let queenSideRook: PieceDetails;
     let kingSideRook: PieceDetails;
     let capturedPiece: PieceDetails;
     let capturedEnPassantPiece: PieceDetails;

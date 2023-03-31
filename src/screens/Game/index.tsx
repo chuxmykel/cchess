@@ -5,8 +5,7 @@ import { Chess } from "chess.js";
 import Chessboard from '../../components/ChessBoard';
 
 const Game: React.FC = () => {
-  // Use positon from FEN
-
+  // NOTE: Use positon from FEN
 
   // Fried liver attack (King Side Castle)
   // const [game] = useState(new Chess("r1bqk2r/pppp1ppp/2n2n2/2b1p1N1/2B1P3/8/PPPP1PPP/RNBQK2R w KQkq - 6 5"));
