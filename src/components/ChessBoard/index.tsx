@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  View,
-  Animated,
-  StyleSheet,
-  Pressable,
-  Image,
-} from "react-native";
+import { View, Animated } from "react-native";
 import {
   Square,
   PieceSymbol,
@@ -13,8 +7,11 @@ import {
   Chess,
   Move
 } from "chess.js";
+
 import Row from "./components/Row";
 import Piece from "./components/Piece";
+import PromotionMenu from "./components/PromotionMenu";
+
 import {
   getSquareFromXY,
   getXYFromSquare,
@@ -35,7 +32,6 @@ import {
   WHITE_KING_SIDE_ROOK_INITIAL_SQUARE,
   WHITE_QUEEN_SIDE_CASTLE_SQUARE,
   WHITE_QUEEN_SIDE_ROOK_INITIAL_SQUARE,
-  PIECES,
 } from "../../constants";
 
 type PieceDetails = {
@@ -300,47 +296,12 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
       {/* Promotion Menu */}
       {showPromotionMenu && (
         <>
-          <View
-            style={{
-              ...styles.promotionMenu,
-              height: width,
-              width: width,
-            }}
-          >
-            <View
-              style={{
-                height: PIECE_WIDTH * 2,
-                backgroundColor: "#000",
-                opacity: 1,
-                flexDirection: "row",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 15
-              }}
-            >
-              {
-                ["q", "r", "b", "n"].map((type: PieceSymbol) => {
-                  return (
-                    <Pressable
-                      onPress={() => {
-                        promotePiece(type);
-                      }}
-                      key={type}
-                    >
-                      <Image
-                        source={PIECES[`${game.turn()}${type}`]}
-                        style={{
-                          width: PIECE_WIDTH,
-                          height: PIECE_WIDTH,
-
-                        }}
-                      />
-                    </Pressable>
-                  );
-                })
-              }
-            </View>
-          </View>
+          <PromotionMenu
+            promotingColor={game.turn()}
+            boardWidth={width}
+            pieceWidth={PIECE_WIDTH}
+            handlePromotion={promotePiece}
+          />
         </>
       )}
 
@@ -368,15 +329,4 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
 };
 
 export default Chessboard;
-
-const styles = StyleSheet.create({
-  promotionMenu: {
-    position: "absolute",
-    backgroundColor: "#fff",
-    // backgroundColor: "#000",
-    zIndex: 100,
-    justifyContent: "center",
-    opacity: 0.8
-  }
-});
 
