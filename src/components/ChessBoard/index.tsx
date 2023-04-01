@@ -46,8 +46,6 @@ type PieceDetails = {
   key: string;
   id: `${Color}${PieceSymbol}`,
   captured: boolean;
-  // FIXME: This may not be useful. Investigate.
-  opacity: Animated.Value;
   position: Position;
 } | null;
 
@@ -61,7 +59,7 @@ interface ChessboardProps {
 }
 
 const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
-  const animationDuration = 20;
+  const animationDuration = 150;
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
   const boardPieces: PieceDetails[] = [];
   game.board().forEach((row) => {
@@ -70,14 +68,11 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
         if (piece) {
           const squareXYCoordinates = getXYFromSquare(piece.square, PIECE_WIDTH);
           const animatedPosition = new Animated.ValueXY(squareXYCoordinates);
-          const opacity = new Animated.Value(1);
           boardPieces.push({
             ...piece,
             animatedPosition,
-            // FIXME: Random key? Might be okay since the pieces are finite.
             key: `${Math.random() * Date.now()}`,
             captured: false,
-            opacity,
             position: squareXYCoordinates,
             id: `${piece.color}${piece.type}`
           })
@@ -89,31 +84,41 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
   const [showPromotionMenu, setShowPromotionMenu] = useState<boolean>(false);
   const [promotedPiece, setPromotedPiece] = useState<PieceDetails>(null);
   const [promotionMove, setPromotionMove] = useState<Move>(null);
-  function handleMove(move: Move) {
-    const updatedPieces: PieceDetails[] = [];
-    const toSquare = move.to;
-    const fromSquare = move.from;
-    const movedPiece = pieces.find(piece => piece.square === fromSquare);
+
+  function handleMove(from: Position, to: Position) {
     let queenSideRook: PieceDetails;
     let kingSideRook: PieceDetails;
     let capturedPiece: PieceDetails;
     let capturedEnPassantPiece: PieceDetails;
+    const updatedPieces: PieceDetails[] = [];
+    const {
+      toSquare,
+      movedPiece,
+      legalMove
+    } = parsePieceMove(from, to);
 
+    // Terminate early if move is illegal
+    if (!legalMove) {
+      revertPosition(movedPiece);
+      return;
+    }
     // Update the square of the moved piece
     updatedPieces.push({
       ...movedPiece,
       square: toSquare,
+      position: to,
+      animatedPosition: new Animated.ValueXY(to)
     });
 
-    if (isCaptureMove(move)) {
+    if (isCaptureMove(legalMove)) {
       capturedPiece = pieces.find((piece) => {
         return piece.square === toSquare && !piece.captured;
       });
       capturePiece(capturedPiece, updatedPieces);
     }
 
-    if (isKingSideCastlingMove(move)) {
-      kingSideRook = getKingSideRook(move.color)
+    if (isKingSideCastlingMove(legalMove)) {
+      kingSideRook = getKingSideRook(legalMove.color)
       const newPosition = animateKingSideCastle(kingSideRook);
       updatedPieces.push({
         ...kingSideRook,
@@ -123,8 +128,8 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
       })
     }
 
-    if (isQueenSideCastlingMove(move)) {
-      queenSideRook = getQueenSideRook(move.color)
+    if (isQueenSideCastlingMove(legalMove)) {
+      queenSideRook = getQueenSideRook(legalMove.color)
       const newPosition = animateQueenSideCastle(queenSideRook);
       updatedPieces.push({
         ...queenSideRook,
@@ -134,17 +139,17 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
       })
     }
 
-    if (isEnpassantMove(move)) {
+    if (isEnpassantMove(legalMove)) {
       capturedEnPassantPiece = pieces.find((piece) => {
         return piece.square === getEnPassantSquare(toSquare);
       });
       capturePiece(capturedEnPassantPiece, updatedPieces);
     }
 
-    if (isPromotion(move)) {
+    if (isPromotion(legalMove)) {
       setShowPromotionMenu(true);
       setPromotedPiece(movedPiece);
-      setPromotionMove(move);
+      setPromotionMove(legalMove);
       return;
 
     }
@@ -164,10 +169,31 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
     });
 
     // Make the move
-    game.move(move);
+    game.move(legalMove);
+  }
+
+  function parsePieceMove(from: Position, to: Position) {
+    const toSquare = getSquareFromXY(to, PIECE_WIDTH);
+    const fromSquare = getSquareFromXY(from, PIECE_WIDTH);
+    const movedPiece = pieces
+      .find(piece => piece.square === fromSquare && !piece.captured);
+    const legalMoves = game
+      .moves({ square: fromSquare, verbose: true });
+    const legalMove = legalMoves
+      .find((move) => move.to === toSquare);
+    return {
+      toSquare,
+      movedPiece,
+      legalMove
+    };
+  }
+  function revertPosition(piece: PieceDetails) {
+    return animatePieceToPosition(
+      piece,
+      piece.position,
+    );
   }
   function capturePiece(capturedPiece: PieceDetails, updatedPieces: PieceDetails[]): void {
-    animateCapture(capturedPiece);
     updatedPieces.push({
       ...capturedPiece,
       captured: true,
@@ -177,7 +203,8 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
     const kingSideRook = pieces
       .find(
         (piece) => color === "w" ?
-          piece.square === WHITE_KING_SIDE_ROOK_INITIAL_SQUARE : piece.square === BLACK_KING_SIDE_ROOK_INITIAL_SQUARE,
+          piece.square === WHITE_KING_SIDE_ROOK_INITIAL_SQUARE :
+          piece.square === BLACK_KING_SIDE_ROOK_INITIAL_SQUARE,
       );
     return kingSideRook;
   }
@@ -185,7 +212,8 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
     return pieces
       .find(
         (piece) => color === "w" ?
-          piece.square === WHITE_QUEEN_SIDE_ROOK_INITIAL_SQUARE : piece.square === BLACK_QUEEN_SIDE_ROOK_INITIAL_SQUARE,
+          piece.square === WHITE_QUEEN_SIDE_ROOK_INITIAL_SQUARE :
+          piece.square === BLACK_QUEEN_SIDE_ROOK_INITIAL_SQUARE,
       );
   }
   function getEnPassantSquare(toSquare: Square): Square {
@@ -207,14 +235,6 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
   function animatePieceToPosition(piece: PieceDetails, position: Position) {
     Animated.timing(piece.animatedPosition, {
       toValue: position,
-      duration: animationDuration,
-      useNativeDriver: true,
-    }).start();
-  }
-  function animateCapture(piece: PieceDetails) {
-    animatePieceToPosition(piece, { x: width / 2, y: 1000 });
-    Animated.timing(piece.opacity, {
-      toValue: 0,
       duration: animationDuration,
       useNativeDriver: true,
     }).start();
@@ -249,12 +269,16 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
     setPieces(prevPieces => {
       const prevPiecesWithoutPromotedPiece = prevPieces
         .filter(prevPiece => prevPiece.key !== promotedPiece.key);
+      const promotionSquare = getPromotionSquare(promotedPiece.square);
+      const promotionPosition = getXYFromSquare(promotionSquare, PIECE_WIDTH);
       return [
         ...prevPiecesWithoutPromotedPiece,
         {
           ...promotedPiece,
           id: `${game.turn()}${type}`,
-          square: getPromotionSquare(promotedPiece.square),
+          square: promotionSquare,
+          position: promotionPosition,
+          animatedPosition: new Animated.ValueXY(promotionPosition),
         }
       ];
     });
@@ -323,19 +347,20 @@ const Chessboard: React.FC<ChessboardProps> = ({ game, colors, width }) => {
       {/* Pieces */}
       <>
         {
-          pieces.map((pieceDetails: PieceDetails) => (
-            <Piece
-              key={pieceDetails.key}
-              id={pieceDetails.id}
-              width={PIECE_WIDTH}
-              position={pieceDetails.position}
-              animatedPosition={pieceDetails.animatedPosition}
-              game={game}
-              onMove={handleMove}
-              opacity={pieceDetails.opacity}
-              captured={pieceDetails.captured}
-            />
-          ))
+          pieces.map((pieceDetails: PieceDetails) => {
+            const isPieceColorTurn = game.turn() === pieceDetails.id.charAt(0);
+            return pieceDetails.captured ? null : (
+              <Piece
+                key={pieceDetails.key}
+                id={pieceDetails.id}
+                width={PIECE_WIDTH}
+                position={pieceDetails.position}
+                animatedPosition={pieceDetails.animatedPosition}
+                move={handleMove}
+                disabled={!isPieceColorTurn || game.isGameOver()}
+              />
+            )
+          })
         }
       </>
     </View >
@@ -354,3 +379,4 @@ const styles = StyleSheet.create({
     opacity: 0.8
   }
 });
+
