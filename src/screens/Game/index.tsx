@@ -22,33 +22,35 @@ const Game: React.FC = () => {
   // New Game
   const [game] = useState(new Chess());
 
+  const themes = {
+    "chess.com": {
+      dark: "#769656",
+      light: "#eeeed2",
+    },
+    "lichess.org": {
+      dark: "#b58863",
+      light: "#f1d9b4",
+    },
+    "monochrome": {
+      dark: "#888",
+      light: "#fff"
+    },
+    "powderblue": {
+      light: "powderblue",
+      dark: "grey"
+    },
+    "test": {
+      light: "#d0dff4",
+      dark: "#4b648a"
+    }
+  }
   const { width } = useWindowDimensions();
-
-  // chess.com
-  // const colors = {
-  //   dark: "#769656",
-  //   light: "#eeeed2",
-  // };
-
-
-  // lichess.org
-  const colors = {
-    dark: "#b58863",
-    light: "#f1d9b4",
-  };
-
-  // black & white
-  // const colors = {
-  //   dark: "#888",
-  //   light: "#fff"
-  // };
-
 
   return (
     <View style={styles.container}>
       <Chessboard
         game={game}
-        colors={colors}
+        colors={themes.test}
         width={width}
       />
     </View>
