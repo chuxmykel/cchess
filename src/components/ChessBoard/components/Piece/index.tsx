@@ -1,5 +1,5 @@
+import { useState } from 'react';
 import {
-  Image,
   StyleSheet,
   PanResponder,
   Animated,
@@ -26,13 +26,31 @@ const Piece: React.FC<PieceProps> = ({
   move,
   disabled,
 }) => {
+  const [scale] = useState(new Animated.Value(1));
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: () => !disabled,
+    onPanResponderGrant: () => {
+      zoomIn();
+    },
     onPanResponderMove: (_, gesture) => {
+      // TODO: Can I use setValue to change the animatedPosition instead of creating
+      // a new one after each move. (Causing the game to stutter)???
       animatedPosition.setValue({
         x: position.x + gesture.dx,
         y: position.y + gesture.dy,
+        // FIXME: I want the piece to be offset
+        // from the gesture generating finger so it's clear
+        // what piece is being dragged.
+        // This will mean I should give some visual feedback as
+        // to the square where the piece will land.
+        // I'll leave this commented out until I'm ready to implement this feature.
+        // y: (position.y + gesture.dy) - (1.2 * width),
       });
+      // animatedPosition.setOffset({
+      //
+      //   x: position.x + gesture.dx,
+      //   y: position.y + gesture.dy,
+      // });
     },
     onPanResponderRelease: (_, gesture) => {
       const newX =
@@ -44,8 +62,24 @@ const Piece: React.FC<PieceProps> = ({
         y: newY,
       };
       move(position, newPositon);
+      zoomOut();
     },
   });
+
+  function zoomIn() {
+    Animated.timing(scale, {
+      toValue: 2,
+      duration: 0,
+      useNativeDriver: true,
+    }).start();
+  }
+  function zoomOut() {
+    Animated.timing(scale, {
+      toValue: 1,
+      duration: 0,
+      useNativeDriver: true,
+    }).start();
+  }
 
   return (
     <Animated.View
@@ -58,11 +92,12 @@ const Piece: React.FC<PieceProps> = ({
       }}
       {...panResponder.panHandlers}
     >
-      <Image
+      <Animated.Image
         source={PIECES[id]}
         style={{
           width: width,
           height: width,
+          transform: [{ scale: scale }],
         }}
       />
     </Animated.View>
