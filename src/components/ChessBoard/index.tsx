@@ -48,7 +48,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
                 width={PIECE_WIDTH}
                 position={pieceDetails.position}
                 animatedPosition={pieceDetails.animatedPosition}
-                move={onMove}
+                onMove={onMove}
                 disabled={!isPieceColorTurn || game.isGameOver()}
               />
             )

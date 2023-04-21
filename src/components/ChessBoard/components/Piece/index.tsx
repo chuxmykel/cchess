@@ -14,7 +14,7 @@ interface PieceProps {
   position: Position;
   animatedPosition: Animated.ValueXY;
   id: string;
-  move: (from: Position, to: Position) => void;
+  onMove: (from: Position, to: Position) => void;
   disabled: boolean;
 }
 
@@ -23,34 +23,18 @@ const Piece: React.FC<PieceProps> = ({
   position,
   animatedPosition,
   id,
-  move,
+  onMove,
   disabled,
 }) => {
   const [scale] = useState(new Animated.Value(1));
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: () => !disabled,
-    onPanResponderGrant: () => {
-      zoomIn();
-    },
+    onPanResponderGrant: () => { },
     onPanResponderMove: (_, gesture) => {
-      // TODO: Can I use setValue to change the animatedPosition instead of creating
-      // a new one after each move. (Causing the game to stutter)???
       animatedPosition.setValue({
         x: position.x + gesture.dx,
         y: position.y + gesture.dy,
-        // FIXME: I want the piece to be offset
-        // from the gesture generating finger so it's clear
-        // what piece is being dragged.
-        // This will mean I should give some visual feedback as
-        // to the square where the piece will land.
-        // I'll leave this commented out until I'm ready to implement this feature.
-        // y: (position.y + gesture.dy) - (1.2 * width),
       });
-      // animatedPosition.setOffset({
-      //
-      //   x: position.x + gesture.dx,
-      //   y: position.y + gesture.dy,
-      // });
     },
     onPanResponderRelease: (_, gesture) => {
       const newX =
@@ -61,25 +45,9 @@ const Piece: React.FC<PieceProps> = ({
         x: newX,
         y: newY,
       };
-      move(position, newPositon);
-      zoomOut();
+      onMove(position, newPositon);
     },
   });
-
-  function zoomIn() {
-    Animated.timing(scale, {
-      toValue: 2,
-      duration: 0,
-      useNativeDriver: true,
-    }).start();
-  }
-  function zoomOut() {
-    Animated.timing(scale, {
-      toValue: 1,
-      duration: 0,
-      useNativeDriver: true,
-    }).start();
-  }
 
   return (
     <Animated.View

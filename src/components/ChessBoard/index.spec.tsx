@@ -1,28 +1,21 @@
 import { render, screen } from '@testing-library/react-native';
+import { Chess } from 'chess.js';
 import Chessboard from '.';
 
 describe("Chessboard", () => {
-
   function renderChessBoard() {
-    const board = [
-      ["br", "bn", "bb", "bq", "bk", "bb", "bn", "br"],
-      ["bp", "bp", "bp", "bp", "bp", "bp", "bp", "bp"],
-      [" ", " ", " ", " ", " ", " ", " ", " "],
-      [" ", " ", " ", " ", " ", " ", " ", " "],
-      [" ", " ", " ", " ", " ", " ", " ", " "],
-      [" ", " ", " ", " ", " ", " ", " ", " "],
-      ["wp", "wp", "wp", "wp", "wp", "wp", "wp", "wp",],
-      ["wr", "wn", "wb", "wq", "wk", "wb", "wn", "wr"],
-    ];
+    const mockOnMove = jest.fn();
     const width = 400;
     const screen = render(
       <Chessboard
-        board={board}
+        game={new Chess()}
         colors={{
           dark: "black",
           light: "white"
         }}
         width={width}
+        onMove={mockOnMove}
+        pieces={[]}
       />
     );
     const result = screen.getByTestId("chessboard");

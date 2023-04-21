@@ -104,7 +104,7 @@ const Game: React.FC = () => {
   //       getXYFromSquare(randomMove.from, PIECE_WIDTH),
   //       getXYFromSquare(randomMove.to, PIECE_WIDTH)
   //     );
-  //   }, 200);
+  //   }, 500);
   //   return () => clearInterval(interval);
   // }, [game.turn()]);
 
@@ -125,13 +125,7 @@ const Game: React.FC = () => {
       revertPosition(movedPiece);
       return;
     }
-    // Update the square of the moved piece
-    updatedPieces.push({
-      ...movedPiece,
-      square: toSquare,
-      position: to,
-      animatedPosition: new Animated.ValueXY(to)
-    });
+
 
     if (isCaptureMove(legalMove)) {
       capturedPiece = pieces.find((piece) => {
@@ -174,10 +168,26 @@ const Game: React.FC = () => {
       setPromotedPiece(movedPiece);
       setPromotionMove(legalMove);
       return;
-
     }
 
-    // FIXME: Smoothen out the effect of this update on the animation
+
+    // Animate the mvoed piece to it's new pisiton
+    animatePieceToPosition(movedPiece, to, () => {
+      // Update the moved piece data
+      updatedPieces.push({
+        ...movedPiece,
+        square: toSquare,
+        position: to,
+        animatedPosition: new Animated.ValueXY(to)
+      });
+      updateBoardState(updatedPieces);
+    });
+
+    // Make the move
+    game.move(legalMove);
+  }
+
+  function updateBoardState(updatedPieces: PieceDetails[]) {
     setPieces(prevPieces => {
       const prevPiecesWithoutUpdatedPieces = prevPieces.filter((prevPiece) => {
         const updatedPiece = updatedPieces
@@ -190,9 +200,6 @@ const Game: React.FC = () => {
         ...updatedPieces,
       ];
     });
-
-    // Make the move
-    game.move(legalMove);
   }
 
   function parsePieceMove(from: Position, to: Position) {
@@ -255,12 +262,12 @@ const Game: React.FC = () => {
     };
     return getSquareFromXY(promotionSquareXYCoordinate, PIECE_WIDTH);
   }
-  function animatePieceToPosition(piece: PieceDetails, position: Position) {
+  function animatePieceToPosition(piece: PieceDetails, position: Position, cb?: () => void) {
     Animated.timing(piece.animatedPosition, {
       toValue: position,
       duration: animationDuration,
       useNativeDriver: true,
-    }).start();
+    }).start(cb);
   }
   function animateQueenSideCastle(rook: PieceDetails) {
     const newPosition = getXYFromSquare(
