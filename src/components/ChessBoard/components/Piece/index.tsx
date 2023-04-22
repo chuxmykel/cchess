@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef } from 'react';
 import {
   StyleSheet,
   PanResponder,
@@ -33,15 +33,19 @@ const Piece: React.FC<PieceProps> = ({
   showDragGuide,
   hideDragGuide,
 }) => {
-  const [scale] = useState(new Animated.Value(1));
+  const scale = useRef(new Animated.Value(1)).current;
+  const zIndex = useRef(new Animated.Value(0)).current;
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: () => !disabled,
-    onPanResponderGrant: () => { },
+    onPanResponderGrant: () => {
+      zoomIn();
+    },
     onPanResponderMove: (_, gestureState) => {
       showDragGuide();
       const currentAnimatedPosition = {
         x: position.x + gestureState.dx,
-        y: position.y + gestureState.dy,
+        // A little offset on the y-axis to the top to make piece visible when dragging.
+        y: position.y + gestureState.dy - width * 1.5,
       };
       animatedPosition.setValue(currentAnimatedPosition);
       const newPosition = getNewPositionFromGestureState(gestureState)
@@ -51,6 +55,7 @@ const Piece: React.FC<PieceProps> = ({
       const newPosition = getNewPositionFromGestureState(gestureState)
       onMove(position, newPosition);
       hideDragGuide();
+      zoomOut();
     },
   });
 
@@ -66,6 +71,15 @@ const Piece: React.FC<PieceProps> = ({
     return newPositon;
   }
 
+  function zoomIn() {
+    scale.setValue(2.5);
+    zIndex.setValue(100);
+  }
+
+  function zoomOut() {
+    scale.setValue(1);
+    zIndex.setValue(0);
+  }
   return (
     <Animated.View
       style={{
@@ -74,6 +88,7 @@ const Piece: React.FC<PieceProps> = ({
           { translateX: animatedPosition.x },
           { translateY: animatedPosition.y },
         ],
+        zIndex,
       }}
       {...panResponder.panHandlers}
     >
