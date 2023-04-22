@@ -1,5 +1,4 @@
-import { Animated } from "react-native";
-
+import { Animated, StyleSheet } from "react-native";
 interface PieceDragAndDropGuideProps {
   squareWidth: number;
   position: Animated.ValueXY;
@@ -16,20 +15,17 @@ const PieceDragAndDropGuide: React.FC<PieceDragAndDropGuideProps> = ({
   return (
     <>
       <Animated.View style={{
-        position: "absolute",
-        zIndex: 10,
+        ...styles.container,
         height: dragGuideDiameter,
         width: dragGuideDiameter,
         borderRadius: dragGuideDiameter / 2,
         top: offsetToCenter,
         left: offsetToCenter,
-        backgroundColor: 'rgba(70, 70, 70, 0.4)',
         opacity,
         transform: [
           { translateX: position.x },
           { translateY: position.y },
         ],
-
       }}>
       </Animated.View>
     </>
@@ -38,3 +34,9 @@ const PieceDragAndDropGuide: React.FC<PieceDragAndDropGuideProps> = ({
 
 export default PieceDragAndDropGuide;
 
+const styles = StyleSheet.create({
+  container: {
+    position: "absolute",
+    backgroundColor: 'rgba(70, 70, 70, 0.4)',
+  }
+});

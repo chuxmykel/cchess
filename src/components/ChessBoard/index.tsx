@@ -28,31 +28,35 @@ const Chessboard: React.FC<ChessboardProps> = ({
   pieces
 }) => {
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
-  const dragGuidePosition = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  const dragGuideOpacity = useRef(new Animated.Value(0)).current;
+  const initialGuidePosition = { x: -PIECE_WIDTH * 3, y: -PIECE_WIDTH * 3 };
+  const dragGuidePosition = useRef(new Animated.ValueXY(initialGuidePosition)).current;
+  const dragGuideOpacity = useRef(new Animated.Value(1)).current;
   function showDragGuide() {
     dragGuideOpacity.setValue(1);
   }
   function hideDragGuide() {
     dragGuideOpacity.setValue(0);
+    dragGuidePosition.setValue(initialGuidePosition);
   }
   function updateDragGuidePosition(currentPieceAnimatedPosition: Position) {
     dragGuidePosition.setValue(currentPieceAnimatedPosition);
   }
 
   return (
-    <View style={{ width, height: width, }} testID="chessboard">
+    <View style={{ width, height: width }} testID="chessboard">
       {/* Board Surface */}
-      <PieceDragAndDropGuide
-        squareWidth={PIECE_WIDTH}
-        position={dragGuidePosition}
-        opacity={dragGuideOpacity}
-      />
       <>
         {new Array(NUMBER_OF_ROWS).fill("").map((_, idx) => (
           <Row key={idx} colors={colors} rank={NUMBER_OF_ROWS - idx} />
         ))}
       </>
+
+      {/* Drag and Drop Guide */}
+      <PieceDragAndDropGuide
+        squareWidth={PIECE_WIDTH}
+        position={dragGuidePosition}
+        opacity={dragGuideOpacity}
+      />
 
       {/* Pieces */}
       <>
@@ -76,7 +80,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
           })
         }
       </>
-    </View >
+    </View>
   );
 };
 
