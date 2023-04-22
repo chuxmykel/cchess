@@ -1,4 +1,5 @@
-import { View } from "react-native";
+import { useRef } from "react";
+import { View, Animated } from "react-native";
 import { Chess } from "chess.js";
 
 import { NUMBER_OF_ROWS } from "../../constants";
@@ -6,6 +7,7 @@ import { PieceDetails, Position } from "../../types";
 
 import Row from "./components/Row";
 import Piece from "./components/Piece";
+import PieceDragAndDropGuide from "./components/PieceDragAndDropGuide";
 
 interface ChessboardProps {
   game: Chess;
@@ -26,10 +28,26 @@ const Chessboard: React.FC<ChessboardProps> = ({
   pieces
 }) => {
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
+  const dragGuidePosition = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const dragGuideOpacity = useRef(new Animated.Value(0)).current;
+  function showDragGuide() {
+    dragGuideOpacity.setValue(1);
+  }
+  function hideDragGuide() {
+    dragGuideOpacity.setValue(0);
+  }
+  function updateDragGuidePosition(currentPieceAnimatedPosition: Position) {
+    dragGuidePosition.setValue(currentPieceAnimatedPosition);
+  }
 
   return (
-    <View style={{ width, height: width }} testID="chessboard">
+    <View style={{ width, height: width, }} testID="chessboard">
       {/* Board Surface */}
+      <PieceDragAndDropGuide
+        squareWidth={PIECE_WIDTH}
+        position={dragGuidePosition}
+        opacity={dragGuideOpacity}
+      />
       <>
         {new Array(NUMBER_OF_ROWS).fill("").map((_, idx) => (
           <Row key={idx} colors={colors} rank={NUMBER_OF_ROWS - idx} />
@@ -49,7 +67,10 @@ const Chessboard: React.FC<ChessboardProps> = ({
                 position={pieceDetails.position}
                 animatedPosition={pieceDetails.animatedPosition}
                 onMove={onMove}
+                onDrag={updateDragGuidePosition}
                 disabled={!isPieceColorTurn || game.isGameOver()}
+                showDragGuide={showDragGuide}
+                hideDragGuide={hideDragGuide}
               />
             )
           })
