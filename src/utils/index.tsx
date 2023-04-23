@@ -1,4 +1,4 @@
-import { Animated } from "react-native";
+import { Animated, PanResponderGestureState } from "react-native";
 import { Square, Move, Chess, Color } from "chess.js";
 
 import { PieceDetails, Position } from "../types";
@@ -10,7 +10,6 @@ import {
   BLACK_KING_SIDE_ROOK_INITIAL_SQUARE,
   BLACK_QUEEN_SIDE_CASTLE_SQUARE,
   BLACK_QUEEN_SIDE_ROOK_INITIAL_SQUARE,
-  NUMBER_OF_ROWS,
   WHITE_KING_SIDE_CASTLE_SQUARE,
   WHITE_KING_SIDE_ROOK_INITIAL_SQUARE,
   WHITE_QUEEN_SIDE_CASTLE_SQUARE,
@@ -149,3 +148,14 @@ export function getPromotionSquare(fromSquare: Square, pieceWidth: number): Squa
   return getSquareFromXY(promotionSquareXYCoordinate, pieceWidth);
 }
 
+export function getNewPositionFromGesture(initialPosition: Position, gestureState: PanResponderGestureState, width: number) {
+  const newX =
+    Math.round((initialPosition.x + gestureState.dx) / width) * width;
+  const newY =
+    Math.round((initialPosition.y + gestureState.dy) / width) * width;
+  const newPositon: Position = {
+    x: newX,
+    y: newY,
+  };
+  return newPositon;
+}

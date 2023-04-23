@@ -8,6 +8,7 @@ import {
 
 import { PIECES } from "../../../../constants";
 import { Position } from "../../../../types";
+import { getNewPositionFromGesture } from '../../../../utils';
 
 
 interface PieceProps {
@@ -50,28 +51,16 @@ const Piece: React.FC<PieceProps> = ({
         y: position.y + gestureState.dy - width * 1.5,
       };
       animatedPosition.setValue(currentAnimatedPosition);
-      const newPosition = getNewPositionFromGestureState(gestureState)
+      const newPosition = getNewPositionFromGesture(position, gestureState, width);
       onDrag(newPosition);
     },
     onPanResponderRelease: (_, gestureState: PanResponderGestureState) => {
-      const newPosition = getNewPositionFromGestureState(gestureState)
+      const newPosition = getNewPositionFromGesture(position, gestureState, width);
       onMove(position, newPosition);
       hideDragGuide();
       zoomOut();
     },
   });
-
-  function getNewPositionFromGestureState(gestureState: PanResponderGestureState) {
-    const newX =
-      Math.round((position.x + gestureState.dx) / width) * width;
-    const newY =
-      Math.round((position.y + gestureState.dy) / width) * width;
-    const newPositon: Position = {
-      x: newX,
-      y: newY,
-    };
-    return newPositon;
-  }
 
   function zoomIn() {
     scale.setValue(2.5);
