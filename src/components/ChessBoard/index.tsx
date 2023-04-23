@@ -1,8 +1,7 @@
-import { useRef, useState } from "react";
 import { View, Animated } from "react-native";
-import { Chess, Move } from "chess.js";
+import { Chess } from "chess.js";
 
-import { NUMBER_OF_ROWS } from "../../constants";
+import { NUMBER_OF_ROWS, squares } from "../../constants";
 import { PieceDetails, Position } from "../../types";
 
 import Row from "./components/Row";
@@ -31,9 +30,14 @@ const Chessboard: React.FC<ChessboardProps> = ({
 }) => {
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
   const initialGuidePosition = { x: -PIECE_WIDTH * 3, y: -PIECE_WIDTH * 3 };
-  const dragGuidePosition = useRef(new Animated.ValueXY(initialGuidePosition)).current;
-  const dragGuideOpacity = useRef(new Animated.Value(1)).current;
-  const [legalMoves, setLegalMoves] = useState<Move[]>([]);
+  const dragGuidePosition = new Animated.ValueXY(initialGuidePosition);
+  const dragGuideOpacity = new Animated.Value(1);
+  const squareDetails = squares.map(square => {
+    return {
+      validMoveIndicatorOpacity: new Animated.Value(0),
+      notation: square,
+    };
+  });
   function showDragGuide() {
     dragGuideOpacity.setValue(1);
   }
@@ -45,12 +49,22 @@ const Chessboard: React.FC<ChessboardProps> = ({
     dragGuidePosition.setValue(currentPieceAnimatedPosition);
   }
   function handlePiecePress(piecePosition: Position) {
+    clearValidMoveGuides();
     const pieceSquare = getSquareFromXY(piecePosition, PIECE_WIDTH);
     const legalMoves = game.moves({
       square: pieceSquare,
       verbose: true,
     });
-    setLegalMoves(legalMoves);
+    const legalMovesToSquares = legalMoves.map(move => move.to);
+    squareDetails.forEach(square => {
+      if (legalMovesToSquares.includes(square.notation)) {
+        square.validMoveIndicatorOpacity.setValue(1);
+      }
+    });
+  }
+
+  function clearValidMoveGuides() {
+    squareDetails.forEach(square => square.validMoveIndicatorOpacity.setValue(0));
   }
 
   return (
@@ -70,13 +84,14 @@ const Chessboard: React.FC<ChessboardProps> = ({
       />
 
       {/* Legal moves guide */}
-      {legalMoves.map(move => {
-        const movePosition = getXYFromSquare(move.to, PIECE_WIDTH);
+      {squareDetails.map(square => {
+        const squarePosition = getXYFromSquare(square.notation, PIECE_WIDTH);
         return (
           <ValidMoveIndicator
-            key={move.to}
-            position={movePosition}
+            key={square.notation}
+            position={squarePosition}
             squareWidth={PIECE_WIDTH}
+            opacity={square.validMoveIndicatorOpacity}
           />
         );
       })}
