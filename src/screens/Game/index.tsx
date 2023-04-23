@@ -1,31 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View, StyleSheet, useWindowDimensions, Animated } from 'react-native';
-import { Chess, Color, Move, PieceSymbol, Square } from "chess.js";
+import { Chess, Move, PieceSymbol } from "chess.js";
 
-import Chessboard from '../../components/ChessBoard';
 import { PieceDetails, Position } from '../../types';
-import {
-  BLACK_KING_SIDE_CASTLE_SQUARE,
-  BLACK_KING_SIDE_ROOK_INITIAL_SQUARE,
-  BLACK_QUEEN_SIDE_CASTLE_SQUARE,
-  BLACK_QUEEN_SIDE_ROOK_INITIAL_SQUARE,
-  NUMBER_OF_ROWS,
-  WHITE_KING_SIDE_CASTLE_SQUARE,
-  WHITE_KING_SIDE_ROOK_INITIAL_SQUARE,
-  WHITE_QUEEN_SIDE_CASTLE_SQUARE,
-  WHITE_QUEEN_SIDE_ROOK_INITIAL_SQUARE,
-} from "../../constants";
+import { NUMBER_OF_ROWS } from "../../constants";
 
 import {
+  animateKingSideCastle,
+  animateQueenSideCastle,
   getSquareFromXY,
   getXYFromSquare,
   isCaptureMove,
   isEnpassantMove,
   isKingSideCastlingMove,
   isPromotion,
-  isQueenSideCastlingMove
+  isQueenSideCastlingMove,
+  animatePieceToPosition,
+  parsePieceMove,
+  revertMove,
+  capturePiece,
+  getQueenSideRook,
+  getKingSideRook,
+  getEnPassantSquare,
+  getPromotionSquare,
 } from "../../utils";
+
 import PromotionMenu from '../../components/ChessBoard/components/PromotionMenu';
+import Chessboard from '../../components/ChessBoard';
 
 
 const Game: React.FC = () => {
@@ -72,7 +73,6 @@ const Game: React.FC = () => {
   const [showPromotionMenu, setShowPromotionMenu] = useState<boolean>(false);
   const [promotedPiece, setPromotedPiece] = useState<PieceDetails>(null);
   const [promotionMove, setPromotionMove] = useState<Move>(null);
-  const animationDuration = 50;
 
   const themes = {
     "chess.com": {
@@ -120,11 +120,12 @@ const Game: React.FC = () => {
       toSquare,
       movedPiece,
       legalMove
-    } = parsePieceMove(from, to);
+    } = parsePieceMove(from, to, PIECE_WIDTH, pieces, game);
 
-    // Terminate early if move is illegal
+    // Terminate early to avoid lenghthy checks
+    // if move is illegal
     if (!legalMove) {
-      revertPosition(movedPiece);
+      revertMove(movedPiece);
       return;
     }
 
@@ -137,8 +138,8 @@ const Game: React.FC = () => {
     }
 
     if (isKingSideCastlingMove(legalMove)) {
-      kingSideRook = getKingSideRook(legalMove.color)
-      const newPosition = animateKingSideCastle(kingSideRook);
+      kingSideRook = getKingSideRook(legalMove.color, pieces);
+      const newPosition = animateKingSideCastle(kingSideRook, PIECE_WIDTH);
       updatedPieces.push({
         ...kingSideRook,
         square: getSquareFromXY(newPosition, PIECE_WIDTH),
@@ -148,8 +149,8 @@ const Game: React.FC = () => {
     }
 
     if (isQueenSideCastlingMove(legalMove)) {
-      queenSideRook = getQueenSideRook(legalMove.color)
-      const newPosition = animateQueenSideCastle(queenSideRook);
+      queenSideRook = getQueenSideRook(legalMove.color, pieces);
+      const newPosition = animateQueenSideCastle(queenSideRook, PIECE_WIDTH);
       updatedPieces.push({
         ...queenSideRook,
         square: getSquareFromXY(newPosition, PIECE_WIDTH),
@@ -160,7 +161,7 @@ const Game: React.FC = () => {
 
     if (isEnpassantMove(legalMove)) {
       capturedEnPassantPiece = pieces.find((piece) => {
-        return piece.square === getEnPassantSquare(toSquare);
+        return piece.square === getEnPassantSquare(toSquare, PIECE_WIDTH);
       });
       capturePiece(capturedEnPassantPiece, updatedPieces);
     }
@@ -204,105 +205,11 @@ const Game: React.FC = () => {
     });
   }
 
-  function parsePieceMove(from: Position, to: Position) {
-    const toSquare = getSquareFromXY(to, PIECE_WIDTH);
-    const fromSquare = getSquareFromXY(from, PIECE_WIDTH);
-    const movedPiece = pieces
-      .find(piece => piece.square === fromSquare && !piece.captured);
-    const legalMoves = game
-      .moves({ square: fromSquare, verbose: true });
-    const legalMove = legalMoves
-      .find((move) => move.to === toSquare);
-    return {
-      toSquare,
-      movedPiece,
-      legalMove
-    };
-  }
-  function revertPosition(piece: PieceDetails) {
-    return animatePieceToPosition(
-      piece,
-      piece.position,
-    );
-  }
-  function capturePiece(capturedPiece: PieceDetails, updatedPieces: PieceDetails[]): void {
-    capturedPiece.opacity.setValue(0);
-    updatedPieces.push({
-      ...capturedPiece,
-      captured: true,
-    });
-  }
-  function getKingSideRook(color: Color): PieceDetails {
-    const kingSideRook = pieces
-      .find(
-        (piece) => color === "w" ?
-          piece.square === WHITE_KING_SIDE_ROOK_INITIAL_SQUARE :
-          piece.square === BLACK_KING_SIDE_ROOK_INITIAL_SQUARE,
-      );
-    return kingSideRook;
-  }
-  function getQueenSideRook(color: Color): PieceDetails {
-    return pieces
-      .find(
-        (piece) => color === "w" ?
-          piece.square === WHITE_QUEEN_SIDE_ROOK_INITIAL_SQUARE :
-          piece.square === BLACK_QUEEN_SIDE_ROOK_INITIAL_SQUARE,
-      );
-  }
-  function getEnPassantSquare(toSquare: Square): Square {
-    const toSquareXYCoordinate = getXYFromSquare(toSquare, PIECE_WIDTH);
-    const enPassantSquareXYCoordinate = {
-      ...toSquareXYCoordinate,
-      y: ((toSquareXYCoordinate.y / PIECE_WIDTH) + 1) * PIECE_WIDTH,
-    };
-    return getSquareFromXY(enPassantSquareXYCoordinate, PIECE_WIDTH);
-  }
-  function getPromotionSquare(fromSquare: Square): Square {
-    const fromSquareXYCoordinate = getXYFromSquare(fromSquare, PIECE_WIDTH);
-    const promotionSquareXYCoordinate = {
-      ...fromSquareXYCoordinate,
-      y: ((fromSquareXYCoordinate.y / PIECE_WIDTH) - 1) * PIECE_WIDTH,
-    };
-    return getSquareFromXY(promotionSquareXYCoordinate, PIECE_WIDTH);
-  }
-  function animatePieceToPosition(piece: PieceDetails, position: Position, cb?: () => void) {
-    Animated.timing(piece.animatedPosition, {
-      toValue: position,
-      duration: animationDuration,
-      useNativeDriver: true,
-    }).start(cb);
-  }
-  function animateQueenSideCastle(rook: PieceDetails) {
-    const newPosition = getXYFromSquare(
-      rook.color === "w" ?
-        WHITE_QUEEN_SIDE_CASTLE_SQUARE
-        : BLACK_QUEEN_SIDE_CASTLE_SQUARE,
-      PIECE_WIDTH,
-    );
-    animatePieceToPosition(
-      rook,
-      newPosition,
-    );
-    return newPosition;
-  }
-  function animateKingSideCastle(rook: PieceDetails) {
-    const newPosition = getXYFromSquare(
-      rook.color === "w" ?
-        WHITE_KING_SIDE_CASTLE_SQUARE
-        : BLACK_KING_SIDE_CASTLE_SQUARE,
-      PIECE_WIDTH
-    );
-    animatePieceToPosition(
-      rook,
-      newPosition
-    );
-    return newPosition;
-  }
   function promotePiece(type: PieceSymbol) {
     setPieces(prevPieces => {
       const prevPiecesWithoutPromotedPiece = prevPieces
         .filter(prevPiece => prevPiece.key !== promotedPiece.key);
-      const promotionSquare = getPromotionSquare(promotedPiece.square);
+      const promotionSquare = getPromotionSquare(promotedPiece.square, PIECE_WIDTH);
       const promotionPosition = getXYFromSquare(promotionSquare, PIECE_WIDTH);
       return [
         ...prevPiecesWithoutPromotedPiece,
@@ -348,7 +255,6 @@ const Game: React.FC = () => {
 }
 
 export default Game;
-
 
 const styles = StyleSheet.create({
   container: {
