@@ -14,20 +14,21 @@ const PieceDragAndDropGuide: React.FC<PieceDragAndDropGuideProps> = ({
   const offsetToCenter = -(dragGuideDiameter / 3.5);
   return (
     <>
-      <Animated.View style={{
-        ...styles.container,
-        height: dragGuideDiameter,
-        width: dragGuideDiameter,
-        borderRadius: dragGuideDiameter / 2,
-        top: offsetToCenter,
-        left: offsetToCenter,
-        opacity,
-        transform: [
-          { translateX: position.x },
-          { translateY: position.y },
-        ],
-      }}>
-      </Animated.View>
+      <Animated.View
+        style={{
+          ...styles.container,
+          height: dragGuideDiameter,
+          width: dragGuideDiameter,
+          borderRadius: dragGuideDiameter / 2,
+          top: offsetToCenter,
+          left: offsetToCenter,
+          opacity,
+          transform: [
+            { translateX: position.x },
+            { translateY: position.y },
+          ],
+        }}
+      />
     </>
   );
 }

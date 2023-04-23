@@ -1,6 +1,6 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { View, Animated } from "react-native";
-import { Chess } from "chess.js";
+import { Chess, Move } from "chess.js";
 
 import { NUMBER_OF_ROWS } from "../../constants";
 import { PieceDetails, Position } from "../../types";
@@ -8,6 +8,8 @@ import { PieceDetails, Position } from "../../types";
 import Row from "./components/Row";
 import Piece from "./components/Piece";
 import PieceDragAndDropGuide from "./components/PieceDragAndDropGuide";
+import ValidMoveIndicator from "./components/ValidMoveIndicator";
+import { getXYFromSquare, getSquareFromXY } from "../../utils";
 
 interface ChessboardProps {
   game: Chess;
@@ -31,6 +33,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
   const initialGuidePosition = { x: -PIECE_WIDTH * 3, y: -PIECE_WIDTH * 3 };
   const dragGuidePosition = useRef(new Animated.ValueXY(initialGuidePosition)).current;
   const dragGuideOpacity = useRef(new Animated.Value(1)).current;
+  const [legalMoves, setLegalMoves] = useState<Move[]>([]);
   function showDragGuide() {
     dragGuideOpacity.setValue(1);
   }
@@ -40,6 +43,14 @@ const Chessboard: React.FC<ChessboardProps> = ({
   }
   function updateDragGuidePosition(currentPieceAnimatedPosition: Position) {
     dragGuidePosition.setValue(currentPieceAnimatedPosition);
+  }
+  function handlePiecePress(piecePosition: Position) {
+    const pieceSquare = getSquareFromXY(piecePosition, PIECE_WIDTH);
+    const legalMoves = game.moves({
+      square: pieceSquare,
+      verbose: true,
+    });
+    setLegalMoves(legalMoves);
   }
 
   return (
@@ -58,6 +69,18 @@ const Chessboard: React.FC<ChessboardProps> = ({
         opacity={dragGuideOpacity}
       />
 
+      {/* Legal moves guide */}
+      {legalMoves.map(move => {
+        const movePosition = getXYFromSquare(move.to, PIECE_WIDTH);
+        return (
+          <ValidMoveIndicator
+            key={move.to}
+            position={movePosition}
+            squareWidth={PIECE_WIDTH}
+          />
+        );
+      })}
+
       {/* Pieces */}
       <>
         {
@@ -70,12 +93,13 @@ const Chessboard: React.FC<ChessboardProps> = ({
                 width={PIECE_WIDTH}
                 position={pieceDetails.position}
                 animatedPosition={pieceDetails.animatedPosition}
+                disabled={!isPieceColorTurn || game.isGameOver()}
+                opacity={pieceDetails.opacity}
                 onMove={onMove}
                 onDrag={updateDragGuidePosition}
-                disabled={!isPieceColorTurn || game.isGameOver()}
+                onPress={handlePiecePress}
                 showDragGuide={showDragGuide}
                 hideDragGuide={hideDragGuide}
-                opacity={pieceDetails.opacity}
               />
             )
           })

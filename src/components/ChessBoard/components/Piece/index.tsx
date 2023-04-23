@@ -16,12 +16,13 @@ interface PieceProps {
   position: Position;
   animatedPosition: Animated.ValueXY;
   id: string;
+  disabled: boolean;
+  opacity: Animated.Value;
   onMove: (from: Position, to: Position) => void;
   onDrag: (currentPosition: Position) => void;
-  disabled: boolean;
+  onPress: (position: Position) => void;
   showDragGuide: () => void;
   hideDragGuide: () => void;
-  opacity: Animated.Value;
 }
 
 const Piece: React.FC<PieceProps> = ({
@@ -29,21 +30,24 @@ const Piece: React.FC<PieceProps> = ({
   position,
   animatedPosition,
   id,
+  disabled,
+  opacity,
   onMove,
   onDrag,
-  disabled,
+  onPress,
   showDragGuide,
   hideDragGuide,
-  opacity,
 }) => {
   const scale = useRef(new Animated.Value(1)).current;
   const zIndex = useRef(new Animated.Value(0)).current;
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: () => !disabled,
+    onStartShouldSetPanResponder: () => !disabled,
     onPanResponderGrant: () => {
-      zoomIn();
+      onPress(position);
     },
     onPanResponderMove: (_, gestureState) => {
+      zoomIn();
       showDragGuide();
       const currentAnimatedPosition = {
         x: position.x + gestureState.dx,
