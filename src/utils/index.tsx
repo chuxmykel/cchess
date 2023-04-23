@@ -159,3 +159,7 @@ export function getNewPositionFromGesture(initialPosition: Position, gestureStat
   };
   return newPositon;
 }
+
+export function isSamePosition(from: Position, to: Position) {
+  return from.x === to.x && from.y === to.y;
+}

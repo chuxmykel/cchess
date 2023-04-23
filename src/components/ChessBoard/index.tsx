@@ -3,12 +3,16 @@ import { Chess } from "chess.js";
 
 import { NUMBER_OF_ROWS, squares } from "../../constants";
 import { PieceDetails, Position } from "../../types";
+import {
+  getXYFromSquare,
+  getSquareFromXY,
+  isSamePosition,
+} from "../../utils";
 
 import Row from "./components/Row";
 import Piece from "./components/Piece";
 import PieceDragAndDropGuide from "./components/PieceDragAndDropGuide";
 import ValidMoveIndicator from "./components/ValidMoveIndicator";
-import { getXYFromSquare, getSquareFromXY } from "../../utils";
 
 interface ChessboardProps {
   game: Chess;
@@ -62,7 +66,12 @@ const Chessboard: React.FC<ChessboardProps> = ({
       }
     });
   }
-
+  function handleMove(from: Position, to: Position) {
+    onMove(from, to);
+    if (!isSamePosition(from, to)) {
+      clearValidMoveGuides();
+    }
+  }
   function clearValidMoveGuides() {
     squareDetails.forEach(square => square.validMoveIndicatorOpacity.setValue(0));
   }
@@ -110,7 +119,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
                 animatedPosition={pieceDetails.animatedPosition}
                 disabled={!isPieceColorTurn || game.isGameOver()}
                 opacity={pieceDetails.opacity}
-                onMove={onMove}
+                onMove={handleMove}
                 onDrag={updateDragGuidePosition}
                 onPress={handlePiecePress}
                 showDragGuide={showDragGuide}
