@@ -75,6 +75,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
                 disabled={!isPieceColorTurn || game.isGameOver()}
                 showDragGuide={showDragGuide}
                 hideDragGuide={hideDragGuide}
+                opacity={pieceDetails.opacity}
               />
             )
           })

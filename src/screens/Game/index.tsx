@@ -54,13 +54,15 @@ const Game: React.FC = () => {
         if (piece) {
           const squareXYCoordinates = getXYFromSquare(piece.square, PIECE_WIDTH);
           const animatedPosition = new Animated.ValueXY(squareXYCoordinates);
+          const opacity = new Animated.Value(1);
           boardPieces.push({
             ...piece,
             animatedPosition,
             key: `${Math.random() * Date.now()}`,
             captured: false,
             position: squareXYCoordinates,
-            id: `${piece.color}${piece.type}`
+            id: `${piece.color}${piece.type}`,
+            opacity,
           })
         }
       }
@@ -70,7 +72,7 @@ const Game: React.FC = () => {
   const [showPromotionMenu, setShowPromotionMenu] = useState<boolean>(false);
   const [promotedPiece, setPromotedPiece] = useState<PieceDetails>(null);
   const [promotionMove, setPromotionMove] = useState<Move>(null);
-  const animationDuration = 150;
+  const animationDuration = 50;
 
   const themes = {
     "chess.com": {
@@ -224,6 +226,7 @@ const Game: React.FC = () => {
     );
   }
   function capturePiece(capturedPiece: PieceDetails, updatedPieces: PieceDetails[]): void {
+    capturedPiece.opacity.setValue(0);
     updatedPieces.push({
       ...capturedPiece,
       captured: true,

@@ -20,6 +20,7 @@ interface PieceProps {
   disabled: boolean;
   showDragGuide: () => void;
   hideDragGuide: () => void;
+  opacity: Animated.Value;
 }
 
 const Piece: React.FC<PieceProps> = ({
@@ -32,6 +33,7 @@ const Piece: React.FC<PieceProps> = ({
   disabled,
   showDragGuide,
   hideDragGuide,
+  opacity,
 }) => {
   const scale = useRef(new Animated.Value(1)).current;
   const zIndex = useRef(new Animated.Value(0)).current;
@@ -89,6 +91,7 @@ const Piece: React.FC<PieceProps> = ({
           { translateY: animatedPosition.y },
         ],
         zIndex,
+        opacity,
       }}
       {...panResponder.panHandlers}
     >

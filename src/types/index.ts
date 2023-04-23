@@ -15,5 +15,6 @@ export type PieceDetails = {
   id: `${Color}${PieceSymbol}`,
   captured: boolean;
   position: Position;
+  opacity: Animated.Value;
 } | null;
 
