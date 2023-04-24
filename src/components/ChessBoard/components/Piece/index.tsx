@@ -8,7 +8,10 @@ import {
 
 import { PIECES } from "../../../../constants";
 import { Position } from "../../../../types";
-import { getNewPositionFromGesture } from '../../../../utils';
+import {
+  getNewPositionFromGesture,
+  isSamePosition,
+} from '../../../../utils';
 
 
 interface PieceProps {
@@ -20,9 +23,10 @@ interface PieceProps {
   opacity: Animated.Value;
   onMove: (from: Position, to: Position) => void;
   onDrag: (currentPosition: Position) => void;
-  onPress: (position: Position) => void;
   showDragGuide: () => void;
   hideDragGuide: () => void;
+  showValidMovesGuide: (fromPosition: Position) => void;
+  clearValidMovesGuide: () => void;
 }
 
 const Piece: React.FC<PieceProps> = ({
@@ -34,33 +38,43 @@ const Piece: React.FC<PieceProps> = ({
   opacity,
   onMove,
   onDrag,
-  onPress,
   showDragGuide,
   hideDragGuide,
+  showValidMovesGuide,
+  clearValidMovesGuide,
 }) => {
   const scale = useRef(new Animated.Value(1)).current;
   const zIndex = useRef(new Animated.Value(0)).current;
   const panResponder = PanResponder.create({
     onMoveShouldSetPanResponder: () => !disabled,
-    onStartShouldSetPanResponder: () => !disabled,
     onPanResponderGrant: () => {
-      onPress(position);
+      showValidMovesGuide(position);
     },
     onPanResponderMove: (_, gestureState) => {
+      // A little offset to move the piece image above the dragging finger for good visibility!
+      const pieceImageOffsetFromActualGestureResponderPosition = width * 1.5;
       zoomIn();
       showDragGuide();
       const currentAnimatedPosition = {
         x: position.x + gestureState.dx,
-        // A little offset on the y-axis to the top to make piece visible when dragging.
-        y: position.y + gestureState.dy - width * 1.5,
+        y: position.y + gestureState.dy - pieceImageOffsetFromActualGestureResponderPosition,
       };
       animatedPosition.setValue(currentAnimatedPosition);
-      const newPosition = getNewPositionFromGesture(position, gestureState, width);
+      const newPosition = getNewPositionFromGesture(
+        position,
+        gestureState,
+        width
+      );
       onDrag(newPosition);
     },
     onPanResponderRelease: (_, gestureState: PanResponderGestureState) => {
       const newPosition = getNewPositionFromGesture(position, gestureState, width);
       onMove(position, newPosition);
+      // NOTE: DON'T CLEAR the valid moves guide if the piece landed on the same position.
+      // I may also want to leave it on if the piece landed on an invalid square.
+      if (!isSamePosition(position, newPosition)) {
+        clearValidMovesGuide();
+      }
       hideDragGuide();
       zoomOut();
     },

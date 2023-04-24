@@ -1,5 +1,5 @@
 import { View, Animated } from "react-native";
-import { Chess } from "chess.js";
+import { Chess, Square } from "chess.js";
 
 import { NUMBER_OF_ROWS, squares } from "../../constants";
 import { PieceDetails, Position } from "../../types";
@@ -52,11 +52,15 @@ const Chessboard: React.FC<ChessboardProps> = ({
   function updateDragGuidePosition(currentPieceAnimatedPosition: Position) {
     dragGuidePosition.setValue(currentPieceAnimatedPosition);
   }
-  function handlePiecePress(piecePosition: Position) {
-    clearValidMoveGuides();
-    const pieceSquare = getSquareFromXY(piecePosition, PIECE_WIDTH);
+
+  function clearValidMovesGuide() {
+    squareDetails.forEach(square => square.validMoveIndicatorOpacity.setValue(0));
+  }
+  function showValidMovesGuide(piecePosition: Position) {
+    clearValidMovesGuide();
+    const fromSquare = getSquareFromXY(piecePosition, PIECE_WIDTH);
     const legalMoves = game.moves({
-      square: pieceSquare,
+      square: fromSquare,
       verbose: true,
     });
     const legalMovesToSquares = legalMoves.map(move => move.to);
@@ -65,15 +69,6 @@ const Chessboard: React.FC<ChessboardProps> = ({
         square.validMoveIndicatorOpacity.setValue(1);
       }
     });
-  }
-  function handleMove(from: Position, to: Position) {
-    onMove(from, to);
-    if (!isSamePosition(from, to)) {
-      clearValidMoveGuides();
-    }
-  }
-  function clearValidMoveGuides() {
-    squareDetails.forEach(square => square.validMoveIndicatorOpacity.setValue(0));
   }
 
   return (
@@ -119,11 +114,12 @@ const Chessboard: React.FC<ChessboardProps> = ({
                 animatedPosition={pieceDetails.animatedPosition}
                 disabled={!isPieceColorTurn || game.isGameOver()}
                 opacity={pieceDetails.opacity}
-                onMove={handleMove}
+                onMove={onMove}
                 onDrag={updateDragGuidePosition}
-                onPress={handlePiecePress}
                 showDragGuide={showDragGuide}
                 hideDragGuide={hideDragGuide}
+                showValidMovesGuide={showValidMovesGuide}
+                clearValidMovesGuide={clearValidMovesGuide}
               />
             )
           })
