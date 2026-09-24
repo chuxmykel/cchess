@@ -1,5 +1,5 @@
 import { Color, PieceSymbol, Square } from "chess.js";
-import { Animated } from "react-native/types";
+import { Animated } from "react-native";
 
 export type Position = {
   x: number;

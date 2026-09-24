@@ -15,10 +15,11 @@ export default function App() {
     <>
       <NavigationContainer>
         <Navigator
-          initialRouteName='Home'
-        // screenOptions={{
-        // headerShown: false,
-        // }}
+          id="RootNavigator"
+          initialRouteName="Home"
+          // screenOptions={{
+          // headerShown: false,
+          // }}
         >
           <Screen name="Home" component={Home} />
         </Navigator>

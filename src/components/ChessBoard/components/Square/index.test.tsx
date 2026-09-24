@@ -30,36 +30,28 @@ describe("Square", () => {
     expect(Square).toBeDefined();
   });
 
-  it("should display coordinates if it's an a file square", () => {
-    const screen = renderChessBoardSquareWithCoordinates();
+  it("should display coordinates if it's an a file square", async () => {
+    const screen = await renderChessBoardSquareWithCoordinates();
     const squareWithCoordinate = screen.getByText("a");
 
     expect(squareWithCoordinate).toBeDefined();
   });
 
-  it("should display coordinates if it's a rank 1 square", () => {
-    const screen = renderChessBoardSquareWithCoordinates();
+  it("should display coordinates if it's a rank 1 square", async () => {
+    const screen = await renderChessBoardSquareWithCoordinates();
     const squareWithCoordinate = screen.getByText("1");
 
     expect(squareWithCoordinate).toBeDefined();
   });
 
-  it("should not display coordinates if it's not a rank 1 square", () => {
-    const screen = renderChessBoardSquareWithoutCoordinates();
-    try {
-      screen.getByText("2");
-    } catch (error) {
-      expect(error.message).toBe("Unable to find an element with text: 2");
-    }
+  it("should not display coordinates if it's not a rank 1 square", async () => {
+    const screen = await renderChessBoardSquareWithoutCoordinates();
+    expect(() => screen.getByText("2")).toThrow("Unable to find an element with text: 2");
   });
 
-  it("should not display coordinates if it's not an a file square", () => {
-    const screen = renderChessBoardSquareWithoutCoordinates();
-    try {
-      screen.getByText("b");
-    } catch (error) {
-      expect(error.message).toBe("Unable to find an element with text: b");
-    }
+  it("should not display coordinates if it's not an a file square", async () => {
+    const screen = await renderChessBoardSquareWithoutCoordinates();
+    expect(() => screen.getByText("b")).toThrow("Unable to find an element with text: b");
   });
 });
 
