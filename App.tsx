@@ -15,7 +15,7 @@ export default function App() {
     <>
       <NavigationContainer>
         <Navigator
-          id="HomeStack"
+          id="RootNavigator"
           initialRouteName="Home"
           // screenOptions={{
           // headerShown: false,
