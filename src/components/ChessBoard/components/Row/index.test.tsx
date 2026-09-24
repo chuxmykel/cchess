@@ -3,8 +3,8 @@ import { render, screen } from '@testing-library/react-native';
 import Row from ".";
 
 describe("Row", () => {
-  function renderChessBoardRow() {
-    const screen = render(
+  async function renderChessBoardRow() {
+    const screen = await render(
       <Row
         colors={{
           light: "white",
@@ -20,8 +20,8 @@ describe("Row", () => {
     expect(Row).toBeDefined();
   });
 
-  it("should have 8 columns", () => {
-    const result = renderChessBoardRow();
+  it("should have 8 columns", async () => {
+    const result = await renderChessBoardRow();
     expect(result.children).toHaveLength(8);
   });
 });

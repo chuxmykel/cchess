@@ -10,7 +10,8 @@ const Home: React.FC = () => {
   return (
     <>
       <Navigator
-        initialRouteName='Game'
+        id="GameStack"
+        initialRouteName="Game"
         screenOptions={{
           headerShown: false,
         }}

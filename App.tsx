@@ -15,6 +15,7 @@ export default function App() {
     <>
       <NavigationContainer>
         <Navigator
+          id={undefined}
           initialRouteName='Home'
         // screenOptions={{
         // headerShown: false,

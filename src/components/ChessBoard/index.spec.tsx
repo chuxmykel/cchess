@@ -3,10 +3,10 @@ import { Chess } from 'chess.js';
 import Chessboard from '.';
 
 describe("Chessboard", () => {
-  function renderChessBoard() {
+  async function renderChessBoard() {
     const mockOnMove = jest.fn();
     const width = 400;
-    const screen = render(
+    const screen = await render(
       <Chessboard
         game={new Chess()}
         colors={{
@@ -25,8 +25,8 @@ describe("Chessboard", () => {
     expect(Chessboard).toBeDefined();
   });
 
-  it("should be a perfect square", () => {
-    const result = renderChessBoard();
+  it("should be a perfect square", async () => {
+    const result = await renderChessBoard();
     expect(result.props.style.width)
       .toEqual(result.props.style.height);
   });
