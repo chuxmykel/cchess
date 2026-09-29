@@ -115,6 +115,286 @@ describe("Chessboard", () => {
 
       expect(onMove).not.toHaveBeenCalled();
     });
+
+    it("should call onMove with squares chess.js recognizes as a capture", async () => {
+      const game = new Chess("4k3/8/8/8/8/2b5/8/1N2K3 w - - 0 1");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-b1"));
+      await fireEvent.press(screen.getByTestId("square-c3"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("b1", PIECE_WIDTH),
+        getXYFromSquare("c3", PIECE_WIDTH),
+      );
+
+      const move = game.move({ from: "b1", to: "c3" });
+      expect(move.captured).toBe("b");
+      expect(move.flags).toContain("c");
+      expect(game.get("c3")).toEqual({ type: "n", color: "w" });
+    });
+
+    it("should remove the captured piece from the board once the move is applied", async () => {
+      const game = new Chess("r3k3/8/8/8/8/8/8/R3K3 w - - 0 1");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-a1"));
+      await fireEvent.press(screen.getByTestId("square-a8"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("a1", PIECE_WIDTH),
+        getXYFromSquare("a8", PIECE_WIDTH),
+      );
+
+      game.move({ from: "a1", to: "a8" });
+      const piecesAfterMove = buildPiecesFromGame(game, PIECE_WIDTH);
+      expect(
+        piecesAfterMove.find(piece => piece.square === "a8" && piece.color === "b")
+      ).toBeUndefined();
+      expect(
+        piecesAfterMove.find(piece => piece.square === "a8" && piece.color === "w" && piece.type === "r")
+      ).toBeDefined();
+    });
+  });
+
+  describe("accurate piece movement", () => {
+    it("moves a pawn forward from an edge file", async () => {
+      const game = new Chess();
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-a2"));
+      await fireEvent.press(screen.getByTestId("square-a4"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("a2", PIECE_WIDTH),
+        getXYFromSquare("a4", PIECE_WIDTH),
+      );
+    });
+
+    it("moves a black pawn forward", async () => {
+      const game = new Chess();
+      game.move("e4");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-e7"));
+      await fireEvent.press(screen.getByTestId("square-e5"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("e7", PIECE_WIDTH),
+        getXYFromSquare("e5", PIECE_WIDTH),
+      );
+    });
+
+    it("moves a knight toward an edge square", async () => {
+      const game = new Chess();
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-g1"));
+      await fireEvent.press(screen.getByTestId("square-h3"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("g1", PIECE_WIDTH),
+        getXYFromSquare("h3", PIECE_WIDTH),
+      );
+    });
+
+    it("moves a bishop along the long diagonal between corners", async () => {
+      const game = new Chess("4k3/7p/8/8/8/8/8/B3K3 w - - 0 1");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-a1"));
+      await fireEvent.press(screen.getByTestId("square-h8"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("a1", PIECE_WIDTH),
+        getXYFromSquare("h8", PIECE_WIDTH),
+      );
+    });
+
+    it("moves a rook the length of a file between corners", async () => {
+      const game = new Chess("4k3/8/8/8/8/8/8/R3K3 w - - 0 1");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-a1"));
+      await fireEvent.press(screen.getByTestId("square-a8"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("a1", PIECE_WIDTH),
+        getXYFromSquare("a8", PIECE_WIDTH),
+      );
+    });
+
+    it("moves a queen diagonally toward an edge file", async () => {
+      const game = new Chess("4k3/8/8/8/8/8/8/3QK3 w - - 0 1");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-d1"));
+      await fireEvent.press(screen.getByTestId("square-a4"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("d1", PIECE_WIDTH),
+        getXYFromSquare("a4", PIECE_WIDTH),
+      );
+    });
+
+    it("moves a king one square from a corner", async () => {
+      const game = new Chess("4k3/7p/8/8/8/8/8/K7 w - - 0 1");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-a1"));
+      await fireEvent.press(screen.getByTestId("square-b2"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("a1", PIECE_WIDTH),
+        getXYFromSquare("b2", PIECE_WIDTH),
+      );
+    });
+  });
+
+  describe("castling", () => {
+    it("should castle kingside for white", async () => {
+      const game = new Chess("r1bqk2r/pppp1ppp/2n2n2/2b1p1N1/2B1P3/8/PPPP1PPP/RNBQK2R w KQkq - 6 5");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-e1"));
+      await fireEvent.press(screen.getByTestId("square-g1"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("e1", PIECE_WIDTH),
+        getXYFromSquare("g1", PIECE_WIDTH),
+      );
+
+      const move = game.move({ from: "e1", to: "g1" });
+      expect(move.flags).toContain("k");
+    });
+
+    it("should castle kingside for black", async () => {
+      const game = new Chess("r1bqk2r/pppp1ppp/2n2n2/2b1p1N1/2B1P3/8/PPPP1PPP/RNBQK2R b KQkq - 6 5");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-e8"));
+      await fireEvent.press(screen.getByTestId("square-g8"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("e8", PIECE_WIDTH),
+        getXYFromSquare("g8", PIECE_WIDTH),
+      );
+
+      const move = game.move({ from: "e8", to: "g8" });
+      expect(move.flags).toContain("k");
+    });
+
+    it("should castle queenside for white", async () => {
+      const game = new Chess("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/R3KBNR w KQkq - 0 1");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-e1"));
+      await fireEvent.press(screen.getByTestId("square-c1"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("e1", PIECE_WIDTH),
+        getXYFromSquare("c1", PIECE_WIDTH),
+      );
+
+      const move = game.move({ from: "e1", to: "c1" });
+      expect(move.flags).toContain("q");
+    });
+
+    it("should castle queenside for black", async () => {
+      const game = new Chess("r3kbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-e8"));
+      await fireEvent.press(screen.getByTestId("square-c8"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("e8", PIECE_WIDTH),
+        getXYFromSquare("c8", PIECE_WIDTH),
+      );
+
+      const move = game.move({ from: "e8", to: "c8" });
+      expect(move.flags).toContain("q");
+    });
+  });
+
+  describe("en passant", () => {
+    it("should capture en passant when tapping through the capturing move", async () => {
+      const game = new Chess();
+      game.move("e4");
+      game.move("a6");
+      game.move("e5");
+      game.move("d5");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-e5"));
+      await fireEvent.press(screen.getByTestId("square-d6"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("e5", PIECE_WIDTH),
+        getXYFromSquare("d6", PIECE_WIDTH),
+      );
+
+      const move = game.move({ from: "e5", to: "d6" });
+      expect(move.flags).toContain("e");
+      expect(move.captured).toBe("p");
+      expect(game.get("d5")).toBeUndefined();
+    });
+  });
+
+  describe("promotion", () => {
+    it("should call onMove for a pawn move that reaches the back rank", async () => {
+      const game = new Chess("8/4P3/8/2k5/8/4K3/8/8 w - - 0 1");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-e7"));
+      await fireEvent.press(screen.getByTestId("square-e8"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("e7", PIECE_WIDTH),
+        getXYFromSquare("e8", PIECE_WIDTH),
+      );
+
+      const legalMoves = game.moves({ square: "e7", verbose: true });
+      expect(legalMoves.length).toBeGreaterThan(0);
+      expect(legalMoves.every(move => move.to === "e8" && move.flags.includes("p"))).toBe(true);
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should not call onMove when the game is already over", async () => {
+      const game = new Chess();
+      game.move("f3");
+      game.move("e5");
+      game.move("g4");
+      game.move("Qh4");
+      expect(game.isGameOver()).toBe(true);
+
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-e8"));
+      await fireEvent.press(screen.getByTestId("square-e7"));
+
+      expect(onMove).not.toHaveBeenCalled();
+    });
+
+    it("should not crash through a chain of select/deselect/reselect taps", async () => {
+      const game = new Chess();
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-e2")); // select pawn
+      await fireEvent.press(screen.getByTestId("square-e2")); // deselect
+      await fireEvent.press(screen.getByTestId("square-d2")); // select another pawn
+      await fireEvent.press(screen.getByTestId("square-b1")); // switch to knight
+      await fireEvent.press(screen.getByTestId("square-b1")); // deselect
+      await fireEvent.press(screen.getByTestId("square-g1")); // select other knight
+      await fireEvent.press(screen.getByTestId("square-f3")); // legal move
+
+      expect(onMove).toHaveBeenCalledTimes(1);
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("g1", PIECE_WIDTH),
+        getXYFromSquare("f3", PIECE_WIDTH),
+      );
+    });
   });
 });
 

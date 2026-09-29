@@ -38,6 +38,7 @@ const PromotionMenu: React.FC<PromotionMenuProps> = ({ boardWidth, pieceWidth, h
                   handlePromotion(type);
                 }}
                 key={type}
+                testID={`promote-${type}`}
               >
                 <Image
                   source={PIECES[`${promotingColor}${type}`]}
