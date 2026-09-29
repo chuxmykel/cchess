@@ -26,6 +26,7 @@ interface PieceProps {
   onMove: (from: Position, to: Position) => void;
   onDrag: (currentPosition: Position) => void;
   onSquarePress: (square: Square) => void;
+  resetSelectedSquare: () => void;
   showDragGuide: () => void;
   hideDragGuide: () => void;
   showValidMovesGuide: (fromPosition: Position) => void;
@@ -42,6 +43,7 @@ const Piece: React.FC<PieceProps> = ({
   onMove,
   onDrag,
   onSquarePress,
+  resetSelectedSquare,
   showDragGuide,
   hideDragGuide,
   showValidMovesGuide,
@@ -91,6 +93,13 @@ const Piece: React.FC<PieceProps> = ({
         onSquarePress(square);
         return;
       }
+
+      // A real drag - on any piece, own or not, legal target or not - moves the
+      // piece directly via onMove below, bypassing onSquarePress entirely. It
+      // must still invalidate whatever the tap-to-move flow had armed earlier,
+      // or a stale selection can cause a later, unrelated tap to silently move
+      // the wrong piece.
+      resetSelectedSquare();
       if (disabled) return;
 
       const newPosition = getNewPositionFromGesture(position, gestureState, width);

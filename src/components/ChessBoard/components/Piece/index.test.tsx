@@ -14,10 +14,12 @@ describe("Piece", () => {
     onMove: jest.Mock;
     onDrag: jest.Mock;
     onSquarePress: jest.Mock;
+    resetSelectedSquare: jest.Mock;
   }> = {}) {
     const onMove = overrides.onMove ?? jest.fn();
     const onDrag = overrides.onDrag ?? jest.fn();
     const onSquarePress = overrides.onSquarePress ?? jest.fn();
+    const resetSelectedSquare = overrides.resetSelectedSquare ?? jest.fn();
     const screen = await render(
       <Piece
         width={width}
@@ -29,6 +31,7 @@ describe("Piece", () => {
         onMove={onMove}
         onDrag={onDrag}
         onSquarePress={onSquarePress}
+        resetSelectedSquare={resetSelectedSquare}
         showDragGuide={jest.fn()}
         hideDragGuide={jest.fn()}
         showValidMovesGuide={jest.fn()}
@@ -36,7 +39,7 @@ describe("Piece", () => {
       />
     );
     const piece = screen.getByTestId("piece-e2");
-    return { piece, onMove, onDrag, onSquarePress };
+    return { piece, onMove, onDrag, onSquarePress, resetSelectedSquare };
   }
 
   it("should exist", () => {
@@ -88,5 +91,30 @@ describe("Piece", () => {
 
     expect(onSquarePress).not.toHaveBeenCalled();
     expect(onMove).toHaveBeenCalled();
+  });
+
+  it("should call resetSelectedSquare on any real drag, including one that doesn't move the piece", async () => {
+    const { piece, resetSelectedSquare } = await renderPiece();
+
+    await simulatePanResponderDrag(piece, 0, -100);
+
+    expect(resetSelectedSquare).toHaveBeenCalled();
+  });
+
+  it("should call resetSelectedSquare even when dragging a disabled (opponent's) piece", async () => {
+    const { piece, resetSelectedSquare, onMove } = await renderPiece({ disabled: true });
+
+    await simulatePanResponderDrag(piece, 0, -100);
+
+    expect(resetSelectedSquare).toHaveBeenCalled();
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it("should not call resetSelectedSquare on a tap (only a real drag should invalidate a prior selection)", async () => {
+    const { piece, resetSelectedSquare } = await renderPiece();
+
+    await simulatePanResponderTap(piece);
+
+    expect(resetSelectedSquare).not.toHaveBeenCalled();
   });
 });

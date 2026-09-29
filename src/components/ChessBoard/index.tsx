@@ -82,6 +82,14 @@ const Chessboard: React.FC<ChessboardProps> = ({
     selectedSquare.current = null;
     clearValidMovesGuide();
   }
+  // Drag-and-drop moves a piece directly via onMove, bypassing handleSquarePress
+  // entirely - so a real drag (on any piece, own or not, legal target or not)
+  // must still invalidate whatever the tap-to-move flow had armed earlier.
+  // Without this, a stale selectedSquare left over from an unresolved tap could
+  // cause a later, seemingly unrelated tap to silently move the wrong piece.
+  function resetSelectedSquare() {
+    selectedSquare.current = null;
+  }
   function handleSquarePress(square: Square) {
     if (game.isGameOver()) return;
     const pieceOnSquare = pieces.find(piece => piece.square === square && !piece.captured);
@@ -163,6 +171,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
                 onMove={onMove}
                 onDrag={updateDragGuidePosition}
                 onSquarePress={handleSquarePress}
+                resetSelectedSquare={resetSelectedSquare}
                 showDragGuide={showDragGuide}
                 hideDragGuide={hideDragGuide}
                 showValidMovesGuide={showValidMovesGuide}

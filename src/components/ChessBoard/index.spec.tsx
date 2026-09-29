@@ -256,6 +256,51 @@ describe("Chessboard", () => {
     });
   });
 
+  describe("mixed tap and drag interactions", () => {
+    it("should not leave a stale tap-selection armed after an unrelated illegal drag", async () => {
+      const game = new Chess();
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      // Tap e2 to select the white pawn.
+      await fireEvent.press(screen.getByTestId("square-e2"));
+
+      // Drag a different piece (the c1 bishop) onto its own pawn at c2 - an
+      // illegal target. Chessboard has no legality opinion of its own (that's
+      // Game's handleMove, one layer up), so this drag legitimately calls
+      // onMove(c1, c2) same as any other drag; it's the caller's job to
+      // reject it. What matters is that the gesture still invalidates the
+      // earlier e2 tap-selection.
+      const { dx, dy } = dragDeltaBetween("c1", "c2");
+      await simulatePanResponderDrag(screen.getByTestId("piece-c1"), dx, dy);
+      onMove.mockClear();
+
+      // Tapping an empty square now, with nothing actually selected anymore,
+      // must be a no-op - NOT silently move the e2 pawn there.
+      await fireEvent.press(screen.getByTestId("square-e4"));
+
+      expect(onMove).not.toHaveBeenCalled();
+    });
+
+    it("should let a fresh tap select a new piece after an unrelated illegal drag", async () => {
+      const game = new Chess();
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-e2"));
+
+      const { dx, dy } = dragDeltaBetween("c1", "c2");
+      await simulatePanResponderDrag(screen.getByTestId("piece-c1"), dx, dy);
+
+      // A fresh, deliberate tap-to-move sequence afterward should work normally.
+      await fireEvent.press(screen.getByTestId("square-d2"));
+      await fireEvent.press(screen.getByTestId("square-d4"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("d2", PIECE_WIDTH),
+        getXYFromSquare("d4", PIECE_WIDTH),
+      );
+    });
+  });
+
   describe("accurate piece movement", () => {
     it("moves a pawn forward from an edge file", async () => {
       const game = new Chess();
