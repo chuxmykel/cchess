@@ -4,11 +4,7 @@ import { Chess, Square } from "chess.js";
 
 import { NUMBER_OF_ROWS, squares } from "../../constants";
 import { PieceDetails, Position } from "../../types";
-import {
-  getXYFromSquare,
-  getSquareFromXY,
-  isSamePosition,
-} from "../../utils";
+import { getXYFromSquare, getSquareFromXY } from "../../utils";
 
 import Row from "./components/Row";
 import Piece from "./components/Piece";
@@ -74,9 +70,11 @@ const Chessboard: React.FC<ChessboardProps> = ({
 
   // Tap-to-move: tap a square to select it (source), then tap another to move there (target).
   const selectedSquare = useRef<Square | null>(null);
+  function isSquareSelected(square: Square): boolean {
+    return selectedSquare.current === square;
+  }
   function selectSquare(square: Square) {
     selectedSquare.current = square;
-    showValidMovesGuide(getXYFromSquare(square, PIECE_WIDTH));
   }
   function deselectSquare() {
     selectedSquare.current = null;
@@ -100,7 +98,6 @@ const Chessboard: React.FC<ChessboardProps> = ({
       return;
     }
     if (square === selectedSquare.current) {
-      deselectSquare();
       return;
     }
     if (isOwnPiece) {
@@ -172,12 +169,13 @@ const Chessboard: React.FC<ChessboardProps> = ({
                 onDrag={updateDragGuidePosition}
                 onSquarePress={handleSquarePress}
                 resetSelectedSquare={resetSelectedSquare}
+                isSquareSelected={isSquareSelected}
                 showDragGuide={showDragGuide}
                 hideDragGuide={hideDragGuide}
                 showValidMovesGuide={showValidMovesGuide}
                 clearValidMovesGuide={clearValidMovesGuide}
               />
-            )
+            );
           })
         }
       </>
@@ -186,4 +184,3 @@ const Chessboard: React.FC<ChessboardProps> = ({
 };
 
 export default Chessboard;
-

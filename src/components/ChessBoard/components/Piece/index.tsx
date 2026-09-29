@@ -27,6 +27,7 @@ interface PieceProps {
   onDrag: (currentPosition: Position) => void;
   onSquarePress: (square: Square) => void;
   resetSelectedSquare: () => void;
+  isSquareSelected: (square: Square) => boolean;
   showDragGuide: () => void;
   hideDragGuide: () => void;
   showValidMovesGuide: (fromPosition: Position) => void;
@@ -44,6 +45,7 @@ const Piece: React.FC<PieceProps> = ({
   onDrag,
   onSquarePress,
   resetSelectedSquare,
+  isSquareSelected,
   showDragGuide,
   hideDragGuide,
   showValidMovesGuide,
@@ -59,6 +61,7 @@ const Piece: React.FC<PieceProps> = ({
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: () => {
       if (disabled) return;
+      if (isSquareSelected(square)) return;
       showValidMovesGuide(position);
     },
     onPanResponderMove: (_, gestureState) => {
@@ -70,13 +73,16 @@ const Piece: React.FC<PieceProps> = ({
       showDragGuide();
       const currentAnimatedPosition = {
         x: position.x + gestureState.dx,
-        y: position.y + gestureState.dy - pieceImageOffsetFromActualGestureResponderPosition,
+        y:
+          position.y +
+          gestureState.dy -
+          pieceImageOffsetFromActualGestureResponderPosition,
       };
       animatedPosition.setValue(currentAnimatedPosition);
       const newPosition = getNewPositionFromGesture(
         position,
         gestureState,
-        width
+        width,
       );
       onDrag(newPosition);
     },
@@ -107,7 +113,11 @@ const Piece: React.FC<PieceProps> = ({
       resetSelectedSquare();
       if (disabled) return;
 
-      const newPosition = getNewPositionFromGesture(position, gestureState, width);
+      const newPosition = getNewPositionFromGesture(
+        position,
+        gestureState,
+        width,
+      );
       onMove(position, newPosition);
       // NOTE: DON'T CLEAR the valid moves guide if the piece landed on the same position.
       // I may also want to leave it on if the piece landed on an invalid square.

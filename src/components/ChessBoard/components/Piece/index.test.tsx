@@ -18,12 +18,18 @@ describe("Piece", () => {
       onDrag: jest.Mock;
       onSquarePress: jest.Mock;
       resetSelectedSquare: jest.Mock;
+      isSquareSelected: jest.Mock;
+      showValidMovesGuide: jest.Mock;
+      clearValidMovesGuide: jest.Mock;
     }> = {},
   ) {
     const onMove = overrides.onMove ?? jest.fn();
     const onDrag = overrides.onDrag ?? jest.fn();
     const onSquarePress = overrides.onSquarePress ?? jest.fn();
     const resetSelectedSquare = overrides.resetSelectedSquare ?? jest.fn();
+    const isSquareSelected = overrides.isSquareSelected ?? jest.fn(() => false);
+    const showValidMovesGuide = overrides.showValidMovesGuide ?? jest.fn();
+    const clearValidMovesGuide = overrides.clearValidMovesGuide ?? jest.fn();
     const animatedPosition = new Animated.ValueXY(position);
     const screen = await render(
       <Piece
@@ -37,10 +43,11 @@ describe("Piece", () => {
         onDrag={onDrag}
         onSquarePress={onSquarePress}
         resetSelectedSquare={resetSelectedSquare}
+        isSquareSelected={isSquareSelected}
         showDragGuide={jest.fn()}
         hideDragGuide={jest.fn()}
-        showValidMovesGuide={jest.fn()}
-        clearValidMovesGuide={jest.fn()}
+        showValidMovesGuide={showValidMovesGuide}
+        clearValidMovesGuide={clearValidMovesGuide}
       />,
     );
     const piece = screen.getByTestId("piece-e2");
@@ -50,6 +57,9 @@ describe("Piece", () => {
       onDrag,
       onSquarePress,
       resetSelectedSquare,
+      isSquareSelected,
+      showValidMovesGuide,
+      clearValidMovesGuide,
       animatedPosition,
     };
   }
@@ -147,5 +157,50 @@ describe("Piece", () => {
     expect(onSquarePress).toHaveBeenCalledWith("e2");
     expect(getAnimatedValue(animatedPosition.x)).toBe(position.x);
     expect(getAnimatedValue(animatedPosition.y)).toBe(position.y);
+  });
+
+  it("should show the valid moves guide on touch-down when the piece isn't already selected", async () => {
+    const isSquareSelected = jest.fn(() => false);
+    const { piece, showValidMovesGuide } = await renderPiece({
+      isSquareSelected,
+    });
+
+    await simulatePanResponderTap(piece);
+
+    expect(showValidMovesGuide).toHaveBeenCalledWith(position);
+  });
+
+  it("should not re-show the valid moves guide on touch-down when the piece is already selected", async () => {
+    // Simulates re-tapping an already-selected piece (a no-op - see
+    // Chessboard's handleSquarePress): its guide is already showing, so
+    // recomputing it on touch-down would just be a pointless, visibly
+    // flickery clear-then-reset of the same dots.
+    const isSquareSelected = jest.fn(() => true);
+    const { piece, showValidMovesGuide } = await renderPiece({
+      isSquareSelected,
+    });
+
+    await simulatePanResponderTap(piece);
+
+    expect(isSquareSelected).toHaveBeenCalledWith("e2");
+    expect(showValidMovesGuide).not.toHaveBeenCalled();
+  });
+
+  it("should keep (not toggle) the valid moves guide if the same piece is selected", async () => {
+    // Re-tapping an already-selected piece should be a no-op end to end:
+    // Piece itself never touches the guide either way. Grant skips the
+    // redundant re-show (already covered above); this checks the full
+    // gesture - onSquarePress still fires (so Chessboard's own handler can
+    // decide it's a no-op), but neither show nor clear ever gets called by
+    // Piece, so there's nothing here that could flicker or toggle it.
+    const isSquareSelected = jest.fn(() => true);
+    const { piece, onSquarePress, showValidMovesGuide, clearValidMovesGuide } =
+      await renderPiece({ isSquareSelected });
+
+    await simulatePanResponderTap(piece);
+
+    expect(onSquarePress).toHaveBeenCalledWith("e2");
+    expect(showValidMovesGuide).not.toHaveBeenCalled();
+    expect(clearValidMovesGuide).not.toHaveBeenCalled();
   });
 });

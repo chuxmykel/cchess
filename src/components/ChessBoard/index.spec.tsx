@@ -74,14 +74,24 @@ describe("Chessboard", () => {
       );
     });
 
-    it("should deselect without moving when the same square is tapped twice", async () => {
+    it("should keep the selection (no-op) when the same square is tapped twice", async () => {
       const game = new Chess();
       const { screen, onMove } = await renderChessBoardWithGame(game);
 
       await fireEvent.press(screen.getByTestId("square-e2"));
       await fireEvent.press(screen.getByTestId("square-e2"));
-
       expect(onMove).not.toHaveBeenCalled();
+
+      // "onMove not called" alone doesn't distinguish a no-op from a
+      // deselect - both look identical from here. Prove the selection was
+      // actually kept by completing a move with the same piece right after,
+      // with no re-select needed in between.
+      await fireEvent.press(screen.getByTestId("square-e4"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("e2", PIECE_WIDTH),
+        getXYFromSquare("e4", PIECE_WIDTH),
+      );
     });
 
     it("should switch selection when a different own piece is tapped", async () => {
@@ -555,15 +565,15 @@ describe("Chessboard", () => {
       expect(onMove).not.toHaveBeenCalled();
     });
 
-    it("should not crash through a chain of select/deselect/reselect taps", async () => {
+    it("should not crash through a chain of select/re-tap(no-op)/reselect taps", async () => {
       const game = new Chess();
       const { screen, onMove } = await renderChessBoardWithGame(game);
 
       await fireEvent.press(screen.getByTestId("square-e2")); // select pawn
-      await fireEvent.press(screen.getByTestId("square-e2")); // deselect
+      await fireEvent.press(screen.getByTestId("square-e2")); // re-tap, no-op
       await fireEvent.press(screen.getByTestId("square-d2")); // select another pawn
       await fireEvent.press(screen.getByTestId("square-b1")); // switch to knight
-      await fireEvent.press(screen.getByTestId("square-b1")); // deselect
+      await fireEvent.press(screen.getByTestId("square-b1")); // re-tap, no-op
       await fireEvent.press(screen.getByTestId("square-g1")); // select other knight
       await fireEvent.press(screen.getByTestId("square-f3")); // legal move
 
