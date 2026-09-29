@@ -1,5 +1,5 @@
 import { Animated, PanResponderGestureState } from "react-native";
-import { Square, Move, Chess, Color } from "chess.js";
+import { Square, Move, Chess, Color, PieceSymbol } from "chess.js";
 
 import { PieceDetails, Position } from "../types";
 
@@ -164,6 +164,18 @@ export function isSamePosition(from: Position, to: Position) {
   return from.x === to.x && from.y === to.y;
 }
 
+// A React `key` for a piece, stable across the whole game - it must NOT be
+// tied to the piece's current square, since squares change every move and a
+// changing key would make React remount the piece instead of animating it
+// smoothly to its new position. The color/type/starting-square prefix is just
+// for readability in devtools; the suffix is what actually guarantees
+// uniqueness. Math.random() returns a float in [0, 1), so toString(36) always
+// produces a "0." prefix - that's the same on every call (no entropy, just
+// noise), so slice(2) drops those first two characters.
+export function generatePieceKey(color: Color, type: PieceSymbol, square: Square): string {
+  return `${color}${type}-${square}-${Math.random().toString(36).slice(2)}`;
+}
+
 export function buildPiecesFromGame(game: Chess, pieceWidth: number): PieceDetails[] {
   const boardPieces: PieceDetails[] = [];
   game.board().forEach((row) => {
@@ -175,7 +187,7 @@ export function buildPiecesFromGame(game: Chess, pieceWidth: number): PieceDetai
         boardPieces.push({
           ...piece,
           animatedPosition,
-          key: `${Math.random() * Date.now()}`,
+          key: generatePieceKey(piece.color, piece.type, piece.square),
           captured: false,
           position: squareXYCoordinates,
           id: `${piece.color}${piece.type}`,
