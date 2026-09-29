@@ -33,19 +33,19 @@ export function getSquareFromXY(position: Position, width: number): Square {
 }
 
 export function isCaptureMove(move: Move): boolean {
-  return move.flags.includes("c");
+  return move.isCapture();
 }
 export function isEnpassantMove(move: Move): boolean {
-  return move.flags.includes("e");
+  return move.isEnPassant();
 }
 export function isPromotion(move: Move): boolean {
-  return move.flags.includes("p");
+  return move.isPromotion();
 }
 export function isKingSideCastlingMove(move: Move) {
-  return move.flags.includes("k");
+  return move.isKingsideCastle();
 }
 export function isQueenSideCastlingMove(move: Move) {
-  return move.flags.includes("q");
+  return move.isQueensideCastle();
 }
 
 export function animateQueenSideCastle(rook: PieceDetails, pieceWidth: number) {

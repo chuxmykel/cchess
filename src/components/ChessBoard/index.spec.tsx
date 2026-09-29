@@ -60,7 +60,7 @@ describe("Chessboard", () => {
       .toEqual(result.props.style.height);
   });
 
-  describe("click to move", () => {
+  describe("tap to move", () => {
     it("should move a piece when its square then an empty target square are tapped", async () => {
       const game = new Chess();
       const { screen, onMove } = await renderChessBoardWithGame(game);
@@ -119,8 +119,19 @@ describe("Chessboard", () => {
       const { screen, onMove } = await renderChessBoardWithGame(game);
 
       await fireEvent.press(screen.getByTestId("square-e4"));
-
       expect(onMove).not.toHaveBeenCalled();
+
+      // Prove the tap didn't leave anything armed: a normal tap-to-move
+      // sequence right after should behave exactly as it would on a fresh
+      // board, not be affected by the earlier no-op tap in any way.
+      await fireEvent.press(screen.getByTestId("square-e2"));
+      await fireEvent.press(screen.getByTestId("square-e4"));
+
+      expect(onMove).toHaveBeenCalledTimes(1);
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("e2", PIECE_WIDTH),
+        getXYFromSquare("e4", PIECE_WIDTH),
+      );
     });
 
     it("should call onMove with squares chess.js recognizes as a capture", async () => {
@@ -137,8 +148,31 @@ describe("Chessboard", () => {
 
       const move = game.move({ from: "b1", to: "c3" });
       expect(move.captured).toBe("b");
-      expect(move.flags).toContain("c");
+      expect(move.isCapture()).toBe(true);
       expect(game.get("c3")).toEqual({ type: "n", color: "w" });
+    });
+
+    it("should not flag an ordinary move to an empty square as a capture", async () => {
+      // Same position and piece as the capture test above, but moved to d2
+      // (empty) instead of c3 (the bishop) - proves captured/flags actually
+      // distinguish the two cases rather than the capture test passing
+      // vacuously regardless of what chess.js reports. (The white king is in
+      // check from the bishop here, so d2 - which blocks it - is the only
+      // other legal square for this knight besides the capture on c3.)
+      const game = new Chess("4k3/8/8/8/8/2b5/8/1N2K3 w - - 0 1");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await fireEvent.press(screen.getByTestId("square-b1"));
+      await fireEvent.press(screen.getByTestId("square-d2"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("b1", PIECE_WIDTH),
+        getXYFromSquare("d2", PIECE_WIDTH),
+      );
+
+      const move = game.move({ from: "b1", to: "d2" });
+      expect(move.captured).toBeUndefined();
+      expect(move.isCapture()).toBe(false);
     });
 
     it("should remove the captured piece from the board once the move is applied", async () => {
@@ -192,7 +226,7 @@ describe("Chessboard", () => {
 
       const move = game.move({ from: "b1", to: "c3" });
       expect(move.captured).toBe("b");
-      expect(move.flags).toContain("c");
+      expect(move.isCapture()).toBe(true);
     });
 
     it("should castle kingside for white when the king is dragged two squares", async () => {
@@ -208,7 +242,7 @@ describe("Chessboard", () => {
       );
 
       const move = game.move({ from: "e1", to: "g1" });
-      expect(move.flags).toContain("k");
+      expect(move.isKingsideCastle()).toBe(true);
     });
 
     it("should capture en passant when dragged through the capturing move", async () => {
@@ -228,7 +262,7 @@ describe("Chessboard", () => {
       );
 
       const move = game.move({ from: "e5", to: "d6" });
-      expect(move.flags).toContain("e");
+      expect(move.isEnPassant()).toBe(true);
       expect(move.captured).toBe("p");
     });
 
@@ -409,7 +443,7 @@ describe("Chessboard", () => {
       );
 
       const move = game.move({ from: "e1", to: "g1" });
-      expect(move.flags).toContain("k");
+      expect(move.isKingsideCastle()).toBe(true);
     });
 
     it("should castle kingside for black", async () => {
@@ -425,7 +459,7 @@ describe("Chessboard", () => {
       );
 
       const move = game.move({ from: "e8", to: "g8" });
-      expect(move.flags).toContain("k");
+      expect(move.isKingsideCastle()).toBe(true);
     });
 
     it("should castle queenside for white", async () => {
@@ -441,7 +475,7 @@ describe("Chessboard", () => {
       );
 
       const move = game.move({ from: "e1", to: "c1" });
-      expect(move.flags).toContain("q");
+      expect(move.isQueensideCastle()).toBe(true);
     });
 
     it("should castle queenside for black", async () => {
@@ -457,7 +491,7 @@ describe("Chessboard", () => {
       );
 
       const move = game.move({ from: "e8", to: "c8" });
-      expect(move.flags).toContain("q");
+      expect(move.isQueensideCastle()).toBe(true);
     });
   });
 
@@ -479,7 +513,7 @@ describe("Chessboard", () => {
       );
 
       const move = game.move({ from: "e5", to: "d6" });
-      expect(move.flags).toContain("e");
+      expect(move.isEnPassant()).toBe(true);
       expect(move.captured).toBe("p");
       expect(game.get("d5")).toBeUndefined();
     });
@@ -500,7 +534,7 @@ describe("Chessboard", () => {
 
       const legalMoves = game.moves({ square: "e7", verbose: true });
       expect(legalMoves.length).toBeGreaterThan(0);
-      expect(legalMoves.every(move => move.to === "e8" && move.flags.includes("p"))).toBe(true);
+      expect(legalMoves.every(move => move.to === "e8" && move.isPromotion())).toBe(true);
     });
   });
 
