@@ -123,6 +123,7 @@ const Piece: React.FC<PieceProps> = ({
         zIndex,
         opacity,
       }}
+      testID={`piece-${square}`}
       {...panResponder.panHandlers}
     >
       <Animated.Image

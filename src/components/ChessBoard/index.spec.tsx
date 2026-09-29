@@ -1,12 +1,19 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import { Chess } from 'chess.js';
+import { Chess, Square } from 'chess.js';
 import Chessboard from '.';
 import { buildPiecesFromGame, getXYFromSquare } from '../../utils';
 import { NUMBER_OF_ROWS } from '../../constants';
+import { simulatePanResponderDrag, simulatePanResponderTap } from '../../testUtils/panResponderGesture';
 
 describe("Chessboard", () => {
   const width = 400;
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
+
+  function dragDeltaBetween(from: Square, to: Square) {
+    const fromPosition = getXYFromSquare(from, PIECE_WIDTH);
+    const toPosition = getXYFromSquare(to, PIECE_WIDTH);
+    return { dx: toPosition.x - fromPosition.x, dy: toPosition.y - fromPosition.y };
+  }
 
   async function renderChessBoard() {
     const mockOnMove = jest.fn();
@@ -154,6 +161,98 @@ describe("Chessboard", () => {
       expect(
         piecesAfterMove.find(piece => piece.square === "a8" && piece.color === "w" && piece.type === "r")
       ).toBeDefined();
+    });
+  });
+
+  describe("drag and drop", () => {
+    it("should move a piece when dragged to an empty target square", async () => {
+      const game = new Chess();
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+      const { dx, dy } = dragDeltaBetween("e2", "e4");
+
+      await simulatePanResponderDrag(screen.getByTestId("piece-e2"), dx, dy);
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("e2", PIECE_WIDTH),
+        getXYFromSquare("e4", PIECE_WIDTH),
+      );
+    });
+
+    it("should call onMove with squares chess.js recognizes as a capture when dragged onto an opponent's piece", async () => {
+      const game = new Chess("4k3/8/8/8/8/2b5/8/1N2K3 w - - 0 1");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+      const { dx, dy } = dragDeltaBetween("b1", "c3");
+
+      await simulatePanResponderDrag(screen.getByTestId("piece-b1"), dx, dy);
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("b1", PIECE_WIDTH),
+        getXYFromSquare("c3", PIECE_WIDTH),
+      );
+
+      const move = game.move({ from: "b1", to: "c3" });
+      expect(move.captured).toBe("b");
+      expect(move.flags).toContain("c");
+    });
+
+    it("should castle kingside for white when the king is dragged two squares", async () => {
+      const game = new Chess("r1bqk2r/pppp1ppp/2n2n2/2b1p1N1/2B1P3/8/PPPP1PPP/RNBQK2R w KQkq - 6 5");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+      const { dx, dy } = dragDeltaBetween("e1", "g1");
+
+      await simulatePanResponderDrag(screen.getByTestId("piece-e1"), dx, dy);
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("e1", PIECE_WIDTH),
+        getXYFromSquare("g1", PIECE_WIDTH),
+      );
+
+      const move = game.move({ from: "e1", to: "g1" });
+      expect(move.flags).toContain("k");
+    });
+
+    it("should capture en passant when dragged through the capturing move", async () => {
+      const game = new Chess();
+      game.move("e4");
+      game.move("a6");
+      game.move("e5");
+      game.move("d5");
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+      const { dx, dy } = dragDeltaBetween("e5", "d6");
+
+      await simulatePanResponderDrag(screen.getByTestId("piece-e5"), dx, dy);
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("e5", PIECE_WIDTH),
+        getXYFromSquare("d6", PIECE_WIDTH),
+      );
+
+      const move = game.move({ from: "e5", to: "d6" });
+      expect(move.flags).toContain("e");
+      expect(move.captured).toBe("p");
+    });
+
+    it("should not move an opponent's piece even if dragged", async () => {
+      const game = new Chess(); // white to move
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+      const { dx, dy } = dragDeltaBetween("e7", "e5");
+
+      await simulatePanResponderDrag(screen.getByTestId("piece-e7"), dx, dy);
+
+      expect(onMove).not.toHaveBeenCalled();
+    });
+
+    it("should select the square (not move) when a piece is tapped through the drag responder without real movement", async () => {
+      const game = new Chess();
+      const { screen, onMove } = await renderChessBoardWithGame(game);
+
+      await simulatePanResponderTap(screen.getByTestId("piece-e2"));
+      await fireEvent.press(screen.getByTestId("square-e4"));
+
+      expect(onMove).toHaveBeenCalledWith(
+        getXYFromSquare("e2", PIECE_WIDTH),
+        getXYFromSquare("e4", PIECE_WIDTH),
+      );
     });
   });
 
