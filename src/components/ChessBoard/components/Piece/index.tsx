@@ -88,6 +88,11 @@ const Piece: React.FC<PieceProps> = ({
         Math.abs(gestureState.dx) < TAP_MOVEMENT_THRESHOLD &&
         Math.abs(gestureState.dy) < TAP_MOVEMENT_THRESHOLD;
       if (isTap) {
+        // onPanResponderMove isn't gated by the tap threshold - any incidental
+        // finger jitter during a tap already nudged animatedPosition to follow
+        // it. A tap never reaches onMove below, so nothing else would snap the
+        // piece back to its actual square - do that explicitly here.
+        animatedPosition.setValue(position);
         // Tapping a piece - including an opponent's - selects its square
         // (as either a move's source or a capture's target).
         onSquarePress(square);
