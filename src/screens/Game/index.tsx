@@ -8,6 +8,7 @@ import { NUMBER_OF_ROWS } from "../../constants";
 import {
   animateKingSideCastle,
   animateQueenSideCastle,
+  buildPiecesFromGame,
   getSquareFromXY,
   getXYFromSquare,
   isCaptureMove,
@@ -48,28 +49,9 @@ const Game: React.FC = () => {
   const { width } = useWindowDimensions();
   const [game] = useState(new Chess());
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
-  const boardPieces: PieceDetails[] = [];
-  game.board().forEach((row) => {
-    row.forEach(
-      (piece) => {
-        if (piece) {
-          const squareXYCoordinates = getXYFromSquare(piece.square, PIECE_WIDTH);
-          const animatedPosition = new Animated.ValueXY(squareXYCoordinates);
-          const opacity = new Animated.Value(1);
-          boardPieces.push({
-            ...piece,
-            animatedPosition,
-            key: `${Math.random() * Date.now()}`,
-            captured: false,
-            position: squareXYCoordinates,
-            id: `${piece.color}${piece.type}`,
-            opacity,
-          })
-        }
-      }
-    );
-  });
-  const [pieces, setPieces] = useState<PieceDetails[]>(boardPieces);
+  const [pieces, setPieces] = useState<PieceDetails[]>(
+    buildPiecesFromGame(game, PIECE_WIDTH)
+  );
   const [showPromotionMenu, setShowPromotionMenu] = useState<boolean>(false);
   const [promotedPiece, setPromotedPiece] = useState<PieceDetails>(null);
   const [promotionMove, setPromotionMove] = useState<Move>(null);

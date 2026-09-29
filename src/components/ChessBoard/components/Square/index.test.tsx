@@ -1,16 +1,17 @@
 
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import Square from ".";
 
 describe("Square", () => {
-  function renderChessBoardSquareWithCoordinates() {
+  function renderChessBoardSquareWithCoordinates(onPress?: () => void) {
     return render(
       <Square
         color="black"
         textColor="white"
         rank={1}
         file={"a"}
+        onPress={onPress}
       />
     );
   }
@@ -52,6 +53,14 @@ describe("Square", () => {
   it("should not display coordinates if it's not an a file square", async () => {
     const screen = await renderChessBoardSquareWithoutCoordinates();
     expect(() => screen.getByText("b")).toThrow("Unable to find an element with text: b");
+  });
+
+  it("should call onPress when pressed", async () => {
+    const onPress = jest.fn();
+    const screen = await renderChessBoardSquareWithCoordinates(onPress);
+    await fireEvent.press(screen.getByTestId("square-a1"));
+
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 });
 

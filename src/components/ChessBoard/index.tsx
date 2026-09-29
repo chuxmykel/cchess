@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { View, Animated } from "react-native";
 import { Chess, Square } from "chess.js";
 
@@ -71,21 +72,66 @@ const Chessboard: React.FC<ChessboardProps> = ({
     });
   }
 
+  // Tap-to-move: tap a square to select it (source), then tap another to move there (target).
+  const selectedSquare = useRef<Square | null>(null);
+  function selectSquare(square: Square) {
+    selectedSquare.current = square;
+    showValidMovesGuide(getXYFromSquare(square, PIECE_WIDTH));
+  }
+  function deselectSquare() {
+    selectedSquare.current = null;
+    clearValidMovesGuide();
+  }
+  function handleSquarePress(square: Square) {
+    if (game.isGameOver()) return;
+    const pieceOnSquare = pieces.find(piece => piece.square === square && !piece.captured);
+    const isOwnPiece = Boolean(pieceOnSquare) && pieceOnSquare.color === game.turn();
+
+    if (!selectedSquare.current) {
+      if (isOwnPiece) selectSquare(square);
+      return;
+    }
+    if (square === selectedSquare.current) {
+      deselectSquare();
+      return;
+    }
+    if (isOwnPiece) {
+      selectSquare(square);
+      return;
+    }
+
+    const from = getXYFromSquare(selectedSquare.current, PIECE_WIDTH);
+    const to = getXYFromSquare(square, PIECE_WIDTH);
+    deselectSquare();
+    onMove(from, to);
+  }
+
   return (
     <View style={{ width, height: width }} testID="chessboard">
       {/* Board Surface */}
       <>
         {new Array(NUMBER_OF_ROWS).fill("").map((_, idx) => (
-          <Row key={idx} colors={colors} rank={NUMBER_OF_ROWS - idx} />
+          <Row
+            key={idx}
+            colors={colors}
+            rank={NUMBER_OF_ROWS - idx}
+            onSquarePress={handleSquarePress}
+          />
         ))}
       </>
 
-      {/* Drag and Drop Guide */}
-      <PieceDragAndDropGuide
-        squareWidth={PIECE_WIDTH}
-        position={dragGuidePosition}
-        opacity={dragGuideOpacity}
-      />
+      {/* Drag and Drop Guide - clipped to the board; unlike a dragged piece,
+      the guide should never be visible past the board's edge. */}
+      <View
+        style={{ position: "absolute", width, height: width, overflow: "hidden" }}
+        pointerEvents="none"
+      >
+        <PieceDragAndDropGuide
+          squareWidth={PIECE_WIDTH}
+          position={dragGuidePosition}
+          opacity={dragGuideOpacity}
+        />
+      </View>
 
       {/* Legal moves guide */}
       {squareDetails.map(square => {
@@ -116,6 +162,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
                 opacity={pieceDetails.opacity}
                 onMove={onMove}
                 onDrag={updateDragGuidePosition}
+                onSquarePress={handleSquarePress}
                 showDragGuide={showDragGuide}
                 hideDragGuide={hideDragGuide}
                 showValidMovesGuide={showValidMovesGuide}

@@ -163,3 +163,26 @@ export function getNewPositionFromGesture(initialPosition: Position, gestureStat
 export function isSamePosition(from: Position, to: Position) {
   return from.x === to.x && from.y === to.y;
 }
+
+export function buildPiecesFromGame(game: Chess, pieceWidth: number): PieceDetails[] {
+  const boardPieces: PieceDetails[] = [];
+  game.board().forEach((row) => {
+    row.forEach((piece) => {
+      if (piece) {
+        const squareXYCoordinates = getXYFromSquare(piece.square, pieceWidth);
+        const animatedPosition = new Animated.ValueXY(squareXYCoordinates);
+        const opacity = new Animated.Value(1);
+        boardPieces.push({
+          ...piece,
+          animatedPosition,
+          key: `${Math.random() * Date.now()}`,
+          captured: false,
+          position: squareXYCoordinates,
+          id: `${piece.color}${piece.type}`,
+          opacity,
+        });
+      }
+    });
+  });
+  return boardPieces;
+}

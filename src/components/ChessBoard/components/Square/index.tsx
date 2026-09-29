@@ -1,12 +1,15 @@
 import {
-  View,
+  Pressable,
   StyleSheet,
   Text,
+  View,
 } from "react-native";
 
 
-const Square = ({ color, textColor, rank, file }) => (
-  <View
+const Square = ({ color, textColor, rank, file, onPress = () => {} }) => (
+  <Pressable
+    onPress={onPress}
+    testID={`square-${file}${rank}`}
     style={{
       backgroundColor: color,
       ...styles.square,
@@ -38,7 +41,7 @@ const Square = ({ color, textColor, rank, file }) => (
         </Text >
       </View>
     </View>
-  </View>
+  </Pressable>
 );
 
 export default Square;

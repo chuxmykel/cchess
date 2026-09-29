@@ -18,6 +18,7 @@ const ValidMoveIndicator: React.FC<
     const offsetToCenter = indicatorDiameter;
     return (
       <Animated.View
+        pointerEvents="none"
         style={{
           ...styles.container,
           borderRadius: indicatorDiameter / 2,
