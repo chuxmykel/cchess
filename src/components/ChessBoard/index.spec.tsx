@@ -82,10 +82,6 @@ describe("Chessboard", () => {
       await fireEvent.press(screen.getByTestId("square-e2"));
       expect(onMove).not.toHaveBeenCalled();
 
-      // "onMove not called" alone doesn't distinguish a no-op from a
-      // deselect - both look identical from here. Prove the selection was
-      // actually kept by completing a move with the same piece right after,
-      // with no re-select needed in between.
       await fireEvent.press(screen.getByTestId("square-e4"));
 
       expect(onMove).toHaveBeenCalledWith(

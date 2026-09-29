@@ -171,10 +171,6 @@ describe("Piece", () => {
   });
 
   it("should not re-show the valid moves guide on touch-down when the piece is already selected", async () => {
-    // Simulates re-tapping an already-selected piece (a no-op - see
-    // Chessboard's handleSquarePress): its guide is already showing, so
-    // recomputing it on touch-down would just be a pointless, visibly
-    // flickery clear-then-reset of the same dots.
     const isSquareSelected = jest.fn(() => true);
     const { piece, showValidMovesGuide } = await renderPiece({
       isSquareSelected,
@@ -187,12 +183,6 @@ describe("Piece", () => {
   });
 
   it("should keep (not toggle) the valid moves guide if the same piece is selected", async () => {
-    // Re-tapping an already-selected piece should be a no-op end to end:
-    // Piece itself never touches the guide either way. Grant skips the
-    // redundant re-show (already covered above); this checks the full
-    // gesture - onSquarePress still fires (so Chessboard's own handler can
-    // decide it's a no-op), but neither show nor clear ever gets called by
-    // Piece, so there's nothing here that could flicker or toggle it.
     const isSquareSelected = jest.fn(() => true);
     const { piece, onSquarePress, showValidMovesGuide, clearValidMovesGuide } =
       await renderPiece({ isSquareSelected });
