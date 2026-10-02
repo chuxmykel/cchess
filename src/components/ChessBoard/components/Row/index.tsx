@@ -7,7 +7,7 @@ import {
 import Square from '../Square';
 
 
-const Row = ({ colors, rank }) => {
+const Row = ({ colors, rank, onSquarePress = (_square: string) => {} }) => {
   const startColor = rank % 2 === 0 ? colors.light : colors.dark;
   const alternateColor = startColor === colors.light ? colors.dark : colors.light;
 
@@ -25,6 +25,7 @@ const Row = ({ colors, rank }) => {
                 textColor={idx % 2 === 0 ? alternateColor : startColor}
                 rank={rank}
                 file={file}
+                onPress={() => onSquarePress(`${file}${rank}`)}
               />
             );
           })

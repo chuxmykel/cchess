@@ -5,11 +5,13 @@ import {
   Animated,
   PanResponderGestureState,
 } from 'react-native';
+import { Square } from 'chess.js';
 
-import { PIECES } from "../../../../constants";
+import { PIECES, TAP_MOVEMENT_THRESHOLD } from "../../../../constants";
 import { Position } from "../../../../types";
 import {
   getNewPositionFromGesture,
+  getSquareFromXY,
   isSamePosition,
 } from '../../../../utils';
 
@@ -23,6 +25,9 @@ interface PieceProps {
   opacity: Animated.Value;
   onMove: (from: Position, to: Position) => void;
   onDrag: (currentPosition: Position) => void;
+  onSquarePress: (square: Square) => void;
+  resetSelectedSquare: () => void;
+  isSquareSelected: (square: Square) => boolean;
   showDragGuide: () => void;
   hideDragGuide: () => void;
   showValidMovesGuide: (fromPosition: Position) => void;
@@ -38,50 +43,97 @@ const Piece: React.FC<PieceProps> = ({
   opacity,
   onMove,
   onDrag,
+  onSquarePress,
+  resetSelectedSquare,
+  isSquareSelected,
   showDragGuide,
   hideDragGuide,
   showValidMovesGuide,
   clearValidMovesGuide,
 }) => {
+  const square = getSquareFromXY(position, width);
   const scale = useRef(new Animated.Value(1)).current;
   const zIndex = useRef(new Animated.Value(0)).current;
   const panResponder = PanResponder.create({
-    onMoveShouldSetPanResponder: () => !disabled,
+    // Claim the responder on touch-down (not just on movement) so a plain
+    // tap-and-release with no drag still reaches onPanResponderRelease.
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: () => {
+      if (disabled) return;
+      // Show the guide the moment the piece is pressed, resting on its own
+      // square - onPanResponderMove below takes over and drags it along if
+      // this turns into a real drag; either way, onPanResponderRelease hides
+      // it again once the touch ends.
+      onDrag(position);
+      if (isSquareSelected(square)) return;
       showValidMovesGuide(position);
     },
     onPanResponderMove: (_, gestureState) => {
+      // Opponent pieces are tap-only (see onPanResponderRelease) - they can't be dragged.
+      if (disabled) return;
       // A little offset to move the piece image above the dragging finger for good visibility!
-      const pieceImageOffsetFromActualGestureResponderPosition = width * 1.5;
+      const pieceImageOffsetFromActualGestureResponderPosition = width * 0.5;
       zoomIn();
       showDragGuide();
       const currentAnimatedPosition = {
         x: position.x + gestureState.dx,
-        y: position.y + gestureState.dy - pieceImageOffsetFromActualGestureResponderPosition,
+        y:
+          position.y +
+          gestureState.dy -
+          pieceImageOffsetFromActualGestureResponderPosition,
       };
       animatedPosition.setValue(currentAnimatedPosition);
       const newPosition = getNewPositionFromGesture(
         position,
         gestureState,
-        width
+        width,
       );
       onDrag(newPosition);
     },
     onPanResponderRelease: (_, gestureState: PanResponderGestureState) => {
-      const newPosition = getNewPositionFromGesture(position, gestureState, width);
+      hideDragGuide();
+      zoomOut();
+
+      const isTap =
+        Math.abs(gestureState.dx) < TAP_MOVEMENT_THRESHOLD &&
+        Math.abs(gestureState.dy) < TAP_MOVEMENT_THRESHOLD;
+      if (isTap) {
+        // onPanResponderMove isn't gated by the tap threshold - any incidental
+        // finger jitter during a tap already nudged animatedPosition to follow
+        // it. A tap never reaches onMove below, so nothing else would snap the
+        // piece back to its actual square - do that explicitly here.
+        animatedPosition.setValue(position);
+        // Tapping a piece - including an opponent's - selects its square
+        // (as either a move's source or a capture's target).
+        onSquarePress(square);
+        return;
+      }
+
+      // A real drag - on any piece, own or not, legal target or not - moves the
+      // piece directly via onMove below, bypassing onSquarePress entirely. It
+      // must still invalidate whatever the tap-to-move flow had armed earlier,
+      // or a stale selection can cause a later, unrelated tap to silently move
+      // the wrong piece.
+      resetSelectedSquare();
+      if (disabled) return;
+
+      const newPosition = getNewPositionFromGesture(
+        position,
+        gestureState,
+        width,
+      );
       onMove(position, newPosition);
       // NOTE: DON'T CLEAR the valid moves guide if the piece landed on the same position.
       // I may also want to leave it on if the piece landed on an invalid square.
       if (!isSamePosition(position, newPosition)) {
         clearValidMovesGuide();
       }
-      hideDragGuide();
-      zoomOut();
     },
   });
 
   function zoomIn() {
-    scale.setValue(2.5);
+    scale.setValue(1.4);
     zIndex.setValue(100);
   }
 
@@ -100,6 +152,7 @@ const Piece: React.FC<PieceProps> = ({
         zIndex,
         opacity,
       }}
+      testID={`piece-${square}`}
       {...panResponder.panHandlers}
     >
       <Animated.Image

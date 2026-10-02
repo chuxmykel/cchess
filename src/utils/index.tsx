@@ -1,5 +1,5 @@
 import { Animated, PanResponderGestureState } from "react-native";
-import { Square, Move, Chess, Color } from "chess.js";
+import { Square, Move, Chess, Color, PieceSymbol } from "chess.js";
 
 import { PieceDetails, Position } from "../types";
 
@@ -33,19 +33,19 @@ export function getSquareFromXY(position: Position, width: number): Square {
 }
 
 export function isCaptureMove(move: Move): boolean {
-  return move.flags.includes("c");
+  return move.isCapture();
 }
 export function isEnpassantMove(move: Move): boolean {
-  return move.flags.includes("e");
+  return move.isEnPassant();
 }
 export function isPromotion(move: Move): boolean {
-  return move.flags.includes("p");
+  return move.isPromotion();
 }
 export function isKingSideCastlingMove(move: Move) {
-  return move.flags.includes("k");
+  return move.isKingsideCastle();
 }
 export function isQueenSideCastlingMove(move: Move) {
-  return move.flags.includes("q");
+  return move.isQueensideCastle();
 }
 
 export function animateQueenSideCastle(rook: PieceDetails, pieceWidth: number) {
@@ -162,4 +162,39 @@ export function getNewPositionFromGesture(initialPosition: Position, gestureStat
 
 export function isSamePosition(from: Position, to: Position) {
   return from.x === to.x && from.y === to.y;
+}
+
+// A React `key` for a piece, stable across the whole game - it must NOT be
+// tied to the piece's current square, since squares change every move and a
+// changing key would make React remount the piece instead of animating it
+// smoothly to its new position. The color/type/starting-square prefix is just
+// for readability in devtools; the suffix is what actually guarantees
+// uniqueness. Math.random() returns a float in [0, 1), so toString(36) always
+// produces a "0." prefix - that's the same on every call (no entropy, just
+// noise), so slice(2) drops those first two characters.
+export function generatePieceKey(color: Color, type: PieceSymbol, square: Square): string {
+  return `${color}${type}-${square}-${Math.random().toString(36).slice(2)}`;
+}
+
+export function buildPiecesFromGame(game: Chess, pieceWidth: number): PieceDetails[] {
+  const boardPieces: PieceDetails[] = [];
+  game.board().forEach((row) => {
+    row.forEach((piece) => {
+      if (piece) {
+        const squareXYCoordinates = getXYFromSquare(piece.square, pieceWidth);
+        const animatedPosition = new Animated.ValueXY(squareXYCoordinates);
+        const opacity = new Animated.Value(1);
+        boardPieces.push({
+          ...piece,
+          animatedPosition,
+          key: generatePieceKey(piece.color, piece.type, piece.square),
+          captured: false,
+          position: squareXYCoordinates,
+          id: `${piece.color}${piece.type}`,
+          opacity,
+        });
+      }
+    });
+  });
+  return boardPieces;
 }
