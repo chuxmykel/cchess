@@ -42,6 +42,9 @@ const Game: React.FC = () => {
   // Promotion
   // const [game] = useState(new Chess("8/4P3/8/2k5/8/4K3/8/8 w - - 0 1"));
 
+  // Promotion multiple pieces
+  // const [game] = useState(new Chess("8/2PPP3/8/2k5/8/4K3/8/8 w - - 0 1"));
+
   // Pre - en passant
   // const [game] = useState(new Chess("rnbqkbnr/pppp1ppp/4p3/4P3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"))
 
@@ -188,20 +191,25 @@ const Game: React.FC = () => {
   }
 
   function promotePiece(type: PieceSymbol) {
+    const promotionSquare = getPromotionSquare(
+      promotedPiece.square,
+      PIECE_WIDTH,
+    );
+    const promotionPosition = getXYFromSquare(promotionSquare, PIECE_WIDTH);
+    promotedPiece.animatedPosition.setValue(promotionPosition);
+
     setPieces(prevPieces => {
-      const prevPiecesWithoutPromotedPiece = prevPieces
-        .filter(prevPiece => prevPiece.key !== promotedPiece.key);
-      const promotionSquare = getPromotionSquare(promotedPiece.square, PIECE_WIDTH);
-      const promotionPosition = getXYFromSquare(promotionSquare, PIECE_WIDTH);
+      const prevPiecesWithoutPromotedPiece = prevPieces.filter(
+        (prevPiece) => prevPiece.key !== promotedPiece.key,
+      );
       return [
         ...prevPiecesWithoutPromotedPiece,
         {
           ...promotedPiece,
-          id: `${game.turn()}${type}`,
+          id: `${promotionMove.color}${type}`,
           square: promotionSquare,
           position: promotionPosition,
-          animatedPosition: new Animated.ValueXY(promotionPosition),
-        }
+        },
       ];
     });
     setShowPromotionMenu(false);

@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { View, Animated } from "react-native";
 import { Chess, Square } from "chess.js";
 
-import { NUMBER_OF_ROWS, squares } from "../../constants";
+import { NUMBER_OF_ROWS, SQUARES } from "../../constants";
 import { PieceDetails, Position } from "../../types";
 import { getXYFromSquare, getSquareFromXY } from "../../utils";
 
@@ -33,7 +33,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
   const initialGuidePosition = { x: -PIECE_WIDTH * 3, y: -PIECE_WIDTH * 3 };
   const dragGuidePosition = new Animated.ValueXY(initialGuidePosition);
   const dragGuideOpacity = new Animated.Value(1);
-  const squareDetails = squares.map(square => {
+  const squareDetails = SQUARES.map((square) => {
     return {
       validMoveIndicatorOpacity: new Animated.Value(0),
       notation: square,
@@ -47,6 +47,12 @@ const Chessboard: React.FC<ChessboardProps> = ({
     dragGuidePosition.setValue(initialGuidePosition);
   }
   function updateDragGuidePosition(currentPieceAnimatedPosition: Position) {
+    const square = getSquareFromXY(currentPieceAnimatedPosition, PIECE_WIDTH);
+    if (!SQUARES.includes(square)) {
+      hideDragGuide();
+      return;
+    }
+    showDragGuide();
     dragGuidePosition.setValue(currentPieceAnimatedPosition);
   }
 
