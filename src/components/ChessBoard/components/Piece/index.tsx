@@ -61,6 +61,11 @@ const Piece: React.FC<PieceProps> = ({
     onMoveShouldSetPanResponder: () => true,
     onPanResponderGrant: () => {
       if (disabled) return;
+      // Show the guide the moment the piece is pressed, resting on its own
+      // square - onPanResponderMove below takes over and drags it along if
+      // this turns into a real drag; either way, onPanResponderRelease hides
+      // it again once the touch ends.
+      onDrag(position);
       if (isSquareSelected(square)) return;
       showValidMovesGuide(position);
     },

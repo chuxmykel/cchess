@@ -131,10 +131,8 @@ const Chessboard: React.FC<ChessboardProps> = ({
         ))}
       </>
 
-      {/* Drag and Drop Guide - clipped to the board; unlike a dragged piece,
-      the guide should never be visible past the board's edge. */}
       <View
-        style={{ position: "absolute", width, height: width, overflow: "hidden" }}
+        style={{ position: "absolute", width, height: width }}
         pointerEvents="none"
       >
         <PieceDragAndDropGuide
@@ -145,7 +143,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
       </View>
 
       {/* Legal moves guide */}
-      {squareDetails.map(square => {
+      {squareDetails.map((square) => {
         const squarePosition = getXYFromSquare(square.notation, PIECE_WIDTH);
         return (
           <ValidMoveIndicator
@@ -159,31 +157,29 @@ const Chessboard: React.FC<ChessboardProps> = ({
 
       {/* Pieces */}
       <>
-        {
-          pieces.map((pieceDetails: PieceDetails) => {
-            const isPieceColorTurn = game.turn() === pieceDetails.id.charAt(0);
-            return pieceDetails.captured ? null : (
-              <Piece
-                key={pieceDetails.key}
-                id={pieceDetails.id}
-                width={PIECE_WIDTH}
-                position={pieceDetails.position}
-                animatedPosition={pieceDetails.animatedPosition}
-                disabled={!isPieceColorTurn || game.isGameOver()}
-                opacity={pieceDetails.opacity}
-                onMove={onMove}
-                onDrag={updateDragGuidePosition}
-                onSquarePress={handleSquarePress}
-                resetSelectedSquare={resetSelectedSquare}
-                isSquareSelected={isSquareSelected}
-                showDragGuide={showDragGuide}
-                hideDragGuide={hideDragGuide}
-                showValidMovesGuide={showValidMovesGuide}
-                clearValidMovesGuide={clearValidMovesGuide}
-              />
-            );
-          })
-        }
+        {pieces.map((pieceDetails: PieceDetails) => {
+          const isPieceColorTurn = game.turn() === pieceDetails.id.charAt(0);
+          return pieceDetails.captured ? null : (
+            <Piece
+              key={pieceDetails.key}
+              id={pieceDetails.id}
+              width={PIECE_WIDTH}
+              position={pieceDetails.position}
+              animatedPosition={pieceDetails.animatedPosition}
+              disabled={!isPieceColorTurn || game.isGameOver()}
+              opacity={pieceDetails.opacity}
+              onMove={onMove}
+              onDrag={updateDragGuidePosition}
+              onSquarePress={handleSquarePress}
+              resetSelectedSquare={resetSelectedSquare}
+              isSquareSelected={isSquareSelected}
+              showDragGuide={showDragGuide}
+              hideDragGuide={hideDragGuide}
+              showValidMovesGuide={showValidMovesGuide}
+              clearValidMovesGuide={clearValidMovesGuide}
+            />
+          );
+        })}
       </>
     </View>
   );
