@@ -1,16 +1,11 @@
-import { memo, useRef } from "react";
-import {
-  StyleSheet,
-  PanResponder,
-  Animated,
-  PanResponderGestureState,
-} from "react-native";
+import { memo } from "react";
+import { StyleSheet, Animated } from "react-native";
 import { Square } from "chess.js";
 
-import { PIECES, TAP_MOVEMENT_THRESHOLD } from "../../../../constants";
+import { PIECES } from "../../../../constants";
 import { Position } from "../../../../domain/types";
 import { getSquareFromXY } from "../../../../domain/boardCoordinates";
-import { getNewPositionFromGesture } from "../../../../utils/animation";
+import { usePieceGesture } from "../../../../hooks/usePieceGesture";
 
 interface PieceProps {
   width: number;
@@ -27,116 +22,11 @@ interface PieceProps {
   hideDragGuide: () => void;
 }
 
-// Where the piece sprite should sit while being actively dragged: the
-// finger's live position, offset upward by half the piece width so the
-// dragged piece stays visible above the finger rather than hidden under it.
-function getDraggedPosition(
-  position: Position,
-  gestureState: PanResponderGestureState,
-  width: number,
-): Position {
-  const pieceImageOffsetFromActualGestureResponderPosition = width * 0.5;
-  return {
-    x: position.x + gestureState.dx,
-    y:
-      position.y +
-      gestureState.dy -
-      pieceImageOffsetFromActualGestureResponderPosition,
-  };
-}
-
 const Piece: React.FC<PieceProps> = (props) => {
   const { width, position, animatedPosition, id, opacity } = props;
   const square = getSquareFromXY(position, width);
-  const scale = useRef(new Animated.Value(1)).current;
-  const zIndex = useRef(new Animated.Value(0)).current;
+  const { panHandlers, scale, zIndex } = usePieceGesture(props, square);
 
-  // The PanResponder below is created exactly once (see the useRef it's
-  // wrapped in) rather than directly in the render body, so a re-render
-  // during an active touch can never reallocate it and invalidate the
-  // gesture it's already resolving. Its handlers read every current value
-  // through latestPropsRef instead of closing over props directly, so they
-  // stay fresh across renders without the PanResponder itself needing to be
-  // recreated.
-  const latestPropsRef = useRef({ ...props, square });
-  latestPropsRef.current = { ...props, square };
-
-  const panResponderRef = useRef<ReturnType<typeof PanResponder.create> | null>(
-    null,
-  );
-  if (!panResponderRef.current) {
-    panResponderRef.current = PanResponder.create({
-      // Claim the responder on touch-down (not just on movement) so a plain
-      // tap-and-release with no drag still reaches onPanResponderRelease.
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        const { disabled, position, square, onDrag, onDragStart } =
-          latestPropsRef.current;
-        if (disabled) return;
-
-        onDrag(position);
-        onDragStart(square);
-      },
-      onPanResponderMove: (_, gestureState) => {
-        const { disabled, position, width, animatedPosition, onDrag } =
-          latestPropsRef.current;
-        // Opponent pieces get no drag affordance at all - they're tap-only (see release below).
-        if (disabled) return;
-        zoomIn();
-        latestPropsRef.current.showDragGuide();
-        animatedPosition.setValue(
-          getDraggedPosition(position, gestureState, width),
-        );
-        const newPosition = getNewPositionFromGesture(
-          position,
-          gestureState,
-          width,
-        );
-        onDrag(newPosition);
-      },
-      onPanResponderRelease: (_, gestureState: PanResponderGestureState) => {
-        const {
-          position,
-          width,
-          animatedPosition,
-          square,
-          onTap,
-          onDragRelease,
-        } = latestPropsRef.current;
-        latestPropsRef.current.hideDragGuide();
-        zoomOut();
-
-        const isTap =
-          Math.abs(gestureState.dx) < TAP_MOVEMENT_THRESHOLD &&
-          Math.abs(gestureState.dy) < TAP_MOVEMENT_THRESHOLD;
-        if (isTap) {
-          animatedPosition.setValue(position);
-          onTap(square);
-          return;
-        }
-
-        const newPosition = getNewPositionFromGesture(
-          position,
-          gestureState,
-          width,
-        );
-        const newSquare = getSquareFromXY(newPosition, width);
-        onDragRelease(square, newSquare);
-      },
-    });
-  }
-  const panResponder = panResponderRef.current;
-
-  function zoomIn() {
-    scale.setValue(1.4);
-    zIndex.setValue(100);
-  }
-
-  function zoomOut() {
-    scale.setValue(1);
-    zIndex.setValue(0);
-  }
   return (
     <Animated.View
       style={{
@@ -150,7 +40,7 @@ const Piece: React.FC<PieceProps> = (props) => {
         opacity,
       }}
       testID={`piece-${square}`}
-      {...panResponder.panHandlers}
+      {...panHandlers}
     >
       <Animated.Image
         source={PIECES[id]}

@@ -50,3 +50,11 @@ export async function simulatePanResponderTap(element: TestInstance) {
 export async function simulatePanResponderGrant(element: TestInstance) {
   await fireEvent(element, 'responderGrant', { touchHistory: touchHistoryAt(0, 0, 0, 0, 0) });
 }
+
+// Grant + move, with no release - for asserting on state that's only true
+// mid-drag (e.g. zoom/scale feedback), which a full release would already
+// have reverted by the time a post-drag assertion could observe it.
+export async function simulatePanResponderGrantAndMove(element: TestInstance, dx: number, dy: number) {
+  await fireEvent(element, 'responderGrant', { touchHistory: touchHistoryAt(0, 0, 0, 0, 0) });
+  await fireEvent(element, 'responderMove', { touchHistory: touchHistoryAt(0, 0, dx, dy, 100) });
+}
