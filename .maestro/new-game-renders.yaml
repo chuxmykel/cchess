@@ -1,0 +1,11 @@
+appId: host.exp.Exponent
+---
+- runFlow: common/launch-fresh.yaml
+- assertVisible:
+    id: "chessboard"
+- assertVisible:
+    id: "piece-e2"
+- assertVisible:
+    id: "piece-d7"
+- assertNotVisible:
+    id: "piece-e4"

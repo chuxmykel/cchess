@@ -5,7 +5,7 @@ import Piece from '.';
 import { TAP_MOVEMENT_THRESHOLD } from '../../../../constants';
 import { simulatePanResponderDrag, simulatePanResponderTap } from '../../../../testUtils/panResponderGesture';
 import { getAnimatedValue } from "../../../../testUtils/animatedValue";
-import { getXYFromSquare } from "../../../../utils";
+import { getXYFromSquare } from "../../../../domain/boardCoordinates";
 
 describe("Piece", () => {
   const width = 50;
@@ -14,22 +14,16 @@ describe("Piece", () => {
   async function renderPiece(
     overrides: Partial<{
       disabled: boolean;
-      onMove: jest.Mock;
+      onTap: jest.Mock;
+      onDragRelease: jest.Mock;
+      onDragStart: jest.Mock;
       onDrag: jest.Mock;
-      onSquarePress: jest.Mock;
-      resetSelectedSquare: jest.Mock;
-      isSquareSelected: jest.Mock;
-      showValidMovesGuide: jest.Mock;
-      clearValidMovesGuide: jest.Mock;
     }> = {},
   ) {
-    const onMove = overrides.onMove ?? jest.fn();
+    const onTap = overrides.onTap ?? jest.fn();
+    const onDragRelease = overrides.onDragRelease ?? jest.fn();
+    const onDragStart = overrides.onDragStart ?? jest.fn();
     const onDrag = overrides.onDrag ?? jest.fn();
-    const onSquarePress = overrides.onSquarePress ?? jest.fn();
-    const resetSelectedSquare = overrides.resetSelectedSquare ?? jest.fn();
-    const isSquareSelected = overrides.isSquareSelected ?? jest.fn(() => false);
-    const showValidMovesGuide = overrides.showValidMovesGuide ?? jest.fn();
-    const clearValidMovesGuide = overrides.clearValidMovesGuide ?? jest.fn();
     const animatedPosition = new Animated.ValueXY(position);
     const screen = await render(
       <Piece
@@ -39,158 +33,125 @@ describe("Piece", () => {
         id="wp"
         disabled={overrides.disabled ?? false}
         opacity={new Animated.Value(1)}
-        onMove={onMove}
+        onTap={onTap}
+        onDragRelease={onDragRelease}
+        onDragStart={onDragStart}
         onDrag={onDrag}
-        onSquarePress={onSquarePress}
-        resetSelectedSquare={resetSelectedSquare}
-        isSquareSelected={isSquareSelected}
         showDragGuide={jest.fn()}
         hideDragGuide={jest.fn()}
-        showValidMovesGuide={showValidMovesGuide}
-        clearValidMovesGuide={clearValidMovesGuide}
       />,
     );
     const piece = screen.getByTestId("piece-e2");
-    return {
-      piece,
-      onMove,
-      onDrag,
-      onSquarePress,
-      resetSelectedSquare,
-      isSquareSelected,
-      showValidMovesGuide,
-      clearValidMovesGuide,
-      animatedPosition,
-    };
+    return { piece, onTap, onDragRelease, onDragStart, onDrag, animatedPosition };
   }
 
   it("should exist", () => {
     expect(Piece).toBeDefined();
   });
 
-  it("should call onMove with the piece's from/to positions when dragged past the tap threshold", async () => {
-    const { piece, onMove, onSquarePress } = await renderPiece();
+  it("should call onDragRelease with the piece's from/to squares when dragged past the tap threshold", async () => {
+    const { piece, onDragRelease } = await renderPiece();
 
     // Drag up by 2 squares (width 50 * 2 = 100px) - well past the threshold.
     await simulatePanResponderDrag(piece, 0, -100);
 
-    expect(onMove).toHaveBeenCalledWith(position, { x: 200, y: 200 });
-    expect(onSquarePress).not.toHaveBeenCalled();
+    expect(onDragRelease).toHaveBeenCalledWith("e2", "e4");
   });
 
-  it("should call onSquarePress instead of onMove when movement stays under the tap threshold", async () => {
-    const { piece, onMove, onSquarePress } = await renderPiece();
+  it("should not call onTap on touch-down for a gesture that turns into a drag", async () => {
+    const { piece, onTap } = await renderPiece();
+
+    await simulatePanResponderDrag(piece, 0, -100);
+
+    // Regression guard: an earlier version called onTap on every
+    // touch-down (tap or drag) so the legal-move indicators would show
+    // instantly. onDragStart (below) now covers that need directly, so
+    // onTap at grant has no remaining job - and firing it anyway wastefully
+    // dispatches a selection change (on a genuinely new selection) that a
+    // drag's own release immediately supersedes, which measurably delayed
+    // both the drag guide's hide and the piece's own move animation on a
+    // first interaction with a square.
+    expect(onTap).not.toHaveBeenCalled();
+  });
+
+  it("should call onDragStart on touch-down, instead of onTap", async () => {
+    const { piece, onDragStart } = await renderPiece();
+
+    await simulatePanResponderDrag(piece, 0, -100);
+
+    // Drives the valid-move indicators with a plain, synchronous
+    // Animated.setValue alongside the drag guide's, with no dispatch
+    // involved at all.
+    expect(onDragStart).toHaveBeenCalledWith("e2");
+  });
+
+  it("should not call onDragStart on touch-down for a disabled (opponent's) piece", async () => {
+    const { piece, onDragStart } = await renderPiece({ disabled: true });
+
+    await simulatePanResponderDrag(piece, 0, -100);
+
+    expect(onDragStart).not.toHaveBeenCalled();
+  });
+
+  it("should call onTap instead of onDragRelease when movement stays under the tap threshold", async () => {
+    const { piece, onDragRelease, onTap } = await renderPiece();
 
     await simulatePanResponderTap(piece);
 
-    expect(onSquarePress).toHaveBeenCalledWith("e2");
-    expect(onMove).not.toHaveBeenCalled();
+    expect(onTap).toHaveBeenCalledWith("e2");
+    expect(onDragRelease).not.toHaveBeenCalled();
   });
 
-  it("should still treat a tap on a disabled (opponent's) piece as a square press", async () => {
-    const { piece, onMove, onSquarePress } = await renderPiece({
+  it("should still report a tap on a disabled (opponent's) piece, so it can be used as a move's target", async () => {
+    const { piece, onTap, onDragRelease } = await renderPiece({
       disabled: true,
     });
 
     await simulatePanResponderTap(piece);
 
-    expect(onSquarePress).toHaveBeenCalledWith("e2");
-    expect(onMove).not.toHaveBeenCalled();
+    expect(onTap).toHaveBeenCalledWith("e2");
+    expect(onDragRelease).not.toHaveBeenCalled();
   });
 
-  it("should not call onMove when a disabled (opponent's) piece is dragged", async () => {
-    const { piece, onMove, onDrag } = await renderPiece({ disabled: true });
+  it("should not report onTap or onDrag on touch-down for a disabled (opponent's) piece", async () => {
+    const { piece, onTap, onDrag } = await renderPiece({ disabled: true });
 
     await simulatePanResponderDrag(piece, 0, -100);
 
-    expect(onMove).not.toHaveBeenCalled();
+    expect(onTap).not.toHaveBeenCalled();
     expect(onDrag).not.toHaveBeenCalled();
   });
 
+  it("should still report a real drag's outcome on release even for a disabled (opponent's) piece - legality is the caller's call", async () => {
+    const { piece, onDragRelease } = await renderPiece({ disabled: true });
+
+    await simulatePanResponderDrag(piece, 0, -100);
+
+    expect(onDragRelease).toHaveBeenCalledWith("e2", "e4");
+  });
+
   it("movement right at the threshold boundary counts as a drag, not a tap", async () => {
-    const { piece, onMove, onSquarePress } = await renderPiece();
+    const { piece, onDragRelease, onTap } = await renderPiece();
 
     // TAP_MOVEMENT_THRESHOLD itself is excluded by the component's strict "<" check.
     await simulatePanResponderDrag(piece, TAP_MOVEMENT_THRESHOLD, 0);
 
-    expect(onSquarePress).not.toHaveBeenCalled();
-    expect(onMove).toHaveBeenCalled();
-  });
-
-  it("should call resetSelectedSquare on any real drag, including one that doesn't move the piece", async () => {
-    const { piece, resetSelectedSquare } = await renderPiece();
-
-    await simulatePanResponderDrag(piece, 0, -100);
-
-    expect(resetSelectedSquare).toHaveBeenCalled();
-  });
-
-  it("should call resetSelectedSquare even when dragging a disabled (opponent's) piece", async () => {
-    const { piece, resetSelectedSquare, onMove } = await renderPiece({
-      disabled: true,
-    });
-
-    await simulatePanResponderDrag(piece, 0, -100);
-
-    expect(resetSelectedSquare).toHaveBeenCalled();
-    expect(onMove).not.toHaveBeenCalled();
-  });
-
-  it("should not call resetSelectedSquare on a tap (only a real drag should invalidate a prior selection)", async () => {
-    const { piece, resetSelectedSquare } = await renderPiece();
-
-    await simulatePanResponderTap(piece);
-
-    expect(resetSelectedSquare).not.toHaveBeenCalled();
+    expect(onDragRelease).toHaveBeenCalled();
+    expect(onTap).not.toHaveBeenCalled();
   });
 
   it("should snap the piece back to its own square when incidental jitter during a tap stays under the threshold", async () => {
-    const { piece, animatedPosition, onSquarePress } = await renderPiece();
+    const { piece, animatedPosition, onTap } = await renderPiece();
 
     // onPanResponderMove isn't gated by the tap threshold - even a few
     // pixels of finger jitter during what's still classified as a tap
-    // nudges animatedPosition via setValue. Since a tap never reaches
-    // onMove, nothing else would put it back - the release handler itself
+    // nudges animatedPosition via setValue. Since a tap never reports a
+    // drag, nothing else would put it back - the release handler itself
     // must reset it.
     await simulatePanResponderDrag(piece, 5, -5);
 
-    expect(onSquarePress).toHaveBeenCalledWith("e2");
+    expect(onTap).toHaveBeenCalledWith("e2");
     expect(getAnimatedValue(animatedPosition.x)).toBe(position.x);
     expect(getAnimatedValue(animatedPosition.y)).toBe(position.y);
-  });
-
-  it("should show the valid moves guide on touch-down when the piece isn't already selected", async () => {
-    const isSquareSelected = jest.fn(() => false);
-    const { piece, showValidMovesGuide } = await renderPiece({
-      isSquareSelected,
-    });
-
-    await simulatePanResponderTap(piece);
-
-    expect(showValidMovesGuide).toHaveBeenCalledWith(position);
-  });
-
-  it("should not re-show the valid moves guide on touch-down when the piece is already selected", async () => {
-    const isSquareSelected = jest.fn(() => true);
-    const { piece, showValidMovesGuide } = await renderPiece({
-      isSquareSelected,
-    });
-
-    await simulatePanResponderTap(piece);
-
-    expect(isSquareSelected).toHaveBeenCalledWith("e2");
-    expect(showValidMovesGuide).not.toHaveBeenCalled();
-  });
-
-  it("should keep (not toggle) the valid moves guide if the same piece is selected", async () => {
-    const isSquareSelected = jest.fn(() => true);
-    const { piece, onSquarePress, showValidMovesGuide, clearValidMovesGuide } =
-      await renderPiece({ isSquareSelected });
-
-    await simulatePanResponderTap(piece);
-
-    expect(onSquarePress).toHaveBeenCalledWith("e2");
-    expect(showValidMovesGuide).not.toHaveBeenCalled();
-    expect(clearValidMovesGuide).not.toHaveBeenCalled();
   });
 });

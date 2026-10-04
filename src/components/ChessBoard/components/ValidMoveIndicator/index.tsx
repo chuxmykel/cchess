@@ -1,10 +1,11 @@
 import { Animated, StyleSheet } from "react-native";
-import { Position } from "../../../../types";
+import { Position } from "../../../../domain/types";
 
 interface ValidMoveIndicatorProps {
   position: Position;
   squareWidth: number;
   opacity: Animated.Value;
+  testID?: string;
 };
 
 const ValidMoveIndicator: React.FC<
@@ -13,12 +14,14 @@ const ValidMoveIndicator: React.FC<
   position,
   squareWidth,
   opacity,
+  testID,
 }) => {
     const indicatorDiameter = squareWidth / 3;
     const offsetToCenter = indicatorDiameter;
     return (
       <Animated.View
         pointerEvents="none"
+        testID={testID}
         style={{
           ...styles.container,
           borderRadius: indicatorDiameter / 2,

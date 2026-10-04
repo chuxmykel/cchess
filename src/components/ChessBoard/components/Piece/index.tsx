@@ -1,20 +1,16 @@
-import { useRef } from 'react';
+import { memo, useRef } from "react";
 import {
   StyleSheet,
   PanResponder,
   Animated,
   PanResponderGestureState,
-} from 'react-native';
-import { Square } from 'chess.js';
+} from "react-native";
+import { Square } from "chess.js";
 
 import { PIECES, TAP_MOVEMENT_THRESHOLD } from "../../../../constants";
-import { Position } from "../../../../types";
-import {
-  getNewPositionFromGesture,
-  getSquareFromXY,
-  isSamePosition,
-} from '../../../../utils';
-
+import { Position } from "../../../../domain/types";
+import { getSquareFromXY } from "../../../../domain/boardCoordinates";
+import { getNewPositionFromGesture } from "../../../../utils/animation";
 
 interface PieceProps {
   width: number;
@@ -23,114 +19,114 @@ interface PieceProps {
   id: string;
   disabled: boolean;
   opacity: Animated.Value;
-  onMove: (from: Position, to: Position) => void;
+  onTap: (square: Square) => void;
+  onDragRelease: (from: Square, to: Square) => void;
+  onDragStart: (square: Square) => void;
   onDrag: (currentPosition: Position) => void;
-  onSquarePress: (square: Square) => void;
-  resetSelectedSquare: () => void;
-  isSquareSelected: (square: Square) => boolean;
   showDragGuide: () => void;
   hideDragGuide: () => void;
-  showValidMovesGuide: (fromPosition: Position) => void;
-  clearValidMovesGuide: () => void;
 }
 
-const Piece: React.FC<PieceProps> = ({
-  width,
-  position,
-  animatedPosition,
-  id,
-  disabled,
-  opacity,
-  onMove,
-  onDrag,
-  onSquarePress,
-  resetSelectedSquare,
-  isSquareSelected,
-  showDragGuide,
-  hideDragGuide,
-  showValidMovesGuide,
-  clearValidMovesGuide,
-}) => {
+// Where the piece sprite should sit while being actively dragged: the
+// finger's live position, offset upward by half the piece width so the
+// dragged piece stays visible above the finger rather than hidden under it.
+function getDraggedPosition(
+  position: Position,
+  gestureState: PanResponderGestureState,
+  width: number,
+): Position {
+  const pieceImageOffsetFromActualGestureResponderPosition = width * 0.5;
+  return {
+    x: position.x + gestureState.dx,
+    y:
+      position.y +
+      gestureState.dy -
+      pieceImageOffsetFromActualGestureResponderPosition,
+  };
+}
+
+const Piece: React.FC<PieceProps> = (props) => {
+  const { width, position, animatedPosition, id, opacity } = props;
   const square = getSquareFromXY(position, width);
   const scale = useRef(new Animated.Value(1)).current;
   const zIndex = useRef(new Animated.Value(0)).current;
-  const panResponder = PanResponder.create({
-    // Claim the responder on touch-down (not just on movement) so a plain
-    // tap-and-release with no drag still reaches onPanResponderRelease.
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: () => {
-      if (disabled) return;
-      // Show the guide the moment the piece is pressed, resting on its own
-      // square - onPanResponderMove below takes over and drags it along if
-      // this turns into a real drag; either way, onPanResponderRelease hides
-      // it again once the touch ends.
-      onDrag(position);
-      if (isSquareSelected(square)) return;
-      showValidMovesGuide(position);
-    },
-    onPanResponderMove: (_, gestureState) => {
-      // Opponent pieces are tap-only (see onPanResponderRelease) - they can't be dragged.
-      if (disabled) return;
-      // A little offset to move the piece image above the dragging finger for good visibility!
-      const pieceImageOffsetFromActualGestureResponderPosition = width * 0.5;
-      zoomIn();
-      showDragGuide();
-      const currentAnimatedPosition = {
-        x: position.x + gestureState.dx,
-        y:
-          position.y +
-          gestureState.dy -
-          pieceImageOffsetFromActualGestureResponderPosition,
-      };
-      animatedPosition.setValue(currentAnimatedPosition);
-      const newPosition = getNewPositionFromGesture(
-        position,
-        gestureState,
-        width,
-      );
-      onDrag(newPosition);
-    },
-    onPanResponderRelease: (_, gestureState: PanResponderGestureState) => {
-      hideDragGuide();
-      zoomOut();
 
-      const isTap =
-        Math.abs(gestureState.dx) < TAP_MOVEMENT_THRESHOLD &&
-        Math.abs(gestureState.dy) < TAP_MOVEMENT_THRESHOLD;
-      if (isTap) {
-        // onPanResponderMove isn't gated by the tap threshold - any incidental
-        // finger jitter during a tap already nudged animatedPosition to follow
-        // it. A tap never reaches onMove below, so nothing else would snap the
-        // piece back to its actual square - do that explicitly here.
-        animatedPosition.setValue(position);
-        // Tapping a piece - including an opponent's - selects its square
-        // (as either a move's source or a capture's target).
-        onSquarePress(square);
-        return;
-      }
+  // The PanResponder below is created exactly once (see the useRef it's
+  // wrapped in) rather than directly in the render body, so a re-render
+  // during an active touch can never reallocate it and invalidate the
+  // gesture it's already resolving. Its handlers read every current value
+  // through latestPropsRef instead of closing over props directly, so they
+  // stay fresh across renders without the PanResponder itself needing to be
+  // recreated.
+  const latestPropsRef = useRef({ ...props, square });
+  latestPropsRef.current = { ...props, square };
 
-      // A real drag - on any piece, own or not, legal target or not - moves the
-      // piece directly via onMove below, bypassing onSquarePress entirely. It
-      // must still invalidate whatever the tap-to-move flow had armed earlier,
-      // or a stale selection can cause a later, unrelated tap to silently move
-      // the wrong piece.
-      resetSelectedSquare();
-      if (disabled) return;
+  const panResponderRef = useRef<ReturnType<typeof PanResponder.create> | null>(
+    null,
+  );
+  if (!panResponderRef.current) {
+    panResponderRef.current = PanResponder.create({
+      // Claim the responder on touch-down (not just on movement) so a plain
+      // tap-and-release with no drag still reaches onPanResponderRelease.
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        const { disabled, position, square, onDrag, onDragStart } =
+          latestPropsRef.current;
+        if (disabled) return;
 
-      const newPosition = getNewPositionFromGesture(
-        position,
-        gestureState,
-        width,
-      );
-      onMove(position, newPosition);
-      // NOTE: DON'T CLEAR the valid moves guide if the piece landed on the same position.
-      // I may also want to leave it on if the piece landed on an invalid square.
-      if (!isSamePosition(position, newPosition)) {
-        clearValidMovesGuide();
-      }
-    },
-  });
+        onDrag(position);
+        onDragStart(square);
+      },
+      onPanResponderMove: (_, gestureState) => {
+        const { disabled, position, width, animatedPosition, onDrag } =
+          latestPropsRef.current;
+        // Opponent pieces get no drag affordance at all - they're tap-only (see release below).
+        if (disabled) return;
+        zoomIn();
+        latestPropsRef.current.showDragGuide();
+        animatedPosition.setValue(
+          getDraggedPosition(position, gestureState, width),
+        );
+        const newPosition = getNewPositionFromGesture(
+          position,
+          gestureState,
+          width,
+        );
+        onDrag(newPosition);
+      },
+      onPanResponderRelease: (_, gestureState: PanResponderGestureState) => {
+        const {
+          position,
+          width,
+          animatedPosition,
+          square,
+          onTap,
+          onDragRelease,
+        } = latestPropsRef.current;
+        latestPropsRef.current.hideDragGuide();
+        zoomOut();
+
+        const isTap =
+          Math.abs(gestureState.dx) < TAP_MOVEMENT_THRESHOLD &&
+          Math.abs(gestureState.dy) < TAP_MOVEMENT_THRESHOLD;
+        if (isTap) {
+          animatedPosition.setValue(position);
+          onTap(square);
+          return;
+        }
+
+        const newPosition = getNewPositionFromGesture(
+          position,
+          gestureState,
+          width,
+        );
+        const newSquare = getSquareFromXY(newPosition, width);
+        onDragRelease(square, newSquare);
+      },
+    });
+  }
+  const panResponder = panResponderRef.current;
 
   function zoomIn() {
     scale.setValue(1.4);
@@ -148,6 +144,7 @@ const Piece: React.FC<PieceProps> = ({
         transform: [
           { translateX: animatedPosition.x },
           { translateY: animatedPosition.y },
+          { scale: scale },
         ],
         zIndex,
         opacity,
@@ -160,7 +157,6 @@ const Piece: React.FC<PieceProps> = ({
         style={{
           width: width,
           height: width,
-          transform: [{ scale: scale }],
         }}
       />
     </Animated.View>
@@ -169,9 +165,33 @@ const Piece: React.FC<PieceProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
+    position: "absolute",
   },
 });
 
-export default Piece;
+// `position` is a plain `{x, y}` object rebuilt fresh on every Chessboard
+// render (even when its values haven't changed), so the default shallow
+// comparator would never consider two renders equal - compare its fields by
+// value instead. Everything else compares correctly by reference, including
+// the callback props, which Chessboard keeps stable via useCallback so this
+// memoization skips re-rendering unrelated pieces: selecting one square
+// shouldn't re-render all the others.
+function arePropsEqual(prev: PieceProps, next: PieceProps): boolean {
+  return (
+    prev.id === next.id &&
+    prev.disabled === next.disabled &&
+    prev.width === next.width &&
+    prev.position.x === next.position.x &&
+    prev.position.y === next.position.y &&
+    prev.animatedPosition === next.animatedPosition &&
+    prev.opacity === next.opacity &&
+    prev.onTap === next.onTap &&
+    prev.onDragRelease === next.onDragRelease &&
+    prev.onDragStart === next.onDragStart &&
+    prev.onDrag === next.onDrag &&
+    prev.showDragGuide === next.showDragGuide &&
+    prev.hideDragGuide === next.hideDragGuide
+  );
+}
 
+export default memo(Piece, arePropsEqual);

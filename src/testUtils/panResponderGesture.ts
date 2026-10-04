@@ -42,3 +42,11 @@ export async function simulatePanResponderDrag(element: TestInstance, dx: number
 export async function simulatePanResponderTap(element: TestInstance) {
   await simulatePanResponderDrag(element, 0, 0);
 }
+
+// Just the touch-down, with no move/release - for asserting on state that
+// should already be correct the instant a gesture starts (e.g. anything
+// that must stay in sync with the drag guide, which updates synchronously
+// on grant, not after release).
+export async function simulatePanResponderGrant(element: TestInstance) {
+  await fireEvent(element, 'responderGrant', { touchHistory: touchHistoryAt(0, 0, 0, 0, 0) });
+}

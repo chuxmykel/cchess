@@ -1,0 +1,14 @@
+appId: host.exp.Exponent
+---
+# Point coordinates are in points, captured from a fresh starting position
+# on iPhone 18 Pro / iOS 27.0 (see README.md "Device-specific coordinates").
+# Recompute via `maestro hierarchy` for any other device/board state.
+- runFlow: common/launch-fresh.yaml
+- swipe:
+    start: "226,613" # piece-e2 center
+    end: "226,512"   # square-e4 center
+    duration: 600
+- assertNotVisible:
+    id: "piece-e2"
+- assertVisible:
+    id: "piece-e4"

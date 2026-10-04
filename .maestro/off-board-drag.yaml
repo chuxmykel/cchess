@@ -1,0 +1,16 @@
+appId: host.exp.Exponent
+---
+# Point coordinates are device-specific - see drag-and-drop.yaml.
+- runFlow: common/launch-fresh.yaml
+- swipe:
+    start: "326,663" # piece-g1 (knight) center
+    end: "326,820"   # well below the board
+    duration: 600
+- assertVisible:
+    id: "piece-g1"
+- tapOn: { id: "square-g1" }
+- tapOn: { id: "square-f3" }
+- assertNotVisible:
+    id: "piece-g1"
+- assertVisible:
+    id: "piece-f3"
