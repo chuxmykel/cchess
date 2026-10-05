@@ -1,27 +1,43 @@
 import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { View, Pressable, Text, StyleSheet } from "react-native";
 
-import NewGameScreen from './screens/NewGameScreen';
-import Game from '../Game';
+interface HomeProps {
+  navigation: {
+    navigate: (route: string) => any,
+  },
+};
 
-const { Navigator, Screen } = createNativeStackNavigator();
-
-const Home: React.FC = () => {
+const Home: React.FC<HomeProps> = ({ navigation }) => {
+  function play() {
+    navigation.navigate("NewGame");
+  }
   return (
     <>
-      <Navigator
-        id="GameStack"
-        initialRouteName="Game"
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        <Screen name="NewGame" component={NewGameScreen} />
-        <Screen name="Game" component={Game} />
-      </Navigator>
+      <View style={styles.container}>
+        <Pressable style={styles.playButton} onPress={play}>
+          <Text style={styles.playButtonText}>Play</Text>
+        </Pressable>
+      </View>
     </>
   );
-}
+};
 
 export default Home;
+
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  playButton: {
+    backgroundColor: "#769656",
+    padding: 8,
+    borderRadius: 4,
+  },
+  playButtonText: {
+    color: "white",
+  },
+});
 

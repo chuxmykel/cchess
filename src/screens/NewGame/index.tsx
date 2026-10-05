@@ -1,12 +1,12 @@
 import { View, Pressable, Text, StyleSheet } from "react-native";
 
-interface NewGameScreenProps {
+interface NewGameProps {
   navigation: {
     navigate: (route: string) => any,
   },
 };
 
-const NewGameScreen: React.FC<NewGameScreenProps> = ({ navigation }) => {
+const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
   function startNewGame() {
     navigation.navigate("Game")
   }
@@ -25,7 +25,7 @@ const NewGameScreen: React.FC<NewGameScreenProps> = ({ navigation }) => {
   );
 }
 
-export default NewGameScreen;
+export default NewGame;
 
 
 const styles = StyleSheet.create({
