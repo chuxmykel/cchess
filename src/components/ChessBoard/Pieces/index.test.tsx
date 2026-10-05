@@ -3,9 +3,9 @@ import { Animated } from "react-native";
 import { Square } from "chess.js";
 
 import Pieces from ".";
-import { AnimatedPieceView } from "../../../../hooks/usePieceAnimations";
-import { getXYFromSquare } from "../../../../domain/boardCoordinates";
-import { simulatePanResponderDrag } from "../../../../testUtils/panResponderGesture";
+import { AnimatedPieceView } from "../../../hooks/usePieceAnimations";
+import { getXYFromSquare } from "../../../domain/boardCoordinates";
+import { simulatePanResponderDrag } from "../../../testUtils/panResponderGesture";
 
 describe("Pieces", () => {
   const pieceWidth = 50;

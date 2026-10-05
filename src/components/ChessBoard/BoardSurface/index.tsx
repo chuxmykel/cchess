@@ -1,6 +1,6 @@
 import { Square } from "chess.js";
 
-import { NUMBER_OF_ROWS } from "../../../../constants";
+import { NUMBER_OF_ROWS } from "../../../constants";
 import Row from "../Row";
 
 interface BoardSurfaceProps {

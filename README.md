@@ -27,45 +27,63 @@ WIP (TBD)
 
 ```
 src/
-├── domain/                 Pure, framework-agnostic chess logic - no React/RN
-│                            imports, plain Jest-testable with no rendering
-│   ├── ChessEngine.ts            Facade over chess.js: attemptMove, legal
-│   │                               moves, turn/check/game-over status
-│   ├── boardCoordinates.ts       Square <-> pixel math
-│   ├── castlingSquares.ts        Castling rook from/to squares
-│   └── types.ts                  DomainPiece, AppliedMove, MoveResult, etc.
-├── hooks/                  React state/animation layer - no rules knowledge
-│   ├── useChessGame.ts            The single state machine for an in-progress
-│   │                                game (a reducer owning a ChessEngine
-│   │                                instance)
-│   ├── usePieceAnimations.ts      Bridges plain domain pieces to stable
-│   │                                Animated.Value objects for smooth tweening
-│   ├── useDragGuide.ts            The drag-and-drop guide's Animated
-│   │                                position/opacity
-│   └── useValidMoveIndicators.ts  Per-square legal-move indicator opacities
-├── components/ChessBoard/ Presentational only - consumes the hooks/context above
-│   ├── index.tsx                  Composes the board from context + the hooks
-│   └── components/
-│       ├── BoardSurface/          The checkered rows of squares
-│       ├── Pieces/, Piece/        Renders each piece; Piece owns raw gesture
-│       │                            capture (tap vs. drag)
-│       ├── PieceDragAndDropGuide/ The circular guide shown while dragging
-│       ├── ValidMoveIndicators/,  Per-square legal-move highlight dots
-│       │   ValidMoveIndicator/
-│       ├── Row/, Square/          The board's rows and individual squares
-│       └── PromotionMenu/         Pawn-promotion piece picker
+├── domain/                           Pure, framework-agnostic chess logic - no
+│                                     React/RN imports, plain Jest-testable with no rendering
+│   ├── ChessEngine.ts                Facade over chess.js: attemptMove, legal moves,
+│   │                                 turn/check/game-over status
+│   │
+│   ├── boardCoordinates.ts           Square <-> pixel math
+│   │
+│   ├── castlingSquares.ts            Castling rook from/to squares
+│   │
+│   └── types.ts                      DomainPiece, AppliedMove, MoveResult, etc.
+│
+├── hooks/                            React state/animation layer - no chess-rules knowledge
+│   ├── useChessGame.ts               The single state machine for an in-progress game
+│   │                                 (a reducer owning a ChessEngine instance)
+│   │
+│   ├── usePieceAnimations.ts         Bridges domain pieces to stable Animated.Value objects for smooth tweening
+│   │
+│   ├── useDragGuide.ts               The drag-and-drop guide's Animated position/opacity
+│   │
+│   └── useValidMoveIndicators.ts     Per-square legal-move indicator opacities
+│
+├── components/                       Presentational only - consumes the hooks/context above
+│   ├── ChessBoard/
+│   │   ├── index.tsx                 Composes the board from context + the hooks
+│   │   │
+│   │   ├── BoardSurface/             The checkered rows of squares
+│   │   │
+│   │   ├── Pieces/                   Renders each piece
+│   │   │   └── Piece/                Owns raw gesture capture (tap vs. drag)
+│   │   │
+│   │   ├── PieceDragAndDropGuide/    The circular guide shown while dragging
+│   │   │
+│   │   ├── ValidMoveIndicators/      Per-square legal-move highlight dots
+│   │   │   └── ValidMoveIndicator/   A single square's highlight dot
+│   │   │
+│   │   ├── Row/                      One rank of 8 squares
+│   │   │
+│   │   └── Square/                   One square, with coordinate labels
+│   │
+│   └── PromotionMenu/                Pawn-promotion piece picker - a sibling of ChessBoard,
+│                                     since it's rendered by the Game screen, not ChessBoard
+│
 ├── screens/
-│   ├── Home/                 Drawer home screen + its navigation stack
+│   ├── Home/                         Drawer home screen + its navigation stack
+│   │
 │   └── Game/
-│       ├── index.tsx              Hosts the board behind a ChessGameContext
-│       │                            provider
-│       └── ChessGameContext.tsx   Scoped React Context (not global state)
-│                                    delivering useChessGame's state/handlers
-│                                    down to ChessBoard
-├── constants/              Board size, piece image lookups, square list
-├── utils/animation.ts      RN Animated helpers (castling animation, piece ids)
-└── testUtils/              Jest/RNTL helpers: gesture simulation, Animated
-                              value reads, a text board visualizer for debugging
+│       ├── index.tsx                 Hosts the board behind a ChessGameContext provider
+│       │
+│       └── ChessGameContext.tsx      Scoped React Context (not global state) delivering
+│                                     useChessGame's state/handlers down to ChessBoard
+│
+├── constants/                        Board size, piece image lookups, square list
+│
+├── utils/animation.ts                RN Animated helpers (castling animation, piece ids)
+│
+└── testUtils/                        Jest/RNTL helpers: gesture simulation, Animated value
+                                      reads, a text board visualizer for debugging
 ```
 
 Business logic (chess rules, move legality, selection/turn state) is

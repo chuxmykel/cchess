@@ -34,7 +34,7 @@ command below still worked exactly as documented.
 The square/piece testIDs this skill's examples reference
 (`square-<file><rank>`, `piece-<file><rank>`, `chessboard`) come from
 `src/components/ChessBoard/index.tsx` and
-`src/components/ChessBoard/components/Piece/index.tsx`. If those change,
+`src/components/ChessBoard/Pieces/Piece/index.tsx`. If those change,
 re-run `ios-simulator-setup`'s `hierarchy` dump step rather than trusting
 this doc.
 

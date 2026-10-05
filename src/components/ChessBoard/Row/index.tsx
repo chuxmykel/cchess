@@ -3,7 +3,7 @@ import { View, StyleSheet } from "react-native";
 import {
   NUMBER_OF_COLUMNS,
   CHAR_CODE_FOR_LETTER_A
-} from "../../../../constants";
+} from "../../../constants";
 import Square from '../Square';
 
 

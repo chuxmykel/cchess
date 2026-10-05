@@ -2,7 +2,7 @@ import { View, StyleSheet, useWindowDimensions } from "react-native";
 
 import { NUMBER_OF_ROWS } from "../../constants";
 import Chessboard from "../../components/ChessBoard";
-import PromotionMenu from "../../components/ChessBoard/components/PromotionMenu";
+import PromotionMenu from "../../components/PromotionMenu";
 import { ChessGameProvider, useChessGameContext } from "./ChessGameContext";
 
 const themes = {

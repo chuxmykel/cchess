@@ -2,7 +2,7 @@ import { render } from "@testing-library/react-native";
 import { Animated } from "react-native";
 
 import PieceDragAndDropGuide from ".";
-import { getAnimatedValue } from "../../../../testUtils/animatedValue";
+import { getAnimatedValue } from "../../../testUtils/animatedValue";
 
 describe("PieceDragAndDropGuide", () => {
   const boardWidth = 400;

@@ -3,8 +3,8 @@ import { Animated } from "react-native";
 import { Square } from "chess.js";
 
 import ValidMoveIndicators from ".";
-import { SQUARES } from "../../../../constants";
-import { getAnimatedValue } from "../../../../testUtils/animatedValue";
+import { SQUARES } from "../../../constants";
+import { getAnimatedValue } from "../../../testUtils/animatedValue";
 
 describe("ValidMoveIndicators", () => {
   const pieceWidth = 50;

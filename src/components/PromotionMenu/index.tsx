@@ -1,7 +1,7 @@
 import { View, StyleSheet, Image, Pressable } from 'react-native';
 import { PieceSymbol, Color } from 'chess.js';
-import { PIECES } from '../../../../constants';
-import { PROMOTION_PIECE_TYPES } from '../../../../domain/types';
+import { PIECES } from '../../constants';
+import { PROMOTION_PIECE_TYPES } from '../../domain/types';
 
 interface PromotionMenuProps {
   boardWidth: number;

@@ -10,10 +10,10 @@ import { useDragGuide } from "../../hooks/useDragGuide";
 import { useValidMoveIndicators } from "../../hooks/useValidMoveIndicators";
 import { useChessGameContext } from "../../screens/Game/ChessGameContext";
 
-import BoardSurface from "./components/BoardSurface";
-import Pieces from "./components/Pieces";
-import PieceDragAndDropGuide from "./components/PieceDragAndDropGuide";
-import ValidMoveIndicators from "./components/ValidMoveIndicators";
+import BoardSurface from "./BoardSurface";
+import Pieces from "./Pieces";
+import PieceDragAndDropGuide from "./PieceDragAndDropGuide";
+import ValidMoveIndicators from "./ValidMoveIndicators";
 
 interface ChessboardProps {
   colors: {

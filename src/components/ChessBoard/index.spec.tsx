@@ -1,6 +1,6 @@
 import { fireEvent, render } from "@testing-library/react-native";
 import Chessboard from ".";
-import PromotionMenu from "./components/PromotionMenu";
+import PromotionMenu from "../PromotionMenu";
 import {
   ChessGameProvider,
   useChessGameContext,
