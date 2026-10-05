@@ -1,0 +1,18 @@
+appId: host.exp.Exponent
+---
+# 1. e4 d5 2. exd5 - the shortest path to a real capture from the standard
+# start position. Proves the tap-to-move path correctly drives a capture on
+# a real device; the rules themselves (what counts as a capture, etc) are
+# unit-tested directly against ChessEngine - this only checks the gesture
+# layer produces the right outcome end-to-end.
+- runFlow: common/launch-fresh.yaml
+- tapOn: { id: "square-e2" }
+- tapOn: { id: "square-e4" }
+- tapOn: { id: "square-d7" }
+- tapOn: { id: "square-d5" }
+- tapOn: { id: "square-e4" }
+- tapOn: { id: "square-d5" }
+- assertNotVisible:
+    id: "piece-e4"
+- assertVisible:
+    id: "piece-d5"

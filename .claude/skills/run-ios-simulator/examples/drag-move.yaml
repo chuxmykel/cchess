@@ -1,0 +1,13 @@
+# Drag-and-drop: point-coordinate swipe from one square's center to another.
+# Coordinates below are in points (not screenshot pixels) and are specific
+# to the iPhone 18 Pro / iOS 27.0 layout they were captured from - recompute
+# from `maestro --device <UDID> hierarchy` bounds for any other device or
+# board state (see SKILL.md step 4). This example drags the d7 pawn to d5.
+#
+# Run with: maestro --device <UDID> test drag-move.yaml
+appId: host.exp.Exponent
+---
+- swipe:
+    start: "175,361" # piece-d7 center
+    end: "175,462"   # square-d5 center
+    duration: 600

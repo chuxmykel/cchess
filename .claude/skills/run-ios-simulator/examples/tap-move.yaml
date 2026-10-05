@@ -1,0 +1,8 @@
+# Tap-to-move: select a square, then tap the destination.
+# Run with: maestro --device <UDID> test tap-move.yaml
+appId: host.exp.Exponent
+---
+- tapOn:
+    id: "square-e2"
+- tapOn:
+    id: "square-e4"

@@ -1,0 +1,11 @@
+appId: host.exp.Exponent
+---
+- runFlow: common/launch-fresh.yaml
+- tapOn:
+    id: "square-e2"
+- tapOn:
+    id: "square-e4"
+- assertNotVisible:
+    id: "piece-e2"
+- assertVisible:
+    id: "piece-e4"
