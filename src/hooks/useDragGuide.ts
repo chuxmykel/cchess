@@ -35,8 +35,6 @@ export function useDragGuide(pieceWidth: number): DragGuide {
         return;
       }
 
-      // Position before opacity, so a show can never land with the opacity
-      // update ahead of the position update.
       position.setValue(currentPieceAnimatedPosition);
       show();
     },

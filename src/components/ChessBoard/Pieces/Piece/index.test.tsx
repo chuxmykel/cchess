@@ -50,10 +50,11 @@ describe("Piece", () => {
   });
 
   it("should call onDragRelease with the piece's from/to squares when dragged past the tap threshold", async () => {
+    const tapThreshold = 50;
     const { piece, onDragRelease } = await renderPiece();
 
     // Drag up by 2 squares (width 50 * 2 = 100px) - well past the threshold.
-    await simulatePanResponderDrag(piece, 0, -100);
+    await simulatePanResponderDrag(piece, 0, -(tapThreshold * 2));
 
     expect(onDragRelease).toHaveBeenCalledWith("e2", "e4");
   });
@@ -63,14 +64,6 @@ describe("Piece", () => {
 
     await simulatePanResponderDrag(piece, 0, -100);
 
-    // Regression guard: an earlier version called onTap on every
-    // touch-down (tap or drag) so the legal-move indicators would show
-    // instantly. onDragStart (below) now covers that need directly, so
-    // onTap at grant has no remaining job - and firing it anyway wastefully
-    // dispatches a selection change (on a genuinely new selection) that a
-    // drag's own release immediately supersedes, which measurably delayed
-    // both the drag guide's hide and the piece's own move animation on a
-    // first interaction with a square.
     expect(onTap).not.toHaveBeenCalled();
   });
 
@@ -79,9 +72,6 @@ describe("Piece", () => {
 
     await simulatePanResponderDrag(piece, 0, -100);
 
-    // Drives the valid-move indicators with a plain, synchronous
-    // Animated.setValue alongside the drag guide's, with no dispatch
-    // involved at all.
     expect(onDragStart).toHaveBeenCalledWith("e2");
   });
 
@@ -133,7 +123,6 @@ describe("Piece", () => {
   it("movement right at the threshold boundary counts as a drag, not a tap", async () => {
     const { piece, onDragRelease, onTap } = await renderPiece();
 
-    // TAP_MOVEMENT_THRESHOLD itself is excluded by the component's strict "<" check.
     await simulatePanResponderDrag(piece, TAP_MOVEMENT_THRESHOLD, 0);
 
     expect(onDragRelease).toHaveBeenCalled();
@@ -143,11 +132,6 @@ describe("Piece", () => {
   it("should snap the piece back to its own square when incidental jitter during a tap stays under the threshold", async () => {
     const { piece, animatedPosition, onTap } = await renderPiece();
 
-    // onPanResponderMove isn't gated by the tap threshold - even a few
-    // pixels of finger jitter during what's still classified as a tap
-    // nudges animatedPosition via setValue. Since a tap never reports a
-    // drag, nothing else would put it back - the release handler itself
-    // must reset it.
     await simulatePanResponderDrag(piece, 5, -5);
 
     expect(onTap).toHaveBeenCalledWith("e2");

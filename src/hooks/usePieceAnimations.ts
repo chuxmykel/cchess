@@ -29,12 +29,6 @@ type PieceEntry = {
   opacity: Animated.Value;
 };
 
-// Bridges the plain, framework-agnostic `pieces`/`lastMove` coming out of
-// useChessGame to the stable Animated.Value/ValueXY objects React Native
-// needs for smooth tweening. Owns a persistent pieceId<->square mapping in a
-// ref, keyed off `lastMove`, so identity survives across moves/captures/
-// castling/promotion exactly like the single mutable piece list the old
-// Game.handleMove used to maintain by hand.
 export function usePieceAnimations(
   pieces: DomainPiece[],
   lastMove: AppliedMove | null,
@@ -44,14 +38,9 @@ export function usePieceAnimations(
   const entryById = useRef(new Map<string, PieceEntry>());
   const initialized = useRef(false);
   const processedMove = useRef<AppliedMove | null>(null);
-  const pendingAnimations = useRef<{ pieceEntry: PieceEntry; toSquare: Square }[]>([]);
-  // Caches the returned array by `pieces` identity: useChessGame only ever
-  // produces a new `pieces` array on an actually-applied move, so a
-  // re-render triggered by anything else (selecting a square, etc) can
-  // reuse the exact same array here. Without this, pieces.map below would
-  // return a fresh array on every render regardless, which defeats
-  // React.memo on Piece for every one of the 32 pieces even when only a
-  // selection changed.
+  const pendingAnimations = useRef<
+    { pieceEntry: PieceEntry; toSquare: Square }[]
+  >([]);
   const prevPieces = useRef<DomainPiece[] | null>(null);
   const prevResult = useRef<AnimatedPieceView[]>([]);
 

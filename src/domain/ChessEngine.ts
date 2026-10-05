@@ -24,8 +24,6 @@ function toDomainMove(move: Move): DomainMove {
   };
 }
 
-// The en passant captured pawn always sits on the capturing pawn's own rank,
-// at the destination's file - true regardless of which color is capturing.
 function getEnPassantCapturedSquare(from: Square, to: Square): Square {
   return (to.charAt(0) + from.charAt(1)) as Square;
 }
@@ -113,9 +111,6 @@ export class ChessEngine {
       return { status: "needs-promotion-choice", from, to };
     }
 
-    // chess.js's own move object shape calls this field `promotion` - that
-    // key name is its external API, not ours, so it stays as-is here even
-    // though our own promotionPiece is named differently.
     const appliedMove = promotionPiece
       ? this.game.move({ ...legalMove, promotion: promotionPiece })
       : this.game.move(legalMove);
