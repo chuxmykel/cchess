@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Pressable, Text, StyleSheet } from "react-native";
+import { View, Pressable, Text, ScrollView, StyleSheet } from "react-native";
 
 import HomeHeader from "../../components/HomeHeader";
 import FriendsCarousel from "../../components/FriendsCarousel";
+import RecentGamesList from "../../components/RecentGamesList";
 
 interface HomeProps {
   navigation: {
@@ -22,12 +23,15 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
   return (
     <View style={styles.screen}>
       <HomeHeader onAvatarPress={goToProfile} />
-      <FriendsCarousel />
-      <View style={styles.container}>
-        <Pressable style={styles.playButton} onPress={play}>
-          <Text style={styles.playButtonText}>Play</Text>
-        </Pressable>
-      </View>
+      <ScrollView>
+        <FriendsCarousel />
+        <RecentGamesList />
+        <View style={styles.container}>
+          <Pressable style={styles.playButton} onPress={play}>
+            <Text style={styles.playButtonText}>Play</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -40,9 +44,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
-    flex: 1,
-    justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 32,
   },
   playButton: {
     backgroundColor: "#769656",

@@ -51,3 +51,7 @@ export type MoveResult =
   | { status: "ok"; move: AppliedMove };
 
 export const PROMOTION_PIECE_TYPES: readonly PieceSymbol[] = ["q", "r", "b", "n"];
+
+export type GameType = "bullet" | "blitz" | "rapid" | "classical";
+
+export type GameResult = "win" | "loss" | "draw";
