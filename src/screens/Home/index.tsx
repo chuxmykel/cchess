@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Pressable, Text, StyleSheet } from "react-native";
 
 import HomeHeader from "../../components/HomeHeader";
+import FriendsCarousel from "../../components/FriendsCarousel";
 
 interface HomeProps {
   navigation: {
@@ -21,6 +22,7 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
   return (
     <View style={styles.screen}>
       <HomeHeader onAvatarPress={goToProfile} />
+      <FriendsCarousel />
       <View style={styles.container}>
         <Pressable style={styles.playButton} onPress={play}>
           <Text style={styles.playButtonText}>Play</Text>
