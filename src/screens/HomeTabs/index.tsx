@@ -1,8 +1,7 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
-import Home from "../Home";
+import HomeTabStack from "../HomeTabStack";
 import Profile from "../Profile";
-import NewGame from "../NewGame";
 
 const { Navigator, Screen } = createBottomTabNavigator();
 
@@ -11,21 +10,17 @@ const HomeTabs: React.FC = () => {
     <>
       <Navigator
         id="HomeTabs"
-        initialRouteName="Home"
+        initialRouteName="HomeTabStack"
         screenOptions={{
           headerShown: false,
         }}
       >
-        <Screen name="Home" component={Home} />
-        <Screen name="Profile" component={Profile} />
         <Screen
-          name="NewGame"
-          component={NewGame}
-          options={{
-            tabBarButton: () => null,
-            tabBarItemStyle: { display: "none" },
-          }}
+          name="HomeTabStack"
+          component={HomeTabStack}
+          options={{ tabBarLabel: "Home" }}
         />
+        <Screen name="Profile" component={Profile} />
       </Navigator>
     </>
   );
