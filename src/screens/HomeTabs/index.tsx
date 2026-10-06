@@ -13,6 +13,11 @@ const HomeTabs: React.FC = () => {
         initialRouteName="HomeTabStack"
         screenOptions={{
           headerShown: false,
+          tabBarStyle: {
+            borderTopWidth: 0,
+            elevation: 0,
+            shadowOpacity: 0,
+          },
         }}
       >
         <Screen

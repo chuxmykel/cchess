@@ -23,15 +23,15 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
   return (
     <View style={styles.screen}>
       <HomeHeader onAvatarPress={goToProfile} />
-      <ScrollView>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <FriendsCarousel />
         <RecentGamesList />
-        <View style={styles.container}>
-          <Pressable style={styles.playButton} onPress={play}>
-            <Text style={styles.playButtonText}>Play</Text>
-          </Pressable>
-        </View>
       </ScrollView>
+      <View style={styles.playButtonContainer}>
+        <Pressable style={styles.playButton} onPress={play}>
+          <Text style={styles.playButtonText}>Play</Text>
+        </Pressable>
+      </View>
     </View>
   );
 };
@@ -43,17 +43,29 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
-  container: {
-    alignItems: "center",
-    paddingVertical: 32,
+  scrollContent: {
+    paddingBottom: 96,
+  },
+  playButtonContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    // Matches the tab bar's background so this reads as one
+    // continuous section rather than a separate floating bar.
+    backgroundColor: "white",
   },
   playButton: {
     backgroundColor: "#769656",
-    padding: 8,
-    borderRadius: 4,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
   },
   playButtonText: {
     color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
-
