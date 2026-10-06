@@ -1,0 +1,15 @@
+# Navigate from a fresh launch to the Game screen's chessboard: dismiss
+# the first-launch dev-menu overlay (only present on a truly fresh
+# Expo Go install/launch - "optional" so this is a no-op otherwise),
+# tap Play on Home, then Start New Game on the New Game screen.
+#
+# Run with: maestro --device <UDID> test to-board.yaml
+appId: host.exp.Exponent
+---
+- tapOn:
+    id: "xmark"
+    optional: true
+- tapOn:
+    id: "play-button"
+- tapOn:
+    id: "start-new-game-button"
