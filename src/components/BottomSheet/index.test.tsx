@@ -4,11 +4,6 @@ import { Text } from "react-native";
 import BottomSheet from ".";
 import { withSafeArea } from "../../testUtils/safeArea";
 
-// The sheet's own open/close animation, backdrop interpolation and
-// drag-to-dismiss gesture are covered directly at the hook level
-// (useBottomSheet.test.tsx) - these tests only cover what the component
-// wires on top of that hook: rendering children, the Modal's visibility,
-// and the backdrop press closing it.
 describe("BottomSheet", () => {
   it("renders its children while visible", async () => {
     const screen = await render(
