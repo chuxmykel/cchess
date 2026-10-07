@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Pressable, Text, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet } from "react-native";
 
 import HomeHeader from "../../components/HomeHeader";
 import FriendsCarousel from "../../components/FriendsCarousel";
 import RecentGamesList from "../../components/RecentGamesList";
+import Button from "../../components/Button";
 
 interface HomeProps {
   navigation: {
@@ -28,9 +29,7 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
         <RecentGamesList />
       </ScrollView>
       <View style={styles.playButtonContainer}>
-        <Pressable style={styles.playButton} onPress={play}>
-          <Text style={styles.playButtonText}>Play</Text>
-        </Pressable>
+        <Button label="Play" onPress={play} variant="primary" testID="play-button" />
       </View>
     </View>
   );
@@ -56,16 +55,5 @@ const styles = StyleSheet.create({
     // Matches the tab bar's background so this reads as one
     // continuous section rather than a separate floating bar.
     backgroundColor: "white",
-  },
-  playButton: {
-    backgroundColor: "#769656",
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  playButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
   },
 });

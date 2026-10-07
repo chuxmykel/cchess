@@ -1,4 +1,6 @@
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
+
+import Button from "../Button";
 
 interface SectionHeaderProps {
   title: string;
@@ -16,9 +18,12 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
   return (
     <View style={styles.row}>
       <Text style={styles.title}>{title}</Text>
-      <Pressable onPress={onActionPress} testID={testID}>
-        <Text style={styles.action}>{actionLabel}</Text>
-      </Pressable>
+      <Button
+        label={actionLabel}
+        onPress={onActionPress}
+        variant="text"
+        testID={testID}
+      />
     </View>
   );
 };
@@ -35,10 +40,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: "600",
-  },
-  action: {
-    color: "#769656",
     fontWeight: "600",
   },
 });
