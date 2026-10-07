@@ -18,7 +18,13 @@ const Avatar: React.FC<AvatarProps> = ({ size = DEFAULT_SIZE, name, imageUri }) 
   const dimensions = { width: size, height: size, borderRadius: size / 2 };
 
   if (imageUri) {
-    return <Image source={{ uri: imageUri }} style={[styles.avatar, dimensions]} />;
+    return (
+      <Image
+        source={{ uri: imageUri }}
+        style={[styles.avatar, dimensions]}
+        testID="avatar-image"
+      />
+    );
   }
 
   return (

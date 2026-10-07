@@ -25,24 +25,24 @@ const TimeControlSelector: React.FC<TimeControlSelectorProps> = ({
   triggerStyleVariant,
   showTypeName,
 }) => {
-  const [visible, setVisible] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   function handleSelect(timeControl: TimeControl) {
     onSelect(timeControl);
-    setVisible(false);
+    setSheetOpen(false);
   }
 
   return (
     <View>
       <TimeControlTrigger
         selected={selected}
-        visible={visible}
-        onPress={() => setVisible(true)}
+        sheetOpen={sheetOpen}
+        onPress={() => setSheetOpen(true)}
         triggerStyleVariant={triggerStyleVariant}
         showTypeName={showTypeName}
       />
 
-      <BottomSheet visible={visible} onClose={() => setVisible(false)}>
+      <BottomSheet visible={sheetOpen} onClose={() => setSheetOpen(false)}>
         <TimeControlOptions selected={selected} onSelect={handleSelect} />
       </BottomSheet>
     </View>

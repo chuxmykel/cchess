@@ -21,7 +21,11 @@ const BottomSheet: React.FC<BottomSheetProps> = ({ visible, onClose, children })
     <Modal visible={modalVisible} transparent animationType="none" onRequestClose={onClose}>
       <View style={styles.container}>
         <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={onClose}
+            testID="bottom-sheet-backdrop"
+          />
         </Animated.View>
         <Animated.View style={[styles.sheetWrapper, { transform: [{ translateY }] }]}>
           <View {...panHandlers} style={styles.handleArea}>

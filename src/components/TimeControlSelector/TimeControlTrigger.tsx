@@ -31,7 +31,7 @@ export const TRIGGER_STYLE_VARIANTS: { id: TriggerStyleVariant; label: string }[
 
 interface TimeControlTriggerProps {
   selected: TimeControl;
-  visible: boolean;
+  sheetOpen: boolean;
   onPress: () => void;
   triggerStyleVariant?: TriggerStyleVariant;
   showTypeName?: boolean;
@@ -39,12 +39,12 @@ interface TimeControlTriggerProps {
 
 const TimeControlTrigger: React.FC<TimeControlTriggerProps> = ({
   selected,
-  visible,
+  sheetOpen,
   onPress,
   triggerStyleVariant = "tintedAccentBar",
   showTypeName = true,
 }) => {
-  const { rotateTransform, pulseDipOpacity } = useCaretRotation(visible);
+  const { rotateTransform, pulseDipOpacity } = useCaretRotation(sheetOpen);
 
   const accentColor = GAME_TYPE_COLORS[selected.type];
   const variant = TRIGGER_VARIANT_STYLES[triggerStyleVariant](accentColor);
@@ -57,7 +57,9 @@ const TimeControlTrigger: React.FC<TimeControlTriggerProps> = ({
     >
       <GameTypeIcon type={selected.type} size={22} />
       <Text style={[styles.triggerLabel, variant.label]}>
-        {showTypeName ? `${GAME_TYPE_LABELS[selected.type]} · ${selected.label}` : selected.label}
+        {showTypeName
+          ? `${GAME_TYPE_LABELS[selected.type]} · ${selected.label}`
+          : selected.label}
       </Text>
       <View style={styles.caretContainer}>
         <Animated.Text style={[styles.caret, rotateTransform, pulseDipOpacity]}>
