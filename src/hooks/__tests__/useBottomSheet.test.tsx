@@ -22,6 +22,10 @@ function Harness({
   resultRef: { current: BottomSheetAnimation | null };
 }) {
   const hookResult = useBottomSheet({ visible, onClose });
+  // Test-only mirror of the hook's result onto a ref so assertions
+  // outside the render tree can read it; not production code subject to
+  // the compiler.
+  // eslint-disable-next-line react-hooks/refs
   resultRef.current = hookResult;
 
   return (

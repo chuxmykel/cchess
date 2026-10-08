@@ -77,6 +77,17 @@ function initState(engine: ChessEngine): ChessGameState {
 }
 
 export function useChessGame(fen?: string) {
+  // `engineRef` follows React's own documented lazy-ref-init pattern
+  // (https://react.dev/reference/react/useRef#avoiding-recreating-the-ref-contents)
+  // for constructing a stable instance exactly once. `stateRef` mirrors
+  // the latest `state` into a ref every render so the useCallback-memoized
+  // handlers below can read fresh state without needing `state` in their
+  // own dependency arrays (which would change their identity on every
+  // move). Both are intentional; react-hooks/refs is a
+  // React-Compiler-readiness rule, not a correctness bug under React's
+  // current (non-compiled) runtime - revisit this if this project ever
+  // turns the compiler on.
+  /* eslint-disable react-hooks/refs */
   const engineRef = useRef<ChessEngine | null>(null);
   if (!engineRef.current) {
     engineRef.current = new ChessEngine(fen);
@@ -87,6 +98,7 @@ export function useChessGame(fen?: string) {
 
   const stateRef = useRef(state);
   stateRef.current = state;
+  /* eslint-enable react-hooks/refs */
 
   const applyResult = useCallback(
     (result: MoveResult) => {

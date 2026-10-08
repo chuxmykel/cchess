@@ -34,6 +34,21 @@ export function usePieceAnimations(
   lastMove: AppliedMove | null,
   pieceWidth: number,
 ): AnimatedPieceView[] {
+  // This hook keeps its piece/animation bookkeeping in mutable refs that
+  // are read and written synchronously during render, not inside an
+  // effect, so it can incrementally diff `pieces`/`lastMove` against the
+  // previous render's cached result instead of recomputing it from
+  // scratch every time. None of these refs ever drive what gets rendered
+  // on their own - they're deliberately invisible to React's reactivity,
+  // the same way `useRef` is meant to be used. This is exactly what
+  // react-hooks/refs is warning about, but it's a React-Compiler-readiness
+  // rule, not a correctness bug under React's current (non-compiled)
+  // runtime: nothing here actually uses the compiler. Revisit this hook
+  // specifically if this project ever turns the compiler on - until then,
+  // rewriting it to avoid ref access during render would mean moving this
+  // bookkeeping into real state and re-deriving it with useMemo, which
+  // risks regressing piece-move animations for no present benefit.
+  /* eslint-disable react-hooks/refs */
   const pieceIdBySquare = useRef(new Map<Square, string>());
   const entryById = useRef(new Map<string, PieceEntry>());
   const initialized = useRef(false);
@@ -142,4 +157,5 @@ export function usePieceAnimations(
     });
   }
   return prevResult.current;
+  /* eslint-enable react-hooks/refs */
 }

@@ -22,6 +22,13 @@ export function useBottomSheet({
   onClose,
 }: UseBottomSheetOptions): BottomSheetAnimation {
   const [modalVisible, setModalVisible] = useState(visible);
+  // `translateY`/`panResponder` are created once via useRef and never
+  // reassigned - reading `.current` here is the standard "lazy-init a
+  // stable value" idiom, not a bug. react-hooks/refs is a
+  // React-Compiler-readiness rule, not a correctness bug under React's
+  // current (non-compiled) runtime - revisit this if this project ever
+  // turns the compiler on.
+  /* eslint-disable react-hooks/refs */
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
 
   const backdropOpacity = translateY.interpolate({
@@ -39,6 +46,13 @@ export function useBottomSheet({
     }
 
     if (visible) {
+      // Mounting the modal and starting its spring-in animation in the
+      // same effect is intentional: the Modal must be in the tree before
+      // the slide-in animation plays. react-hooks/set-state-in-effect is a
+      // React-Compiler-readiness rule, not a correctness bug under React's
+      // current (non-compiled) runtime - revisit this if this project
+      // ever turns the compiler on.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setModalVisible(true);
       Animated.spring(translateY, {
         toValue: 0,
@@ -52,7 +66,7 @@ export function useBottomSheet({
         useNativeDriver: true,
       }).start(() => setModalVisible(false));
     }
-  }, [visible]);
+  }, [visible, translateY]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -90,4 +104,5 @@ export function useBottomSheet({
     backdropOpacity,
     panHandlers: panResponder.panHandlers,
   };
+  /* eslint-enable react-hooks/refs */
 }

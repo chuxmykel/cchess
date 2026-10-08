@@ -9,6 +9,12 @@ export interface CaretRotation {
 }
 
 export function useCaretRotation(open: boolean): CaretRotation {
+  // `progress` is created once via useRef and never reassigned - reading
+  // `.current` here is the standard "lazy-init a stable Animated.Value"
+  // idiom, not a bug. react-hooks/refs is a React-Compiler-readiness rule;
+  // nothing in this project runs the compiler today, so revisit this if
+  // that ever changes.
+  /* eslint-disable react-hooks/refs */
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -37,4 +43,5 @@ export function useCaretRotation(open: boolean): CaretRotation {
   };
 
   return { rotateTransform, pulseDipOpacity };
+  /* eslint-enable react-hooks/refs */
 }

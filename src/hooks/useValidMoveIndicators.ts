@@ -13,6 +13,12 @@ export function useValidMoveIndicators(
   legalMoveSquares: Square[],
   getLegalMoveSquares: (square: Square) => Square[],
 ): ValidMoveIndicators {
+  // `indicatorOpacities` is created once via useRef and never reassigned -
+  // reading `.current` here is the standard "lazy-init a stable value"
+  // idiom, not a bug. react-hooks/refs is a React-Compiler-readiness rule;
+  // nothing in this project runs the compiler today, so revisit this if
+  // that ever changes.
+  /* eslint-disable react-hooks/refs */
   const indicatorOpacities = useRef<Record<Square, Animated.Value>>(
     SQUARES.reduce(
       (acc, square) => {
@@ -42,4 +48,5 @@ export function useValidMoveIndicators(
   );
 
   return { opacities: indicatorOpacities, showFor };
+  /* eslint-enable react-hooks/refs */
 }

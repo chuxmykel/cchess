@@ -37,16 +37,18 @@ const Chessboard: React.FC<ChessboardProps> = ({ colors, width }) => {
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
   const animatedPieces = usePieceAnimations(pieces, lastMove, PIECE_WIDTH);
   const dragGuide = useDragGuide(PIECE_WIDTH);
+  const { updatePosition } = dragGuide;
   const validMoveIndicators = useValidMoveIndicators(
     legalMoveSquares,
     getLegalMoveSquares,
   );
+  const { showFor } = validMoveIndicators;
 
   const handleDragStart = useCallback(
     (square: Square) => {
-      validMoveIndicators.showFor(square);
+      showFor(square);
     },
-    [validMoveIndicators.showFor],
+    [showFor],
   );
 
   const handleDragRelease = useCallback(
@@ -66,9 +68,9 @@ const Chessboard: React.FC<ChessboardProps> = ({ colors, width }) => {
 
   const handleDrag = useCallback(
     (position: Position) => {
-      dragGuide.updatePosition(position);
+      updatePosition(position);
     },
-    [dragGuide.updatePosition],
+    [updatePosition],
   );
 
   return (
