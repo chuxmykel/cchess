@@ -125,11 +125,11 @@ npm run ios      # start the bundler and open directly in the iOS Simulator
 
 Two deliberately separate layers:
 
-|                    | Unit/component (Jest)                                  | End-to-end (Maestro)                        |
-|--------------------|----------------------------------------------------------|----------------------------------------------|
-| Run with           | `npm test`                                                | `npm run test:e2e`                            |
+|                    | Unit/component (Jest)                                                        | End-to-end (Maestro)                                |
+| ------------------ | ---------------------------------------------------------------------------- | --------------------------------------------------- |
+| Run with           | `npm test`                                                                   | `npm run test:e2e`                                  |
 | Covers             | Chess rules, the game state machine, gesture→callback translation, rendering | Real native gestures driving the actual running app |
-| Needs a simulator? | No                                                         | Yes - a booted iOS Simulator + `expo start` running |
+| Needs a simulator? | No                                                                           | Yes - a booted iOS Simulator + `expo start` running |
 
 ```bash
 npm test                 # full Jest suite

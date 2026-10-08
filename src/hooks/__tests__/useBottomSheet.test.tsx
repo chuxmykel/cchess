@@ -1,15 +1,15 @@
-import { act, render, renderHook } from "@testing-library/react-native";
-import { Animated } from "react-native";
+import { act, render, renderHook } from '@testing-library/react-native';
+import { Animated } from 'react-native';
 
-import { useBottomSheet, BottomSheetAnimation } from "../useBottomSheet";
-import { getAnimatedValue } from "../../testUtils/animatedValue";
+import { useBottomSheet, BottomSheetAnimation } from '../useBottomSheet';
+import { getAnimatedValue } from '../../testUtils/animatedValue';
 import {
   simulatePanResponderDrag,
   simulatePanResponderGrantAndMove,
-} from "../../testUtils/panResponderGesture";
+} from '../../testUtils/panResponderGesture';
 
 // A minimal host component so the hook's panHandlers can be driven through
-// fireEvent-based gesture simulation. 
+// fireEvent-based gesture simulation.
 // renderHook alone has no host node to attach a PanResponder to. The hook's result is
 // mirrored onto resultRef so assertions outside the tree can read it.
 function Harness({
@@ -48,8 +48,8 @@ async function mountHarness(visible: boolean, onClose: () => void) {
   return { screen, resultRef };
 }
 
-describe("useBottomSheet", () => {
-  it("modalVisible matches an initially-true visible prop", async () => {
+describe('useBottomSheet', () => {
+  it('modalVisible matches an initially-true visible prop', async () => {
     const { result } = await renderHook(() =>
       useBottomSheet({ visible: true, onClose: jest.fn() }),
     );
@@ -57,7 +57,7 @@ describe("useBottomSheet", () => {
     expect(result.current.modalVisible).toBe(true);
   });
 
-  it("modalVisible becomes true once visible flips to true", async () => {
+  it('modalVisible becomes true once visible flips to true', async () => {
     const { result, rerender } = await renderHook(
       (props: { visible: boolean }) =>
         useBottomSheet({ visible: props.visible, onClose: jest.fn() }),
@@ -72,7 +72,7 @@ describe("useBottomSheet", () => {
     expect(result.current.modalVisible).toBe(true);
   });
 
-  it("keeps modalVisible true until the close animation finishes, so the sheet stays mounted mid-exit", async () => {
+  it('keeps modalVisible true until the close animation finishes, so the sheet stays mounted mid-exit', async () => {
     const { result, rerender } = await renderHook(
       (props: { visible: boolean }) =>
         useBottomSheet({ visible: props.visible, onClose: jest.fn() }),
@@ -91,39 +91,41 @@ describe("useBottomSheet", () => {
     expect(result.current.modalVisible).toBe(false);
   });
 
-  it("follows the finger while dragging down from the handle", async () => {
+  it('follows the finger while dragging down from the handle', async () => {
     const { screen, resultRef } = await mountHarness(true, jest.fn());
-    const target = screen.getByTestId("sheet-handle");
+    const target = screen.getByTestId('sheet-handle');
 
     await simulatePanResponderGrantAndMove(target, 0, 60);
 
     expect(getAnimatedValue(resultRef.current!.translateY)).toBe(60);
   });
 
-  it("ignores upward movement - the sheet only tracks dragging down", async () => {
+  it('ignores upward movement - the sheet only tracks dragging down', async () => {
     const { screen, resultRef } = await mountHarness(true, jest.fn());
-    const target = screen.getByTestId("sheet-handle");
+    const target = screen.getByTestId('sheet-handle');
     const valueBeforeDrag = getAnimatedValue(resultRef.current!.translateY);
 
     await simulatePanResponderGrantAndMove(target, 0, -60);
 
-    expect(getAnimatedValue(resultRef.current!.translateY)).toBe(valueBeforeDrag);
+    expect(getAnimatedValue(resultRef.current!.translateY)).toBe(
+      valueBeforeDrag,
+    );
   });
 
-  it("springs back without closing when released short of the drag-close distance", async () => {
+  it('springs back without closing when released short of the drag-close distance', async () => {
     const onClose = jest.fn();
     const { screen } = await mountHarness(true, onClose);
-    const target = screen.getByTestId("sheet-handle");
+    const target = screen.getByTestId('sheet-handle');
 
     await simulatePanResponderDrag(target, 0, 60);
 
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("closes once dragged past the drag-close distance", async () => {
+  it('closes once dragged past the drag-close distance', async () => {
     const onClose = jest.fn();
     const { screen } = await mountHarness(true, onClose);
-    const target = screen.getByTestId("sheet-handle");
+    const target = screen.getByTestId('sheet-handle');
 
     await act(async () => {
       await simulatePanResponderDrag(target, 0, 150);

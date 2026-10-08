@@ -1,5 +1,5 @@
-import { useRef, useState, RefObject } from "react";
-import { View, useWindowDimensions } from "react-native";
+import { useRef, useState, RefObject } from 'react';
+import { View, useWindowDimensions } from 'react-native';
 
 const SCREEN_EDGE_MARGIN = 8;
 
@@ -30,7 +30,7 @@ export function usePopoverMenu(menuWidth: number): PopoverMenu {
     triggerRef.current?.measureInWindow((x, y, width, height) => {
       const left = Math.min(
         Math.max(x + width - menuWidth, SCREEN_EDGE_MARGIN),
-        windowWidth - menuWidth - SCREEN_EDGE_MARGIN
+        windowWidth - menuWidth - SCREEN_EDGE_MARGIN,
       );
       setPosition({ top: y + height + 4, left });
       setVisible(true);

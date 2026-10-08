@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from 'react-native';
 
-import Avatar from "../../Avatar";
-import GameTypeIcon from "../../GameTypeIcon";
-import GameResultIcon from "../../GameResultIcon";
-import { RecentGame } from "../../../constants/recentGames";
+import Avatar from '../../Avatar';
+import GameTypeIcon from '../../GameTypeIcon';
+import GameResultIcon from '../../GameResultIcon';
+import { RecentGame } from '../../../constants/recentGames';
 
 interface GameRowProps {
   game: RecentGame;
@@ -20,7 +20,7 @@ const GameRow: React.FC<GameRowProps> = ({ game }) => {
       </View>
       <View style={styles.details}>
         <Text style={styles.name} numberOfLines={1}>
-          {game.opponentName}{" "}
+          {game.opponentName}{' '}
           <Text style={styles.rating}>({game.opponentRating})</Text>
         </Text>
         <Text style={styles.playedAt}>{game.playedAt}</Text>
@@ -34,14 +34,14 @@ export default GameRow;
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
   typeIcon: {
     width: 24,
-    alignItems: "center",
+    alignItems: 'center',
     marginRight: 12,
   },
   avatar: {
@@ -52,15 +52,15 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   rating: {
-    fontWeight: "400",
-    color: "#888",
+    fontWeight: '400',
+    color: '#888',
   },
   playedAt: {
     fontSize: 12,
-    color: "#888",
+    color: '#888',
     marginTop: 2,
   },
 });

@@ -1,6 +1,6 @@
-import { Square } from "chess.js";
+import { Square } from 'chess.js';
 
-import { Position } from "./types";
+import { Position } from './types';
 
 // Pure square <-> pixel math - a standard chessboard is always 8x8, so these
 // are domain constants in their own right, independent of the UI's board
@@ -15,7 +15,9 @@ export function getXYFromSquare(square: string, width: number): Position {
 }
 
 export function getSquareFromXY(position: Position, width: number): Square {
-  const file = String.fromCharCode(CHAR_CODE_FOR_LETTER_A + Math.floor(position.x / width));
+  const file = String.fromCharCode(
+    CHAR_CODE_FOR_LETTER_A + Math.floor(position.x / width),
+  );
   const rank = NUMBER_OF_COLUMNS - Math.floor(position.y / width);
   return (file + rank) as Square;
 }

@@ -1,8 +1,8 @@
-import { useEffect, useRef } from "react";
-import { Animated, Text, View, StyleSheet } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useEffect, useRef } from 'react';
+import { Animated, Text, View, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ToastItem } from "../../hooks/useToast";
+import { ToastItem } from '../../hooks/useToast';
 
 interface ToastProps {
   toasts: ToastItem[];
@@ -12,7 +12,10 @@ const Toast: React.FC<ToastProps> = ({ toasts }) => {
   const insets = useSafeAreaInsets();
 
   return (
-    <View pointerEvents="none" style={[styles.container, { bottom: insets.bottom + 24 }]}>
+    <View
+      pointerEvents="none"
+      style={[styles.container, { bottom: insets.bottom + 24 }]}
+    >
       {toasts.map((toast) => (
         <ToastBubble key={toast.id} message={toast.message} />
       ))}
@@ -54,20 +57,20 @@ const ToastBubble: React.FC<ToastBubbleProps> = ({ message }) => {
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
+    position: 'absolute',
     left: 24,
     right: 24,
-    alignItems: "center",
+    alignItems: 'center',
   },
   text: {
-    backgroundColor: "rgba(0, 0, 0, 0.65)",
-    color: "rgba(255, 255, 255, 0.85)",
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    color: 'rgba(255, 255, 255, 0.85)',
     fontSize: 13,
-    fontWeight: "500",
+    fontWeight: '500',
     paddingHorizontal: 18,
     paddingVertical: 7,
     borderRadius: 18,
-    overflow: "hidden",
+    overflow: 'hidden',
     marginTop: 6,
   },
 });

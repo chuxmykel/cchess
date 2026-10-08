@@ -1,9 +1,9 @@
-import { useCallback, useRef } from "react";
-import { Animated } from "react-native";
+import { useCallback, useRef } from 'react';
+import { Animated } from 'react-native';
 
-import { Position } from "../domain/types";
-import { getSquareFromXY } from "../domain/boardCoordinates";
-import { SQUARES } from "../constants";
+import { Position } from '../domain/types';
+import { getSquareFromXY } from '../domain/boardCoordinates';
+import { SQUARES } from '../constants';
 
 export type DragGuide = {
   position: Animated.ValueXY;

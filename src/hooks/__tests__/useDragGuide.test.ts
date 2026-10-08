@@ -1,12 +1,12 @@
-import { act, renderHook } from "@testing-library/react-native";
+import { act, renderHook } from '@testing-library/react-native';
 
-import { useDragGuide } from "../useDragGuide";
-import { getAnimatedValue } from "../../testUtils/animatedValue";
+import { useDragGuide } from '../useDragGuide';
+import { getAnimatedValue } from '../../testUtils/animatedValue';
 
-describe("useDragGuide", () => {
+describe('useDragGuide', () => {
   const pieceWidth = 50;
 
-  it("starts hidden at the origin", async () => {
+  it('starts hidden at the origin', async () => {
     const { result } = await renderHook(
       (props: { pieceWidth: number }) => useDragGuide(props.pieceWidth),
       { initialProps: { pieceWidth } },
@@ -17,7 +17,7 @@ describe("useDragGuide", () => {
     expect(getAnimatedValue(result.current.position.y)).toBe(0);
   });
 
-  it("show makes the guide visible", async () => {
+  it('show makes the guide visible', async () => {
     const { result } = await renderHook(
       (props: { pieceWidth: number }) => useDragGuide(props.pieceWidth),
       { initialProps: { pieceWidth } },
@@ -30,7 +30,7 @@ describe("useDragGuide", () => {
     expect(getAnimatedValue(result.current.opacity)).toBe(1);
   });
 
-  it("hide only touches opacity, leaving position wherever it last was", async () => {
+  it('hide only touches opacity, leaving position wherever it last was', async () => {
     const { result } = await renderHook(
       (props: { pieceWidth: number }) => useDragGuide(props.pieceWidth),
       { initialProps: { pieceWidth } },
@@ -48,7 +48,7 @@ describe("useDragGuide", () => {
     expect(getAnimatedValue(result.current.position.y)).toBe(150);
   });
 
-  it("updatePosition moves the guide and shows it for an on-board square", async () => {
+  it('updatePosition moves the guide and shows it for an on-board square', async () => {
     const { result } = await renderHook(
       (props: { pieceWidth: number }) => useDragGuide(props.pieceWidth),
       { initialProps: { pieceWidth } },
@@ -63,7 +63,7 @@ describe("useDragGuide", () => {
     expect(getAnimatedValue(result.current.opacity)).toBe(1);
   });
 
-  it("updatePosition hides the guide without moving it once dragged off the board", async () => {
+  it('updatePosition hides the guide without moving it once dragged off the board', async () => {
     const { result } = await renderHook(
       (props: { pieceWidth: number }) => useDragGuide(props.pieceWidth),
       { initialProps: { pieceWidth } },
@@ -82,7 +82,7 @@ describe("useDragGuide", () => {
     expect(getAnimatedValue(result.current.position.y)).toBe(150);
   });
 
-  it("keeps show, hide and updatePosition referentially stable across a re-render with the same pieceWidth", async () => {
+  it('keeps show, hide and updatePosition referentially stable across a re-render with the same pieceWidth', async () => {
     const { result, rerender } = await renderHook(
       (props: { pieceWidth: number }) => useDragGuide(props.pieceWidth),
       { initialProps: { pieceWidth } },

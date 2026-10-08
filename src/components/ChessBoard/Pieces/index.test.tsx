@@ -1,24 +1,26 @@
-import { render } from "@testing-library/react-native";
-import { Animated } from "react-native";
-import { Square } from "chess.js";
+import { render } from '@testing-library/react-native';
+import { Animated } from 'react-native';
+import { Square } from 'chess.js';
 
-import Pieces from ".";
-import { AnimatedPieceView } from "../../../hooks/usePieceAnimations";
-import { getXYFromSquare } from "../../../domain/boardCoordinates";
-import { simulatePanResponderDrag } from "../../../testUtils/panResponderGesture";
+import Pieces from '.';
+import { AnimatedPieceView } from '../../../hooks/usePieceAnimations';
+import { getXYFromSquare } from '../../../domain/boardCoordinates';
+import { simulatePanResponderDrag } from '../../../testUtils/panResponderGesture';
 
-describe("Pieces", () => {
+describe('Pieces', () => {
   const pieceWidth = 50;
 
   function buildPiece(
     square: Square,
-    spriteId: AnimatedPieceView["spriteId"],
+    spriteId: AnimatedPieceView['spriteId'],
   ): AnimatedPieceView {
     return {
       id: `${spriteId}-${square}`,
       spriteId,
       square,
-      animatedPosition: new Animated.ValueXY(getXYFromSquare(square, pieceWidth)),
+      animatedPosition: new Animated.ValueXY(
+        getXYFromSquare(square, pieceWidth),
+      ),
       opacity: new Animated.Value(1),
     };
   }
@@ -30,7 +32,7 @@ describe("Pieces", () => {
       isGameOver: boolean;
     }> = {},
   ) {
-    const pieces = overrides.pieces ?? [buildPiece("e2", "wp")];
+    const pieces = overrides.pieces ?? [buildPiece('e2', 'wp')];
     const isOwnPieceAt = overrides.isOwnPieceAt ?? jest.fn(() => true);
     const isGameOver = overrides.isGameOver ?? false;
     const onTap = jest.fn();
@@ -58,16 +60,16 @@ describe("Pieces", () => {
     return { screen, onTap, onDragStart, onDragRelease, onDrag };
   }
 
-  it("should exist", () => {
+  it('should exist', () => {
     expect(Pieces).toBeDefined();
   });
 
-  it("renders one Piece per entry, keyed by square", async () => {
-    const pieces = [buildPiece("e2", "wp"), buildPiece("e7", "bp")];
+  it('renders one Piece per entry, keyed by square', async () => {
+    const pieces = [buildPiece('e2', 'wp'), buildPiece('e7', 'bp')];
     const { screen } = await renderPieces({ pieces });
 
-    expect(screen.getByTestId("piece-e2")).toBeDefined();
-    expect(screen.getByTestId("piece-e7")).toBeDefined();
+    expect(screen.getByTestId('piece-e2')).toBeDefined();
+    expect(screen.getByTestId('piece-e7')).toBeDefined();
   });
 
   it("enables dragging a piece isOwnPieceAt reports as the player's own", async () => {
@@ -76,9 +78,9 @@ describe("Pieces", () => {
       isGameOver: false,
     });
 
-    await simulatePanResponderDrag(screen.getByTestId("piece-e2"), 0, -100);
+    await simulatePanResponderDrag(screen.getByTestId('piece-e2'), 0, -100);
 
-    expect(onDragStart).toHaveBeenCalledWith("e2");
+    expect(onDragStart).toHaveBeenCalledWith('e2');
   });
 
   it("disables dragging a piece isOwnPieceAt reports as the opponent's", async () => {
@@ -86,7 +88,7 @@ describe("Pieces", () => {
       isOwnPieceAt: () => false,
     });
 
-    await simulatePanResponderDrag(screen.getByTestId("piece-e2"), 0, -100);
+    await simulatePanResponderDrag(screen.getByTestId('piece-e2'), 0, -100);
 
     expect(onDragStart).not.toHaveBeenCalled();
   });
@@ -97,7 +99,7 @@ describe("Pieces", () => {
       isGameOver: true,
     });
 
-    await simulatePanResponderDrag(screen.getByTestId("piece-e2"), 0, -100);
+    await simulatePanResponderDrag(screen.getByTestId('piece-e2'), 0, -100);
 
     expect(onDragStart).not.toHaveBeenCalled();
   });

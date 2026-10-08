@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 export type ToastItem = {
   id: number;
@@ -16,7 +16,9 @@ const MAX_TOASTS = 3;
 export function useToast(durationMs: number = DEFAULT_DURATION_MS): Toast {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextId = useRef(0);
-  const timeoutsRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const timeoutsRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
 
   function clearTimeoutFor(id: number) {
     const timeout = timeoutsRef.current.get(id);
@@ -44,7 +46,7 @@ export function useToast(durationMs: number = DEFAULT_DURATION_MS): Toast {
     });
     timeoutsRef.current.set(
       id,
-      setTimeout(() => dismiss(id), toastDurationMs)
+      setTimeout(() => dismiss(id), toastDurationMs),
     );
   }
 

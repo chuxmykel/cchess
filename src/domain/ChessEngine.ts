@@ -1,6 +1,6 @@
-import { Chess, Color, Move, PieceSymbol, Square } from "chess.js";
+import { Chess, Color, Move, PieceSymbol, Square } from 'chess.js';
 
-import { AppliedMove, DomainMove, DomainPiece, MoveResult } from "./types";
+import { AppliedMove, DomainMove, DomainPiece, MoveResult } from './types';
 import {
   BLACK_KING_SIDE_ROOK_CASTLED_SQUARE,
   BLACK_KING_SIDE_ROOK_INITIAL_SQUARE,
@@ -10,7 +10,7 @@ import {
   WHITE_KING_SIDE_ROOK_INITIAL_SQUARE,
   WHITE_QUEEN_SIDE_ROOK_CASTLED_SQUARE,
   WHITE_QUEEN_SIDE_ROOK_INITIAL_SQUARE,
-} from "./castlingSquares";
+} from './castlingSquares';
 
 function toDomainMove(move: Move): DomainMove {
   return {
@@ -28,16 +28,30 @@ function getEnPassantCapturedSquare(from: Square, to: Square): Square {
   return (to.charAt(0) + from.charAt(1)) as Square;
 }
 
-function getCastlingRookSquares(move: Move): { rookFrom: Square; rookTo: Square } | null {
+function getCastlingRookSquares(
+  move: Move,
+): { rookFrom: Square; rookTo: Square } | null {
   if (move.isKingsideCastle()) {
-    return move.color === "w"
-      ? { rookFrom: WHITE_KING_SIDE_ROOK_INITIAL_SQUARE, rookTo: WHITE_KING_SIDE_ROOK_CASTLED_SQUARE }
-      : { rookFrom: BLACK_KING_SIDE_ROOK_INITIAL_SQUARE, rookTo: BLACK_KING_SIDE_ROOK_CASTLED_SQUARE };
+    return move.color === 'w'
+      ? {
+          rookFrom: WHITE_KING_SIDE_ROOK_INITIAL_SQUARE,
+          rookTo: WHITE_KING_SIDE_ROOK_CASTLED_SQUARE,
+        }
+      : {
+          rookFrom: BLACK_KING_SIDE_ROOK_INITIAL_SQUARE,
+          rookTo: BLACK_KING_SIDE_ROOK_CASTLED_SQUARE,
+        };
   }
   if (move.isQueensideCastle()) {
-    return move.color === "w"
-      ? { rookFrom: WHITE_QUEEN_SIDE_ROOK_INITIAL_SQUARE, rookTo: WHITE_QUEEN_SIDE_ROOK_CASTLED_SQUARE }
-      : { rookFrom: BLACK_QUEEN_SIDE_ROOK_INITIAL_SQUARE, rookTo: BLACK_QUEEN_SIDE_ROOK_CASTLED_SQUARE };
+    return move.color === 'w'
+      ? {
+          rookFrom: WHITE_QUEEN_SIDE_ROOK_INITIAL_SQUARE,
+          rookTo: WHITE_QUEEN_SIDE_ROOK_CASTLED_SQUARE,
+        }
+      : {
+          rookFrom: BLACK_QUEEN_SIDE_ROOK_INITIAL_SQUARE,
+          rookTo: BLACK_QUEEN_SIDE_ROOK_CASTLED_SQUARE,
+        };
   }
   return null;
 }
@@ -57,7 +71,9 @@ function toAppliedMove(move: Move): AppliedMove {
     color: move.color,
     isCapture,
     capturedSquare: isCapture
-      ? (isEnPassant ? getEnPassantCapturedSquare(move.from, move.to) : move.to)
+      ? isEnPassant
+        ? getEnPassantCapturedSquare(move.from, move.to)
+        : move.to
       : undefined,
     isEnPassant,
     isKingSideCastle: move.isKingsideCastle(),
@@ -84,7 +100,11 @@ export class ChessEngine {
     this.game.board().forEach((row) => {
       row.forEach((piece) => {
         if (piece) {
-          pieces.push({ square: piece.square, type: piece.type, color: piece.color });
+          pieces.push({
+            square: piece.square,
+            type: piece.type,
+            color: piece.color,
+          });
         }
       });
     });
@@ -99,23 +119,27 @@ export class ChessEngine {
     return this.getLegalMoves(square).map((move) => move.to);
   }
 
-  attemptMove(from: Square, to: Square, promotionPiece?: PieceSymbol): MoveResult {
+  attemptMove(
+    from: Square,
+    to: Square,
+    promotionPiece?: PieceSymbol,
+  ): MoveResult {
     const legalMoves = this.game.moves({ square: from, verbose: true });
     const legalMove = legalMoves.find((move) => move.to === to);
 
     if (!legalMove) {
-      return { status: "illegal" };
+      return { status: 'illegal' };
     }
 
     if (legalMove.isPromotion() && !promotionPiece) {
-      return { status: "needs-promotion-choice", from, to };
+      return { status: 'needs-promotion-choice', from, to };
     }
 
     const appliedMove = promotionPiece
       ? this.game.move({ ...legalMove, promotion: promotionPiece })
       : this.game.move(legalMove);
 
-    return { status: "ok", move: toAppliedMove(appliedMove) };
+    return { status: 'ok', move: toAppliedMove(appliedMove) };
   }
 
   getTurn(): Color {

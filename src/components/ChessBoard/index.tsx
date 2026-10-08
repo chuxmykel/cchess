@@ -1,19 +1,19 @@
-import { useCallback } from "react";
-import { View } from "react-native";
-import { Square } from "chess.js";
+import { useCallback } from 'react';
+import { View } from 'react-native';
+import { Square } from 'chess.js';
 
-import { NUMBER_OF_ROWS } from "../../constants";
-import { Position } from "../../domain/types";
-import { getXYFromSquare } from "../../domain/boardCoordinates";
-import { usePieceAnimations } from "../../hooks/usePieceAnimations";
-import { useDragGuide } from "../../hooks/useDragGuide";
-import { useValidMoveIndicators } from "../../hooks/useValidMoveIndicators";
-import { useChessGameContext } from "../../screens/Game/ChessGameContext";
+import { NUMBER_OF_ROWS } from '../../constants';
+import { Position } from '../../domain/types';
+import { getXYFromSquare } from '../../domain/boardCoordinates';
+import { usePieceAnimations } from '../../hooks/usePieceAnimations';
+import { useDragGuide } from '../../hooks/useDragGuide';
+import { useValidMoveIndicators } from '../../hooks/useValidMoveIndicators';
+import { useChessGameContext } from '../../screens/Game/ChessGameContext';
 
-import BoardSurface from "./BoardSurface";
-import Pieces from "./Pieces";
-import PieceDragAndDropGuide from "./PieceDragAndDropGuide";
-import ValidMoveIndicators from "./ValidMoveIndicators";
+import BoardSurface from './BoardSurface';
+import Pieces from './Pieces';
+import PieceDragAndDropGuide from './PieceDragAndDropGuide';
+import ValidMoveIndicators from './ValidMoveIndicators';
 
 interface ChessboardProps {
   colors: {
@@ -55,7 +55,7 @@ const Chessboard: React.FC<ChessboardProps> = ({ colors, width }) => {
         (piece) => piece.square === from,
       );
       const result = attemptMove(from, to);
-      if (result.status === "illegal" && draggedPiece) {
+      if (result.status === 'illegal' && draggedPiece) {
         draggedPiece.animatedPosition.setValue(
           getXYFromSquare(from, PIECE_WIDTH),
         );

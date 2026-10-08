@@ -1,11 +1,11 @@
-import { fireEvent, render } from "@testing-library/react-native";
-import { Text } from "react-native";
+import { fireEvent, render } from '@testing-library/react-native';
+import { Text } from 'react-native';
 
-import BottomSheet from ".";
-import { withSafeArea } from "../../testUtils/safeArea";
+import BottomSheet from '.';
+import { withSafeArea } from '../../testUtils/safeArea';
 
-describe("BottomSheet", () => {
-  it("renders its children while visible", async () => {
+describe('BottomSheet', () => {
+  it('renders its children while visible', async () => {
     const screen = await render(
       withSafeArea(
         <BottomSheet visible onClose={jest.fn()}>
@@ -14,10 +14,10 @@ describe("BottomSheet", () => {
       ),
     );
 
-    expect(screen.getByText("Sheet content")).toBeTruthy();
+    expect(screen.getByText('Sheet content')).toBeTruthy();
   });
 
-  it("calls onClose when the backdrop is pressed", async () => {
+  it('calls onClose when the backdrop is pressed', async () => {
     const onClose = jest.fn();
     const screen = await render(
       withSafeArea(
@@ -27,7 +27,7 @@ describe("BottomSheet", () => {
       ),
     );
 
-    await fireEvent.press(screen.getByTestId("bottom-sheet-backdrop"));
+    await fireEvent.press(screen.getByTestId('bottom-sheet-backdrop'));
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });

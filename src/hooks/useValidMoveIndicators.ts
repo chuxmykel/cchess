@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef } from "react";
-import { Animated } from "react-native";
-import { Square } from "chess.js";
+import { useCallback, useEffect, useRef } from 'react';
+import { Animated } from 'react-native';
+import { Square } from 'chess.js';
 
-import { SQUARES } from "../constants";
+import { SQUARES } from '../constants';
 
 export type ValidMoveIndicators = {
   opacities: Record<Square, Animated.Value>;
@@ -25,7 +25,9 @@ export function useValidMoveIndicators(
 
   useEffect(() => {
     SQUARES.forEach((square) => {
-      indicatorOpacities[square].setValue(legalMoveSquares.includes(square) ? 1 : 0);
+      indicatorOpacities[square].setValue(
+        legalMoveSquares.includes(square) ? 1 : 0,
+      );
     });
   }, [legalMoveSquares, indicatorOpacities]);
 

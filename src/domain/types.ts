@@ -1,4 +1,4 @@
-import { Color, PieceSymbol, Square } from "chess.js";
+import { Color, PieceSymbol, Square } from 'chess.js';
 
 export type Position = {
   x: number;
@@ -46,12 +46,17 @@ export type AppliedMove = MoveCore & {
 };
 
 export type MoveResult =
-  | { status: "illegal" }
-  | { status: "needs-promotion-choice"; from: Square; to: Square }
-  | { status: "ok"; move: AppliedMove };
+  | { status: 'illegal' }
+  | { status: 'needs-promotion-choice'; from: Square; to: Square }
+  | { status: 'ok'; move: AppliedMove };
 
-export const PROMOTION_PIECE_TYPES: readonly PieceSymbol[] = ["q", "r", "b", "n"];
+export const PROMOTION_PIECE_TYPES: readonly PieceSymbol[] = [
+  'q',
+  'r',
+  'b',
+  'n',
+];
 
-export type GameType = "bullet" | "blitz" | "rapid" | "classical";
+export type GameType = 'bullet' | 'blitz' | 'rapid' | 'classical';
 
-export type GameResult = "win" | "loss" | "draw";
+export type GameResult = 'win' | 'loss' | 'draw';

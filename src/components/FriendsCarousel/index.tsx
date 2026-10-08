@@ -1,8 +1,8 @@
-import { View, FlatList, StyleSheet } from "react-native";
+import { View, FlatList, StyleSheet } from 'react-native';
 
-import SectionHeader from "../SectionHeader";
-import FriendCard from "./FriendCard";
-import { FRIENDS, Friend } from "../../constants/friends";
+import SectionHeader from '../SectionHeader';
+import FriendCard from './FriendCard';
+import { FRIENDS, Friend } from '../../constants/friends';
 
 const FriendsCarousel: React.FC = () => {
   function handleFriendPress(friend: Friend) {

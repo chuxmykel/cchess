@@ -1,8 +1,8 @@
-import React from "react";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import HomeTabs from "../HomeTabs";
-import Game from "../Game";
+import HomeTabs from '../HomeTabs';
+import Game from '../Game';
 
 const { Navigator, Screen } = createNativeStackNavigator();
 

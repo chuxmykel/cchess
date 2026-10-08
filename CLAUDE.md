@@ -104,11 +104,11 @@ domain/        pure chess logic, zero React/RN imports, plain Jest-testable
 
 Two deliberately separate layers - don't let one re-do the other's job:
 
-| | Unit/component (Jest) | End-to-end (Maestro) |
-|---|---|---|
-| Run with | `npm test` | `npm run test:e2e` |
-| Covers | Chess rules, game state machine, gesture -> callback translation, rendering | Real native gestures driving the actual running app |
-| Needs a simulator? | No | Yes |
+|                    | Unit/component (Jest)                                                       | End-to-end (Maestro)                                |
+| ------------------ | --------------------------------------------------------------------------- | --------------------------------------------------- |
+| Run with           | `npm test`                                                                  | `npm run test:e2e`                                  |
+| Covers             | Chess rules, game state machine, gesture -> callback translation, rendering | Real native gestures driving the actual running app |
+| Needs a simulator? | No                                                                          | Yes                                                 |
 
 - Chess rules (legality, check/checkmate, castling, en passant, promotion)
   are unit-tested directly against `ChessEngine`, no rendering involved -

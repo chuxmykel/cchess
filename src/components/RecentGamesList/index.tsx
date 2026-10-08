@@ -1,9 +1,9 @@
-import { Fragment } from "react";
-import { View, StyleSheet } from "react-native";
+import { Fragment } from 'react';
+import { View, StyleSheet } from 'react-native';
 
-import SectionHeader from "../SectionHeader";
-import GameRow from "./GameRow";
-import { RECENT_GAMES } from "../../constants/recentGames";
+import SectionHeader from '../SectionHeader';
+import GameRow from './GameRow';
+import { RECENT_GAMES } from '../../constants/recentGames';
 
 const HOME_SCREEN_GAME_LIMIT = 10;
 
@@ -44,8 +44,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     paddingVertical: 4,
     borderRadius: 8,
-    backgroundColor: "#f0f0f0",
-    shadowColor: "#000",
+    backgroundColor: '#f0f0f0',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "#c8c8c8",
+    backgroundColor: '#c8c8c8',
     marginHorizontal: 16,
   },
 });

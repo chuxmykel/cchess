@@ -1,5 +1,5 @@
-import { ReactElement } from "react";
-import { Metrics, SafeAreaProvider } from "react-native-safe-area-context";
+import { ReactElement } from 'react';
+import { Metrics, SafeAreaProvider } from 'react-native-safe-area-context';
 
 // A component under test that calls useSafeAreaInsets() throws ("No safe
 // area value available") unless it's wrapped in a provider - there's no
@@ -11,5 +11,9 @@ const TEST_SAFE_AREA_METRICS: Metrics = {
 };
 
 export function withSafeArea(children: ReactElement) {
-  return <SafeAreaProvider initialMetrics={TEST_SAFE_AREA_METRICS}>{children}</SafeAreaProvider>;
+  return (
+    <SafeAreaProvider initialMetrics={TEST_SAFE_AREA_METRICS}>
+      {children}
+    </SafeAreaProvider>
+  );
 }

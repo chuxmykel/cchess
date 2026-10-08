@@ -1,4 +1,4 @@
-import { View, Animated, StyleSheet } from "react-native";
+import { View, Animated, StyleSheet } from 'react-native';
 
 interface PieceDragAndDropGuideProps {
   boardWidth: number;
@@ -17,7 +17,7 @@ const PieceDragAndDropGuide: React.FC<PieceDragAndDropGuideProps> = ({
   const offsetToCenter = -(dragGuideDiameter / 3.5);
   return (
     <View
-      style={{ position: "absolute", width: boardWidth, height: boardWidth }}
+      style={{ position: 'absolute', width: boardWidth, height: boardWidth }}
       pointerEvents="none"
     >
       <Animated.View
@@ -41,7 +41,7 @@ export default PieceDragAndDropGuide;
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
-    backgroundColor: "rgba(70, 70, 70, 0.4)",
+    position: 'absolute',
+    backgroundColor: 'rgba(70, 70, 70, 0.4)',
   },
 });

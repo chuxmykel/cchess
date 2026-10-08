@@ -1,11 +1,11 @@
-import { memo } from "react";
-import { StyleSheet, Animated } from "react-native";
-import { Square } from "chess.js";
+import { memo } from 'react';
+import { StyleSheet, Animated } from 'react-native';
+import { Square } from 'chess.js';
 
-import { PIECES } from "../../../../constants";
-import { Position } from "../../../../domain/types";
-import { getSquareFromXY } from "../../../../domain/boardCoordinates";
-import { usePieceGesture } from "../../../../hooks/usePieceGesture";
+import { PIECES } from '../../../../constants';
+import { Position } from '../../../../domain/types';
+import { getSquareFromXY } from '../../../../domain/boardCoordinates';
+import { usePieceGesture } from '../../../../hooks/usePieceGesture';
 
 interface PieceProps {
   width: number;
@@ -55,7 +55,7 @@ const Piece: React.FC<PieceProps> = (props) => {
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
+    position: 'absolute',
   },
 });
 

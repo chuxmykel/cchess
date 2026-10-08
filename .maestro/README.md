@@ -1,7 +1,7 @@
 # E2E flows (Maestro)
 
 Real device/simulator tests, as opposed to the Jest/RNTL suite in `src/`,
-which only *simulates* React Native's PanResponder gesture protocol. These
+which only _simulates_ React Native's PanResponder gesture protocol. These
 flows drive the actual app running in a real iOS Simulator via Apple's
 XCTest instrumentation, so they catch things the simulated tests structurally
 can't.
@@ -100,12 +100,12 @@ just adds navigation the flow has to wait through for no reason.
   drag d7 (black) first and chased a phantom "swipe doesn't work" bug for
   a while before this was spotted.
 - **Swipe needs literal point coordinates, not selectors.** `start:
-  {id: ...}` parses but silently does the wrong thing on this Maestro
+{id: ...}` parses but silently does the wrong thing on this Maestro
   version (2.10.0) - use `start`/`end` as `"x,y"` point strings in points
   (not screenshot pixels), computed from a `maestro hierarchy` bounds
   dump. These are specific to iPhone 18 Pro / iOS 27.0's layout -
   recompute for any other device or board state.
-- **Board-layout coordinates silently go stale when *navigation* around
+- **Board-layout coordinates silently go stale when _navigation_ around
   the board changes, even though nothing in `ChessBoard`/`Game` itself
   did.** Found this session: the drag-and-drop/off-board-drag swipe
   coordinates (piece-e2's center, piece-g1's center) were still the
@@ -114,11 +114,11 @@ just adds navigation the flow has to wait through for no reason.
   with a stack nested under bottom tabs, and further commits added a
   Home header and a pinned Play bar - nobody re-captured the
   coordinates after. `Game`'s container is `flex: 1, justifyContent:
-  "center", alignItems: "center"` - the board is centered in whatever
+"center", alignItems: "center"` - the board is centered in whatever
   height its container gets, not fixed-position, so a different
   enclosing navigator/chrome changes where that centered board lands on
   screen with zero changes to board code. Recomputed via `maestro
-  hierarchy`: piece-e2's center moved from `(226,613)` to `(226,562)`,
+hierarchy`: piece-e2's center moved from `(226,613)` to `(226,562)`,
   piece-g1's from `(326,663)` to `(326,613)`.
   Maestro reports `COMPLETED` for a swipe even when its start point
   misses the piece entirely - there's no error, the board just silently
@@ -132,7 +132,7 @@ just adds navigation the flow has to wait through for no reason.
   or the text `"5+0"`) needs it escaped as `\\+` in the YAML string, or
   Maestro reports "Element not found" / the assertion fails even though
   the element is clearly on screen.
-- **`text:` matches the *complete* accessibility string, not a
+- **`text:` matches the _complete_ accessibility string, not a
   substring - and iOS merges sibling Text nodes under one accessible
   Pressable into a single comma-joined string.** The time control
   trigger's icon, label, and caret are three separate `<Text>` children,

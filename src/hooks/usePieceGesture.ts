@@ -1,11 +1,11 @@
-import { useRef } from "react";
-import { Animated, PanResponder, PanResponderGestureState } from "react-native";
-import { Square } from "chess.js";
+import { useRef } from 'react';
+import { Animated, PanResponder, PanResponderGestureState } from 'react-native';
+import { Square } from 'chess.js';
 
-import { Position } from "../domain/types";
-import { getSquareFromXY } from "../domain/boardCoordinates";
-import { getNewPositionFromGesture } from "../utils/animation";
-import { TAP_MOVEMENT_THRESHOLD } from "../constants";
+import { Position } from '../domain/types';
+import { getSquareFromXY } from '../domain/boardCoordinates';
+import { getNewPositionFromGesture } from '../utils/animation';
+import { TAP_MOVEMENT_THRESHOLD } from '../constants';
 
 export type PieceGestureInput = {
   width: number;
@@ -21,7 +21,7 @@ export type PieceGestureInput = {
 };
 
 export type PieceGesture = {
-  panHandlers: ReturnType<typeof PanResponder.create>["panHandlers"];
+  panHandlers: ReturnType<typeof PanResponder.create>['panHandlers'];
   scale: Animated.Value;
   zIndex: Animated.Value;
 };

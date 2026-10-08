@@ -1,6 +1,14 @@
-import { View, Text, Pressable, Modal, StyleSheet, StyleProp, ViewStyle } from "react-native";
+import {
+  View,
+  Text,
+  Pressable,
+  Modal,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+} from 'react-native';
 
-import { usePopoverMenu } from "../../hooks/usePopoverMenu";
+import { usePopoverMenu } from '../../hooks/usePopoverMenu';
 
 const MENU_WIDTH = 160;
 
@@ -17,7 +25,8 @@ const PopoverMenu: React.FC<PopoverMenuProps> = ({
   style,
   testID,
 }) => {
-  const { triggerRef, visible, position, open, close } = usePopoverMenu(MENU_WIDTH);
+  const { triggerRef, visible, position, open, close } =
+    usePopoverMenu(MENU_WIDTH);
 
   function selectItem(item: string) {
     close();
@@ -33,9 +42,14 @@ const PopoverMenu: React.FC<PopoverMenuProps> = ({
         hitSlop={8}
         testID={testID}
       >
-        <Text style={styles.triggerText}>{"⋮"}</Text>
+        <Text style={styles.triggerText}>{'⋮'}</Text>
       </Pressable>
-      <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={close}
+      >
         <Pressable style={styles.overlay} onPress={close}>
           <View
             style={[
@@ -67,18 +81,18 @@ const styles = StyleSheet.create({
   },
   triggerText: {
     fontSize: 16,
-    color: "#666",
+    color: '#666',
   },
   overlay: {
     flex: 1,
   },
   menu: {
-    position: "absolute",
+    position: 'absolute',
     width: MENU_WIDTH,
-    backgroundColor: "white",
+    backgroundColor: 'white',
     borderRadius: 8,
     paddingVertical: 4,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 6,

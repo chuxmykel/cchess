@@ -1,8 +1,10 @@
-import { useEffect, useRef } from "react";
-import { Animated } from "react-native";
+import { useEffect, useRef } from 'react';
+import { Animated } from 'react-native';
 
 export interface CaretRotation {
-  rotateTransform: { transform: { rotate: Animated.AnimatedInterpolation<string> }[] };
+  rotateTransform: {
+    transform: { rotate: Animated.AnimatedInterpolation<string> }[];
+  };
   pulseDipOpacity: { opacity: Animated.AnimatedInterpolation<number> };
 }
 
@@ -22,7 +24,7 @@ export function useCaretRotation(open: boolean): CaretRotation {
       {
         rotate: progress.interpolate({
           inputRange: [0, 1],
-          outputRange: ["0deg", "180deg"],
+          outputRange: ['0deg', '180deg'],
         }),
       },
     ],

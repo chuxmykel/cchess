@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
-import { Animated } from "react-native";
-import { Color, PieceSymbol, Square } from "chess.js";
+import { useEffect, useRef } from 'react';
+import { Animated } from 'react-native';
+import { Color, PieceSymbol, Square } from 'chess.js';
 
-import { AppliedMove, DomainPiece } from "../domain/types";
-import { getXYFromSquare } from "../domain/boardCoordinates";
-import { generatePieceId } from "../utils/animation";
+import { AppliedMove, DomainPiece } from '../domain/types';
+import { getXYFromSquare } from '../domain/boardCoordinates';
+import { generatePieceId } from '../utils/animation';
 
 const ANIMATION_DURATION = 50;
 
@@ -49,12 +49,18 @@ export function usePieceAnimations(
       id: generatePieceId(piece.color, piece.type, piece.square),
       square: piece.square,
       spriteId: `${piece.color}${piece.type}`,
-      animatedPosition: new Animated.ValueXY(getXYFromSquare(piece.square, pieceWidth)),
+      animatedPosition: new Animated.ValueXY(
+        getXYFromSquare(piece.square, pieceWidth),
+      ),
       opacity: new Animated.Value(1),
     };
   }
 
-  function movePiece(from: Square, to: Square, animations: { pieceEntry: PieceEntry; toSquare: Square }[]) {
+  function movePiece(
+    from: Square,
+    to: Square,
+    animations: { pieceEntry: PieceEntry; toSquare: Square }[],
+  ) {
     const pieceId = pieceIdBySquare.current.get(from);
     const pieceEntry = pieceId && entryById.current.get(pieceId);
     if (!pieceId || !pieceEntry) return;
@@ -71,7 +77,9 @@ export function usePieceAnimations(
     entryById.current.delete(pieceId);
   }
 
-  function applyMove(move: AppliedMove): { pieceEntry: PieceEntry; toSquare: Square }[] {
+  function applyMove(
+    move: AppliedMove,
+  ): { pieceEntry: PieceEntry; toSquare: Square }[] {
     const animations: { pieceEntry: PieceEntry; toSquare: Square }[] = [];
 
     if (move.isCapture && move.capturedSquare) {

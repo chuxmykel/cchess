@@ -1,10 +1,10 @@
-import { render } from "@testing-library/react-native";
-import { Animated } from "react-native";
+import { render } from '@testing-library/react-native';
+import { Animated } from 'react-native';
 
-import ValidMoveIndicator from ".";
-import { getAnimatedValue } from "../../../../testUtils/animatedValue";
+import ValidMoveIndicator from '.';
+import { getAnimatedValue } from '../../../../testUtils/animatedValue';
 
-describe("ValidMoveIndicator", () => {
+describe('ValidMoveIndicator', () => {
   const squareWidth = 60;
 
   async function renderIndicator(
@@ -23,14 +23,18 @@ describe("ValidMoveIndicator", () => {
         opacity={opacity}
       />,
     );
-    return { indicator: screen.getByTestId("valid-move-e4"), position, opacity };
+    return {
+      indicator: screen.getByTestId('valid-move-e4'),
+      position,
+      opacity,
+    };
   }
 
-  it("should exist", () => {
+  it('should exist', () => {
     expect(ValidMoveIndicator).toBeDefined();
   });
 
-  it("sizes the dot relative to the square and centers it", async () => {
+  it('sizes the dot relative to the square and centers it', async () => {
     const { indicator } = await renderIndicator();
 
     const diameter = squareWidth / 3;
@@ -41,7 +45,7 @@ describe("ValidMoveIndicator", () => {
     expect(indicator.props.style.left).toBe(diameter);
   });
 
-  it("wires opacity and position to the given Animated values", async () => {
+  it('wires opacity and position to the given Animated values', async () => {
     const { indicator, position, opacity } = await renderIndicator();
 
     expect(indicator.props.style.opacity).toBe(getAnimatedValue(opacity));

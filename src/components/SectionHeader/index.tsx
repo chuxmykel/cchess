@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from 'react-native';
 
-import Button from "../Button";
+import Button from '../Button';
 
 interface SectionHeaderProps {
   title: string;
@@ -32,14 +32,14 @@ export default SectionHeader;
 
 const styles = StyleSheet.create({
   row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     marginBottom: 12,
   },
   title: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 });

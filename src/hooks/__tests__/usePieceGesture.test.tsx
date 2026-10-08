@@ -1,17 +1,17 @@
-import { render } from "@testing-library/react-native";
-import { Animated } from "react-native";
-import { Square } from "chess.js";
+import { render } from '@testing-library/react-native';
+import { Animated } from 'react-native';
+import { Square } from 'chess.js';
 
-import { usePieceGesture, PieceGestureInput } from "../usePieceGesture";
-import { TAP_MOVEMENT_THRESHOLD } from "../../constants";
-import { getXYFromSquare } from "../../domain/boardCoordinates";
+import { usePieceGesture, PieceGestureInput } from '../usePieceGesture';
+import { TAP_MOVEMENT_THRESHOLD } from '../../constants';
+import { getXYFromSquare } from '../../domain/boardCoordinates';
 import {
   simulatePanResponderDrag,
   simulatePanResponderGrant,
   simulatePanResponderGrantAndMove,
   simulatePanResponderTap,
-} from "../../testUtils/panResponderGesture";
-import { getAnimatedValue } from "../../testUtils/animatedValue";
+} from '../../testUtils/panResponderGesture';
+import { getAnimatedValue } from '../../testUtils/animatedValue';
 
 // A minimal host component so the hook's panHandlers can be driven through
 // the same fireEvent-based gesture simulation used elsewhere - renderHook
@@ -29,9 +29,9 @@ function GestureHarness(props: PieceGestureInput & { square: Square }) {
   );
 }
 
-describe("usePieceGesture", () => {
+describe('usePieceGesture', () => {
   const width = 50;
-  const position = getXYFromSquare("e2", width);
+  const position = getXYFromSquare('e2', width);
 
   async function renderGesture(
     overrides: Partial<{
@@ -67,7 +67,7 @@ describe("usePieceGesture", () => {
         hideDragGuide={hideDragGuide}
       />,
     );
-    const target = screen.getByTestId("gesture-target");
+    const target = screen.getByTestId('gesture-target');
     return {
       target,
       animatedPosition,
@@ -80,7 +80,7 @@ describe("usePieceGesture", () => {
     };
   }
 
-  it("should exist", () => {
+  it('should exist', () => {
     expect(usePieceGesture).toBeDefined();
   });
 
@@ -90,10 +90,10 @@ describe("usePieceGesture", () => {
     // Drag up by 2 squares (width 50 * 2 = 100px) - well past the threshold.
     await simulatePanResponderDrag(target, 0, -100);
 
-    expect(onDragRelease).toHaveBeenCalledWith("e2", "e4");
+    expect(onDragRelease).toHaveBeenCalledWith('e2', 'e4');
   });
 
-  it("does not report onTap on touch-down for a gesture that turns into a drag", async () => {
+  it('does not report onTap on touch-down for a gesture that turns into a drag', async () => {
     const { target, onTap } = await renderGesture();
 
     await simulatePanResponderDrag(target, 0, -100);
@@ -101,12 +101,12 @@ describe("usePieceGesture", () => {
     expect(onTap).not.toHaveBeenCalled();
   });
 
-  it("reports onDragStart on touch-down, instead of onTap", async () => {
+  it('reports onDragStart on touch-down, instead of onTap', async () => {
     const { target, onDragStart } = await renderGesture();
 
     await simulatePanResponderGrant(target);
 
-    expect(onDragStart).toHaveBeenCalledWith("e2");
+    expect(onDragStart).toHaveBeenCalledWith('e2');
   });
 
   it("does not report onDragStart on touch-down for a disabled (opponent's) piece", async () => {
@@ -117,13 +117,13 @@ describe("usePieceGesture", () => {
     expect(onDragStart).not.toHaveBeenCalled();
   });
 
-  it("reports onTap instead of onDragRelease when movement stays under the tap threshold", async () => {
+  it('reports onTap instead of onDragRelease when movement stays under the tap threshold', async () => {
     const { target, onDragRelease, onTap } = await renderGesture();
 
     // Nonzero movement, but still under TAP_MOVEMENT_THRESHOLD (10).
     await simulatePanResponderDrag(target, 5, -5);
 
-    expect(onTap).toHaveBeenCalledWith("e2");
+    expect(onTap).toHaveBeenCalledWith('e2');
     expect(onDragRelease).not.toHaveBeenCalled();
   });
 
@@ -134,7 +134,7 @@ describe("usePieceGesture", () => {
 
     await simulatePanResponderTap(target);
 
-    expect(onTap).toHaveBeenCalledWith("e2");
+    expect(onTap).toHaveBeenCalledWith('e2');
     expect(onDragRelease).not.toHaveBeenCalled();
   });
 
@@ -143,10 +143,10 @@ describe("usePieceGesture", () => {
 
     await simulatePanResponderDrag(target, 0, -100);
 
-    expect(onDragRelease).toHaveBeenCalledWith("e2", "e4");
+    expect(onDragRelease).toHaveBeenCalledWith('e2', 'e4');
   });
 
-  it("movement right at the threshold boundary counts as a drag, not a tap", async () => {
+  it('movement right at the threshold boundary counts as a drag, not a tap', async () => {
     const { target, onDragRelease, onTap } = await renderGesture();
 
     // TAP_MOVEMENT_THRESHOLD itself is excluded by the hook's strict "<" check.
@@ -156,17 +156,17 @@ describe("usePieceGesture", () => {
     expect(onTap).not.toHaveBeenCalled();
   });
 
-  it("snaps the piece back to its own square when incidental jitter during a tap stays under the threshold", async () => {
+  it('snaps the piece back to its own square when incidental jitter during a tap stays under the threshold', async () => {
     const { target, animatedPosition, onTap } = await renderGesture();
 
     await simulatePanResponderDrag(target, 5, -5);
 
-    expect(onTap).toHaveBeenCalledWith("e2");
+    expect(onTap).toHaveBeenCalledWith('e2');
     expect(getAnimatedValue(animatedPosition.x)).toBe(position.x);
     expect(getAnimatedValue(animatedPosition.y)).toBe(position.y);
   });
 
-  it("shows the drag guide during a drag and hides it on release", async () => {
+  it('shows the drag guide during a drag and hides it on release', async () => {
     const { target, showDragGuide, hideDragGuide } = await renderGesture();
 
     await simulatePanResponderDrag(target, 0, -100);
@@ -175,7 +175,7 @@ describe("usePieceGesture", () => {
     expect(hideDragGuide).toHaveBeenCalled();
   });
 
-  it("hides the drag guide on release even for a plain tap", async () => {
+  it('hides the drag guide on release even for a plain tap', async () => {
     const { target, hideDragGuide } = await renderGesture();
 
     await simulatePanResponderTap(target);
@@ -183,7 +183,7 @@ describe("usePieceGesture", () => {
     expect(hideDragGuide).toHaveBeenCalled();
   });
 
-  it("zooms the piece in while actively dragging", async () => {
+  it('zooms the piece in while actively dragging', async () => {
     const { target } = await renderGesture();
 
     await simulatePanResponderGrantAndMove(target, 0, -100);
@@ -192,7 +192,7 @@ describe("usePieceGesture", () => {
     expect(target.props.style.zIndex).toBe(100);
   });
 
-  it("zooms back out once the drag is released", async () => {
+  it('zooms back out once the drag is released', async () => {
     const { target } = await renderGesture();
 
     await simulatePanResponderDrag(target, 0, -100);

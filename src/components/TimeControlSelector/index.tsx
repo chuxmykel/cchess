@@ -1,13 +1,13 @@
-import { useState } from "react";
-import { View } from "react-native";
+import { useState } from 'react';
+import { View } from 'react-native';
 
-import BottomSheet from "../BottomSheet";
+import BottomSheet from '../BottomSheet';
 import TimeControlTrigger, {
   TriggerStyleVariant,
   TRIGGER_STYLE_VARIANTS,
-} from "./TimeControlTrigger";
-import TimeControlOptions from "./TimeControlOptions";
-import { TimeControl } from "../../constants/timeControls";
+} from './TimeControlTrigger';
+import TimeControlOptions from './TimeControlOptions';
+import { TimeControl } from '../../constants/timeControls';
 
 export type { TriggerStyleVariant };
 export { TRIGGER_STYLE_VARIANTS };

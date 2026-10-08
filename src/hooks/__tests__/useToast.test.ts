@@ -1,8 +1,8 @@
-import { act, renderHook } from "@testing-library/react-native";
+import { act, renderHook } from '@testing-library/react-native';
 
-import { useToast } from "../useToast";
+import { useToast } from '../useToast';
 
-describe("useToast", () => {
+describe('useToast', () => {
   beforeEach(() => {
     jest.useFakeTimers();
   });
@@ -11,34 +11,39 @@ describe("useToast", () => {
     jest.useRealTimers();
   });
 
-  it("starts with no toasts", async () => {
+  it('starts with no toasts', async () => {
     const { result } = await renderHook(() => useToast());
 
     expect(result.current.toasts).toEqual([]);
   });
 
-  it("show adds a toast", async () => {
+  it('show adds a toast', async () => {
     const { result } = await renderHook(() => useToast());
 
     await act(() => {
-      result.current.show("Coming soon");
+      result.current.show('Coming soon');
     });
 
-    expect(result.current.toasts.map((toast) => toast.message)).toEqual(["Coming soon"]);
+    expect(result.current.toasts.map((toast) => toast.message)).toEqual([
+      'Coming soon',
+    ]);
   });
 
-  it("stacks multiple toasts oldest first", async () => {
+  it('stacks multiple toasts oldest first', async () => {
     const { result } = await renderHook(() => useToast());
 
     await act(() => {
-      result.current.show("First");
-      result.current.show("Second");
+      result.current.show('First');
+      result.current.show('Second');
     });
 
-    expect(result.current.toasts.map((toast) => toast.message)).toEqual(["First", "Second"]);
+    expect(result.current.toasts.map((toast) => toast.message)).toEqual([
+      'First',
+      'Second',
+    ]);
   });
 
-  it("drops the oldest toast once a 4th arrives", async () => {
+  it('drops the oldest toast once a 4th arrives', async () => {
     const { result } = await renderHook(() => useToast());
 
     await act(() => {
@@ -49,17 +54,17 @@ describe("useToast", () => {
 
     expect(result.current.toasts).toHaveLength(3);
     expect(result.current.toasts.map((toast) => toast.message)).toEqual([
-      "Toast 2",
-      "Toast 3",
-      "Toast 4",
+      'Toast 2',
+      'Toast 3',
+      'Toast 4',
     ]);
   });
 
-  it("dismisses a toast after the default duration", async () => {
+  it('dismisses a toast after the default duration', async () => {
     const { result } = await renderHook(() => useToast(2000));
 
     await act(() => {
-      result.current.show("Coming soon");
+      result.current.show('Coming soon');
     });
     await act(() => {
       jest.advanceTimersByTime(2000);
@@ -68,11 +73,11 @@ describe("useToast", () => {
     expect(result.current.toasts).toEqual([]);
   });
 
-  it("honors a per-call duration override", async () => {
+  it('honors a per-call duration override', async () => {
     const { result } = await renderHook(() => useToast(2000));
 
     await act(() => {
-      result.current.show("Quick toast", 500);
+      result.current.show('Quick toast', 500);
     });
     await act(() => {
       jest.advanceTimersByTime(500);
@@ -81,23 +86,25 @@ describe("useToast", () => {
     expect(result.current.toasts).toEqual([]);
   });
 
-  it("dismisses toasts independently of each other", async () => {
+  it('dismisses toasts independently of each other', async () => {
     const { result } = await renderHook(() => useToast(2000));
 
     await act(() => {
-      result.current.show("Slow", 2000);
+      result.current.show('Slow', 2000);
     });
     await act(() => {
       jest.advanceTimersByTime(1000);
     });
     await act(() => {
-      result.current.show("Fast", 500);
+      result.current.show('Fast', 500);
     });
     await act(() => {
       jest.advanceTimersByTime(500);
     });
 
-    expect(result.current.toasts.map((toast) => toast.message)).toEqual(["Slow"]);
+    expect(result.current.toasts.map((toast) => toast.message)).toEqual([
+      'Slow',
+    ]);
 
     await act(() => {
       jest.advanceTimersByTime(500);

@@ -4,7 +4,13 @@ import type { TestInstance } from 'test-renderer';
 // Builds the minimal `touchHistory` shape React Native's PanResponder reads
 // to compute gestureState.dx/dy (see TouchHistoryMath.centroidDimension) -
 // this is plain data, not anything requiring a real native touch bridge.
-function touchHistoryAt(startX: number, startY: number, currentX: number, currentY: number, timestamp: number) {
+function touchHistoryAt(
+  startX: number,
+  startY: number,
+  currentX: number,
+  currentY: number,
+  timestamp: number,
+) {
   return {
     touchBank: [
       {
@@ -31,10 +37,20 @@ function touchHistoryAt(startX: number, startY: number, currentX: number, curren
 // wherever it started. Absolute touch coordinates don't matter here - only the
 // delta, since that's all gestureState.dx/dy (and therefore the component under
 // test) ever sees.
-export async function simulatePanResponderDrag(element: TestInstance, dx: number, dy: number) {
-  await fireEvent(element, 'responderGrant', { touchHistory: touchHistoryAt(0, 0, 0, 0, 0) });
-  await fireEvent(element, 'responderMove', { touchHistory: touchHistoryAt(0, 0, dx, dy, 100) });
-  await fireEvent(element, 'responderRelease', { touchHistory: touchHistoryAt(0, 0, dx, dy, 100) });
+export async function simulatePanResponderDrag(
+  element: TestInstance,
+  dx: number,
+  dy: number,
+) {
+  await fireEvent(element, 'responderGrant', {
+    touchHistory: touchHistoryAt(0, 0, 0, 0, 0),
+  });
+  await fireEvent(element, 'responderMove', {
+    touchHistory: touchHistoryAt(0, 0, dx, dy, 100),
+  });
+  await fireEvent(element, 'responderRelease', {
+    touchHistory: touchHistoryAt(0, 0, dx, dy, 100),
+  });
 }
 
 // A tap through the same PanResponder path (as opposed to a Pressable's onPress) -
@@ -48,13 +64,23 @@ export async function simulatePanResponderTap(element: TestInstance) {
 // that must stay in sync with the drag guide, which updates synchronously
 // on grant, not after release).
 export async function simulatePanResponderGrant(element: TestInstance) {
-  await fireEvent(element, 'responderGrant', { touchHistory: touchHistoryAt(0, 0, 0, 0, 0) });
+  await fireEvent(element, 'responderGrant', {
+    touchHistory: touchHistoryAt(0, 0, 0, 0, 0),
+  });
 }
 
 // Grant + move, with no release - for asserting on state that's only true
 // mid-drag (e.g. zoom/scale feedback), which a full release would already
 // have reverted by the time a post-drag assertion could observe it.
-export async function simulatePanResponderGrantAndMove(element: TestInstance, dx: number, dy: number) {
-  await fireEvent(element, 'responderGrant', { touchHistory: touchHistoryAt(0, 0, 0, 0, 0) });
-  await fireEvent(element, 'responderMove', { touchHistory: touchHistoryAt(0, 0, dx, dy, 100) });
+export async function simulatePanResponderGrantAndMove(
+  element: TestInstance,
+  dx: number,
+  dy: number,
+) {
+  await fireEvent(element, 'responderGrant', {
+    touchHistory: touchHistoryAt(0, 0, 0, 0, 0),
+  });
+  await fireEvent(element, 'responderMove', {
+    touchHistory: touchHistoryAt(0, 0, dx, dy, 100),
+  });
 }
