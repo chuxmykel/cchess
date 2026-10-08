@@ -1,13 +1,20 @@
 # Drag-and-drop: point-coordinate swipe from one square's center to another.
 # Coordinates below are in points (not screenshot pixels) and are specific
 # to the iPhone 18 Pro / iOS 27.0 layout they were captured from - recompute
-# from `maestro --device <UDID> hierarchy` bounds for any other device or
-# board state (see SKILL.md step 4). This example drags the d7 pawn to d5.
+# from `maestro --device <UDID> hierarchy` bounds for any other device,
+# board state, or after any change to Game/ChessBoard's layout (see
+# SKILL.md step 4) - these drift whenever the board's on-screen position
+# shifts, and they silently "complete" (deliver a swipe) without actually
+# grabbing the piece if they're stale, rather than erroring.
+#
+# This drags the d7 pawn to d5, which is only a legal move once it's
+# Black's turn - run tap-move.yaml (White's e2-e4) on the same board
+# first, or this move is rejected.
 #
 # Run with: maestro --device <UDID> test drag-move.yaml
 appId: host.exp.Exponent
 ---
 - swipe:
-    start: "175,361" # piece-d7 center
-    end: "175,462"   # square-d5 center
+    start: "175,311" # piece-d7 center
+    end: "175,412"   # square-d5 center
     duration: 600

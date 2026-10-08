@@ -1,6 +1,6 @@
 appId: host.exp.Exponent
 ---
-- runFlow: common/launch-fresh.yaml
+- runFlow: common/to-board.yaml
 - assertVisible:
     id: "chessboard"
 - assertVisible:

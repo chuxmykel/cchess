@@ -1,11 +1,11 @@
 appId: host.exp.Exponent
 ---
-# Guarantees a genuinely fresh app + a new game: clearState wipes Expo Go's
-# remembered project list (so openLink can't just resume an already-running
-# JS instance), and the dev-menu overlay only reappears on a true fresh
-# load - its presence is itself a signal this worked, which is why every
-# flow dismisses it explicitly rather than assuming it's absent.
-#
+# Guarantees a genuinely fresh app, landing on Home: clearState wipes Expo
+# Go's remembered project list (so openLink can't just resume an
+# already-running JS instance), and the dev-menu overlay only reappears on
+# a true fresh load - its presence is itself a signal this worked, which is
+# why every flow dismisses it explicitly rather than assuming it's absent.
+
 # Requires `expo start` already running locally on the default port 8081 -
 # see ../README.md.
 - launchApp:
@@ -17,10 +17,9 @@ appId: host.exp.Exponent
 - tapOn:
     id: "xmark"
 
-# Synchronization barrier: tapOn/swipe don't wait for the board to actually
-# be interactive, only for the dev-menu overlay's dismissal to register -
-# without this, flows that immediately start tapping squares race ahead of
-# the board settling and silently miss (this bit every flow below the first
-# one that didn't itself open with an assertion).
+# Synchronization barrier: tapOn/swipe don't wait for Home to actually be
+# interactive, only for Maestro's own target element to resolve - without
+# this, a flow that starts interacting immediately after this one races
+# ahead of Home settling and silently misses.
 - assertVisible:
-    id: "piece-e2"
+    id: "play-button"

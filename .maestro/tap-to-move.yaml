@@ -1,6 +1,6 @@
 appId: host.exp.Exponent
 ---
-- runFlow: common/launch-fresh.yaml
+- runFlow: common/to-board.yaml
 - tapOn:
     id: "square-e2"
 - tapOn:

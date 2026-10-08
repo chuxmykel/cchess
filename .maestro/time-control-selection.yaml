@@ -1,0 +1,26 @@
+appId: host.exp.Exponent
+---
+# Opening the time control dropdown and picking a different time control -
+# then confirming starting a game still works afterward, so a bad
+# selection can't silently break the "Start New Game" path.
+
+- runFlow: common/to-new-game.yaml
+
+- tapOn:
+    id: "time-control-trigger"
+# `+` is a regex quantifier to Maestro's id/text matchers, not a literal
+# character - every testID below with a "+" in it needs it escaped as
+# "\\+", or the match silently fails to find an element that's on screen.
+- assertVisible:
+    id: "time-control-option-bullet-1\\+0"
+
+- tapOn:
+    id: "time-control-option-bullet-1\\+0"
+# The sheet closes itself once a selection is made.
+- assertNotVisible:
+    id: "time-control-option-bullet-1\\+0"
+
+- tapOn:
+    id: "start-new-game-button"
+- assertVisible:
+    id: "piece-e2"

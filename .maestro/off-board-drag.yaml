@@ -1,10 +1,10 @@
 appId: host.exp.Exponent
 ---
 # Point coordinates are device-specific - see drag-and-drop.yaml.
-- runFlow: common/launch-fresh.yaml
+- runFlow: common/to-board.yaml
 - swipe:
-    start: "326,663" # piece-g1 (knight) center
-    end: "326,820"   # well below the board
+    start: "326,613" # piece-g1 (knight) center
+    end: "326,770"   # well below the board
     duration: 600
 - assertVisible:
     id: "piece-g1"

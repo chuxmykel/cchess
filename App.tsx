@@ -1,31 +1,29 @@
 import 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
-import { createDrawerNavigator } from '@react-navigation/drawer';
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import Home from './src/screens/Home';
+import HomeStack from "./src/screens/HomeStack";
 
-const {
-  Navigator,
-  Screen
-} = createDrawerNavigator();
+const { Navigator, Screen } = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <>
+    <SafeAreaProvider>
       <NavigationContainer>
         <Navigator
           id="RootNavigator"
-          initialRouteName="Home"
-          // screenOptions={{
-          // headerShown: false,
-          // }}
+          initialRouteName="HomeStack"
+          screenOptions={{
+            headerShown: false,
+          }}
         >
-          <Screen name="Home" component={Home} />
+          <Screen name="HomeStack" component={HomeStack} />
         </Navigator>
         <StatusBar style="auto" />
       </NavigationContainer>
-    </>
+    </SafeAreaProvider>
   );
 }
 

@@ -1,0 +1,11 @@
+appId: host.exp.Exponent
+---
+- runFlow: launch-fresh.yaml
+
+# Home's Play bar navigates to New Game.
+- tapOn:
+    id: "play-button"
+
+# Synchronization barrier - see the note in launch-fresh.yaml.
+- assertVisible:
+    id: "time-control-trigger"
