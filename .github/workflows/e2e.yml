@@ -1,0 +1,83 @@
+name: E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Maestro (iOS Simulator)
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Maestro install
+        run: maestro --version
+
+      - name: Start Expo and boot iOS Simulator
+        env:
+          CI: "true"
+        run: |
+          nohup npx expo start --ios > expo.log 2>&1 &
+          echo $! > expo.pid
+
+          echo "Waiting for Metro bundler to finish bundling..."
+          for i in $(seq 1 60); do
+            if grep -q "Bundled" expo.log; then
+              echo "Bundler ready."
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "Timed out waiting for Expo/Metro to bundle the app." >&2
+              cat expo.log
+              exit 1
+            fi
+            sleep 5
+          done
+          cat expo.log
+
+      - name: Run Maestro e2e flows
+        run: npm run test:e2e
+
+      - name: Stop Expo
+        if: always()
+        run: kill "$(cat expo.pid)" 2>/dev/null || true
+
+      - name: Upload Expo log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: expo-log
+          path: expo.log
+
+      - name: Upload Maestro test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-reports
+          path: ~/.maestro/tests
+          if-no-files-found: ignore
