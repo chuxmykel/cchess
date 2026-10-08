@@ -19,5 +19,9 @@ web-build/
 # Auto-generated, not hand-formatted
 package-lock.json
 
-# Owned by CI setup work happening in parallel - not this change's to format
-.github/
+# YAML files are DSL/config consumed by external tools (GitHub Actions,
+# Maestro) with their own exact-formatting gotchas (e.g. Maestro's
+# literal point-coordinate strings and `+`-escaping rules) - not ours to
+# reformat.
+*.yaml
+*.yml
