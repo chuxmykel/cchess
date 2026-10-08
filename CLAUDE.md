@@ -26,6 +26,11 @@ npm test -- -t "name of test or describe" # filter by test name
 
 npm run test:e2e         # full Maestro e2e suite (see .maestro/README.md)
 maestro test .maestro/tap-to-move.yaml    # a single Maestro flow, while iterating
+
+npm run lint             # eslint . (flat config: eslint-config-expo + prettier)
+npm run lint:fix
+npm run format           # prettier --write .
+npm run format:check
 ```
 
 Maestro e2e requires `expo start` already running (deep-links via
@@ -35,8 +40,12 @@ For driving the app end-to-end on this machine, use the `run-ios-simulator`
 skill (project specifics: testIDs, navigation path, known-good example flows)
 together with the global `ios-simulator-setup` skill (machine gotchas).
 
-There are no lint/typecheck npm scripts configured; `tsconfig.json` extends
-`expo/tsconfig.base` with `strict: false`.
+There's no typecheck npm script - run `npx tsc --noEmit` directly.
+`tsconfig.json` extends `expo/tsconfig.base` with `strict: false`.
+
+GitHub Actions runs lint, the Jest suite, and the Maestro e2e suite on every
+push to `main` and on every PR (`.github/workflows/{lint,test,e2e}.yml`,
+each a separate workflow file).
 
 ## Architecture
 
@@ -133,3 +142,14 @@ Two deliberately separate layers - don't let one re-do the other's job:
 - Board color themes are defined inline in `src/screens/Game/index.tsx`
   (`chess.com`, `lichess.org`, `monochrome`, `powderblue`, `test`) - only
   `test` is currently wired up as active.
+- `eslint-plugin-react-hooks`'s React-Compiler-readiness rules
+  (`react-hooks/refs`, `react-hooks/set-state-in-effect`) are kept at their
+  default `error` severity project-wide - this project doesn't have
+  `babel-plugin-react-compiler` installed, so they're purely predictive.
+  Where an existing pattern is intentionally safe under React's current,
+  non-compiled runtime (a lazy-inited `useRef(...).current`, an
+  always-latest ref written via `useLayoutEffect` instead of inline during
+  render), silence it with a short, scoped `eslint-disable` /
+  `eslint-disable-next-line` comment explaining why - not a blanket `warn`
+  override, and not a rewrite of working code. Revisit only if the React
+  Compiler is ever actually enabled.
