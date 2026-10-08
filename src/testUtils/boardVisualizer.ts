@@ -1,13 +1,13 @@
-import { Square } from "chess.js";
+import { Square } from 'chess.js';
 
-import { DomainPiece } from "../domain/types";
-import { UseChessGameResult } from "../hooks/useChessGame";
+import { DomainPiece } from '../domain/types';
+import { UseChessGameResult } from '../hooks/useChessGame';
 
-const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
+const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const RANKS = [8, 7, 6, 5, 4, 3, 2, 1];
 
 function symbolFor(piece: DomainPiece): string {
-  return piece.color === "w" ? piece.type.toUpperCase() : piece.type;
+  return piece.color === 'w' ? piece.type.toUpperCase() : piece.type;
 }
 
 // The `result` ref renderHook() returns - `const { result } = await
@@ -15,7 +15,7 @@ function symbolFor(piece: DomainPiece): string {
 // refreshed after every act(). Typed structurally rather than importing
 // RNTL's own RefObject, since that type isn't part of the library's public
 // exports (it's internal to render-hook.d.ts).
-type ChessGameResultRef = { current: Pick<UseChessGameResult, "pieces"> };
+type ChessGameResultRef = { current: Pick<UseChessGameResult, 'pieces'> };
 
 // Renders the `pieces` from a useChessGame renderHook() result as an 8x8
 // text grid - uppercase letters for white, lowercase for black, "." for an
@@ -30,17 +30,20 @@ export function renderBoardAsText(resultRef: ChessGameResultRef): string {
   const rows = RANKS.map((rank) => {
     const squares = FILES.map((file) => {
       const piece = bySquare.get(`${file}${rank}` as Square);
-      return piece ? symbolFor(piece) : ".";
+      return piece ? symbolFor(piece) : '.';
     });
-    return `${rank} ${squares.join(" ")} ${rank}`;
+    return `${rank} ${squares.join(' ')} ${rank}`;
   });
 
-  const fileLabels = `  ${FILES.join(" ")}`;
-  return [fileLabels, ...rows, fileLabels].join("\n");
+  const fileLabels = `  ${FILES.join(' ')}`;
+  return [fileLabels, ...rows, fileLabels].join('\n');
 }
 
 // Thin convenience wrapper for the common case of just wanting it on
 // stdout immediately, without a separate console.log call at the call site.
-export function printBoard(resultRef: ChessGameResultRef, message?: string): void {
+export function printBoard(
+  resultRef: ChessGameResultRef,
+  message?: string,
+): void {
   console.log(renderBoardAsText(resultRef), message || '');
 }

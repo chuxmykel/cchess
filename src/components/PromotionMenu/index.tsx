@@ -11,7 +11,12 @@ interface PromotionMenuProps {
 }
 
 // FIXME: Looks terrible for black and doesn't look too good for white either.
-const PromotionMenu: React.FC<PromotionMenuProps> = ({ boardWidth, pieceWidth, handlePromotion, promotingColor }) => {
+const PromotionMenu: React.FC<PromotionMenuProps> = ({
+  boardWidth,
+  pieceWidth,
+  handlePromotion,
+  promotingColor,
+}) => {
   return (
     <View
       style={{
@@ -23,51 +28,46 @@ const PromotionMenu: React.FC<PromotionMenuProps> = ({ boardWidth, pieceWidth, h
       <View
         style={{
           height: pieceWidth * 2,
-          backgroundColor: "#000",
+          backgroundColor: '#000',
           opacity: 1,
-          flexDirection: "row",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: 15
+          flexDirection: 'row',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 15,
         }}
       >
-        {
-          PROMOTION_PIECE_TYPES.map((type: PieceSymbol) => {
-            return (
-              <Pressable
-                onPress={() => {
-                  handlePromotion(type);
+        {PROMOTION_PIECE_TYPES.map((type: PieceSymbol) => {
+          return (
+            <Pressable
+              onPress={() => {
+                handlePromotion(type);
+              }}
+              key={type}
+              testID={`promote-${type}`}
+            >
+              <Image
+                source={PIECES[`${promotingColor}${type}`]}
+                style={{
+                  width: pieceWidth,
+                  height: pieceWidth,
                 }}
-                key={type}
-                testID={`promote-${type}`}
-              >
-                <Image
-                  source={PIECES[`${promotingColor}${type}`]}
-                  style={{
-                    width: pieceWidth,
-                    height: pieceWidth,
-
-                  }}
-                />
-              </Pressable>
-            );
-          })
-        }
+              />
+            </Pressable>
+          );
+        })}
       </View>
     </View>
-
   );
-}
+};
 
 export default PromotionMenu;
 
 const styles = StyleSheet.create({
   promotionMenu: {
-    position: "absolute",
-    backgroundColor: "#fff",
+    position: 'absolute',
+    backgroundColor: '#fff',
     zIndex: 100,
-    justifyContent: "center",
-    opacity: 0.8
-  }
+    justifyContent: 'center',
+    opacity: 0.8,
+  },
 });
-

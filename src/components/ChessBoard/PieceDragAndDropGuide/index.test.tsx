@@ -1,10 +1,10 @@
-import { render } from "@testing-library/react-native";
-import { Animated } from "react-native";
+import { render } from '@testing-library/react-native';
+import { Animated } from 'react-native';
 
-import PieceDragAndDropGuide from ".";
-import { getAnimatedValue } from "../../../testUtils/animatedValue";
+import PieceDragAndDropGuide from '.';
+import { getAnimatedValue } from '../../../testUtils/animatedValue';
 
-describe("PieceDragAndDropGuide", () => {
+describe('PieceDragAndDropGuide', () => {
   const boardWidth = 400;
   const squareWidth = 50;
 
@@ -14,7 +14,8 @@ describe("PieceDragAndDropGuide", () => {
       opacity: Animated.Value;
     }> = {},
   ) {
-    const position = overrides.position ?? new Animated.ValueXY({ x: 123, y: 45 });
+    const position =
+      overrides.position ?? new Animated.ValueXY({ x: 123, y: 45 });
     const opacity = overrides.opacity ?? new Animated.Value(0.7);
     const screen = await render(
       <PieceDragAndDropGuide
@@ -24,14 +25,14 @@ describe("PieceDragAndDropGuide", () => {
         opacity={opacity}
       />,
     );
-    return { guide: screen.getByTestId("drag-guide"), position, opacity };
+    return { guide: screen.getByTestId('drag-guide'), position, opacity };
   }
 
-  it("should exist", () => {
+  it('should exist', () => {
     expect(PieceDragAndDropGuide).toBeDefined();
   });
 
-  it("sizes the guide relative to a square, centered on the piece", async () => {
+  it('sizes the guide relative to a square, centered on the piece', async () => {
     const { guide } = await renderGuide();
 
     const diameter = squareWidth * 2.5;
@@ -42,7 +43,7 @@ describe("PieceDragAndDropGuide", () => {
     expect(guide.props.style.left).toBe(-(diameter / 3.5));
   });
 
-  it("wires opacity and position to the given Animated values", async () => {
+  it('wires opacity and position to the given Animated values', async () => {
     const { guide, position, opacity } = await renderGuide();
 
     expect(guide.props.style.opacity).toBe(getAnimatedValue(opacity));

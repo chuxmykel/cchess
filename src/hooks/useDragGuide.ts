@@ -1,9 +1,9 @@
-import { useCallback, useRef } from "react";
-import { Animated } from "react-native";
+import { useCallback, useRef } from 'react';
+import { Animated } from 'react-native';
 
-import { Position } from "../domain/types";
-import { getSquareFromXY } from "../domain/boardCoordinates";
-import { SQUARES } from "../constants";
+import { Position } from '../domain/types';
+import { getSquareFromXY } from '../domain/boardCoordinates';
+import { SQUARES } from '../constants';
 
 export type DragGuide = {
   position: Animated.ValueXY;
@@ -16,6 +16,12 @@ export type DragGuide = {
 // Owns the drag-and-drop guide's Animated state: where it sits and whether
 // it's visible, plus the handlers that drive both as a piece is dragged.
 export function useDragGuide(pieceWidth: number): DragGuide {
+  // `position`/`opacity` are created once via useRef and never
+  // reassigned - reading `.current` here is the standard "lazy-init a
+  // stable Animated value" idiom, not a bug. react-hooks/refs is a
+  // React-Compiler-readiness rule; nothing in this project runs the
+  // compiler today, so revisit this if that ever changes.
+  /* eslint-disable react-hooks/refs */
   const position = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -42,4 +48,5 @@ export function useDragGuide(pieceWidth: number): DragGuide {
   );
 
   return { position, opacity, show, hide, updatePosition };
+  /* eslint-enable react-hooks/refs */
 }

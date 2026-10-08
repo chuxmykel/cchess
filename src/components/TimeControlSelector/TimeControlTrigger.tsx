@@ -7,26 +7,33 @@ import {
   ViewStyle,
   TextStyle,
   StyleSheet,
-} from "react-native";
+} from 'react-native';
 
-import GameTypeIcon from "../GameTypeIcon";
-import { tintColor } from "../../utils/color";
-import { useCaretRotation } from "../../hooks/useCaretRotation";
-import { TimeControl, GAME_TYPE_LABELS, GAME_TYPE_COLORS } from "../../constants/timeControls";
+import GameTypeIcon from '../GameTypeIcon';
+import { tintColor } from '../../utils/color';
+import { useCaretRotation } from '../../hooks/useCaretRotation';
+import {
+  TimeControl,
+  GAME_TYPE_LABELS,
+  GAME_TYPE_COLORS,
+} from '../../constants/timeControls';
 
 export type TriggerStyleVariant =
-  | "tintedAccentBar"
-  | "tintedOutline"
-  | "accentGlow"
-  | "boldTint"
-  | "tintedUnderline";
+  | 'tintedAccentBar'
+  | 'tintedOutline'
+  | 'accentGlow'
+  | 'boldTint'
+  | 'tintedUnderline';
 
-export const TRIGGER_STYLE_VARIANTS: { id: TriggerStyleVariant; label: string }[] = [
-  { id: "tintedAccentBar", label: "Tinted Bar" },
-  { id: "tintedOutline", label: "Tinted Outline" },
-  { id: "accentGlow", label: "Accent Glow" },
-  { id: "boldTint", label: "Bold Tint" },
-  { id: "tintedUnderline", label: "Tinted Underline" },
+export const TRIGGER_STYLE_VARIANTS: {
+  id: TriggerStyleVariant;
+  label: string;
+}[] = [
+  { id: 'tintedAccentBar', label: 'Tinted Bar' },
+  { id: 'tintedOutline', label: 'Tinted Outline' },
+  { id: 'accentGlow', label: 'Accent Glow' },
+  { id: 'boldTint', label: 'Bold Tint' },
+  { id: 'tintedUnderline', label: 'Tinted Underline' },
 ];
 
 interface TimeControlTriggerProps {
@@ -41,7 +48,7 @@ const TimeControlTrigger: React.FC<TimeControlTriggerProps> = ({
   selected,
   sheetOpen,
   onPress,
-  triggerStyleVariant = "tintedAccentBar",
+  triggerStyleVariant = 'tintedAccentBar',
   showTypeName = true,
 }) => {
   const { rotateTransform, pulseDipOpacity } = useCaretRotation(sheetOpen);
@@ -63,7 +70,7 @@ const TimeControlTrigger: React.FC<TimeControlTriggerProps> = ({
       </Text>
       <View style={styles.caretContainer}>
         <Animated.Text style={[styles.caret, rotateTransform, pulseDipOpacity]}>
-          {"⏷"}
+          {'⏷'}
         </Animated.Text>
       </View>
     </Pressable>
@@ -118,7 +125,7 @@ const TRIGGER_VARIANT_STYLES: Record<
       borderLeftWidth: 6,
       borderLeftColor: accent,
     },
-    label: { color: accent, fontWeight: "700" },
+    label: { color: accent, fontWeight: '700' },
   }),
   tintedUnderline: (accent) => ({
     container: {
@@ -126,7 +133,7 @@ const TRIGGER_VARIANT_STYLES: Record<
       borderRadius: 14,
       borderBottomWidth: 3,
       borderBottomColor: accent,
-      shadowColor: "#000",
+      shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.08,
       shadowRadius: 6,
@@ -138,28 +145,28 @@ const TRIGGER_VARIANT_STYLES: Record<
 
 const styles = StyleSheet.create({
   trigger: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 16,
     paddingHorizontal: 16,
     gap: 8,
   },
   triggerLabel: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#222",
+    fontWeight: '600',
+    color: '#222',
   },
   caretContainer: {
-    position: "absolute",
+    position: 'absolute',
     right: 16,
     top: 0,
     bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   caret: {
     fontSize: 20,
-    color: "#888",
+    color: '#888',
   },
 });

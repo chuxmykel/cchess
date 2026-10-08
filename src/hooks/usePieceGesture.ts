@@ -1,11 +1,11 @@
-import { useRef } from "react";
-import { Animated, PanResponder, PanResponderGestureState } from "react-native";
-import { Square } from "chess.js";
+import { useRef } from 'react';
+import { Animated, PanResponder, PanResponderGestureState } from 'react-native';
+import { Square } from 'chess.js';
 
-import { Position } from "../domain/types";
-import { getSquareFromXY } from "../domain/boardCoordinates";
-import { getNewPositionFromGesture } from "../utils/animation";
-import { TAP_MOVEMENT_THRESHOLD } from "../constants";
+import { Position } from '../domain/types';
+import { getSquareFromXY } from '../domain/boardCoordinates';
+import { getNewPositionFromGesture } from '../utils/animation';
+import { TAP_MOVEMENT_THRESHOLD } from '../constants';
 
 export type PieceGestureInput = {
   width: number;
@@ -21,7 +21,7 @@ export type PieceGestureInput = {
 };
 
 export type PieceGesture = {
-  panHandlers: ReturnType<typeof PanResponder.create>["panHandlers"];
+  panHandlers: ReturnType<typeof PanResponder.create>['panHandlers'];
   scale: Animated.Value;
   zIndex: Animated.Value;
 };
@@ -53,6 +53,17 @@ export function usePieceGesture(
   props: PieceGestureInput,
   square: Square,
 ): PieceGesture {
+  // Everything below reads/writes `.current` synchronously during render:
+  // `scale`/`zIndex` are lazy-inited once and never reassigned;
+  // `latestPropsRef` is deliberately overwritten every render so the
+  // PanResponder's handlers (created once, see below) always see fresh
+  // props without needing to be recreated mid-gesture; `panResponderRef`
+  // follows React's own documented lazy-ref-init pattern
+  // (https://react.dev/reference/react/useRef#avoiding-recreating-the-ref-contents).
+  // react-hooks/refs is a React-Compiler-readiness rule, not a
+  // correctness bug under React's current (non-compiled) runtime -
+  // revisit this if this project ever turns the compiler on.
+  /* eslint-disable react-hooks/refs */
   const scale = useRef(new Animated.Value(1)).current;
   const zIndex = useRef(new Animated.Value(0)).current;
 
@@ -143,4 +154,5 @@ export function usePieceGesture(
   }
 
   return { panHandlers: panResponderRef.current.panHandlers, scale, zIndex };
+  /* eslint-enable react-hooks/refs */
 }

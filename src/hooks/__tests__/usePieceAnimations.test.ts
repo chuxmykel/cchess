@@ -1,16 +1,16 @@
-import { renderHook } from "@testing-library/react-native";
+import { renderHook } from '@testing-library/react-native';
 
-import { usePieceAnimations } from "../usePieceAnimations";
-import { DomainPiece } from "../../domain/types";
+import { usePieceAnimations } from '../usePieceAnimations';
+import { DomainPiece } from '../../domain/types';
 
-describe("usePieceAnimations", () => {
+describe('usePieceAnimations', () => {
   const pieceWidth = 50;
   const twoPieces: DomainPiece[] = [
-    { square: "e2", type: "p", color: "w" },
-    { square: "e7", type: "p", color: "b" },
+    { square: 'e2', type: 'p', color: 'w' },
+    { square: 'e7', type: 'p', color: 'b' },
   ];
 
-  it("returns the same array reference across re-renders when `pieces` itself is unchanged", async () => {
+  it('returns the same array reference across re-renders when `pieces` itself is unchanged', async () => {
     // Regression guard for the fix to the drag-guide hide delay: useChessGame
     // only ever produces a new `pieces` array on an actually-applied move, so
     // a re-render triggered by anything else (e.g. selecting a square) should
@@ -18,7 +18,8 @@ describe("usePieceAnimations", () => {
     // array here, even with identical contents, would give Piece's
     // React.memo nothing to bail out on, forcing every piece to re-render.
     const { result, rerender } = await renderHook(
-      (props: { pieces: DomainPiece[] }) => usePieceAnimations(props.pieces, null, pieceWidth),
+      (props: { pieces: DomainPiece[] }) =>
+        usePieceAnimations(props.pieces, null, pieceWidth),
       { initialProps: { pieces: twoPieces } },
     );
 
@@ -28,9 +29,10 @@ describe("usePieceAnimations", () => {
     expect(result.current).toBe(firstResult);
   });
 
-  it("returns a new array when `pieces` is a genuinely new reference", async () => {
+  it('returns a new array when `pieces` is a genuinely new reference', async () => {
     const { result, rerender } = await renderHook(
-      (props: { pieces: DomainPiece[] }) => usePieceAnimations(props.pieces, null, pieceWidth),
+      (props: { pieces: DomainPiece[] }) =>
+        usePieceAnimations(props.pieces, null, pieceWidth),
       { initialProps: { pieces: twoPieces } },
     );
 
@@ -46,7 +48,8 @@ describe("usePieceAnimations", () => {
 
   it("keeps each individual piece's view referentially stable across an unrelated re-render", async () => {
     const { result, rerender } = await renderHook(
-      (props: { pieces: DomainPiece[] }) => usePieceAnimations(props.pieces, null, pieceWidth),
+      (props: { pieces: DomainPiece[] }) =>
+        usePieceAnimations(props.pieces, null, pieceWidth),
       { initialProps: { pieces: twoPieces } },
     );
 

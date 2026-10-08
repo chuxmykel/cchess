@@ -1,34 +1,38 @@
-import { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import Button from "../../components/Button";
-import TimeControlSelector from "../../components/TimeControlSelector";
-import Toast from "../../components/Toast";
-import { useToast } from "../../hooks/useToast";
-import { TimeControl, DEFAULT_TIME_CONTROL } from "../../constants/timeControls";
+import Button from '../../components/Button';
+import TimeControlSelector from '../../components/TimeControlSelector';
+import Toast from '../../components/Toast';
+import { useToast } from '../../hooks/useToast';
+import {
+  TimeControl,
+  DEFAULT_TIME_CONTROL,
+} from '../../constants/timeControls';
 
 interface NewGameProps {
   navigation: {
-    navigate: (route: string) => any,
-  },
-};
+    navigate: (route: string) => any;
+  };
+}
 
 const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const [timeControl, setTimeControl] = useState<TimeControl>(DEFAULT_TIME_CONTROL);
+  const [timeControl, setTimeControl] =
+    useState<TimeControl>(DEFAULT_TIME_CONTROL);
   const toast = useToast();
 
   function startNewGame() {
-    navigation.navigate("Game");
+    navigation.navigate('Game');
   }
 
   function challengeFriend() {
-    toast.show("Coming soon");
+    toast.show('Coming soon');
   }
 
   function playStockfish() {
-    toast.show("Coming soon");
+    toast.show('Coming soon');
   }
 
   return (
@@ -53,7 +57,7 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
             onDisabledPress={challengeFriend}
             appearsDisabled
             variant="outline"
-            icon={"\u{1F91D}"}
+            icon={'\u{1F91D}'}
             style={styles.secondaryButtonSpacing}
             testID="challenge-friend-button"
           />
@@ -62,7 +66,7 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
             onDisabledPress={playStockfish}
             appearsDisabled
             variant="outline"
-            icon={"\u{1F916}"}
+            icon={'\u{1F916}'}
             testID="play-stockfish-button"
           />
         </View>
@@ -70,10 +74,9 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
       <Toast toasts={toast.toasts} />
     </View>
   );
-}
+};
 
 export default NewGame;
-
 
 const styles = StyleSheet.create({
   screen: {
@@ -85,14 +88,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
-    fontWeight: "700",
+    fontWeight: '700',
     marginBottom: 28,
   },
   sectionLabel: {
     fontSize: 13,
-    fontWeight: "600",
-    color: "#888",
-    textTransform: "uppercase",
+    fontWeight: '600',
+    color: '#888',
+    textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 12,
   },

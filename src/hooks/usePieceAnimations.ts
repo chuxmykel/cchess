@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
-import { Animated } from "react-native";
-import { Color, PieceSymbol, Square } from "chess.js";
+import { useEffect, useRef } from 'react';
+import { Animated } from 'react-native';
+import { Color, PieceSymbol, Square } from 'chess.js';
 
-import { AppliedMove, DomainPiece } from "../domain/types";
-import { getXYFromSquare } from "../domain/boardCoordinates";
-import { generatePieceId } from "../utils/animation";
+import { AppliedMove, DomainPiece } from '../domain/types';
+import { getXYFromSquare } from '../domain/boardCoordinates';
+import { generatePieceId } from '../utils/animation';
 
 const ANIMATION_DURATION = 50;
 
@@ -34,6 +34,21 @@ export function usePieceAnimations(
   lastMove: AppliedMove | null,
   pieceWidth: number,
 ): AnimatedPieceView[] {
+  // This hook keeps its piece/animation bookkeeping in mutable refs that
+  // are read and written synchronously during render, not inside an
+  // effect, so it can incrementally diff `pieces`/`lastMove` against the
+  // previous render's cached result instead of recomputing it from
+  // scratch every time. None of these refs ever drive what gets rendered
+  // on their own - they're deliberately invisible to React's reactivity,
+  // the same way `useRef` is meant to be used. This is exactly what
+  // react-hooks/refs is warning about, but it's a React-Compiler-readiness
+  // rule, not a correctness bug under React's current (non-compiled)
+  // runtime: nothing here actually uses the compiler. Revisit this hook
+  // specifically if this project ever turns the compiler on - until then,
+  // rewriting it to avoid ref access during render would mean moving this
+  // bookkeeping into real state and re-deriving it with useMemo, which
+  // risks regressing piece-move animations for no present benefit.
+  /* eslint-disable react-hooks/refs */
   const pieceIdBySquare = useRef(new Map<Square, string>());
   const entryById = useRef(new Map<string, PieceEntry>());
   const initialized = useRef(false);
@@ -49,12 +64,18 @@ export function usePieceAnimations(
       id: generatePieceId(piece.color, piece.type, piece.square),
       square: piece.square,
       spriteId: `${piece.color}${piece.type}`,
-      animatedPosition: new Animated.ValueXY(getXYFromSquare(piece.square, pieceWidth)),
+      animatedPosition: new Animated.ValueXY(
+        getXYFromSquare(piece.square, pieceWidth),
+      ),
       opacity: new Animated.Value(1),
     };
   }
 
-  function movePiece(from: Square, to: Square, animations: { pieceEntry: PieceEntry; toSquare: Square }[]) {
+  function movePiece(
+    from: Square,
+    to: Square,
+    animations: { pieceEntry: PieceEntry; toSquare: Square }[],
+  ) {
     const pieceId = pieceIdBySquare.current.get(from);
     const pieceEntry = pieceId && entryById.current.get(pieceId);
     if (!pieceId || !pieceEntry) return;
@@ -71,7 +92,9 @@ export function usePieceAnimations(
     entryById.current.delete(pieceId);
   }
 
-  function applyMove(move: AppliedMove): { pieceEntry: PieceEntry; toSquare: Square }[] {
+  function applyMove(
+    move: AppliedMove,
+  ): { pieceEntry: PieceEntry; toSquare: Square }[] {
     const animations: { pieceEntry: PieceEntry; toSquare: Square }[] = [];
 
     if (move.isCapture && move.capturedSquare) {
@@ -134,4 +157,5 @@ export function usePieceAnimations(
     });
   }
   return prevResult.current;
+  /* eslint-enable react-hooks/refs */
 }

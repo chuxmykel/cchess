@@ -1,10 +1,4 @@
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 const Square = ({ color, textColor, rank, file, onPress = () => {} }) => (
   <Pressable
@@ -15,30 +9,28 @@ const Square = ({ color, textColor, rank, file, onPress = () => {} }) => (
       ...styles.square,
     }}
   >
-    <View
-      style={styles.coordinateContainer}
-    >
+    <View style={styles.coordinateContainer}>
       <View>
         <Text
           style={{
             ...styles.coordinateText,
             color: textColor,
-            display: `${file === "a" ? "flex" : "none"}`
+            display: `${file === 'a' ? 'flex' : 'none'}`,
           }}
         >
           {rank}
-        </Text >
+        </Text>
       </View>
       <View style={styles.file}>
         <Text
           style={{
             ...styles.coordinateText,
             color: textColor,
-            display: `${rank === 1 ? "flex" : "none"}`
+            display: `${rank === 1 ? 'flex' : 'none'}`,
           }}
         >
           {file}
-        </Text >
+        </Text>
       </View>
     </View>
   </Pressable>
@@ -53,13 +45,12 @@ const styles = StyleSheet.create({
   coordinateContainer: {
     padding: 4,
     flex: 1,
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
   },
   coordinateText: {
     fontSize: 12,
   },
   file: {
-    alignItems: "flex-end"
-  }
+    alignItems: 'flex-end',
+  },
 });
-

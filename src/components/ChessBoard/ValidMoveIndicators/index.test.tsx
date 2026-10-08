@@ -1,26 +1,29 @@
-import { render } from "@testing-library/react-native";
-import { Animated } from "react-native";
-import { Square } from "chess.js";
+import { render } from '@testing-library/react-native';
+import { Animated } from 'react-native';
+import { Square } from 'chess.js';
 
-import ValidMoveIndicators from ".";
-import { SQUARES } from "../../../constants";
-import { getAnimatedValue } from "../../../testUtils/animatedValue";
+import ValidMoveIndicators from '.';
+import { SQUARES } from '../../../constants';
+import { getAnimatedValue } from '../../../testUtils/animatedValue';
 
-describe("ValidMoveIndicators", () => {
+describe('ValidMoveIndicators', () => {
   const pieceWidth = 50;
 
   function buildOpacities(): Record<Square, Animated.Value> {
-    return SQUARES.reduce((acc, square) => {
-      acc[square] = new Animated.Value(0);
-      return acc;
-    }, {} as Record<Square, Animated.Value>);
+    return SQUARES.reduce(
+      (acc, square) => {
+        acc[square] = new Animated.Value(0);
+        return acc;
+      },
+      {} as Record<Square, Animated.Value>,
+    );
   }
 
-  it("should exist", () => {
+  it('should exist', () => {
     expect(ValidMoveIndicators).toBeDefined();
   });
 
-  it("renders one indicator per square on the board", async () => {
+  it('renders one indicator per square on the board', async () => {
     const opacities = buildOpacities();
     const screen = await render(
       <ValidMoveIndicators pieceWidth={pieceWidth} opacities={opacities} />,
@@ -36,20 +39,16 @@ describe("ValidMoveIndicators", () => {
       <ValidMoveIndicators pieceWidth={pieceWidth} opacities={opacities} />,
     );
 
-    expect(screen.getByTestId("valid-move-e4").props.style.opacity).toBe(
+    expect(screen.getByTestId('valid-move-e4').props.style.opacity).toBe(
       getAnimatedValue(opacities.e4),
     );
-    expect(screen.getByTestId("valid-move-e4").props.style.opacity).toBe(
-      1,
-    );
-    expect(screen.getByTestId("valid-move-a1").props.style.opacity).toBe(
+    expect(screen.getByTestId('valid-move-e4').props.style.opacity).toBe(1);
+    expect(screen.getByTestId('valid-move-a1').props.style.opacity).toBe(
       getAnimatedValue(opacities.a1),
     );
-    expect(screen.getByTestId("valid-move-a1").props.style.opacity).toBe(
-      0,
-    );
-    expect(screen.getByTestId("valid-move-e4").props.style.opacity).not.toBe(
-      screen.getByTestId("valid-move-a1").props.style.opacity,
+    expect(screen.getByTestId('valid-move-a1').props.style.opacity).toBe(0);
+    expect(screen.getByTestId('valid-move-e4').props.style.opacity).not.toBe(
+      screen.getByTestId('valid-move-a1').props.style.opacity,
     );
   });
 });

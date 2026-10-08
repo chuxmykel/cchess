@@ -1,9 +1,9 @@
-import { Square } from "chess.js";
+import { Square } from 'chess.js';
 
-import { Position } from "../../../domain/types";
-import { getXYFromSquare } from "../../../domain/boardCoordinates";
-import { AnimatedPieceView } from "../../../hooks/usePieceAnimations";
-import Piece from "./Piece";
+import { Position } from '../../../domain/types';
+import { getXYFromSquare } from '../../../domain/boardCoordinates';
+import { AnimatedPieceView } from '../../../hooks/usePieceAnimations';
+import Piece from './Piece';
 
 interface PiecesProps {
   pieces: AnimatedPieceView[];

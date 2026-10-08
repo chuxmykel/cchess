@@ -1,6 +1,6 @@
-import { Text } from "react-native";
+import { Text } from 'react-native';
 
-import { GameType } from "../../domain/types";
+import { GameType } from '../../domain/types';
 
 interface GameTypeIconProps {
   type: GameType;
@@ -14,13 +14,16 @@ const DEFAULT_SIZE = 18;
 // transparent background, single color so it can be tinted - SVG
 // preferred, otherwise PNG at @1x/@2x/@3x.
 const GAME_TYPE_GLYPHS: Record<GameType, string> = {
-  bullet: "⚡", // lightning bolt
-  blitz: "\u{1F525}", // fire
-  rapid: "\u{1F430}", // rabbit
-  classical: "♟", // chess pawn
+  bullet: '⚡', // lightning bolt
+  blitz: '\u{1F525}', // fire
+  rapid: '\u{1F430}', // rabbit
+  classical: '♟', // chess pawn
 };
 
-const GameTypeIcon: React.FC<GameTypeIconProps> = ({ type, size = DEFAULT_SIZE }) => {
+const GameTypeIcon: React.FC<GameTypeIconProps> = ({
+  type,
+  size = DEFAULT_SIZE,
+}) => {
   return <Text style={{ fontSize: size }}>{GAME_TYPE_GLYPHS[type]}</Text>;
 };
 

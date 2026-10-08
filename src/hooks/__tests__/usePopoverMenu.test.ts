@@ -1,11 +1,11 @@
-jest.mock("react-native/Libraries/Utilities/useWindowDimensions", () => ({
+import { act, renderHook } from '@testing-library/react-native';
+
+import { usePopoverMenu } from '../usePopoverMenu';
+
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
   default: () => ({ width: 400, height: 800, scale: 1, fontScale: 1 }),
 }));
-
-import { act, renderHook } from "@testing-library/react-native";
-
-import { usePopoverMenu } from "../usePopoverMenu";
 
 const MENU_WIDTH = 160;
 
@@ -17,8 +17,8 @@ function fakeTrigger(x: number, y: number, width: number, height: number) {
   } as any;
 }
 
-describe("usePopoverMenu", () => {
-  it("starts closed with no position", async () => {
+describe('usePopoverMenu', () => {
+  it('starts closed with no position', async () => {
     const { result } = await renderHook(() => usePopoverMenu(MENU_WIDTH));
 
     expect(result.current.visible).toBe(false);
@@ -61,7 +61,7 @@ describe("usePopoverMenu", () => {
     expect(result.current.position?.left).toBe(8);
   });
 
-  it("close hides the menu but keeps its last position", async () => {
+  it('close hides the menu but keeps its last position', async () => {
     const { result } = await renderHook(() => usePopoverMenu(MENU_WIDTH));
     result.current.triggerRef.current = fakeTrigger(300, 100, 20, 20);
 

@@ -1,9 +1,9 @@
-import { Animated } from "react-native";
-import { Square } from "chess.js";
+import { Animated } from 'react-native';
+import { Square } from 'chess.js';
 
-import { SQUARES } from "../../../constants";
-import { getXYFromSquare } from "../../../domain/boardCoordinates";
-import ValidMoveIndicator from "./ValidMoveIndicator";
+import { SQUARES } from '../../../constants';
+import { getXYFromSquare } from '../../../domain/boardCoordinates';
+import ValidMoveIndicator from './ValidMoveIndicator';
 
 interface ValidMoveIndicatorsProps {
   pieceWidth: number;

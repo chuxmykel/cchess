@@ -1,7 +1,7 @@
-import { View, Pressable, Image, StyleSheet } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { View, Pressable, Image, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import Avatar from "../Avatar";
+import Avatar from '../Avatar';
 
 interface HomeHeaderProps {
   onAvatarPress: () => void;
@@ -13,7 +13,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({ onAvatarPress }) => {
   return (
     <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
       <Image
-        source={require("../../../assets/icon.png")} // FIXME: Change to actual logo when ready.
+        source={require('../../../assets/icon.png')} // FIXME: Change to actual logo when ready.
         style={styles.logo}
       />
       <Pressable onPress={onAvatarPress} testID="avatar-button">
@@ -27,9 +27,9 @@ export default HomeHeader;
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 8,
   },

@@ -1,30 +1,30 @@
-import { View, StyleSheet, useWindowDimensions } from "react-native";
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 
-import { NUMBER_OF_ROWS } from "../../constants";
-import Chessboard from "../../components/ChessBoard";
-import PromotionMenu from "../../components/PromotionMenu";
-import { ChessGameProvider, useChessGameContext } from "./ChessGameContext";
+import { NUMBER_OF_ROWS } from '../../constants';
+import Chessboard from '../../components/ChessBoard';
+import PromotionMenu from '../../components/PromotionMenu';
+import { ChessGameProvider, useChessGameContext } from './ChessGameContext';
 
 const themes = {
-  "chess.com": {
-    dark: "#769656",
-    light: "#eeeed2",
+  'chess.com': {
+    dark: '#769656',
+    light: '#eeeed2',
   },
-  "lichess.org": {
-    dark: "#b58863",
-    light: "#f1d9b4",
+  'lichess.org': {
+    dark: '#b58863',
+    light: '#f1d9b4',
   },
   monochrome: {
-    dark: "#888",
-    light: "#fff",
+    dark: '#888',
+    light: '#fff',
   },
   powderblue: {
-    light: "powderblue",
-    dark: "grey",
+    light: 'powderblue',
+    dark: 'grey',
   },
   test: {
-    light: "#d0dff4",
-    dark: "#4b648a",
+    light: '#d0dff4',
+    dark: '#4b648a',
   },
 };
 
@@ -64,7 +64,7 @@ export default Game;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

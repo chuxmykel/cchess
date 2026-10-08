@@ -1,7 +1,7 @@
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import HomeTabStack from "../HomeTabStack";
-import Profile from "../Profile";
+import HomeTabStack from '../HomeTabStack';
+import Profile from '../Profile';
 
 const { Navigator, Screen } = createBottomTabNavigator();
 
@@ -23,12 +23,12 @@ const HomeTabs: React.FC = () => {
         <Screen
           name="HomeTabStack"
           component={HomeTabStack}
-          options={{ tabBarLabel: "Home" }}
+          options={{ tabBarLabel: 'Home' }}
         />
         <Screen name="Profile" component={Profile} />
       </Navigator>
     </>
   );
-}
+};
 
 export default HomeTabs;

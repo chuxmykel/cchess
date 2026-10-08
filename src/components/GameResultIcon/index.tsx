@@ -1,6 +1,6 @@
-import { Text } from "react-native";
+import { Text } from 'react-native';
 
-import { GameResult } from "../../domain/types";
+import { GameResult } from '../../domain/types';
 
 interface GameResultIconProps {
   result: GameResult;
@@ -10,9 +10,9 @@ interface GameResultIconProps {
 const DEFAULT_SIZE = 16;
 
 const RESULT_GLYPHS: Record<GameResult, { glyph: string; color: string }> = {
-  win: { glyph: "✓", color: "#4caf50" }, // check mark
-  loss: { glyph: "✕", color: "#e53935" }, // multiplication x
-  draw: { glyph: "=", color: "#9e9e9e" },
+  win: { glyph: '✓', color: '#4caf50' }, // check mark
+  loss: { glyph: '✕', color: '#e53935' }, // multiplication x
+  draw: { glyph: '=', color: '#9e9e9e' },
 };
 
 const GameResultIcon: React.FC<GameResultIconProps> = ({
@@ -20,7 +20,9 @@ const GameResultIcon: React.FC<GameResultIconProps> = ({
   size = DEFAULT_SIZE,
 }) => {
   const { glyph, color } = RESULT_GLYPHS[result];
-  return <Text style={{ fontSize: size, color, fontWeight: "700" }}>{glyph}</Text>;
+  return (
+    <Text style={{ fontSize: size, color, fontWeight: '700' }}>{glyph}</Text>
+  );
 };
 
 export default GameResultIcon;

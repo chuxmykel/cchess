@@ -3,13 +3,16 @@ import { Animated } from 'react-native';
 
 import Piece from '.';
 import { TAP_MOVEMENT_THRESHOLD } from '../../../../constants';
-import { simulatePanResponderDrag, simulatePanResponderTap } from '../../../../testUtils/panResponderGesture';
-import { getAnimatedValue } from "../../../../testUtils/animatedValue";
-import { getXYFromSquare } from "../../../../domain/boardCoordinates";
+import {
+  simulatePanResponderDrag,
+  simulatePanResponderTap,
+} from '../../../../testUtils/panResponderGesture';
+import { getAnimatedValue } from '../../../../testUtils/animatedValue';
+import { getXYFromSquare } from '../../../../domain/boardCoordinates';
 
-describe("Piece", () => {
+describe('Piece', () => {
   const width = 50;
-  const position = getXYFromSquare("e2", width);
+  const position = getXYFromSquare('e2', width);
 
   async function renderPiece(
     overrides: Partial<{
@@ -41,11 +44,18 @@ describe("Piece", () => {
         hideDragGuide={jest.fn()}
       />,
     );
-    const piece = screen.getByTestId("piece-e2");
-    return { piece, onTap, onDragRelease, onDragStart, onDrag, animatedPosition };
+    const piece = screen.getByTestId('piece-e2');
+    return {
+      piece,
+      onTap,
+      onDragRelease,
+      onDragStart,
+      onDrag,
+      animatedPosition,
+    };
   }
 
-  it("should exist", () => {
+  it('should exist', () => {
     expect(Piece).toBeDefined();
   });
 
@@ -56,10 +66,10 @@ describe("Piece", () => {
     // Drag up by 2 squares (width 50 * 2 = 100px) - well past the threshold.
     await simulatePanResponderDrag(piece, 0, -(tapThreshold * 2));
 
-    expect(onDragRelease).toHaveBeenCalledWith("e2", "e4");
+    expect(onDragRelease).toHaveBeenCalledWith('e2', 'e4');
   });
 
-  it("should not call onTap on touch-down for a gesture that turns into a drag", async () => {
+  it('should not call onTap on touch-down for a gesture that turns into a drag', async () => {
     const { piece, onTap } = await renderPiece();
 
     await simulatePanResponderDrag(piece, 0, -100);
@@ -67,12 +77,12 @@ describe("Piece", () => {
     expect(onTap).not.toHaveBeenCalled();
   });
 
-  it("should call onDragStart on touch-down, instead of onTap", async () => {
+  it('should call onDragStart on touch-down, instead of onTap', async () => {
     const { piece, onDragStart } = await renderPiece();
 
     await simulatePanResponderDrag(piece, 0, -100);
 
-    expect(onDragStart).toHaveBeenCalledWith("e2");
+    expect(onDragStart).toHaveBeenCalledWith('e2');
   });
 
   it("should not call onDragStart on touch-down for a disabled (opponent's) piece", async () => {
@@ -83,12 +93,12 @@ describe("Piece", () => {
     expect(onDragStart).not.toHaveBeenCalled();
   });
 
-  it("should call onTap instead of onDragRelease when movement stays under the tap threshold", async () => {
+  it('should call onTap instead of onDragRelease when movement stays under the tap threshold', async () => {
     const { piece, onDragRelease, onTap } = await renderPiece();
 
     await simulatePanResponderTap(piece);
 
-    expect(onTap).toHaveBeenCalledWith("e2");
+    expect(onTap).toHaveBeenCalledWith('e2');
     expect(onDragRelease).not.toHaveBeenCalled();
   });
 
@@ -99,7 +109,7 @@ describe("Piece", () => {
 
     await simulatePanResponderTap(piece);
 
-    expect(onTap).toHaveBeenCalledWith("e2");
+    expect(onTap).toHaveBeenCalledWith('e2');
     expect(onDragRelease).not.toHaveBeenCalled();
   });
 
@@ -117,10 +127,10 @@ describe("Piece", () => {
 
     await simulatePanResponderDrag(piece, 0, -100);
 
-    expect(onDragRelease).toHaveBeenCalledWith("e2", "e4");
+    expect(onDragRelease).toHaveBeenCalledWith('e2', 'e4');
   });
 
-  it("movement right at the threshold boundary counts as a drag, not a tap", async () => {
+  it('movement right at the threshold boundary counts as a drag, not a tap', async () => {
     const { piece, onDragRelease, onTap } = await renderPiece();
 
     await simulatePanResponderDrag(piece, TAP_MOVEMENT_THRESHOLD, 0);
@@ -129,12 +139,12 @@ describe("Piece", () => {
     expect(onTap).not.toHaveBeenCalled();
   });
 
-  it("should snap the piece back to its own square when incidental jitter during a tap stays under the threshold", async () => {
+  it('should snap the piece back to its own square when incidental jitter during a tap stays under the threshold', async () => {
     const { piece, animatedPosition, onTap } = await renderPiece();
 
     await simulatePanResponderDrag(piece, 5, -5);
 
-    expect(onTap).toHaveBeenCalledWith("e2");
+    expect(onTap).toHaveBeenCalledWith('e2');
     expect(getAnimatedValue(animatedPosition.x)).toBe(position.x);
     expect(getAnimatedValue(animatedPosition.y)).toBe(position.y);
   });
