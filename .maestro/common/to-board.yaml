@@ -1,0 +1,9 @@
+appId: host.exp.Exponent
+---
+- runFlow: to-new-game.yaml
+
+- tapOn:
+    id: "start-new-game-button"
+
+- assertVisible:
+    id: "piece-e2"

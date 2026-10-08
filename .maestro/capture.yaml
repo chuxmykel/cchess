@@ -5,7 +5,7 @@ appId: host.exp.Exponent
 # a real device; the rules themselves (what counts as a capture, etc) are
 # unit-tested directly against ChessEngine - this only checks the gesture
 # layer produces the right outcome end-to-end.
-- runFlow: common/launch-fresh.yaml
+- runFlow: common/to-board.yaml
 - tapOn: { id: "square-e2" }
 - tapOn: { id: "square-e4" }
 - tapOn: { id: "square-d7" }

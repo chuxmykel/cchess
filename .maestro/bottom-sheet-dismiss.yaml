@@ -1,0 +1,32 @@
+appId: host.exp.Exponent
+---
+# Tapping the dimmed backdrop above the sheet closes it without changing
+# the selection.
+#
+# This can't be a testID-based tap: the backdrop Pressable covers the full
+# screen (so other flows can press it directly in RTL), but the sheet's own
+# content renders on top of it in the same stacking order and physically
+# covers most of that area on screen. Maestro resolves `id: "bottom-sheet-
+# backdrop"` to a tap at the center of its full-screen bounds, which lands
+# on the sheet content, not the visible dimmed strip - so this uses a point
+# coordinate in the area that's actually still dimmed instead. Point
+# coordinates are device-specific - see drag-and-drop.yaml - recompute via
+# `maestro hierarchy` for any other device.
+- runFlow: common/to-new-game.yaml
+
+- tapOn:
+    id: "time-control-trigger"
+- assertVisible:
+    id: "time-control-option-bullet-1\\+0"
+
+- tapOn:
+    point: "200,100" # clearly above the sheet - the New Game title/header area
+- assertNotVisible:
+    id: "time-control-option-bullet-1\\+0"
+
+# The trigger still opens the sheet correctly afterward - the dismiss
+# didn't leave the sheet's open/closed state stuck.
+- tapOn:
+    id: "time-control-trigger"
+- assertVisible:
+    id: "time-control-option-blitz-5\\+0"
