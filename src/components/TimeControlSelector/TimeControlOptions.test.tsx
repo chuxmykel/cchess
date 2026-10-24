@@ -63,6 +63,8 @@ describe('TimeControlOptions', () => {
     expect(onSelect).toHaveBeenCalledWith<[TimeControl]>({
       type: 'rapid',
       label: '10+5',
+      minutes: 10,
+      incrementSeconds: 5,
     });
   });
 

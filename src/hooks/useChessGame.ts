@@ -196,6 +196,10 @@ export function useChessGame(fen?: string) {
 
   return {
     pieces: state.pieces,
+    // engine is engineRef.current (lazy-inited above) - safe under React's
+    // current non-compiled runtime, see the react-hooks/refs note above.
+    // eslint-disable-next-line react-hooks/refs
+    fen: engine.getFen(),
     turn: state.turn,
     isGameOver: state.isGameOver,
     selectedSquare: state.selectedSquare,

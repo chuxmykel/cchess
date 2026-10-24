@@ -39,7 +39,12 @@ describe('TimeControlSelector', () => {
     await fireEvent.press(screen.getByTestId(TRIGGER_TEST_ID));
     await fireEvent.press(screen.getByTestId(RAPID_15_0_TEST_ID));
 
-    expect(onSelect).toHaveBeenCalledWith({ type: 'rapid', label: '15+0' });
+    expect(onSelect).toHaveBeenCalledWith({
+      type: 'rapid',
+      label: '15+0',
+      minutes: 15,
+      incrementSeconds: 0,
+    });
 
     // The sheet only unmounts once its close animation's completion
     // callback fires (see useBottomSheet), so give that a moment to run.

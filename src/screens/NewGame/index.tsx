@@ -13,7 +13,7 @@ import {
 
 interface NewGameProps {
   navigation: {
-    navigate: (route: string) => any;
+    navigate: (route: string, params?: object) => any;
   };
 }
 
@@ -24,7 +24,7 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
   const toast = useToast();
 
   function startNewGame() {
-    navigation.navigate('Game');
+    navigation.navigate('Matchmaking', { timeControl });
   }
 
   function challengeFriend() {
