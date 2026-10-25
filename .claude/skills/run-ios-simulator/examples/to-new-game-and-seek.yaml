@@ -1,0 +1,10 @@
+# Fresh launch -> New Game -> Start New Game, leaving the app seeking on
+# the Matchmaking screen. Unlike to-board.yaml it doesn't wait for a
+# match - used by SKILL.md's retry-until-the-right-color loop.
+#
+# Run with: maestro --device <UDID> test to-new-game-and-seek.yaml
+appId: host.exp.Exponent
+---
+- runFlow: ../../../../.maestro/common/to-new-game.yaml
+- tapOn:
+    id: "start-new-game-button"
