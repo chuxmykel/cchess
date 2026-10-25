@@ -14,7 +14,6 @@ function fakeGestureState(dx: number, dy: number): PanResponderGestureState {
     vx: 0,
     vy: 0,
     numberActiveTouches: 1,
-    _accountsForMovesUpTo: 0,
   };
 }
 

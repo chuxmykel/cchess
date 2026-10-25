@@ -1,5 +1,5 @@
 import { useRef, useState, RefObject } from 'react';
-import { View, useWindowDimensions } from 'react-native';
+import { useWindowDimensions, type ViewInstance } from 'react-native';
 
 export const SCREEN_EDGE_MARGIN = 8;
 export const RIGHT_PLACEMENT_GAP = 8;
@@ -22,7 +22,7 @@ export type UsePopoverMenuOptions = {
 };
 
 export type PopoverMenu = {
-  triggerRef: RefObject<View>;
+  triggerRef: RefObject<ViewInstance>;
   visible: boolean;
   position: MenuPosition | null;
   open: () => void;
@@ -37,7 +37,7 @@ export function usePopoverMenu(
   menuWidth: number,
   { placement = 'below', menuHeight = 0 }: UsePopoverMenuOptions = {},
 ): PopoverMenu {
-  const triggerRef = useRef<View>(null);
+  const triggerRef = useRef<ViewInstance>(null);
   const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState<MenuPosition | null>(null);
   const { width: windowWidth } = useWindowDimensions();
