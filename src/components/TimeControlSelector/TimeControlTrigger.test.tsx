@@ -3,7 +3,12 @@ import { fireEvent, render } from '@testing-library/react-native';
 import TimeControlTrigger from './TimeControlTrigger';
 import { TimeControl } from '../../constants/timeControls';
 
-const BLITZ_5_0: TimeControl = { type: 'blitz', label: '5+0' };
+const BLITZ_5_0: TimeControl = {
+  type: 'blitz',
+  label: '5+0',
+  minutes: 5,
+  incrementSeconds: 0,
+};
 
 describe('TimeControlTrigger', () => {
   it('calls onPress when pressed', async () => {

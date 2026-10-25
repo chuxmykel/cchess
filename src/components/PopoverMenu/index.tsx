@@ -1,14 +1,13 @@
 import {
-  View,
   Text,
   Pressable,
-  Modal,
   StyleSheet,
   StyleProp,
   ViewStyle,
 } from 'react-native';
 
 import { usePopoverMenu } from '../../hooks/usePopoverMenu';
+import Popover, { POPOVER_TRIGGER_HIT_SLOP } from '../Popover';
 
 const MENU_WIDTH = 160;
 
@@ -39,36 +38,28 @@ const PopoverMenu: React.FC<PopoverMenuProps> = ({
         ref={triggerRef}
         style={[styles.trigger, style]}
         onPress={open}
-        hitSlop={8}
+        hitSlop={POPOVER_TRIGGER_HIT_SLOP}
         testID={testID}
       >
         <Text style={styles.triggerText}>{'⋮'}</Text>
       </Pressable>
-      <Modal
+      <Popover
         visible={visible}
-        transparent
-        animationType="fade"
-        onRequestClose={close}
+        position={position}
+        onClose={close}
+        width={MENU_WIDTH}
+        contentStyle={styles.menuContent}
       >
-        <Pressable style={styles.overlay} onPress={close}>
-          <View
-            style={[
-              styles.menu,
-              position && { top: position.top, left: position.left },
-            ]}
+        {items.map((item) => (
+          <Pressable
+            key={item}
+            style={styles.menuItem}
+            onPress={() => selectItem(item)}
           >
-            {items.map((item) => (
-              <Pressable
-                key={item}
-                style={styles.menuItem}
-                onPress={() => selectItem(item)}
-              >
-                <Text style={styles.menuItemText}>{item}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </Pressable>
-      </Modal>
+            <Text style={styles.menuItemText}>{item}</Text>
+          </Pressable>
+        ))}
+      </Popover>
     </>
   );
 };
@@ -83,20 +74,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  overlay: {
-    flex: 1,
-  },
-  menu: {
-    position: 'absolute',
-    width: MENU_WIDTH,
-    backgroundColor: 'white',
-    borderRadius: 8,
+  menuContent: {
     paddingVertical: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 5,
   },
   menuItem: {
     paddingVertical: 12,

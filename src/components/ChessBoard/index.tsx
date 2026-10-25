@@ -8,7 +8,7 @@ import { getXYFromSquare } from '../../domain/boardCoordinates';
 import { usePieceAnimations } from '../../hooks/usePieceAnimations';
 import { useDragGuide } from '../../hooks/useDragGuide';
 import { useValidMoveIndicators } from '../../hooks/useValidMoveIndicators';
-import { useChessGameContext } from '../../screens/Game/ChessGameContext';
+import { useChessGameContext } from '../../context/ChessGameContext';
 
 import BoardSurface from './BoardSurface';
 import Pieces from './Pieces';

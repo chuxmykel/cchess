@@ -1,4 +1,6 @@
 appId: host.exp.Exponent
+tags:
+  - needs-live-server
 ---
 # 1. e4 d5 2. exd5 - the shortest path to a real capture from the standard
 # start position. Proves the tap-to-move path correctly drives a capture on

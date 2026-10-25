@@ -23,9 +23,24 @@ can't.
 ## Running
 
 ```bash
-npm run test:e2e              # every flow in this directory
+npm run test:e2e              # every flow in this directory except needs-live-server ones
 maestro test .maestro/tap-to-move.yaml   # a single flow, while iterating
 ```
+
+**Flows tagged `needs-live-server` are excluded from `npm run test:e2e`
+(and so from CI) as of the guest-auth/matchmaking/live-game slice.**
+`common/to-board.yaml` now goes through real matchmaking - tapping
+"Start New Game" lands on the `Matchmaking` screen, not a board, and
+reaching an actual game needs a live `cchess-be` connection (and a real
+opponent) that CI doesn't have. `common/to-board.yaml` itself and every
+flow that depends on it (`tap-to-move`, `drag-and-drop`, `capture`,
+`off-board-drag`, `new-game-renders`, `time-control-selection`) is
+tagged accordingly - still worth running locally against a live server
+(`maestro test .maestro --include-tags=needs-live-server`), just not
+gating CI until there's a self-contained way to run a backend inside
+the e2e job (e.g. booting `cchess-be` itself as a throwaway process in
+the same CI job). This is a known, deliberately deferred gap, not an
+oversight.
 
 Each flow is independent and self-contained: every flow starts with
 `runFlow: common/launch-fresh.yaml`, `common/to-new-game.yaml`, or
@@ -37,14 +52,16 @@ on another's leftover state, and they can run in any order.
 ## What's covered, and what isn't
 
 - **Navigation**: `common/launch-fresh.yaml` (→ Home), `to-new-game.yaml`
-  (→ New Game), and `to-board.yaml` (→ a fresh game's board) are the
-  layered entry points every flow builds on - see "Navigation path"
-  below.
-- **Board/gameplay**: tap-to-move, drag-and-drop, captures, and an
-  off-board drag snapping back (`tap-to-move.yaml`, `drag-and-drop.yaml`,
-  `capture.yaml`, `off-board-drag.yaml`, `new-game-renders.yaml`).
-- **New Game screen**: picking a time control from the bottom sheet
-  (`time-control-selection.yaml`), dismissing the sheet via its backdrop
+  (→ New Game), and `to-board.yaml` (→ a fresh game's board, now via
+  real matchmaking - `needs-live-server`) are the layered entry points
+  every flow builds on - see "Navigation path" below.
+- **Board/gameplay** (`needs-live-server`, run manually - see above):
+  tap-to-move, drag-and-drop, captures, an off-board drag snapping
+  back, and picking a time control then actually starting a game
+  (`tap-to-move.yaml`, `drag-and-drop.yaml`, `capture.yaml`,
+  `off-board-drag.yaml`, `new-game-renders.yaml`,
+  `time-control-selection.yaml`).
+- **New Game screen**: dismissing the time-control sheet via its backdrop
   without changing the selection (`bottom-sheet-dismiss.yaml`), and the
   "Coming Soon" buttons' disabled-look-but-still-tappable toast
   (`coming-soon-toast.yaml`).
@@ -68,8 +85,10 @@ the last:
    (and any future Home-screen flow) builds on.
 2. `common/to-new-game.yaml` - runs `launch-fresh.yaml`, then taps
    `play-button`. Lands on the **New Game** screen.
-3. `common/to-board.yaml` - runs `to-new-game.yaml`, then taps
-   `start-new-game-button`. Lands on the **Game** screen's chessboard.
+3. `common/to-board.yaml` (`needs-live-server`) - runs `to-new-game.yaml`,
+   then taps `start-new-game-button`. This now goes through real
+   matchmaking rather than landing directly on a board - see the
+   `needs-live-server` note above.
 
 Use whichever one matches what the flow actually needs - a flow testing
 only the New Game screen should `runFlow: common/to-new-game.yaml`

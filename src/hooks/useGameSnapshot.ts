@@ -1,0 +1,50 @@
+import { useEffect, useState } from 'react';
+
+import { AppSocket } from '../network/socketClient';
+import { GameSnapshot } from '../network/socketEvents';
+
+export const GAME_SNAPSHOT_STATUS = {
+  LOADING: 'loading',
+  READY: 'ready',
+} as const;
+
+export type GameSnapshotResult =
+  | { status: typeof GAME_SNAPSHOT_STATUS.LOADING }
+  | { status: typeof GAME_SNAPSHOT_STATUS.READY; snapshot: GameSnapshot };
+
+// Joining a game's room fetches the authoritative current state (fen, turn,
+// clocks, status, move history) via the game:state reply - confirmed live
+// that this is the same full-Game-row shape as game:created/game:over. Every
+// mount of the Game screen re-joins and trusts this reply over whatever
+// navigation params it arrived with, so the screen also works if it's ever
+// reached by resuming an in-progress game rather than fresh from Matchmaking.
+export function useGameSnapshot(
+  socket: AppSocket | null,
+  gameId: string,
+): GameSnapshotResult {
+  const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
+
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+
+    function handleState(payload: GameSnapshot) {
+      if (payload.id === gameId) {
+        setSnapshot(payload);
+      }
+    }
+
+    socket.on('game:state', handleState);
+    socket.emit('game:join', { gameId });
+
+    return () => {
+      socket.off('game:state', handleState);
+    };
+  }, [socket, gameId]);
+
+  if (!snapshot) {
+    return { status: GAME_SNAPSHOT_STATUS.LOADING };
+  }
+  return { status: GAME_SNAPSHOT_STATUS.READY, snapshot };
+}

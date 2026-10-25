@@ -2,9 +2,11 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeTabs from '../HomeTabs';
-import Game from '../Game';
+import LiveGame from '../LiveGame';
+import Matchmaking from '../Matchmaking';
+import { HomeStackParamList } from './types';
 
-const { Navigator, Screen } = createNativeStackNavigator();
+const { Navigator, Screen } = createNativeStackNavigator<HomeStackParamList>();
 
 const HomeStack: React.FC = () => {
   return (
@@ -17,7 +19,12 @@ const HomeStack: React.FC = () => {
         }}
       >
         <Screen name="HomeTabs" component={HomeTabs} />
-        <Screen name="Game" component={Game} />
+        <Screen name="Matchmaking" component={Matchmaking} />
+        <Screen
+          name="LiveGame"
+          component={LiveGame}
+          options={{ gestureEnabled: false }}
+        />
       </Navigator>
     </>
   );

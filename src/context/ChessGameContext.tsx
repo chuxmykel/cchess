@@ -1,11 +1,9 @@
 import { createContext, useContext } from 'react';
 
-import { useChessGame, UseChessGameResult } from '../../hooks/useChessGame';
+import { useChessGame, UseChessGameResult } from '../hooks/useChessGame';
 
-const ChessGameContext = createContext<UseChessGameResult | null>(null);
+export const ChessGameContext = createContext<UseChessGameResult | null>(null);
 
-// Scoped to the Game screen - exists only to remove the Game -> Chessboard ->
-// Piece prop-drilling, not as app-wide state.
 export const ChessGameProvider: React.FC<{
   fen?: string;
   children: React.ReactNode;

@@ -4,7 +4,7 @@ import PromotionMenu from '../PromotionMenu';
 import {
   ChessGameProvider,
   useChessGameContext,
-} from '../../screens/Game/ChessGameContext';
+} from '../../context/ChessGameContext';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
 import { NUMBER_OF_ROWS } from '../../constants';
 import {
