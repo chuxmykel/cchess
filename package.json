@@ -9,6 +9,7 @@
     "web": "expo start --web",
     "test": "jest",
     "test:e2e": "$HOME/.maestro/bin/maestro test .maestro --exclude-tags=needs-live-server",
+    "opponent": "node scripts/opponent.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
