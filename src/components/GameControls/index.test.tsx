@@ -72,7 +72,7 @@ describe('GameControls', () => {
     expect(offered.getByText('Draw Offered')).toBeTruthy();
 
     await fireEvent.press(offered.getByTestId('offer-draw-button'));
-    expect(props.onOfferDraw).toHaveBeenCalledTimes(1);// still called only once.
+    expect(props.onOfferDraw).toHaveBeenCalledTimes(1); // still called only once.
   });
 
   it('shows accept/decline instead of resign/draw when the opponent has offered a draw', async () => {
