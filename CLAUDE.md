@@ -4,8 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A chess app for iOS (more platforms planned), built with React Native (0.86) +
-Expo SDK 57 + React 19 + TypeScript. Pieces move by tap-to-move or
+A chess app for iOS (more platforms planned), built with React Native (0.88) +
+Expo SDK 58 + React 19 + TypeScript. Pieces move by tap-to-move or
 drag-and-drop; all chess rules enforcement (legality, check/checkmate/
 stalemate, castling, en passant, promotion) is delegated to
 [chess.js](https://github.com/jhlywa/chess.js) via `src/domain/ChessEngine.ts`.

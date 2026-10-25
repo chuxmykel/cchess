@@ -12,7 +12,7 @@ WIP (TBD)
 
 ## Tech stack
 
-- [Expo](https://expo.dev) SDK 57 / React Native 0.86 / React 19
+- [Expo](https://expo.dev) SDK 58 / React Native 0.88 / React 19
 - TypeScript
 - [chess.js](https://github.com/jhlywa/chess.js) - chess rules engine
 - React Navigation (native-stack + bottom-tabs)
