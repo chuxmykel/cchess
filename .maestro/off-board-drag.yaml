@@ -1,4 +1,6 @@
 appId: host.exp.Exponent
+tags:
+  - needs-live-server
 ---
 # Point coordinates are device-specific - see drag-and-drop.yaml.
 - runFlow: common/to-board.yaml

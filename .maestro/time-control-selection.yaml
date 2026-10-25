@@ -1,4 +1,6 @@
 appId: host.exp.Exponent
+tags:
+  - needs-live-server
 ---
 # Opening the time control dropdown and picking a different time control -
 # then confirming starting a game still works afterward, so a bad

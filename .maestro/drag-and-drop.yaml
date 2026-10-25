@@ -1,4 +1,6 @@
 appId: host.exp.Exponent
+tags:
+  - needs-live-server
 ---
 # Point coordinates are in points, captured from a fresh starting position
 # on iPhone 18 Pro / iOS 27.0 (see README.md "Device-specific coordinates").

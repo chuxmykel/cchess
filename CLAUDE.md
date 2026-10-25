@@ -24,7 +24,7 @@ npm test -- --watch      # watch mode
 npm test -- path/to/file.test.ts          # a single file
 npm test -- -t "name of test or describe" # filter by test name
 
-npm run test:e2e         # full Maestro e2e suite (see .maestro/README.md)
+npm run test:e2e         # Maestro e2e suite, excluding needs-live-server flows (see .maestro/README.md)
 maestro test .maestro/tap-to-move.yaml    # a single Maestro flow, while iterating
 
 npm run lint             # eslint . (flat config: eslint-config-expo + prettier)
