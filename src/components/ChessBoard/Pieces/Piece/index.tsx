@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { StyleSheet, Animated } from 'react-native';
-import { Square } from 'chess.js';
+import { Color, Square } from 'chess.js';
 
 import { PIECES } from '../../../../constants';
 import { Position } from '../../../../domain/types';
@@ -10,6 +10,7 @@ import { usePieceGesture } from '../../../../hooks/usePieceGesture';
 interface PieceProps {
   width: number;
   position: Position;
+  orientation: Color;
   animatedPosition: Animated.ValueXY;
   id: string;
   disabled: boolean;
@@ -23,8 +24,8 @@ interface PieceProps {
 }
 
 const Piece: React.FC<PieceProps> = (props) => {
-  const { width, position, animatedPosition, id, opacity } = props;
-  const square = getSquareFromXY(position, width);
+  const { width, position, orientation, animatedPosition, id, opacity } = props;
+  const square = getSquareFromXY(position, width, orientation);
   const { panHandlers, scale, zIndex } = usePieceGesture(props, square);
 
   return (
@@ -73,6 +74,7 @@ function arePropsEqual(prev: PieceProps, next: PieceProps): boolean {
     prev.width === next.width &&
     prev.position.x === next.position.x &&
     prev.position.y === next.position.y &&
+    prev.orientation === next.orientation &&
     prev.animatedPosition === next.animatedPosition &&
     prev.opacity === next.opacity &&
     prev.onTap === next.onTap &&

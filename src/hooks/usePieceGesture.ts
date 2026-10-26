@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Animated, PanResponder, PanResponderGestureState } from 'react-native';
-import { Square } from 'chess.js';
+import { Color, Square } from 'chess.js';
 
 import { Position } from '../domain/types';
 import { getSquareFromXY } from '../domain/boardCoordinates';
@@ -10,6 +10,7 @@ import { TAP_MOVEMENT_THRESHOLD } from '../constants';
 export type PieceGestureInput = {
   width: number;
   position: Position;
+  orientation: Color;
   animatedPosition: Animated.ValueXY;
   disabled: boolean;
   onTap: (square: Square) => void;
@@ -125,6 +126,7 @@ export function usePieceGesture(
         const {
           position,
           width,
+          orientation,
           animatedPosition,
           square,
           onTap,
@@ -147,7 +149,7 @@ export function usePieceGesture(
           gestureState,
           width,
         );
-        const newSquare = getSquareFromXY(newPosition, width);
+        const newSquare = getSquareFromXY(newPosition, width, orientation);
         onDragRelease(square, newSquare);
       },
     });

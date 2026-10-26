@@ -1,5 +1,5 @@
 import { Animated } from 'react-native';
-import { Square } from 'chess.js';
+import { Color, Square } from 'chess.js';
 
 import { SQUARES } from '../../../constants';
 import { getXYFromSquare } from '../../../domain/boardCoordinates';
@@ -7,11 +7,13 @@ import ValidMoveIndicator from './ValidMoveIndicator';
 
 interface ValidMoveIndicatorsProps {
   pieceWidth: number;
+  orientation: Color;
   opacities: Record<Square, Animated.Value>;
 }
 
 const ValidMoveIndicators: React.FC<ValidMoveIndicatorsProps> = ({
   pieceWidth,
+  orientation,
   opacities,
 }) => (
   <>
@@ -19,7 +21,7 @@ const ValidMoveIndicators: React.FC<ValidMoveIndicatorsProps> = ({
       <ValidMoveIndicator
         key={square}
         testID={`valid-move-${square}`}
-        position={getXYFromSquare(square, pieceWidth)}
+        position={getXYFromSquare(square, pieceWidth, orientation)}
         squareWidth={pieceWidth}
         opacity={opacities[square]}
       />

@@ -8,12 +8,16 @@ interface GameClockProps {
 
 const LOW_TIME_THRESHOLD_MS = 10000;
 
+function isLowTime(ms: number): boolean {
+  return ms <= LOW_TIME_THRESHOLD_MS;
+}
+
 // Below the low-time threshold, shows tenths of a second (e.g. "0:09.8")
 // instead of whole seconds, for the same reason whole-second mode ceils
 // rather than floors: it should never visually read a smaller value than
 // what's actually left.
-function formatClock(ms: number, showTenths: boolean): string {
-  if (showTenths) {
+function formatClock(ms: number): string {
+  if (isLowTime(ms)) {
     const totalDeciseconds = Math.ceil(ms / 100);
     const minutes = Math.floor(totalDeciseconds / 600);
     const seconds = Math.floor(totalDeciseconds / 10) % 60;
@@ -27,16 +31,14 @@ function formatClock(ms: number, showTenths: boolean): string {
 }
 
 const GameClock: React.FC<GameClockProps> = ({ ms, isActive, label }) => {
-  const isLow = ms <= LOW_TIME_THRESHOLD_MS;
-
   return (
     <View
       style={[styles.container, isActive && styles.active]}
       testID={`game-clock-${label}`}
     >
       <Text style={styles.label}>{label}</Text>
-      <Text style={[styles.time, isLow && styles.timeLow]}>
-        {formatClock(ms, isLow)}
+      <Text style={[styles.time, isLowTime(ms) && styles.timeLow]}>
+        {formatClock(ms)}
       </Text>
     </View>
   );

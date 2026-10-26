@@ -1,4 +1,4 @@
-import { Square } from 'chess.js';
+import { Color, Square } from 'chess.js';
 
 import { Position } from '../../../domain/types';
 import { getXYFromSquare } from '../../../domain/boardCoordinates';
@@ -8,6 +8,7 @@ import Piece from './Piece';
 interface PiecesProps {
   pieces: AnimatedPieceView[];
   pieceWidth: number;
+  orientation: Color;
   isOwnPieceAt: (square: Square) => boolean;
   isGameOver: boolean;
   onTap: (square: Square) => void;
@@ -21,6 +22,7 @@ interface PiecesProps {
 const Pieces: React.FC<PiecesProps> = ({
   pieces,
   pieceWidth,
+  orientation,
   isOwnPieceAt,
   isGameOver,
   onTap,
@@ -36,7 +38,8 @@ const Pieces: React.FC<PiecesProps> = ({
         key={piece.id}
         id={piece.spriteId}
         width={pieceWidth}
-        position={getXYFromSquare(piece.square, pieceWidth)}
+        position={getXYFromSquare(piece.square, pieceWidth, orientation)}
+        orientation={orientation}
         animatedPosition={piece.animatedPosition}
         disabled={!isOwnPieceAt(piece.square) || isGameOver}
         opacity={piece.opacity}

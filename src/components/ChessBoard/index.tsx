@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { View } from 'react-native';
-import { Square } from 'chess.js';
+import { Color, Square } from 'chess.js';
 
 import { NUMBER_OF_ROWS } from '../../constants';
 import { Position } from '../../domain/types';
@@ -21,9 +21,15 @@ interface ChessboardProps {
     dark: string;
   };
   width: number;
+  // Whose side of the board is at the bottom; defaults to white's.
+  orientation?: Color;
 }
 
-const Chessboard: React.FC<ChessboardProps> = ({ colors, width }) => {
+const Chessboard: React.FC<ChessboardProps> = ({
+  colors,
+  width,
+  orientation = 'w',
+}) => {
   const {
     pieces,
     isGameOver,
@@ -35,7 +41,12 @@ const Chessboard: React.FC<ChessboardProps> = ({ colors, width }) => {
     attemptMove,
   } = useChessGameContext();
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
-  const animatedPieces = usePieceAnimations(pieces, lastMove, PIECE_WIDTH);
+  const animatedPieces = usePieceAnimations(
+    pieces,
+    lastMove,
+    PIECE_WIDTH,
+    orientation,
+  );
   const dragGuide = useDragGuide(PIECE_WIDTH);
   const { updatePosition } = dragGuide;
   const validMoveIndicators = useValidMoveIndicators(
@@ -59,11 +70,11 @@ const Chessboard: React.FC<ChessboardProps> = ({ colors, width }) => {
       const result = attemptMove(from, to);
       if (result.status === 'illegal' && draggedPiece) {
         draggedPiece.animatedPosition.setValue(
-          getXYFromSquare(from, PIECE_WIDTH),
+          getXYFromSquare(from, PIECE_WIDTH, orientation),
         );
       }
     },
-    [animatedPieces, attemptMove, PIECE_WIDTH],
+    [animatedPieces, attemptMove, PIECE_WIDTH, orientation],
   );
 
   const handleDrag = useCallback(
@@ -75,7 +86,11 @@ const Chessboard: React.FC<ChessboardProps> = ({ colors, width }) => {
 
   return (
     <View style={{ width, height: width }} testID="chessboard">
-      <BoardSurface colors={colors} onSquarePress={handleSquareTap} />
+      <BoardSurface
+        colors={colors}
+        orientation={orientation}
+        onSquarePress={handleSquareTap}
+      />
 
       <PieceDragAndDropGuide
         boardWidth={width}
@@ -86,12 +101,14 @@ const Chessboard: React.FC<ChessboardProps> = ({ colors, width }) => {
 
       <ValidMoveIndicators
         pieceWidth={PIECE_WIDTH}
+        orientation={orientation}
         opacities={validMoveIndicators.opacities}
       />
 
       <Pieces
         pieces={animatedPieces}
         pieceWidth={PIECE_WIDTH}
+        orientation={orientation}
         isOwnPieceAt={isOwnPieceAt}
         isGameOver={isGameOver}
         onTap={handleSquareTap}

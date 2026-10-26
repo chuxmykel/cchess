@@ -32,6 +32,7 @@ describe('Piece', () => {
       <Piece
         width={width}
         position={position}
+        orientation="w"
         animatedPosition={animatedPosition}
         id="wp"
         disabled={overrides.disabled ?? false}

@@ -26,7 +26,11 @@ describe('ValidMoveIndicators', () => {
   it('renders one indicator per square on the board', async () => {
     const opacities = buildOpacities();
     const screen = await render(
-      <ValidMoveIndicators pieceWidth={pieceWidth} opacities={opacities} />,
+      <ValidMoveIndicators
+        pieceWidth={pieceWidth}
+        orientation="w"
+        opacities={opacities}
+      />,
     );
 
     expect(screen.getAllByTestId(/^valid-move-/)).toHaveLength(SQUARES.length);
@@ -36,7 +40,11 @@ describe('ValidMoveIndicators', () => {
     const opacities = buildOpacities();
     opacities.e4.setValue(1);
     const screen = await render(
-      <ValidMoveIndicators pieceWidth={pieceWidth} opacities={opacities} />,
+      <ValidMoveIndicators
+        pieceWidth={pieceWidth}
+        orientation="w"
+        opacities={opacities}
+      />,
     );
 
     expect(screen.getByTestId('valid-move-e4').props.style.opacity).toBe(
