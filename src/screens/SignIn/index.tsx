@@ -24,6 +24,7 @@ const SignIn: React.FC<SignInProps> = ({ navigation }) => {
     SIGN_IN_FAILED_MESSAGE,
   );
   const isFilledIn = usernameOrEmail.trim() !== '' && password !== '';
+  const canSubmit = isFilledIn && !signInAttempt.isRunning;
 
   async function submit() {
     if (await signInAttempt.run()) {
@@ -35,7 +36,7 @@ const SignIn: React.FC<SignInProps> = ({ navigation }) => {
     <AccountForm
       errorMessage={signInAttempt.errorMessage}
       submitLabel={signInAttempt.isRunning ? 'Signing in…' : 'Sign in'}
-      canSubmit={isFilledIn && !signInAttempt.isRunning}
+      canSubmit={canSubmit}
       onSubmit={submit}
       switchPrompt="New here?"
       switchLabel="Create an account"
@@ -58,7 +59,7 @@ const SignIn: React.FC<SignInProps> = ({ navigation }) => {
         autoComplete="current-password"
         textContentType="password"
         returnKeyType="go"
-        onSubmitEditing={() => isFilledIn && submit()}
+        onSubmitEditing={() => canSubmit && submit()}
         testID="password-input"
       />
     </AccountForm>
