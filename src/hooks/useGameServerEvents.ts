@@ -5,6 +5,7 @@ import { AppSocket } from '../network/socketClient';
 import {
   DrawOfferedPayload,
   GameErrorPayload,
+  GameMoveSummary,
   GameMovePushPayload,
   GameResultReason,
   GameSnapshot,
@@ -20,6 +21,7 @@ export type GameServerEventsResult = {
   whiteTimeMs: number;
   blackTimeMs: number;
   drawOfferedBy: Color | null;
+  moves: GameMoveSummary[];
   clearDrawOffer: () => void;
 };
 
@@ -30,6 +32,14 @@ export type GameServerEventsResult = {
 // opponent's moves, false for the echo of our own (confirmed live that the
 // server pushes our own submitted move back to us) - which is what makes
 // this idempotent without tracking ply numbers separately.
+function withMoveAdded(
+  moves: GameMoveSummary[],
+  move: GameMoveSummary,
+): GameMoveSummary[] {
+  const alreadyHasMove = moves.some(({ ply }) => ply === move.ply);
+  return alreadyHasMove ? moves : [...moves, move];
+}
+
 export function useGameServerEvents(
   socket: AppSocket,
   gameId: string,
@@ -45,6 +55,7 @@ export function useGameServerEvents(
     blackTimeMs: snapshot.blackTimeRemainingMs,
   });
   const [drawOfferedBy, setDrawOfferedBy] = useState(snapshot.drawOfferedBy);
+  const [moves, setMoves] = useState<GameMoveSummary[]>(snapshot.moves);
 
   const gameRef = useRef(game);
   useLayoutEffect(() => {
@@ -60,6 +71,7 @@ export function useGameServerEvents(
         whiteTimeMs: payload.whiteTimeRemainingMs,
         blackTimeMs: payload.blackTimeRemainingMs,
       });
+      setMoves((previous) => withMoveAdded(previous, payload.move));
       if (payload.fen === gameRef.current.fen) {
         return; // the echo of a move we already applied optimistically
       }
@@ -133,6 +145,7 @@ export function useGameServerEvents(
     whiteTimeMs: clocks.whiteTimeMs,
     blackTimeMs: clocks.blackTimeMs,
     drawOfferedBy,
+    moves,
     clearDrawOffer,
   };
 }

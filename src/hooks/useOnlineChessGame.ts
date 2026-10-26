@@ -2,8 +2,13 @@ import { useEffect } from 'react';
 import { Color, Square } from 'chess.js';
 
 import { MoveResult } from '../domain/types';
+import { plyCountFromFen } from '../domain/fen';
 import { AppSocket } from '../network/socketClient';
-import { GameResultReason, GameSnapshot } from '../network/socketEvents';
+import {
+  GameMoveSummary,
+  GameResultReason,
+  GameSnapshot,
+} from '../network/socketEvents';
 import { useChessGame, UseChessGameResult } from './useChessGame';
 import { GameStatus, useGameServerEvents } from './useGameServerEvents';
 
@@ -21,7 +26,8 @@ export type UseOnlineChessGameResult = Omit<
   whiteTimeMs: number;
   blackTimeMs: number;
   drawOfferedBy: Color | null;
-  hasAnyMoveBeenMade: boolean;
+  moves: GameMoveSummary[];
+  canAbort: boolean;
   attemptMove: (from: Square, to: Square) => MoveResult;
   handleSquareTap: (square: Square) => void;
   resign: () => void;
@@ -29,6 +35,8 @@ export type UseOnlineChessGameResult = Omit<
   respondToDraw: (accept: boolean) => void;
   abort: () => void;
 };
+
+const SERVER_ABORT_PLY_LIMIT = 2;
 
 export function useOnlineChessGame(
   socket: AppSocket,
@@ -46,11 +54,14 @@ export function useOnlineChessGame(
     whiteTimeMs,
     blackTimeMs,
     drawOfferedBy,
+    moves,
     clearDrawOffer,
   } = useGameServerEvents(socket, gameId, snapshot, game, onError);
 
-  const hasAnyMoveBeenMade =
-    snapshot.moves.length > 0 || game.lastMove !== null;
+  const pliesPlayedIncludingOurUnconfirmedMove = plyCountFromFen(game.fen);
+  const canAbort =
+    gameStatus === 'active' &&
+    pliesPlayedIncludingOurUnconfirmedMove < SERVER_ABORT_PLY_LIMIT;
 
   useEffect(() => {
     if (game.lastMove && game.lastMove.color === myColor) {
@@ -109,7 +120,8 @@ export function useOnlineChessGame(
     whiteTimeMs,
     blackTimeMs,
     drawOfferedBy,
-    hasAnyMoveBeenMade,
+    moves,
+    canAbort,
     attemptMove,
     handleSquareTap,
     resign,

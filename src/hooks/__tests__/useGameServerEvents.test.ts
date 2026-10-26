@@ -2,7 +2,10 @@ import { act, renderHook } from '@testing-library/react-native';
 
 import { useGameServerEvents } from '../useGameServerEvents';
 import { UseChessGameResult } from '../useChessGame';
-import { GAME_RESULT_REASON } from '../../network/socketEvents';
+import {
+  GAME_RESULT_REASON,
+  GameMoveSummary,
+} from '../../network/socketEvents';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
 import { makeGameSnapshot } from '../../testUtils/gameSnapshot';
 
@@ -238,5 +241,73 @@ describe('useGameServerEvents', () => {
     });
 
     expect(onError).toHaveBeenCalledWith('Illegal move');
+  });
+
+  describe('move history', () => {
+    function moveSummary(
+      ply: number,
+      overrides: Partial<GameMoveSummary> = {},
+    ): GameMoveSummary {
+      return {
+        ply,
+        from: 'e7',
+        to: 'e5',
+        piece: 'p',
+        color: 'b',
+        san: 'e5',
+        captured: null,
+        promotion: null,
+        fenAfter: OPPONENT_MOVE_FEN,
+        clockAfterMs: 299000,
+        ...overrides,
+      };
+    }
+
+    function pushMove(
+      trigger: (event: string, payload: unknown) => void,
+      move: GameMoveSummary,
+    ) {
+      trigger('game:move', {
+        gameId: GAME_ID,
+        move,
+        fen: move.fenAfter,
+        turn: move.color === 'w' ? 'b' : 'w',
+        whiteTimeRemainingMs: 300000,
+        blackTimeRemainingMs: 299000,
+      });
+    }
+
+    it("starts from the snapshot's moves", async () => {
+      const { socket } = createFakeSocket();
+      const snapshotMoves = [
+        moveSummary(1, { color: 'w', from: 'e2', to: 'e4', san: 'e4' }),
+      ];
+      const snapshot = makeGameSnapshot({ moves: snapshotMoves });
+      const { result } = await renderHook(() =>
+        useGameServerEvents(socket, GAME_ID, snapshot, makeFakeGame()),
+      );
+
+      expect(result.current.moves).toEqual(snapshotMoves);
+    });
+
+    it('adds each pushed move, ignoring one it already has', async () => {
+      const { socket, trigger } = createFakeSocket();
+      const { result } = await renderHook(() =>
+        useGameServerEvents(
+          socket,
+          GAME_ID,
+          makeGameSnapshot(),
+          makeFakeGame(),
+        ),
+      );
+      const first = moveSummary(1, { color: 'w', san: 'e4' });
+      const second = moveSummary(2);
+
+      await act(() => pushMove(trigger, first));
+      await act(() => pushMove(trigger, second));
+      await act(() => pushMove(trigger, second));
+
+      expect(result.current.moves).toEqual([first, second]);
+    });
   });
 });
