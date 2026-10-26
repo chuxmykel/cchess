@@ -91,6 +91,26 @@ export async function revokeRefreshToken(refreshToken: string): Promise<void> {
   await apiClient.post('/auth/logout', { refreshToken });
 }
 
+const NOT_FOUND = 404;
+
+export async function isUsernameAvailable(
+  username: string,
+  accessToken: string,
+): Promise<boolean> {
+  try {
+    await apiClient.get(
+      `/users/${encodeURIComponent(username)}`,
+      bearer(accessToken),
+    );
+    return false;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === NOT_FOUND) {
+      return true;
+    }
+    throw error;
+  }
+}
+
 export async function getMe(accessToken: string): Promise<AccountUser> {
   return (await apiClient.get<AccountUser>('/users/me', bearer(accessToken)))
     .data;

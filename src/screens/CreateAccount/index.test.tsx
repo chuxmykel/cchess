@@ -2,12 +2,20 @@ import { fireEvent, render } from '@testing-library/react-native';
 
 import CreateAccount from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
+import {
+  USERNAME_AVAILABILITY,
+  useUsernameAvailability,
+} from '../../hooks/useUsernameAvailability';
 import { ApiError } from '../../network/restClient';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { withSafeArea } from '../../testUtils/safeArea';
 
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
+}));
+jest.mock('../../hooks/useUsernameAvailability', () => ({
+  ...jest.requireActual('../../hooks/useUsernameAvailability'),
+  useUsernameAvailability: jest.fn(),
 }));
 
 describe('CreateAccount', () => {
@@ -34,6 +42,12 @@ describe('CreateAccount', () => {
     await fireEvent.changeText(screen.getByTestId('email-input'), email);
     await fireEvent.changeText(screen.getByTestId('password-input'), password);
   }
+
+  beforeEach(() => {
+    (useUsernameAvailability as jest.Mock).mockReturnValue(
+      USERNAME_AVAILABILITY.AVAILABLE,
+    );
+  });
 
   afterEach(() => {
     jest.clearAllMocks();
@@ -81,6 +95,52 @@ describe('CreateAccount', () => {
       'email must be an email\npassword must be longer than or equal to 8 characters',
     );
     expect(navigation.goBack).not.toHaveBeenCalled();
+  });
+
+  describe('username availability', () => {
+    it('checks the username as it is typed', async () => {
+      const { screenPromise } = renderScreen();
+      const screen = await screenPromise;
+
+      await fireEvent.changeText(screen.getByTestId('username-input'), 'mag');
+
+      expect(useUsernameAvailability).toHaveBeenLastCalledWith('mag');
+    });
+
+    it('shows a check beside an available username', async () => {
+      const { screenPromise } = renderScreen();
+      const screen = await screenPromise;
+
+      expect(screen.getByTestId('username-available')).toBeTruthy();
+    });
+
+    it("shows a cross beside a taken username, and can't be submitted", async () => {
+      (useUsernameAvailability as jest.Mock).mockReturnValue(
+        USERNAME_AVAILABILITY.TAKEN,
+      );
+      const { screenPromise, register } = renderScreen();
+      const screen = await screenPromise;
+
+      await fillIn(screen, {});
+      await fireEvent.press(screen.getByTestId('account-form-submit'));
+      await fireEvent(screen.getByTestId('password-input'), 'submitEditing');
+
+      expect(screen.getByTestId('username-taken')).toBeTruthy();
+      expect(register).not.toHaveBeenCalled();
+    });
+
+    it('can still be submitted while the check is in flight', async () => {
+      (useUsernameAvailability as jest.Mock).mockReturnValue(
+        USERNAME_AVAILABILITY.CHECKING,
+      );
+      const { screenPromise, register } = renderScreen();
+      const screen = await screenPromise;
+
+      await fillIn(screen, {});
+      await fireEvent.press(screen.getByTestId('account-form-submit'));
+
+      expect(register).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('switches to signing in', async () => {

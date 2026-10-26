@@ -4,9 +4,14 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import AccountForm from '../../components/AccountForm';
 import PasswordField from '../../components/PasswordField';
 import TextField from '../../components/TextField';
+import UsernameAvailabilityIndicator from '../../components/UsernameAvailabilityIndicator';
 import { CREATE_ACCOUNT_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
+import {
+  USERNAME_AVAILABILITY,
+  useUsernameAvailability,
+} from '../../hooks/useUsernameAvailability';
 import { HomeStackParamList } from '../HomeStack/types';
 
 type CreateAccountProps = NativeStackScreenProps<
@@ -19,6 +24,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const usernameAvailability = useUsernameAvailability(username);
 
   const registration = useAsyncAction(
     useCallback(
@@ -30,6 +36,8 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
   );
   const isFilledIn =
     username.trim() !== '' && email.trim() !== '' && password !== '';
+  const isUsernameTaken = usernameAvailability === USERNAME_AVAILABILITY.TAKEN;
+  const canSubmit = isFilledIn && !isUsernameTaken && !registration.isRunning;
 
   async function submit() {
     if (await registration.run()) {
@@ -43,7 +51,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
       submitLabel={
         registration.isRunning ? 'Creating account…' : 'Create account'
       }
-      canSubmit={isFilledIn && !registration.isRunning}
+      canSubmit={canSubmit}
       onSubmit={submit}
       switchPrompt="Already have an account?"
       switchLabel="Sign in"
@@ -57,6 +65,9 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
         autoComplete="username-new"
         textContentType="username"
         placeholder="Letters, numbers and underscores"
+        trailing={
+          <UsernameAvailabilityIndicator availability={usernameAvailability} />
+        }
         testID="username-input"
       />
       <TextField
@@ -76,7 +87,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
         textContentType="newPassword"
         placeholder="At least 8 characters"
         returnKeyType="go"
-        onSubmitEditing={() => isFilledIn && submit()}
+        onSubmitEditing={() => canSubmit && submit()}
         testID="password-input"
       />
     </AccountForm>

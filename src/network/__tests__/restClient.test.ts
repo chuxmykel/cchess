@@ -7,6 +7,7 @@ import {
   getGamePgn,
   getMe,
   getMyGames,
+  isUsernameAvailable,
   refreshSession,
   register,
   revokeRefreshToken,
@@ -133,6 +134,37 @@ describe('restClient', () => {
       const request = sentRequest(transport);
       expect(request.url).toBe('/users/me');
       expect(request.headers.Authorization).toBe('Bearer access-123');
+    });
+
+    describe('isUsernameAvailable', () => {
+      it('is available when no user has that name', async () => {
+        const transport = stubTransport(
+          failWith(404, { message: 'User not found' }),
+        );
+
+        await expect(isUsernameAvailable('magnus', 'access-123')).resolves.toBe(
+          true,
+        );
+        const request = sentRequest(transport);
+        expect(request.url).toBe('/users/magnus');
+        expect(request.headers.Authorization).toBe('Bearer access-123');
+      });
+
+      it('is taken when a user has that name', async () => {
+        stubTransport(respondWith(AUTH_RESPONSE.user));
+
+        await expect(isUsernameAvailable('magnus', 'access-123')).resolves.toBe(
+          false,
+        );
+      });
+
+      it("rejects when the server can't say either way", async () => {
+        stubTransport(failWith(500, { message: 'boom' }));
+
+        await expect(
+          isUsernameAvailable('magnus', 'access-123'),
+        ).rejects.toBeInstanceOf(ApiError);
+      });
     });
 
     it('fetches my most recent games, limited to the given count', async () => {
