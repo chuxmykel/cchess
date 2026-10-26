@@ -23,12 +23,34 @@ describe('BoardSurface', () => {
       <BoardSurface colors={colors} onSquarePress={onSquarePress} />,
     );
 
-    // Top-left square is rank 8, bottom-right is rank 1 - the board is
-    // rendered from black's back rank down to white's.
     await fireEvent.press(screen.getByTestId('square-a8'));
     await fireEvent.press(screen.getByTestId('square-h1'));
 
     expect(onSquarePress).toHaveBeenNthCalledWith(1, 'a8');
     expect(onSquarePress).toHaveBeenNthCalledWith(2, 'h1');
+  });
+
+  it("renders rank 8 at the top from white's perspective", async () => {
+    const screen = await render(
+      <BoardSurface colors={colors} onSquarePress={jest.fn()} />,
+    );
+    const rows = screen.getAllByTestId('chessboard-row') as any[];
+
+    expect(rows[0].children[0].props.testID).toBe('square-a8');
+    expect(rows[7].children[0].props.testID).toBe('square-a1');
+  });
+
+  it("renders rank 1 at the top from black's perspective", async () => {
+    const screen = await render(
+      <BoardSurface
+        colors={colors}
+        orientation="b"
+        onSquarePress={jest.fn()}
+      />,
+    );
+    const rows = screen.getAllByTestId('chessboard-row') as any[];
+
+    expect(rows[0].children[0].props.testID).toBe('square-h1');
+    expect(rows[7].children[0].props.testID).toBe('square-h8');
   });
 });

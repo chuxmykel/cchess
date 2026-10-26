@@ -57,6 +57,7 @@ describe('usePieceGesture', () => {
         square="e2"
         width={width}
         position={position}
+        orientation="w"
         animatedPosition={animatedPosition}
         disabled={overrides.disabled ?? false}
         onTap={onTap}

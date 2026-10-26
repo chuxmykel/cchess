@@ -1,0 +1,23 @@
+# Resign the current live game and wait for the game-over banner. The
+# opponent script exits by itself once the game is over.
+#
+# The confirmation alert's "Resign" is tapped by point: `tapOn: "Resign"`
+# matches the screen's own Resign button underneath instead, leaving the
+# alert open. The point is the alert's right-hand button on iPhone 18 Pro
+# / iOS 27.0.
+#
+# Run with: maestro --device <UDID> test resign.yaml
+appId: host.exp.Exponent
+---
+- tapOn:
+    id: "resign-button"
+- extendedWaitUntil:
+    visible:
+      text: "You will lose this game."
+    timeout: 5000
+- tapOn:
+    point: "275,487"
+- extendedWaitUntil:
+    visible:
+      id: "game-over-banner"
+    timeout: 10000

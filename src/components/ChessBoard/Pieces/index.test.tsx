@@ -46,6 +46,7 @@ describe('Pieces', () => {
       <Pieces
         pieces={pieces}
         pieceWidth={pieceWidth}
+        orientation="w"
         isOwnPieceAt={isOwnPieceAt}
         isGameOver={isGameOver}
         onTap={onTap}

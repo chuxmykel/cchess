@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { Animated } from 'react-native';
 import { Color, PieceSymbol, Square } from 'chess.js';
 
@@ -33,6 +33,7 @@ export function usePieceAnimations(
   pieces: DomainPiece[],
   lastMove: AppliedMove | null,
   pieceWidth: number,
+  orientation: Color = 'w',
 ): AnimatedPieceView[] {
   // This hook keeps its piece/animation bookkeeping in mutable refs that
   // are read and written synchronously during render, not inside an
@@ -58,6 +59,7 @@ export function usePieceAnimations(
   >([]);
   const prevPieces = useRef<DomainPiece[] | null>(null);
   const prevResult = useRef<AnimatedPieceView[]>([]);
+  const prevOrientation = useRef(orientation);
 
   function createEntry(piece: DomainPiece): PieceEntry {
     return {
@@ -65,7 +67,7 @@ export function usePieceAnimations(
       square: piece.square,
       spriteId: `${piece.color}${piece.type}`,
       animatedPosition: new Animated.ValueXY(
-        getXYFromSquare(piece.square, pieceWidth),
+        getXYFromSquare(piece.square, pieceWidth, orientation),
       ),
       opacity: new Animated.Value(1),
     };
@@ -131,13 +133,27 @@ export function usePieceAnimations(
   useEffect(() => {
     pendingAnimations.current.forEach(({ pieceEntry, toSquare }) => {
       Animated.timing(pieceEntry.animatedPosition, {
-        toValue: getXYFromSquare(toSquare, pieceWidth),
+        toValue: getXYFromSquare(toSquare, pieceWidth, orientation),
         duration: ANIMATION_DURATION,
         useNativeDriver: true,
       }).start();
     });
     pendingAnimations.current = [];
-  }, [lastMove, pieceWidth]);
+  }, [lastMove, pieceWidth, orientation]);
+
+  // Flipping the board moves every piece to its mirrored square at once.
+  // A layout effect (not a plain one) so the old layout is never painted
+  // for a frame after the flip. The square-keyed bookkeeping above is
+  // orientation-independent, so only the on-screen positions change.
+  useLayoutEffect(() => {
+    if (prevOrientation.current === orientation) return;
+    prevOrientation.current = orientation;
+    entryById.current.forEach((pieceEntry) => {
+      pieceEntry.animatedPosition.setValue(
+        getXYFromSquare(pieceEntry.square, pieceWidth, orientation),
+      );
+    });
+  }, [orientation, pieceWidth]);
 
   if (pieces !== prevPieces.current) {
     prevPieces.current = pieces;

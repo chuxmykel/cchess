@@ -1,4 +1,4 @@
-import { Square } from 'chess.js';
+import { Color, Square } from 'chess.js';
 
 import { NUMBER_OF_ROWS } from '../../../constants';
 import Row from '../Row';
@@ -8,11 +8,13 @@ interface BoardSurfaceProps {
     light: string;
     dark: string;
   };
+  orientation?: Color;
   onSquarePress: (square: Square) => void;
 }
 
 const BoardSurface: React.FC<BoardSurfaceProps> = ({
   colors,
+  orientation = 'w',
   onSquarePress,
 }) => (
   <>
@@ -20,7 +22,8 @@ const BoardSurface: React.FC<BoardSurfaceProps> = ({
       <Row
         key={idx}
         colors={colors}
-        rank={NUMBER_OF_ROWS - idx}
+        rank={orientation === 'b' ? idx + 1 : NUMBER_OF_ROWS - idx}
+        orientation={orientation}
         onSquarePress={onSquarePress}
       />
     ))}

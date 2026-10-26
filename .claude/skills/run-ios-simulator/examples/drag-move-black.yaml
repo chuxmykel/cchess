@@ -1,0 +1,24 @@
+# Drag-and-drop with the app playing black (board unflipped, black at the
+# bottom): e7 -> e5. Only legal once white (the opponent) has made its
+# first move.
+#
+# Coordinates are points, measured from `maestro hierarchy` on iPhone 18
+# Pro / iOS 27.0 with the board facing black's side. They're different
+# when the app is white or the board is flipped - see SKILL.md's
+# orientation table. The assertions catch a swipe that silently missed.
+#
+# Run with: maestro --device <UDID> test drag-move-black.yaml
+appId: host.exp.Exponent
+---
+- extendedWaitUntil:
+    visible:
+      id: "piece-a7"
+    timeout: 10000
+- swipe:
+    start: "175,446" # piece-e7 center (black-side view)
+    end: "175,345"   # square-e5 center (black-side view)
+    duration: 600
+- assertVisible:
+    id: "piece-e5"
+- assertNotVisible:
+    id: "piece-e7"

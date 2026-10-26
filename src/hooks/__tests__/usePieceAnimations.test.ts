@@ -2,6 +2,8 @@ import { renderHook } from '@testing-library/react-native';
 
 import { usePieceAnimations } from '../usePieceAnimations';
 import { DomainPiece } from '../../domain/types';
+import { getXYFromSquare } from '../../domain/boardCoordinates';
+import { getAnimatedXY } from '../../testUtils/animatedValue';
 
 describe('usePieceAnimations', () => {
   const pieceWidth = 50;
@@ -60,5 +62,24 @@ describe('usePieceAnimations', () => {
     // AnimatedPieceView - and crucially its Animated.Value objects - must be
     // the exact same object, or animations would silently stop working.
     expect(result.current[0]).toBe(firstPieceView);
+  });
+
+  it('moves every piece to its mirrored position when the orientation flips, keeping the same Animated values', async () => {
+    const { result, rerender } = await renderHook(
+      (props: { orientation: 'w' | 'b' }) =>
+        usePieceAnimations(twoPieces, null, pieceWidth, props.orientation),
+      { initialProps: { orientation: 'w' as 'w' | 'b' } },
+    );
+    const e2View = result.current[0];
+
+    await rerender({ orientation: 'b' });
+
+    expect(result.current[0]).toBe(e2View);
+    expect(getAnimatedXY(e2View.animatedPosition)).toEqual(
+      getXYFromSquare('e2', pieceWidth, 'b'),
+    );
+    expect(getAnimatedXY(result.current[1].animatedPosition)).toEqual(
+      getXYFromSquare('e7', pieceWidth, 'b'),
+    );
   });
 });

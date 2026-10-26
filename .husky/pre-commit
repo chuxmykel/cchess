@@ -1,0 +1,13 @@
+# Switch to the Node version pinned in .nvmrc when nvm is installed - git
+# GUIs and fresh shells can start on an older default that lint-staged and
+# ESLint don't run on. A no-op without nvm.
+NVM_SCRIPT="${NVM_DIR:-$HOME/.nvm}/nvm.sh"
+if [ -s "$NVM_SCRIPT" ]; then
+  . "$NVM_SCRIPT" --no-use
+  nvm use --silent >/dev/null 2>&1 || echo "husky - couldn't switch to the .nvmrc Node version; using $(node -v)"
+fi
+
+# Lint and format only what's staged (see "lint-staged" in package.json),
+# then typecheck the whole project - tsc can't check files in isolation.
+npx lint-staged
+npx tsc --noEmit

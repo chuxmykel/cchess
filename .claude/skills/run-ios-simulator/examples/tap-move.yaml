@@ -1,4 +1,6 @@
-# Tap-to-move: select a square, then tap the destination.
+# Tap-to-move: select e2, then tap e4. Works in any orientation since it
+# taps by testID, but only when the app is white and it's white's turn.
+#
 # Run with: maestro --device <UDID> test tap-move.yaml
 appId: host.exp.Exponent
 ---
@@ -6,3 +8,5 @@ appId: host.exp.Exponent
     id: "square-e2"
 - tapOn:
     id: "square-e4"
+- assertVisible:
+    id: "piece-e4"

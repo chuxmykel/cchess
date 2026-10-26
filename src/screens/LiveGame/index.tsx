@@ -1,6 +1,5 @@
 import {
   View,
-  Text,
   StyleSheet,
   ActivityIndicator,
   useWindowDimensions,
@@ -8,118 +7,18 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
-import { NUMBER_OF_ROWS } from '../../constants';
-import { BOARD_THEMES } from '../../constants/boardThemes';
-import Chessboard from '../../components/ChessBoard';
-import PromotionMenu from '../../components/PromotionMenu';
-import GameClock from '../../components/GameClock';
-import GameControls from '../../components/GameControls';
-import GameOverBanner from '../../components/GameOverBanner';
 import Toast from '../../components/Toast';
 import { useToast } from '../../hooks/useToast';
-import { useGameScreenGestureLock } from '../../hooks/useGameScreenGestureLock';
-import { useGameClock } from '../../hooks/useGameClock';
 import {
   GAME_SNAPSHOT_STATUS,
   useGameSnapshot,
 } from '../../hooks/useGameSnapshot';
 import { useAuthSession } from '../../context/AuthSessionContext';
-import { GameUserSummary } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
-import {
-  OnlineChessGameProvider,
-  useOnlineChessGameContext,
-} from '../../context/LiveGame/OnlineChessGameContext';
+import { OnlineChessGameProvider } from '../../context/LiveGame/OnlineChessGameContext';
+import LiveGameContent from './LiveGameContent';
 
 type LiveGameProps = NativeStackScreenProps<HomeStackParamList, 'LiveGame'>;
-
-const GameBoard: React.FC<{
-  width: number;
-  navigation: LiveGameProps['navigation'];
-  white: GameUserSummary;
-  black: GameUserSummary;
-}> = ({ width, navigation, white, black }) => {
-  const {
-    turn,
-    pendingPromotion,
-    promoteTo,
-    isGameOver,
-    myColor,
-    result,
-    resultReason,
-    whiteTimeMs,
-    blackTimeMs,
-    drawOfferedBy,
-    hasAnyMoveBeenMade,
-    resign,
-    offerDraw,
-    respondToDraw,
-    abort,
-  } = useOnlineChessGameContext();
-  const PIECE_WIDTH = width / NUMBER_OF_ROWS;
-
-  useGameScreenGestureLock(navigation, isGameOver);
-  const clock = useGameClock(whiteTimeMs, blackTimeMs, turn, !isGameOver);
-
-  function handleDone() {
-    navigation.popToTop();
-  }
-
-  return (
-    <>
-      <View style={styles.playerRow}>
-        <Text style={styles.playerName}>{black.displayName}</Text>
-        <GameClock
-          label="Black"
-          ms={clock.blackMs}
-          isActive={!isGameOver && turn === 'b'}
-        />
-      </View>
-
-      <Chessboard colors={BOARD_THEMES.test} width={width} />
-      {pendingPromotion && (
-        <PromotionMenu
-          promotingColor={turn}
-          boardWidth={width}
-          pieceWidth={PIECE_WIDTH}
-          handlePromotion={promoteTo}
-        />
-      )}
-
-      <View style={styles.playerRow}>
-        <Text style={styles.playerName}>{white.displayName}</Text>
-        <GameClock
-          label="White"
-          ms={clock.whiteMs}
-          isActive={!isGameOver && turn === 'w'}
-        />
-      </View>
-
-      {!isGameOver && (
-        <GameControls
-          canAbort={!hasAnyMoveBeenMade}
-          drawOfferedByOpponent={
-            drawOfferedBy !== null && drawOfferedBy !== myColor
-          }
-          drawOfferedByMe={drawOfferedBy === myColor}
-          onResign={resign}
-          onAbort={abort}
-          onOfferDraw={offerDraw}
-          onAcceptDraw={() => respondToDraw(true)}
-          onDeclineDraw={() => respondToDraw(false)}
-        />
-      )}
-
-      <GameOverBanner
-        visible={isGameOver}
-        result={result}
-        myColor={myColor}
-        resultReason={resultReason}
-        onDone={handleDone}
-      />
-    </>
-  );
-};
 
 const LiveGame: React.FC<LiveGameProps> = ({ navigation, route }) => {
   const { gameId } = route.params;
@@ -152,7 +51,7 @@ const LiveGame: React.FC<LiveGameProps> = ({ navigation, route }) => {
         snapshot={snapshot}
         onError={(message) => toast.show(message)}
       >
-        <GameBoard
+        <LiveGameContent
           width={width}
           navigation={navigation}
           white={snapshot.white}
@@ -176,16 +75,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  playerRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
-  playerName: {
-    fontSize: 15,
-    fontWeight: '600',
   },
 });
