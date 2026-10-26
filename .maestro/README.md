@@ -30,7 +30,7 @@ maestro test .maestro/tap-to-move.yaml   # a single flow, while iterating
 **Flows tagged `needs-live-server` are excluded from `npm run test:e2e`
 (and so from CI) as of the guest-auth/matchmaking/live-game slice.**
 `common/to-board.yaml` now goes through real matchmaking - tapping
-"Start New Game" lands on the `Matchmaking` screen, not a board, and
+"Start New Game" opens LiveGame seeking an opponent, not a game, and
 reaching an actual game needs a live `cchess-be` connection (and a real
 opponent) that CI doesn't have. `common/to-board.yaml` itself and every
 flow that depends on it (`tap-to-move`, `drag-and-drop`, `capture`,
