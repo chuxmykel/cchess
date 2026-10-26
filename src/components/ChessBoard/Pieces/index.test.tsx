@@ -29,12 +29,12 @@ describe('Pieces', () => {
     overrides: Partial<{
       pieces: AnimatedPieceView[];
       isOwnPieceAt: (square: Square) => boolean;
-      isGameOver: boolean;
+      locked: boolean;
     }> = {},
   ) {
     const pieces = overrides.pieces ?? [buildPiece('e2', 'wp')];
     const isOwnPieceAt = overrides.isOwnPieceAt ?? jest.fn(() => true);
-    const isGameOver = overrides.isGameOver ?? false;
+    const locked = overrides.locked ?? false;
     const onTap = jest.fn();
     const onDragStart = jest.fn();
     const onDragRelease = jest.fn();
@@ -48,7 +48,7 @@ describe('Pieces', () => {
         pieceWidth={pieceWidth}
         orientation="w"
         isOwnPieceAt={isOwnPieceAt}
-        isGameOver={isGameOver}
+        locked={locked}
         onTap={onTap}
         onDragStart={onDragStart}
         onDragRelease={onDragRelease}
@@ -76,7 +76,7 @@ describe('Pieces', () => {
   it("enables dragging a piece isOwnPieceAt reports as the player's own", async () => {
     const { screen, onDragStart } = await renderPieces({
       isOwnPieceAt: () => true,
-      isGameOver: false,
+      locked: false,
     });
 
     await simulatePanResponderDrag(screen.getByTestId('piece-e2'), 0, -100);
@@ -94,10 +94,10 @@ describe('Pieces', () => {
     expect(onDragStart).not.toHaveBeenCalled();
   });
 
-  it("disables dragging every piece once the game is over, even the player's own", async () => {
+  it("disables dragging every piece while locked, even the player's own", async () => {
     const { screen, onDragStart } = await renderPieces({
       isOwnPieceAt: () => true,
-      isGameOver: true,
+      locked: true,
     });
 
     await simulatePanResponderDrag(screen.getByTestId('piece-e2'), 0, -100);
