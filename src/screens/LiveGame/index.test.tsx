@@ -7,6 +7,7 @@ import { GAME_RESULT_REASON } from '../../network/socketEvents';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
 import { makeGameSnapshot } from '../../testUtils/gameSnapshot';
 import { withSafeArea } from '../../testUtils/safeArea';
+import { makeAuthSession } from '../../testUtils/authSession';
 
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
@@ -23,12 +24,9 @@ describe('LiveGame', () => {
     params: Parameters<typeof LiveGame>[0]['route']['params'],
   ) {
     const { socket, trigger } = createFakeSocket();
-    (useAuthSession as jest.Mock).mockReturnValue({
-      isReady: true,
-      accessToken: 'token',
-      userId: APP_PLAYER_ID,
-      socket,
-    });
+    (useAuthSession as jest.Mock).mockReturnValue(
+      makeAuthSession({ socket, user: { id: APP_PLAYER_ID } }),
+    );
     const navigation = {
       goBack: jest.fn(),
       setOptions: jest.fn(),

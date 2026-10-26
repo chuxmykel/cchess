@@ -1,122 +1,211 @@
+import { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+
 import {
+  apiClient,
   ApiError,
   createGuestSession,
   getGamePgn,
-  getAuthenticatedText,
-  postJson,
+  getMe,
+  getMyGames,
+  refreshSession,
+  register,
+  revokeRefreshToken,
+  signIn,
 } from '../restClient';
-import { SERVER_URL } from '../env';
 
-describe('postJson', () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
+const AUTH_RESPONSE = {
+  accessToken: 'access-123',
+  refreshToken: 'refresh-456',
+  user: {
+    id: 'user-789',
+    username: 'magnus',
+    displayName: 'magnus',
+    avatarColor: '#123456',
+    isGuest: false,
+    ratings: [],
+  },
+};
 
-  it('POSTs JSON and resolves with the parsed response', async () => {
-    const json = jest.fn().mockResolvedValue({ ok: true });
-    jest.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      json,
-    } as unknown as Response);
+function respondWith(data: unknown) {
+  return jest.fn(
+    async (config: InternalAxiosRequestConfig): Promise<AxiosResponse> => ({
+      data,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config,
+    }),
+  );
+}
 
-    const result = await postJson('/some/path', { a: 1 });
-
-    expect(global.fetch).toHaveBeenCalledWith(`${SERVER_URL}/some/path`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ a: 1 }),
-    });
-    expect(result).toEqual({ ok: true });
-  });
-
-  it('throws an ApiError on a non-2xx response', async () => {
-    jest.spyOn(global, 'fetch').mockResolvedValue({
-      ok: false,
-      status: 500,
-      statusText: 'Internal Server Error',
-      text: jest.fn().mockResolvedValue('boom'),
-    } as unknown as Response);
-
-    await expect(postJson('/fails')).rejects.toThrow(ApiError);
-  });
-});
-
-describe('createGuestSession', () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
-  it('maps the /auth/guest response into a flat session shape', async () => {
-    jest.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      json: jest.fn().mockResolvedValue({
-        accessToken: 'access-123',
-        refreshToken: 'refresh-456',
-        user: { id: 'user-789' },
-      }),
-    } as unknown as Response);
-
-    const session = await createGuestSession();
-
-    expect(session).toEqual({
-      accessToken: 'access-123',
-      refreshToken: 'refresh-456',
-      userId: 'user-789',
+function failWith(status: number, data: unknown) {
+  return jest.fn(async (config: InternalAxiosRequestConfig) => {
+    throw new AxiosError('Request failed', 'ERR_BAD_REQUEST', config, null, {
+      data,
+      status,
+      statusText: '',
+      headers: {},
+      config,
     });
   });
-});
+}
 
-describe('getAuthenticatedText', () => {
+function stubTransport(adapter: ReturnType<typeof respondWith>) {
+  apiClient.defaults.adapter = adapter;
+  return adapter;
+}
+
+function sentRequest(
+  adapter: ReturnType<typeof respondWith>,
+): InternalAxiosRequestConfig {
+  return adapter.mock.calls[0][0];
+}
+
+describe('restClient', () => {
+  const originalAdapter = apiClient.defaults.adapter;
+
   afterEach(() => {
-    jest.restoreAllMocks();
+    apiClient.defaults.adapter = originalAdapter;
   });
 
-  it('GETs with the bearer token and resolves with the response text', async () => {
-    jest.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      text: jest.fn().mockResolvedValue('1. e4 e5'),
-    } as unknown as Response);
+  describe('auth', () => {
+    it.each([
+      [
+        'createGuestSession',
+        () => createGuestSession(),
+        '/auth/guest',
+        undefined,
+      ],
+      [
+        'signIn',
+        () => signIn({ usernameOrEmail: 'magnus', password: 'secret123' }),
+        '/auth/login',
+        { usernameOrEmail: 'magnus', password: 'secret123' },
+      ],
+      [
+        'register',
+        () =>
+          register({
+            username: 'magnus',
+            email: 'm@example.com',
+            password: 'secret123',
+          }),
+        '/auth/register',
+        { username: 'magnus', email: 'm@example.com', password: 'secret123' },
+      ],
+      [
+        'refreshSession',
+        () => refreshSession('refresh-456'),
+        '/auth/refresh',
+        { refreshToken: 'refresh-456' },
+      ],
+    ])(
+      '%s POSTs to %s and resolves with the session',
+      async (_, call, url, body) => {
+        const transport = stubTransport(respondWith(AUTH_RESPONSE));
 
-    const result = await getAuthenticatedText('/some/text', 'token-123');
+        await expect(call()).resolves.toEqual(AUTH_RESPONSE);
 
-    expect(global.fetch).toHaveBeenCalledWith(`${SERVER_URL}/some/text`, {
-      method: 'GET',
-      headers: { Authorization: 'Bearer token-123' },
+        const request = sentRequest(transport);
+        expect(request.method).toBe('post');
+        expect(request.url).toBe(url);
+        expect(request.data && JSON.parse(request.data)).toEqual(body);
+      },
+    );
+
+    it('revokes a refresh token through /auth/logout', async () => {
+      const transport = stubTransport(respondWith(''));
+
+      await revokeRefreshToken('refresh-456');
+
+      const request = sentRequest(transport);
+      expect(request.url).toBe('/auth/logout');
+      expect(JSON.parse(request.data)).toEqual({ refreshToken: 'refresh-456' });
     });
-    expect(result).toBe('1. e4 e5');
   });
 
-  it('throws an ApiError on a non-2xx response', async () => {
-    jest.spyOn(global, 'fetch').mockResolvedValue({
-      ok: false,
-      status: 404,
-      statusText: 'Not Found',
-      text: jest.fn().mockResolvedValue('Game not found'),
-    } as unknown as Response);
+  describe('authenticated requests', () => {
+    it("fetches the signed-in user's profile with the bearer token", async () => {
+      const transport = stubTransport(respondWith(AUTH_RESPONSE.user));
 
-    await expect(getAuthenticatedText('/missing', 'token')).rejects.toThrow(
-      ApiError,
-    );
+      await expect(getMe('access-123')).resolves.toEqual(AUTH_RESPONSE.user);
+
+      const request = sentRequest(transport);
+      expect(request.url).toBe('/users/me');
+      expect(request.headers.Authorization).toBe('Bearer access-123');
+    });
+
+    it('fetches my most recent games, limited to the given count', async () => {
+      const transport = stubTransport(respondWith([]));
+
+      await getMyGames('access-123', 10);
+
+      const request = sentRequest(transport);
+      expect(request.url).toBe('/games');
+      expect(request.params).toEqual({ limit: 10 });
+      expect(request.headers.Authorization).toBe('Bearer access-123');
+    });
+
+    it("fetches a game's PGN as text", async () => {
+      const transport = stubTransport(respondWith('[Event "Casual"]'));
+
+      await expect(getGamePgn('game 1', 'access-123')).resolves.toBe(
+        '[Event "Casual"]',
+      );
+
+      const request = sentRequest(transport);
+      expect(request.url).toBe('/games/game%201/pgn');
+      expect(request.responseType).toBe('text');
+    });
   });
-});
 
-describe('getGamePgn', () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
+  describe('errors', () => {
+    it("rejects with an ApiError carrying the server's status and message", async () => {
+      stubTransport(
+        failWith(409, {
+          statusCode: 409,
+          message: 'Username is already taken',
+        }),
+      );
 
-  it("fetches the game's PGN endpoint", async () => {
-    jest.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      text: jest.fn().mockResolvedValue('[Event "Casual"]'),
-    } as unknown as Response);
+      const failure = register({
+        username: 'magnus',
+        email: 'm@example.com',
+        password: 'secret123',
+      });
 
-    await expect(getGamePgn('game-1', 'token')).resolves.toBe(
-      '[Event "Casual"]',
-    );
-    expect(global.fetch).toHaveBeenCalledWith(
-      `${SERVER_URL}/games/game-1/pgn`,
-      expect.objectContaining({ method: 'GET' }),
-    );
+      await expect(failure).rejects.toBeInstanceOf(ApiError);
+      await expect(failure).rejects.toMatchObject({
+        status: 409,
+        message: 'Username is already taken',
+      });
+    });
+
+    it('puts each validation message on its own line', async () => {
+      stubTransport(
+        failWith(400, {
+          message: [
+            'email must be an email',
+            'password must be longer than or equal to 8 characters',
+          ],
+        }),
+      );
+
+      await expect(
+        register({ username: 'magnus', email: 'nope', password: 'short' }),
+      ).rejects.toMatchObject({
+        message:
+          'email must be an email\npassword must be longer than or equal to 8 characters',
+      });
+    });
+
+    it("falls back to axios's own message when the server sent none", async () => {
+      stubTransport(failWith(502, undefined));
+
+      await expect(createGuestSession()).rejects.toMatchObject({
+        status: 502,
+        message: 'Request failed',
+      });
+    });
   });
 });

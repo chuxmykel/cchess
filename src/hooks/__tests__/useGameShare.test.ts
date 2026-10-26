@@ -5,6 +5,10 @@ import { useGameShare } from '../useGameShare';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { getGamePgn } from '../../network/restClient';
 import { SHARE_FAILED_MESSAGE } from '../../constants/errorMessages';
+import {
+  makeAuthSession,
+  makeBootstrappingAuthSession,
+} from '../../testUtils/authSession';
 
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
@@ -17,12 +21,9 @@ const PGN = '[Event "Casual"]\n\n1. e4 e5 *';
 
 describe('useGameShare', () => {
   beforeEach(() => {
-    (useAuthSession as jest.Mock).mockReturnValue({
-      isReady: true,
-      accessToken: 'token-123',
-      userId: 'u',
-      socket: {},
-    });
+    (useAuthSession as jest.Mock).mockReturnValue(
+      makeAuthSession({ accessToken: 'token-123' }),
+    );
     jest.spyOn(Share, 'share').mockResolvedValue({
       action: 'sharedAction',
       activityType: null,
@@ -56,7 +57,9 @@ describe('useGameShare', () => {
   });
 
   it('reports a failure when there is no session yet', async () => {
-    (useAuthSession as jest.Mock).mockReturnValue({ isReady: false });
+    (useAuthSession as jest.Mock).mockReturnValue(
+      makeBootstrappingAuthSession(),
+    );
     const onError = jest.fn();
     const { result } = await renderHook(() => useGameShare('game-1', onError));
 

@@ -9,18 +9,17 @@ import {
 } from '../../constants/timeControls';
 import { MATCHMAKING_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
+import {
+  makeAuthSession,
+  makeBootstrappingAuthSession,
+} from '../../testUtils/authSession';
 
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
 }));
 
 function mockReadyAuthSession(socket: AppSocket) {
-  (useAuthSession as jest.Mock).mockReturnValue({
-    isReady: true,
-    accessToken: 't',
-    userId: 'u',
-    socket,
-  });
+  (useAuthSession as jest.Mock).mockReturnValue(makeAuthSession({ socket }));
 }
 
 function createCallbacks() {
@@ -33,7 +32,9 @@ describe('useMatchmaking', () => {
   });
 
   it('reports isConnecting while there is no socket yet', async () => {
-    (useAuthSession as jest.Mock).mockReturnValue({ isReady: false });
+    (useAuthSession as jest.Mock).mockReturnValue(
+      makeBootstrappingAuthSession(),
+    );
 
     const { result } = await renderHook(() =>
       useMatchmaking(DEFAULT_TIME_CONTROL, createCallbacks()),
