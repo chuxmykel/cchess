@@ -114,6 +114,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
     and sign out, each swapping the tokens and reconnecting the socket -
     the newest session to succeed wins, and replaced ones are revoked),
     `useRecentGames` (the player's finished games, from `GET /games`),
+    `useUsernameAvailability` (whether a sign-up username is free, asked
+    of `GET /users/:username` once typing pauses and the name fits the
+    server's rules),
     `useMatchmaking` (seek/cancel, reporting
     `game:created` or an error back to its caller), `useGameSession` (a
     game screen's two phases - seeking an opponent, then playing the
@@ -177,7 +180,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `@expo/vector-icons`' MaterialCommunityIcons, so the set can be
   swapped in one place), account UI
   (`AccountForm`, the layout shared by Sign in and Create account;
-  `SignInPrompt`, shown to guests on Home and Profile; `RatingsList`),
+  `SignInPrompt`, shown to guests on Home and Profile; `RatingsList`;
+  `UsernameAvailabilityIndicator`, the ✓/✕ beside the sign-up username),
   and `Home`-screen-specific pieces (`HomeHeader`, `FriendsCarousel`,
   `RecentGamesList`).
 
@@ -201,7 +205,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
 - **`src/constants/`** - board size, piece image lookups
   (`PIECES['wk' | 'bq' | ...]`), castling squares, time controls, board
   themes (`boardThemes.ts`), the app's accent and muted colors
-  (`colors.ts`, a start on a fuller theme), user-facing error-message fallbacks
+  (`colors.ts`, a start on a fuller theme), account rules mirrored from
+  the server (`account.ts`), user-facing error-message fallbacks
   (`errorMessages.ts`), home-screen placeholder data (`friends.ts`,
   until friends are backed by the server), etc.
 
