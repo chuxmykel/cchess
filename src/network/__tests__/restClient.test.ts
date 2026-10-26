@@ -1,4 +1,10 @@
-import { ApiError, createGuestSession, postJson } from '../restClient';
+import {
+  ApiError,
+  createGuestSession,
+  getGamePgn,
+  getAuthenticatedText,
+  postJson,
+} from '../restClient';
 import { SERVER_URL } from '../env';
 
 describe('postJson', () => {
@@ -57,5 +63,60 @@ describe('createGuestSession', () => {
       refreshToken: 'refresh-456',
       userId: 'user-789',
     });
+  });
+});
+
+describe('getAuthenticatedText', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('GETs with the bearer token and resolves with the response text', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      text: jest.fn().mockResolvedValue('1. e4 e5'),
+    } as unknown as Response);
+
+    const result = await getAuthenticatedText('/some/text', 'token-123');
+
+    expect(global.fetch).toHaveBeenCalledWith(`${SERVER_URL}/some/text`, {
+      method: 'GET',
+      headers: { Authorization: 'Bearer token-123' },
+    });
+    expect(result).toBe('1. e4 e5');
+  });
+
+  it('throws an ApiError on a non-2xx response', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 404,
+      statusText: 'Not Found',
+      text: jest.fn().mockResolvedValue('Game not found'),
+    } as unknown as Response);
+
+    await expect(getAuthenticatedText('/missing', 'token')).rejects.toThrow(
+      ApiError,
+    );
+  });
+});
+
+describe('getGamePgn', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("fetches the game's PGN endpoint", async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      text: jest.fn().mockResolvedValue('[Event "Casual"]'),
+    } as unknown as Response);
+
+    await expect(getGamePgn('game-1', 'token')).resolves.toBe(
+      '[Event "Casual"]',
+    );
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${SERVER_URL}/games/game-1/pgn`,
+      expect.objectContaining({ method: 'GET' }),
+    );
   });
 });

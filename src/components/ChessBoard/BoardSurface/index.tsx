@@ -9,7 +9,7 @@ interface BoardSurfaceProps {
     dark: string;
   };
   orientation?: Color;
-  onSquarePress: (square: Square) => void;
+  onSquarePress?: (square: Square) => void;
 }
 
 const BoardSurface: React.FC<BoardSurfaceProps> = ({

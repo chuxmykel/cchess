@@ -1,24 +1,31 @@
+import { useState } from 'react';
+import { Alert, View, StyleSheet } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Color } from 'chess.js';
 
 import { NUMBER_OF_ROWS } from '../../constants';
 import { BOARD_THEMES } from '../../constants/boardThemes';
+import { findTimeControl, TimeControl } from '../../constants/timeControls';
 import Chessboard from '../../components/ChessBoard';
+import MoveList from '../../components/MoveList';
 import PromotionMenu from '../../components/PromotionMenu';
 import PlayerBar, { PlayerBarProps } from '../../components/PlayerBar';
-import GameControls from '../../components/GameControls';
-import GameOverBanner from '../../components/GameOverBanner';
-import Button from '../../components/Button';
+import GameHeader from '../../components/GameHeader';
+import GameToolbar from '../../components/GameToolbar';
+import BottomBar from '../../components/BottomBar';
+import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
+import DrawOfferPrompt from '../../components/DrawOfferPrompt';
+import GameOverCard from '../../components/GameOverCard';
 import { useGameScreenGestureLock } from '../../hooks/useGameScreenGestureLock';
 import { useGameClock } from '../../hooks/useGameClock';
 import { useBoardOrientation } from '../../hooks/useBoardOrientation';
-import { GameUserSummary } from '../../network/socketEvents';
+import { useMoveNavigation } from '../../hooks/useMoveNavigation';
+import { useGameShare } from '../../hooks/useGameShare';
+import { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
 import { useOnlineChessGameContext } from '../../context/LiveGame/OnlineChessGameContext';
+import EarlierPositionOverlay from './EarlierPositionOverlay';
 
-// Only what this component actually calls - setOptions for the swipe-back
-// gesture lock, popToTop for the game-over Done button - so it can be
-// rendered with a plain stub instead of a whole navigator.
 export type LiveGameContentNavigation = Pick<
   NativeStackNavigationProp<HomeStackParamList, 'LiveGame'>,
   'setOptions' | 'popToTop'
@@ -27,20 +34,66 @@ export type LiveGameContentNavigation = Pick<
 interface LiveGameContentProps {
   width: number;
   navigation: LiveGameContentNavigation;
-  white: GameUserSummary;
-  black: GameUserSummary;
+  snapshot: GameSnapshot;
+  onNewOpponent: (timeControl: TimeControl) => void;
+  onError?: (message: string) => void;
 }
 
-// Everything on the LiveGame screen once the game has loaded: the board,
-// both players' bars, the in-game controls and the game-over banner. Must
-// render inside an OnlineChessGameProvider, which LiveGame sets up.
+type GameMenuOptions = {
+  isGameOver: boolean;
+  canAbort: boolean;
+  canOfferDraw: boolean;
+  flip: () => void;
+  confirmAbort: () => void;
+  confirmResign: () => void;
+  offerDraw: () => void;
+};
+
+function gameMenuActions({
+  isGameOver,
+  canAbort,
+  canOfferDraw,
+  flip,
+  confirmAbort,
+  confirmResign,
+  offerDraw,
+}: GameMenuOptions): ActionSheetAction[] {
+  const flipBoard: ActionSheetAction = {
+    label: 'Flip board',
+    onPress: flip,
+    testID: 'flip-board-action',
+  };
+  if (isGameOver) {
+    return [flipBoard];
+  }
+  const leaveGame: ActionSheetAction = canAbort
+    ? {
+        label: 'Abort game',
+        onPress: confirmAbort,
+        destructive: true,
+        testID: 'abort-game-action',
+      }
+    : {
+        label: 'Resign',
+        onPress: confirmResign,
+        destructive: true,
+        testID: 'resign-action',
+      };
+  const drawOffer: ActionSheetAction[] = canOfferDraw
+    ? [{ label: 'Offer draw', onPress: offerDraw, testID: 'offer-draw-action' }]
+    : [];
+  return [flipBoard, leaveGame, ...drawOffer];
+}
+
 const LiveGameContent: React.FC<LiveGameContentProps> = ({
   width,
   navigation,
-  white,
-  black,
+  snapshot,
+  onNewOpponent,
+  onError,
 }) => {
   const {
+    fen,
     turn,
     pendingPromotion,
     promoteTo,
@@ -51,7 +104,8 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     whiteTimeMs,
     blackTimeMs,
     drawOfferedBy,
-    hasAnyMoveBeenMade,
+    moves,
+    canAbort,
     resign,
     offerDraw,
     respondToDraw,
@@ -59,76 +113,171 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   } = useOnlineChessGameContext();
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
   const { orientation, flip } = useBoardOrientation(myColor);
+  const moveNavigation = useMoveNavigation(moves);
+  const shareGame = useGameShare(snapshot.id, onError);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useGameScreenGestureLock(navigation, isGameOver);
   const clock = useGameClock(whiteTimeMs, blackTimeMs, turn, !isGameOver);
 
-  function handleDone() {
+  const timeControl = findTimeControl(
+    snapshot.minutes,
+    snapshot.incrementSeconds,
+    snapshot.gameType,
+  );
+  const drawOfferedByMe = drawOfferedBy === myColor;
+  const drawOfferedByOpponent =
+    drawOfferedBy !== null && drawOfferedBy !== myColor;
+
+  function leaveGame() {
     navigation.popToTop();
   }
 
-  // Each player's bar sits on their own side of the board, so the bars swap
-  // along with it when the board is flipped.
+  function findNewOpponent() {
+    onNewOpponent(timeControl);
+  }
+
+  function confirmAbort() {
+    Alert.alert('Abort game?', 'Are you sure you want to abort?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Abort', style: 'destructive', onPress: abort },
+    ]);
+  }
+
+  function confirmResign() {
+    Alert.alert('Resign?', 'You will lose this game.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Resign', style: 'destructive', onPress: resign },
+    ]);
+  }
+
+  const menuActions = gameMenuActions({
+    isGameOver,
+    canAbort,
+    canOfferDraw: !drawOfferedByMe && !drawOfferedByOpponent,
+    flip,
+    confirmAbort,
+    confirmResign,
+    offerDraw,
+  });
+
   const topColor: Color = orientation === 'w' ? 'b' : 'w';
   const sharedPlayerBarProps: Omit<PlayerBarProps, 'color'> = {
-    white,
-    black,
+    white: snapshot.white,
+    black: snapshot.black,
     clock,
     turn,
     isGameOver,
   };
 
   return (
-    <>
-      <PlayerBar color={topColor} {...sharedPlayerBarProps} />
-
-      <Chessboard
-        colors={BOARD_THEMES.test}
-        width={width}
-        orientation={orientation}
+    <View style={styles.screen}>
+      <GameHeader
+        timeControl={timeControl}
+        rated={snapshot.rated}
+        onBack={isGameOver ? leaveGame : undefined}
+        menuItems={[
+          {
+            label: 'Share & export',
+            icon: '⇪',
+            onPress: shareGame,
+            testID: 'share-game-item',
+          },
+        ]}
       />
-      {pendingPromotion && (
-        <PromotionMenu
-          promotingColor={turn}
-          boardWidth={width}
-          pieceWidth={PIECE_WIDTH}
-          handlePromotion={promoteTo}
+
+      <MoveList
+        moves={moves}
+        currentPly={moveNavigation.currentPly}
+        onSelectPly={moveNavigation.goTo}
+      />
+
+      <View style={styles.board} testID="game-board-area">
+        <PlayerBar color={topColor} {...sharedPlayerBarProps} />
+
+        <View>
+          <Chessboard
+            colors={BOARD_THEMES.test}
+            width={width}
+            orientation={orientation}
+          />
+          {pendingPromotion && moveNavigation.isLive && (
+            <PromotionMenu
+              promotingColor={turn}
+              boardWidth={width}
+              pieceWidth={PIECE_WIDTH}
+              handlePromotion={promoteTo}
+            />
+          )}
+          <EarlierPositionOverlay
+            fen={moveNavigation.viewedFen ?? fen}
+            visible={!moveNavigation.isLive}
+            width={width}
+            orientation={orientation}
+          />
+          {isGameOver && moveNavigation.isLive && (
+            <View style={styles.gameOverOverlay} testID="game-over-overlay">
+              <GameOverCard
+                result={result}
+                myColor={myColor}
+                resultReason={resultReason}
+                onNewOpponent={findNewOpponent}
+              />
+            </View>
+          )}
+        </View>
+
+        <PlayerBar color={orientation} {...sharedPlayerBarProps} />
+      </View>
+
+      {!isGameOver && drawOfferedByOpponent && (
+        <DrawOfferPrompt
+          onAccept={() => respondToDraw(true)}
+          onDecline={() => respondToDraw(false)}
         />
       )}
 
-      <PlayerBar color={orientation} {...sharedPlayerBarProps} />
-
-      <Button
-        label="Flip board"
-        variant="text"
-        onPress={flip}
-        testID="flip-board-button"
-      />
-
-      {!isGameOver && (
-        <GameControls
-          canAbort={!hasAnyMoveBeenMade}
-          drawOfferedByOpponent={
-            drawOfferedBy !== null && drawOfferedBy !== myColor
-          }
-          drawOfferedByMe={drawOfferedBy === myColor}
-          onResign={resign}
-          onAbort={abort}
-          onOfferDraw={offerDraw}
-          onAcceptDraw={() => respondToDraw(true)}
-          onDeclineDraw={() => respondToDraw(false)}
+      <BottomBar>
+        <GameToolbar
+          onOpenMenu={() => setIsMenuOpen(true)}
+          onResign={confirmResign}
+          canResign={!isGameOver && !canAbort}
+          onPreviousMove={moveNavigation.back}
+          onNextMove={moveNavigation.forward}
+          canGoToPreviousMove={moveNavigation.canGoBack}
+          canGoToNextMove={moveNavigation.canGoForward}
         />
-      )}
+      </BottomBar>
 
-      <GameOverBanner
-        visible={isGameOver}
-        result={result}
-        myColor={myColor}
-        resultReason={resultReason}
-        onDone={handleDone}
+      <ActionSheet
+        visible={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        actions={menuActions}
       />
-    </>
+    </View>
   );
 };
 
 export default LiveGameContent;
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    width: '100%',
+  },
+  board: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 12,
+  },
+  gameOverOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+  },
+});

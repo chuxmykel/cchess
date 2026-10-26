@@ -17,15 +17,15 @@ export type GameSnapshotResult =
 // that this is the same full-Game-row shape as game:created/game:over. Every
 // mount of the Game screen re-joins and trusts this reply over whatever
 // navigation params it arrived with, so the screen also works if it's ever
-// reached by resuming an in-progress game rather than fresh from Matchmaking.
+// reached by resuming an in-progress game rather than fresh from a match.
 export function useGameSnapshot(
   socket: AppSocket | null,
-  gameId: string,
+  gameId: string | null,
 ): GameSnapshotResult {
   const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
 
   useEffect(() => {
-    if (!socket) {
+    if (!socket || !gameId) {
       return;
     }
 
@@ -43,7 +43,8 @@ export function useGameSnapshot(
     };
   }, [socket, gameId]);
 
-  if (!snapshot) {
+  const isSnapshotOfThisGame = snapshot !== null && snapshot.id === gameId;
+  if (!isSnapshotOfThisGame) {
     return { status: GAME_SNAPSHOT_STATUS.LOADING };
   }
   return { status: GAME_SNAPSHOT_STATUS.READY, snapshot };

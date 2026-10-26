@@ -71,4 +71,12 @@ describe('PlayerBar', () => {
       idle.getByTestId('game-clock-White').props.style,
     );
   });
+
+  it('fades once the game is over', async () => {
+    const live = await renderBar('w');
+    expect(live.getByTestId('player-bar-w')).not.toHaveStyle({ opacity: 0.5 });
+
+    const over = await renderBar('w', { isGameOver: true });
+    expect(over.getByTestId('player-bar-w')).toHaveStyle({ opacity: 0.5 });
+  });
 });

@@ -49,4 +49,39 @@ describe('useGameSnapshot', () => {
 
     expect(result.current.status).toBe(GAME_SNAPSHOT_STATUS.LOADING);
   });
+
+  it("doesn't join anything while there's no game yet", async () => {
+    const { socket } = createFakeSocket();
+    const { result } = await renderHook(() => useGameSnapshot(socket, null));
+
+    expect(socket.emit).not.toHaveBeenCalled();
+    expect(result.current.status).toBe(GAME_SNAPSHOT_STATUS.LOADING);
+  });
+
+  it("goes back to loading for a new game rather than reporting the last game's snapshot", async () => {
+    const { socket, trigger } = createFakeSocket();
+    const { result, rerender } = await renderHook(
+      (gameId: string) => useGameSnapshot(socket, gameId),
+      { initialProps: 'game-1' },
+    );
+    await act(() => {
+      trigger('game:state', makeGameSnapshot({ id: 'game-1' }));
+    });
+    expect(result.current.status).toBe(GAME_SNAPSHOT_STATUS.READY);
+
+    await rerender('game-2');
+
+    expect(result.current.status).toBe(GAME_SNAPSHOT_STATUS.LOADING);
+    expect(socket.emit).toHaveBeenLastCalledWith('game:join', {
+      gameId: 'game-2',
+    });
+
+    await act(() => {
+      trigger('game:state', makeGameSnapshot({ id: 'game-2' }));
+    });
+    expect(result.current).toEqual({
+      status: GAME_SNAPSHOT_STATUS.READY,
+      snapshot: makeGameSnapshot({ id: 'game-2' }),
+    });
+  });
 });

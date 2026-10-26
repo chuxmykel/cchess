@@ -53,4 +53,12 @@ describe('BoardSurface', () => {
     expect(rows[0].children[0].props.testID).toBe('square-h1');
     expect(rows[7].children[0].props.testID).toBe('square-h8');
   });
+
+  it('can be rendered display-only, with no square press handler', async () => {
+    const screen = await render(<BoardSurface colors={colors} />);
+
+    await fireEvent.press(screen.getByTestId('square-e4'));
+
+    expect(screen.getAllByTestId('chessboard-row')).toHaveLength(8);
+  });
 });

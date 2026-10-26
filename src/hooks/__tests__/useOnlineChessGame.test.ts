@@ -3,7 +3,7 @@ import { act, renderHook } from '@testing-library/react-native';
 import { useOnlineChessGame } from '../useOnlineChessGame';
 import { GAME_RESULT_REASON } from '../../network/socketEvents';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
-import { makeGameSnapshot, STARTING_FEN } from '../../testUtils/gameSnapshot';
+import { makeGameSnapshot } from '../../testUtils/gameSnapshot';
 
 const GAME_ID = 'game-1';
 
@@ -143,28 +143,74 @@ describe('useOnlineChessGame', () => {
     });
   });
 
-  it('reports hasAnyMoveBeenMade from the initial snapshot', async () => {
-    const { socket } = createFakeSocket();
-    const snapshot = makeGameSnapshot({
-      moves: [
-        {
-          ply: 1,
-          from: 'e2',
-          to: 'e4',
-          piece: 'p',
-          color: 'w',
-          san: 'e4',
-          captured: null,
-          promotion: null,
-          fenAfter: STARTING_FEN,
-          clockAfterMs: 299000,
-        },
-      ],
-    });
-    const { result } = await renderHook(() =>
-      useOnlineChessGame(socket, GAME_ID, 'w', snapshot),
-    );
+  describe('canAbort', () => {
+    const AFTER_E4 =
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+    const AFTER_E5 =
+      'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2';
 
-    expect(result.current.hasAnyMoveBeenMade).toBe(true);
+    it('allows aborting before any move', async () => {
+      const { socket } = createFakeSocket();
+      const { result } = await renderHook(() =>
+        useOnlineChessGame(socket, GAME_ID, 'w', makeGameSnapshot()),
+      );
+
+      expect(result.current.canAbort).toBe(true);
+    });
+
+    it("still allows aborting after white's first move", async () => {
+      const { socket } = createFakeSocket();
+      const snapshot = makeGameSnapshot({ fen: AFTER_E4, turn: 'b' });
+      const { result } = await renderHook(() =>
+        useOnlineChessGame(socket, GAME_ID, 'b', snapshot),
+      );
+
+      expect(result.current.canAbort).toBe(true);
+    });
+
+    it('stops allowing it once black has moved too', async () => {
+      const { socket } = createFakeSocket();
+      const snapshot = makeGameSnapshot({ fen: AFTER_E5, turn: 'w' });
+      const { result } = await renderHook(() =>
+        useOnlineChessGame(socket, GAME_ID, 'w', snapshot),
+      );
+
+      expect(result.current.canAbort).toBe(false);
+    });
+
+    it('counts our own move as soon as it is played', async () => {
+      const { socket } = createFakeSocket();
+      const snapshot = makeGameSnapshot({ fen: AFTER_E4, turn: 'b' });
+      const { result } = await renderHook(() =>
+        useOnlineChessGame(socket, GAME_ID, 'b', snapshot),
+      );
+
+      await act(() => {
+        result.current.handleSquareTap('e7');
+      });
+      await act(() => {
+        result.current.handleSquareTap('e5');
+      });
+
+      expect(result.current.canAbort).toBe(false);
+    });
+
+    it('stops allowing it once the game is over', async () => {
+      const { socket, trigger } = createFakeSocket();
+      const snapshot = makeGameSnapshot();
+      const { result } = await renderHook(() =>
+        useOnlineChessGame(socket, GAME_ID, 'w', snapshot),
+      );
+
+      await act(() => {
+        trigger('game:over', {
+          ...snapshot,
+          status: 'aborted',
+          resultReason: GAME_RESULT_REASON.ABORT,
+        });
+      });
+
+      expect(result.current.canAbort).toBe(false);
+    });
   });
 });

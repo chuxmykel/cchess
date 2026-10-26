@@ -24,7 +24,7 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
   const toast = useToast();
 
   function startNewGame() {
-    navigation.navigate('Matchmaking', { timeControl });
+    navigation.navigate('LiveGame', { timeControl });
   }
 
   function challengeFriend() {

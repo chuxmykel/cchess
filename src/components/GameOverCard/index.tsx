@@ -1,7 +1,6 @@
 import { Color } from 'chess.js';
 import { View, Text, StyleSheet } from 'react-native';
 
-import BottomSheet from '../BottomSheet';
 import Button from '../Button';
 import GameResultIcon from '../GameResultIcon';
 import { GameResult } from '../../domain/types';
@@ -10,12 +9,11 @@ import {
   GameResultReason,
 } from '../../network/socketEvents';
 
-interface GameOverBannerProps {
-  visible: boolean;
+interface GameOverCardProps {
   result: 'white' | 'black' | 'draw' | null;
   myColor: Color;
   resultReason: GameResultReason | null;
-  onDone: () => void;
+  onNewOpponent: () => void;
 }
 
 // A null result (an aborted game) means neither side won
@@ -69,48 +67,57 @@ function describeReason(reason: string | null): string {
   );
 }
 
-const GameOverBanner: React.FC<GameOverBannerProps> = ({
-  visible,
+const GameOverCard: React.FC<GameOverCardProps> = ({
   result,
   myColor,
   resultReason,
-  onDone,
+  onNewOpponent,
 }) => {
   const myResult = toMyResult(result, myColor);
+  const wasAborted = resultReason === GAME_RESULT_REASON.ABORT;
 
   return (
-    <BottomSheet visible={visible} onClose={onDone}>
-      <View style={styles.content} testID="game-over-banner">
-        {myResult ? (
-          <>
-            <GameResultIcon result={myResult} size={40} />
-            <Text style={styles.title}>{RESULT_LABELS[myResult]}</Text>
-          </>
-        ) : (
-          <Text style={styles.title}>Game Over</Text>
-        )}
-        {resultReason ? (
-          <Text style={styles.reason}>{describeReason(resultReason)}</Text>
-        ) : null}
-        <Button
-          label="Done"
-          onPress={onDone}
-          variant="primary"
-          style={styles.doneButton}
-          testID="game-over-done-button"
-        />
-      </View>
-    </BottomSheet>
+    <View style={styles.card} testID="game-over-card">
+      {myResult ? (
+        <>
+          <GameResultIcon result={myResult} size={40} />
+          <Text style={styles.title}>{RESULT_LABELS[myResult]}</Text>
+        </>
+      ) : (
+        <Text style={styles.title}>
+          {wasAborted ? 'Game aborted' : 'Game over'}
+        </Text>
+      )}
+      {resultReason && !wasAborted ? (
+        <Text style={styles.reason}>{describeReason(resultReason)}</Text>
+      ) : null}
+      <Button
+        label="New opponent"
+        onPress={onNewOpponent}
+        variant="primary"
+        style={styles.newOpponentButton}
+        testID="new-opponent-button"
+      />
+    </View>
   );
 };
 
-export default GameOverBanner;
+export default GameOverCard;
 
 const styles = StyleSheet.create({
-  content: {
+  card: {
+    minWidth: 240,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    backgroundColor: 'white',
     alignItems: 'center',
-    paddingVertical: 24,
     gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   title: {
     fontSize: 22,
@@ -119,11 +126,10 @@ const styles = StyleSheet.create({
   reason: {
     fontSize: 15,
     color: '#666',
-    marginBottom: 12,
     textTransform: 'capitalize',
   },
-  doneButton: {
-    minWidth: 160,
+  newOpponentButton: {
+    minWidth: 180,
     marginTop: 8,
   },
 });

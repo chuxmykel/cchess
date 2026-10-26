@@ -105,19 +105,28 @@ network/       pure networking infra (REST/socket clients, event types), same st
     `usePieceGesture`) - none of these know chess rules themselves.
   - Online-play orchestration, each wrapping the `network/` layer:
     `useAuthSessionBootstrap` (guest session + socket bootstrap, backs
-    `AuthSessionContext`), `useMatchmaking` (seek/cancel/`game:created`
-    for the `Matchmaking` screen), `useGameSnapshot` (the `game:join`
-    fetch that seeds a `LiveGame` mount), `useOnlineChessGame` (drives an
+    `AuthSessionContext`), `useMatchmaking` (seek/cancel, reporting
+    `game:created` or an error back to its caller), `useGameSession` (a
+    game screen's two phases - seeking an opponent, then playing the
+    matched game), `useGameSnapshot` (the `game:join` fetch that seeds a
+    game once matched), `useOnlineChessGame` (drives an
     in-progress game on top of `useChessGame`, delegating server-push
     handling to `useGameServerEvents` - status/result/clocks/draw offers,
     and replaying the opponent's moves idempotently via a fen comparison
     against the echo of our own), `useGameClock` (client-side ticking
     between authoritative server clock updates), and
     `useConnectionLatency`/`useConnectionStrengthIndicator` (the ack-ping
-    round-trip sample and its bars/label derivation).
+    round-trip sample and its bars/label derivation), `useMoveNavigation`
+    (stepping back/forward through a game's moves to view earlier
+    positions, snapping back to live on a new move), and `useGameShare`
+    (fetches a game's PGN and opens the native share sheet).
   - Small reusable UI-state hooks with no game-domain knowledge at all:
     `usePopoverMenu`, `useToast`/`useToastBubbleAnimation`,
-    `useBottomSheet`, `useCaretRotation`, `useGameScreenGestureLock`.
+    `useBottomSheet`, `useCaretRotation`, `useGameScreenGestureLock`,
+    `useSwipeBackUntilGameLoads` (keeps a game screen's swipe-back gesture
+    available until its game has loaded), and `useRunAfterDismiss` (holds a menu/sheet action until its modal has
+    finished closing - on iOS, presenting the share sheet or an Alert
+    while a modal is still animating away silently does nothing).
 
 - **`src/context/`** - every file that defines a React context lives here,
   one top-level directory, rather than scattered across the layers that
@@ -139,23 +148,30 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `ChessGameContext` + the hooks above; everything under it
   (`BoardSurface`, `Pieces/Piece`, `Row`, `Square`,
   `PieceDragAndDropGuide`, `ValidMoveIndicators`) is purely presentational
-  and renders only what it's given as props/context.
+  and renders only what it's given as props/context. `StaticBoard` is a
+  separate read-only board drawn straight from a FEN (no game state,
+  animation or gestures), used for viewing earlier positions.
 
 - **`src/components/`** (everything else) - also purely presentational,
-  consuming hooks/context the same way: in-game UI (`GameClock`,
-  `GameControls`, `GameOverBanner`, `GameResultIcon`, `GameTypeIcon`,
-  `PlayerBar`, `PromotionMenu`, `ConnectionStrengthIndicator`), shared primitives used
-  across screens (`Button`, `Avatar`, `BottomSheet`, `Popover`/
-  `PopoverMenu`, `SectionHeader`, `Toast`, `TimeControlSelector`), and
+  consuming hooks/context the same way: in-game UI (`GameHeader`,
+  `MoveList`, `GameToolbar`, `BottomBar`, `GameClock`, `GameOverCard`, `GameResultIcon`,
+  `GameTypeIcon`, `PlayerBar`, `PromotionMenu`, `DrawOfferPrompt`,
+  `SeekCard`, `LiveGameSkeleton`, `ConnectionStrengthIndicator`), shared
+  primitives used across screens (`Button`, `Avatar`, `BottomSheet`,
+  `ActionSheet`, `Placeholder`, `Popover`/`PopoverMenu`, `SectionHeader`,
+  `Toast`, `TimeControlSelector`), and
   `Home`-screen-specific pieces (`HomeHeader`, `FriendsCarousel`,
   `RecentGamesList`).
 
 - **Navigation** (React Navigation, nested stacks/tabs):
-  `App.tsx` (root native-stack) -> `HomeStack` (`HomeTabs`, `Matchmaking`,
-  `LiveGame`) -> `HomeTabs` (bottom tabs: `HomeTabStack`, `Profile`) ->
-  `HomeTabStack` (native-stack: `Home`, `NewGame`). A fresh launch lands on
-  the `Home` tab (not the board) - the path to a game is Home -> New Game
-  -> Start New Game -> Matchmaking -> LiveGame. `LiveGame` is named for what
+  `App.tsx` (root native-stack) -> `HomeStack` (`HomeTabs`, `LiveGame`) ->
+  `HomeTabs` (bottom tabs: `HomeTabStack`, `Profile`) -> `HomeTabStack`
+  (native-stack: `Home`, `NewGame`). A fresh launch lands on the `Home` tab
+  (not the board) - the path to a game is Home -> New Game -> Start New
+  Game -> LiveGame. `LiveGame` covers the whole online game in one screen:
+  it opens seeking an opponent (a waiting card over an empty board), then
+  plays the matched game in place, with no navigation in between - and
+  "New opponent" puts it back to seeking. `LiveGame` is named for what
   it is today - a server-driven online game - not a generic "any game"
   screen; a future local/offline game would get its own screen rather than
   being folded into this one.
@@ -174,8 +190,13 @@ network/       pure networking infra (REST/socket clients, event types), same st
   (`panResponderGesture.ts`), `Animated.Value` read helpers, a text-based
   board visualizer for debugging board state in test failures, a fake
   `AppSocket` for hooks that talk to the server (`fakeSocket.ts`), a
-  `GameSnapshot` fixture builder (`gameSnapshot.ts`), and a safe-area
-  wrapper for components that read insets (`safeArea.tsx`).
+  `GameSnapshot` fixture builder (`gameSnapshot.ts`), a safe-area
+  wrapper for components that read insets (`safeArea.tsx`),
+  `waitForSheetToClose` (`modal.ts`), and shared mock modules for
+  `jest.mock` factories (`ConnectionStrengthIndicatorStub.tsx`,
+  `popoverMenuStartingOpen.ts`). `jest-setup.js` makes the mocked
+  `Modal` report `onDismiss` when it hides, as iOS does, so actions that
+  wait on it run in tests too.
 
 ## Testing
 

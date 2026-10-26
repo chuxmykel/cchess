@@ -1,10 +1,12 @@
-# Flip the LiveGame board to the other side's view (tap again to flip
-# back).
+# Flip the LiveGame board to the other side's view, from the ☰ game menu
+# (run again to flip back).
 #
 # Run with: maestro --device <UDID> test flip.yaml
 appId: host.exp.Exponent
 ---
 - tapOn:
-    id: "flip-board-button"
+    id: "game-menu-button"
+- tapOn:
+    id: "flip-board-action"
 - waitForAnimationToEnd:
     timeout: 2000

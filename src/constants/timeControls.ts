@@ -85,3 +85,27 @@ export const TIME_CONTROL_GROUPS: TimeControlGroup[] = [
 
 export const DEFAULT_TIME_CONTROL: TimeControl =
   TIME_CONTROL_GROUPS[1].options[2];
+
+const ALL_TIME_CONTROLS: TimeControl[] = TIME_CONTROL_GROUPS.flatMap(
+  (group) => group.options,
+);
+
+export function findTimeControl(
+  minutes: number,
+  incrementSeconds: number,
+  type: GameType,
+): TimeControl {
+  const preset = ALL_TIME_CONTROLS.find(
+    (option) =>
+      option.minutes === minutes &&
+      option.incrementSeconds === incrementSeconds,
+  );
+  return (
+    preset ?? {
+      type,
+      label: `${minutes}+${incrementSeconds}`,
+      minutes,
+      incrementSeconds,
+    }
+  );
+}

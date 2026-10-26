@@ -95,6 +95,26 @@ describe('useBottomSheet', () => {
     expect(result.current.modalVisible).toBe(false);
   });
 
+  it('stays mounted when reopened before its close animation finishes', async () => {
+    const { result, rerender } = await renderHook(
+      (props: { visible: boolean }) =>
+        useBottomSheet({ visible: props.visible, onClose: jest.fn() }),
+      { initialProps: { visible: true } },
+    );
+
+    await act(async () => {
+      rerender({ visible: false });
+    });
+    await act(async () => {
+      rerender({ visible: true });
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    });
+
+    expect(result.current.modalVisible).toBe(true);
+  });
+
   it('follows the finger while dragging down from the handle', async () => {
     const { screen, resultRef } = await mountHarness(true, jest.fn());
     const target = screen.getByTestId('sheet-handle');

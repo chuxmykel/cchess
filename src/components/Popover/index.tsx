@@ -21,6 +21,7 @@ interface PopoverProps {
   visible: boolean;
   position: MenuPosition | null;
   onClose: () => void;
+  onDismiss?: () => void;
   width?: number;
   // Attaches a caret to the given edge, centered on it. Omitted entirely by
   // default (e.g. PopoverMenu's dropdown doesn't want one) - opt in per use.
@@ -61,6 +62,7 @@ const Popover: React.FC<PopoverProps> = ({
   visible,
   position,
   onClose,
+  onDismiss,
   width,
   caretSide,
   contentStyle,
@@ -74,10 +76,12 @@ const Popover: React.FC<PopoverProps> = ({
       transparent
       animationType="fade"
       onRequestClose={onClose}
+      onDismiss={onDismiss}
     >
       <Pressable
         style={styles.overlay}
         onPress={onClose}
+        accessible={false}
         testID={overlayTestID}
       >
         <View

@@ -10,7 +10,7 @@ interface PiecesProps {
   pieceWidth: number;
   orientation: Color;
   isOwnPieceAt: (square: Square) => boolean;
-  isGameOver: boolean;
+  locked: boolean;
   onTap: (square: Square) => void;
   onDragStart: (square: Square) => void;
   onDragRelease: (from: Square, to: Square) => void;
@@ -24,7 +24,7 @@ const Pieces: React.FC<PiecesProps> = ({
   pieceWidth,
   orientation,
   isOwnPieceAt,
-  isGameOver,
+  locked,
   onTap,
   onDragStart,
   onDragRelease,
@@ -41,7 +41,7 @@ const Pieces: React.FC<PiecesProps> = ({
         position={getXYFromSquare(piece.square, pieceWidth, orientation)}
         orientation={orientation}
         animatedPosition={piece.animatedPosition}
-        disabled={!isOwnPieceAt(piece.square) || isGameOver}
+        disabled={!isOwnPieceAt(piece.square) || locked}
         opacity={piece.opacity}
         onTap={onTap}
         onDragStart={onDragStart}

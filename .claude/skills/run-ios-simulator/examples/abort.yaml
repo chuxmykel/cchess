@@ -1,0 +1,19 @@
+# Abort the current live game from the ☰ game menu, and wait for the
+# "Game aborted" card. Only offered until black has made a first move -
+# after that the menu offers Resign instead (see resign.yaml).
+#
+# Run with: maestro --device <UDID> test abort.yaml
+appId: host.exp.Exponent
+---
+- tapOn:
+    id: "game-menu-button"
+- tapOn:
+    id: "abort-game-action"
+- extendedWaitUntil:
+    visible:
+      text: "Are you sure you want to abort?"
+    timeout: 5000
+- tapOn: "Abort"
+- extendedWaitUntil:
+    visible: "Game aborted"
+    timeout: 10000
