@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 import HomeHeader from '../../components/HomeHeader';
 import FriendsCarousel from '../../components/FriendsCarousel';
@@ -7,6 +8,9 @@ import RecentGamesList from '../../components/RecentGamesList';
 import SignInPrompt from '../../components/SignInPrompt';
 import Button from '../../components/Button';
 import { useAuthSession } from '../../context/AuthSessionContext';
+import { useRecentGames } from '../../hooks/useRecentGames';
+
+const HOME_SCREEN_GAME_LIMIT = 10;
 
 interface HomeProps {
   navigation: {
@@ -18,6 +22,9 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
   const session = useAuthSession();
   const user = session.isReady ? session.user : null;
   const isSignedIn = user !== null && !user.isGuest;
+  const { recentGames, reload } = useRecentGames(HOME_SCREEN_GAME_LIMIT);
+
+  useFocusEffect(reload);
 
   function play() {
     navigation.navigate('NewGame');
@@ -44,7 +51,7 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
             />
           </View>
         )}
-        <RecentGamesList />
+        <RecentGamesList recentGames={recentGames} onRetry={reload} />
       </ScrollView>
       <View style={styles.playButtonContainer}>
         <Button

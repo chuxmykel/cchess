@@ -1,34 +1,117 @@
-import { render } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
 
 import RecentGamesList from '.';
-import { RECENT_GAMES } from '../../constants/recentGames';
+import { RECENT_GAMES_STATUS } from '../../hooks/useRecentGames';
+import { makeGameSummary } from '../../testUtils/gameSummary';
+
+const NOW = new Date('2026-10-26T12:00:00.000Z');
 
 describe('RecentGamesList', () => {
-  it('caps the games shown at 10, even though more exist', async () => {
-    expect(RECENT_GAMES.length).toBeGreaterThan(10);
-
-    const screen = await render(<RecentGamesList />);
-
-    expect(screen.getAllByTestId(/^game-row-/)).toHaveLength(10);
+  beforeEach(() => {
+    jest.useFakeTimers({ now: NOW });
   });
 
-  it('renders the games in the order they appear in RECENT_GAMES', async () => {
-    const screen = await render(<RecentGamesList />);
+  afterEach(() => {
+    jest.useRealTimers();
+  });
 
-    const rows = screen.getAllByTestId(/^game-row-/);
-    const renderedIds = rows.map((row) => row.props.testID);
-    const expectedIds = RECENT_GAMES.slice(0, 10).map(
-      (game) => `game-row-${game.id}`,
+  it('shows placeholder rows while loading', async () => {
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.LOADING }}
+        onRetry={jest.fn()}
+      />,
     );
 
-    expect(renderedIds).toEqual(expectedIds);
+    expect(screen.getByTestId('recent-games-loading')).toBeTruthy();
+  });
+
+  it('shows the games in the order given', async () => {
+    const games = [
+      makeGameSummary({ id: 'newest' }),
+      makeGameSummary({ id: 'older' }),
+    ];
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.READY, games }}
+        onRetry={jest.fn()}
+      />,
+    );
+
+    expect(
+      screen.getAllByTestId(/^game-row-/).map((row) => row.props.testID),
+    ).toEqual(['game-row-newest', 'game-row-older']);
+  });
+
+  it('shows the opponent, when the game ended, and the result', async () => {
+    const game = makeGameSummary({
+      opponentDisplayName: 'Judit Polgar',
+      endedAt: '2026-10-26T10:00:00.000Z',
+      result: 'loss',
+    });
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [game] }}
+        onRetry={jest.fn()}
+      />,
+    );
+
+    const row = within(screen.getByTestId(`game-row-${game.id}`));
+    expect(row.getByText('Judit Polgar')).toBeTruthy();
+    expect(row.getByText('2h ago')).toBeTruthy();
+    expect(row.getByText('✕')).toBeTruthy();
+  });
+
+  it('marks an aborted game, which has no result', async () => {
+    const game = makeGameSummary({
+      status: 'aborted',
+      result: null,
+      endedAt: '2026-10-26T11:55:00.000Z',
+    });
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [game] }}
+        onRetry={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Aborted • 5m ago')).toBeTruthy();
+  });
+
+  it('says where games will appear when there are none yet', async () => {
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [] }}
+        onRetry={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Your games will show here.')).toBeTruthy();
+  });
+
+  it('offers to try again when the games failed to load', async () => {
+    const onRetry = jest.fn();
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.ERROR }}
+        onRetry={onRetry}
+      />,
+    );
+
+    expect(screen.getByText("Couldn't load your games.")).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('recent-games-retry'));
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
   it("renders a 'Recent Games' section header with a 'See All' action", async () => {
-    const screen = await render(<RecentGamesList />);
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.LOADING }}
+        onRetry={jest.fn()}
+      />,
+    );
 
     expect(screen.getByText('Recent Games')).toBeTruthy();
-    expect(screen.getByText('See All')).toBeTruthy();
     expect(screen.getByTestId('recent-games-see-all')).toBeTruthy();
   });
 });

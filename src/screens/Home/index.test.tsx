@@ -2,15 +2,24 @@ import { act, fireEvent, render, within } from '@testing-library/react-native';
 
 import Home from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
+import { getMyGames } from '../../network/restClient';
 import {
   makeAuthSession,
   makeBootstrappingAuthSession,
 } from '../../testUtils/authSession';
+import { makeGameSummary } from '../../testUtils/gameSummary';
 import { withSafeArea } from '../../testUtils/safeArea';
 
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
 }));
+jest.mock('../../network/restClient', () => ({
+  ...jest.requireActual('../../network/restClient'),
+  getMyGames: jest.fn(),
+}));
+jest.mock('@react-navigation/native', () =>
+  jest.requireActual('../../testUtils/focusEffectRunsOnMount'),
+);
 
 const MAGNUS = {
   isGuest: false,
@@ -26,6 +35,10 @@ describe('Home', () => {
     await act(async () => {});
     return { screen, navigation };
   }
+
+  beforeEach(() => {
+    (getMyGames as jest.Mock).mockResolvedValue([]);
+  });
 
   afterEach(() => {
     jest.clearAllMocks();
@@ -74,6 +87,19 @@ describe('Home', () => {
         within(screen.getByTestId('avatar-button')).getByText('MC'),
       ).toBeTruthy();
     });
+  });
+
+  it("loads the player's recent games when it comes into focus", async () => {
+    (getMyGames as jest.Mock).mockResolvedValue([
+      makeGameSummary({ id: 'game-1', opponentDisplayName: 'Judit Polgar' }),
+    ]);
+
+    const { screen } = await renderScreen(
+      makeAuthSession({ accessToken: 'token-a' }),
+    );
+
+    expect(getMyGames).toHaveBeenCalledWith('token-a', 10);
+    expect(screen.getByTestId('game-row-game-1')).toBeTruthy();
   });
 
   it('shows neither the prompt nor friends while the session is starting', async () => {
