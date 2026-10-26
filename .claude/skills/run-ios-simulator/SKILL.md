@@ -11,7 +11,10 @@ What follows is only what's specific to cchess: the project path, its
 testIDs, how to get from launch into a live game (which now needs a
 backend and an opponent), and known-good example flows.
 
-**Last verified: 2026-10-26.** Re-ran every example flow below on
+**Last verified: 2026-10-26.** Added and ran the account flows (create
+account, sign out, sign in) against a local `cchess-be`, after Home and
+Profile gained a guest sign-in prompt and Recent Games started loading
+from the server. Before that, re-ran every game example flow below on
 `iPhone 18 Pro` (iOS 27.0) against a local `cchess-be` with
 `scripts/opponent.js`, after the LiveGame screen gained a header, a move
 list, a ☰ game menu, a bottom toolbar and a game-over card, with the board
@@ -96,7 +99,19 @@ resign or abort from the app (see `examples/resign.yaml` /
 ## Known testIDs
 
 - **Navigation**: `play-button` (Home), `time-control-trigger` and
-  `start-new-game-button` (New Game).
+  `start-new-game-button` (New Game). The tab bar has no testIDs and its
+  labels aren't matched by text - tap Home at (100, 817) and Profile at
+  (301, 817).
+- **Home**: `avatar-button` (header, opens Profile), `recent-games-loading`,
+  `game-row-<gameId>`, `recent-games-retry`. Guests see `sign-in-prompt`
+  (with `sign-in-button` / `create-account-button`) where signed-in
+  players see Friends.
+- **Profile**: `profile-screen`, `rating-<category>`, `sign-out-button`;
+  guests get the same `sign-in-prompt`.
+- **Sign in / Create account**: `sign-in-screen` / `create-account-screen`,
+  inputs `username-or-email-input`, `username-input`, `email-input`,
+  `password-input`, plus `account-form-submit`, `account-form-error` and
+  `account-form-switch` (to the other form).
 - **Board**: `chessboard`, `square-<file><rank>`, `piece-<file><rank>`,
   `valid-move-<square>`, `drag-guide` - from
   `src/components/ChessBoard/`. These are always named by the real
@@ -183,7 +198,33 @@ move.
 `tap-move.yaml` (e2→e4 by testID) works in any orientation, but only
 when the app is white and it's white's turn.
 
+Account flows (no opponent needed, just the backend):
+
+- `create-account.yaml` - from a guest's sign-in prompt on Home or
+  Profile, creates an account. Needs a fresh `-e USERNAME=...` each run.
+- `sign-out.yaml` - from either tab, signs out to a new guest.
+- `sign-in.yaml` - from a guest's prompt, signs back in
+  (`-e USERNAME=...`, password `secret123` unless `-e PASSWORD=...`).
+- `dismiss-save-password.yaml` - used by the two above (see Gotchas).
+
+Run them as create-account → sign-out → sign-in with the same USERNAME.
+
 ## Gotchas
+
+- **A "fresh" launch doesn't sign you out.** `launchApp: clearState`
+  clears Expo Go's data but not the iOS keychain, where the refresh token
+  lives - so after an account flow, later "fresh" launches (including
+  `to-board.yaml`) resume that account. Run `sign-out.yaml` to get back
+  to a guest.
+- **iOS password prompts swallow input and are invisible to Maestro.**
+  Focusing Create account's password field opens "Use Strong Password?",
+  which eats the typing that follows; leaving a filled-in password form
+  opens "Save Password?". Both are iOS UI, missing from `maestro
+hierarchy` and from Maestro's own screenshots (`xcrun simctl io booted
+screenshot` shows them), so the app looks frozen. `create-account.yaml`
+  and `dismiss-save-password.yaml` close them by point. Typing into a
+  secure field a second time is unreliable for the same reason - reopen
+  the form instead of retyping.
 
 - **Swipes that miss still report `COMPLETED`.** If a drag flow
   "succeeds" but the board didn't change, the coordinates are stale or

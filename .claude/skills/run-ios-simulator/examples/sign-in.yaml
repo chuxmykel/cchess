@@ -1,0 +1,24 @@
+# From a guest's sign-in prompt (Home or Profile) -> Sign in with an
+# existing account, then waits until the prompt is gone.
+#
+# Run with: maestro --device <UDID> test -e USERNAME=user_123456 sign-in.yaml
+appId: host.exp.Exponent
+env:
+  PASSWORD: secret123
+---
+- tapOn:
+    id: "sign-in-button"
+- tapOn:
+    id: "username-or-email-input"
+- inputText: ${USERNAME}
+- tapOn:
+    id: "password-input"
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: "account-form-submit"
+- runFlow: dismiss-save-password.yaml
+- extendedWaitUntil:
+    notVisible:
+      id: "sign-in-prompt"
+    timeout: 10000

@@ -1,0 +1,15 @@
+# Signed in, on either tab -> Profile -> Sign out, then waits for the
+# guest's sign-in prompt. The tab bar's labels aren't matched by text, so
+# the Profile tab is tapped by point.
+#
+# Run with: maestro --device <UDID> test sign-out.yaml
+appId: host.exp.Exponent
+---
+- tapOn:
+    point: "301,817"
+- tapOn:
+    id: "sign-out-button"
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-prompt"
+    timeout: 10000
