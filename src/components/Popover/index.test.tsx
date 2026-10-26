@@ -86,4 +86,21 @@ describe('Popover', () => {
     expect(caretStyle[caretSide]).toBeDefined();
     expect(caretStyle[OPPOSITE_EDGE[caretSide]]).toBeUndefined();
   });
+
+  it("keeps the overlay out of the accessibility tree so the content's own elements stay reachable", async () => {
+    const screen = await render(
+      <Popover
+        visible={true}
+        position={{ top: 0, left: 0 }}
+        onClose={jest.fn()}
+        overlayTestID="my-popover-overlay"
+      >
+        <Text>Hello</Text>
+      </Popover>,
+    );
+
+    expect(screen.getByTestId('my-popover-overlay').props.accessible).toBe(
+      false,
+    );
+  });
 });

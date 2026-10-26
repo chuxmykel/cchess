@@ -14,12 +14,14 @@ import { useBottomSheet } from '../../hooks/useBottomSheet';
 interface BottomSheetProps {
   visible: boolean;
   onClose: () => void;
+  onDismiss?: () => void;
   children: ReactNode;
 }
 
 const BottomSheet: React.FC<BottomSheetProps> = ({
   visible,
   onClose,
+  onDismiss,
   children,
 }) => {
   const insets = useSafeAreaInsets();
@@ -35,6 +37,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
       transparent
       animationType="none"
       onRequestClose={onClose}
+      onDismiss={onDismiss}
     >
       <View style={styles.container}>
         <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>

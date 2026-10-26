@@ -1,7 +1,7 @@
 import { Text, Pressable, StyleSheet } from 'react-native';
 
 import Avatar from '../../Avatar';
-import PopoverMenu from '../../PopoverMenu';
+import PopoverMenu, { PopoverMenuItem } from '../../PopoverMenu';
 import { Friend } from '../../../constants/friends';
 
 interface FriendCardProps {
@@ -9,13 +9,13 @@ interface FriendCardProps {
   onPress: (friend: Friend) => void;
 }
 
-const MENU_ITEMS = ['Option 1', 'Option 2']; // TODO: replace with real actions once friend management exists.
+// TODO: replace with real actions once friend management exists.
+const MENU_ITEMS: PopoverMenuItem[] = [
+  { label: 'Option 1', onPress: () => {} },
+  { label: 'Option 2', onPress: () => {} },
+];
 
 const FriendCard: React.FC<FriendCardProps> = ({ friend, onPress }) => {
-  function handleSelectMenuItem(item: string) {
-    // TODO: wire up real actions.
-  }
-
   return (
     <Pressable
       style={styles.card}
@@ -24,7 +24,6 @@ const FriendCard: React.FC<FriendCardProps> = ({ friend, onPress }) => {
     >
       <PopoverMenu
         items={MENU_ITEMS}
-        onSelectItem={handleSelectMenuItem}
         style={styles.menuButton}
         testID={`friend-menu-button-${friend.id}`}
       />
