@@ -172,7 +172,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `SeekCard`, `LiveGameSkeleton`, `ConnectionStrengthIndicator`), shared
   primitives used across screens (`Button`, `Avatar`, `BottomSheet`,
   `ActionSheet`, `Placeholder`, `Popover`/`PopoverMenu`, `SectionHeader`,
-  `Toast`, `TimeControlSelector`, `TextField`), account UI
+  `Toast`, `TimeControlSelector`, `TextField`/`PasswordField`, and
+  `Icon` - every icon in the app goes through it, a thin wrapper over
+  `@expo/vector-icons`' MaterialCommunityIcons, so the set can be
+  swapped in one place), account UI
   (`AccountForm`, the layout shared by Sign in and Create account;
   `SignInPrompt`, shown to guests on Home and Profile; `RatingsList`),
   and `Home`-screen-specific pieces (`HomeHeader`, `FriendsCarousel`,
@@ -197,13 +200,15 @@ network/       pure networking infra (REST/socket clients, event types), same st
 
 - **`src/constants/`** - board size, piece image lookups
   (`PIECES['wk' | 'bq' | ...]`), castling squares, time controls, board
-  themes (`boardThemes.ts`), user-facing error-message fallbacks
+  themes (`boardThemes.ts`), the app's accent and muted colors
+  (`colors.ts`, a start on a fuller theme), user-facing error-message fallbacks
   (`errorMessages.ts`), home-screen placeholder data (`friends.ts`,
   until friends are backed by the server), etc.
 
 - **`src/utils/`** - RN `Animated` helpers (`animation.ts`: castling
-  animation, piece ids), color helpers (`color.ts`) and `formatTimeAgo`
-  (`timeAgo.ts`), independent of the chess domain.
+  animation, piece ids) and color helpers (`color.ts`), independent of the
+  chess domain. Dates are formatted with `date-fns` rather than helpers
+  here.
 
 - **`src/testUtils/`** - Jest/RNTL helpers: simulated PanResponder gestures
   (`panResponderGesture.ts`), `Animated.Value` read helpers, a text-based
@@ -218,7 +223,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `popoverMenuStartingOpen.ts`, and `focusEffectRunsOnMount.ts` for
   screens that use `useFocusEffect`). `jest-setup.js` makes the mocked
   `Modal` report `onDismiss` when it hides, as iOS does, so actions that
-  wait on it run in tests too.
+  wait on it run in tests too, and renders `@expo/vector-icons` as plain
+  `Text`s keeping their props (icon fonts can't load under Jest) - so
+  tests assert which icon shows by its `name` prop, via a `testID`.
 
 ## Testing
 
