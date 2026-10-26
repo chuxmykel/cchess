@@ -32,9 +32,9 @@ describe('Avatar', () => {
     });
   });
 
-  it("falls back to a placeholder glyph when there's neither an image nor a name", async () => {
+  it("falls back to a guest icon when there's neither an image nor a name", async () => {
     const screen = await render(<Avatar />);
 
-    expect(screen.getByText('\u{1F464}')).toBeTruthy();
+    expect(screen.getByTestId('avatar-guest-icon')).toBeTruthy();
   });
 });

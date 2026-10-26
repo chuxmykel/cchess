@@ -59,7 +59,7 @@ describe('RecentGamesList', () => {
     const row = within(screen.getByTestId(`game-row-${game.id}`));
     expect(row.getByText('Judit Polgar')).toBeTruthy();
     expect(row.getByText('2h ago')).toBeTruthy();
-    expect(row.getByText('✕')).toBeTruthy();
+    expect(row.getByTestId('game-result-icon-loss')).toBeTruthy();
   });
 
   it('marks an aborted game, which has no result', async () => {
@@ -76,6 +76,7 @@ describe('RecentGamesList', () => {
     );
 
     expect(screen.getByText('Aborted • 5m ago')).toBeTruthy();
+    expect(screen.queryByTestId(/^game-result-icon-/)).toBeNull();
   });
 
   it('says where games will appear when there are none yet', async () => {

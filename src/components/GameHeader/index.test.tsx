@@ -59,7 +59,10 @@ describe('GameHeader', () => {
       />,
     );
     expect(withMenu.getByTestId('game-header-menu')).toBeTruthy();
-    expect(withMenu.getByText('⋯')).toBeTruthy();
+    expect(withMenu.getByTestId('popover-menu-trigger-icon')).toHaveProp(
+      'name',
+      'dots-horizontal',
+    );
   });
 
   it('shows a placeholder title, but still the connection indicator, before the game is known', async () => {

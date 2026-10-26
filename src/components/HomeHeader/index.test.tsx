@@ -37,6 +37,6 @@ describe('HomeHeader', () => {
       withSafeArea(<HomeHeader onAvatarPress={jest.fn()} />),
     );
 
-    expect(screen.getByText('\u{1F464}')).toBeTruthy();
+    expect(screen.getByTestId('avatar-guest-icon')).toBeTruthy();
   });
 });

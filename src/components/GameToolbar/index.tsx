@@ -1,4 +1,10 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
+
+import Icon, { IconName } from '../Icon';
+
+const ICON_SIZE = 28;
+const ENABLED_COLOR = '#333';
+const DISABLED_COLOR = '#c4c4c4';
 
 interface GameToolbarProps {
   onOpenMenu: () => void;
@@ -11,7 +17,7 @@ interface GameToolbarProps {
 }
 
 interface ToolbarButtonProps {
-  glyph: string;
+  icon: IconName;
   label: string;
   onPress: () => void;
   disabled?: boolean;
@@ -19,7 +25,7 @@ interface ToolbarButtonProps {
 }
 
 const ToolbarButton: React.FC<ToolbarButtonProps> = ({
-  glyph,
+  icon,
   label,
   onPress,
   disabled = false,
@@ -35,7 +41,11 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
     accessibilityState={{ disabled }}
     testID={testID}
   >
-    <Text style={[styles.glyph, disabled && styles.disabled]}>{glyph}</Text>
+    <Icon
+      name={icon}
+      size={ICON_SIZE}
+      color={disabled ? DISABLED_COLOR : ENABLED_COLOR}
+    />
   </Pressable>
 );
 
@@ -50,27 +60,27 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
 }) => (
   <View style={styles.container} testID="game-toolbar">
     <ToolbarButton
-      glyph="☰"
+      icon="menu"
       label="Game menu"
       onPress={onOpenMenu}
       testID="game-menu-button"
     />
     <ToolbarButton
-      glyph="⚑"
+      icon="flag-variant-outline"
       label="Resign"
       onPress={onResign}
       disabled={!canResign}
       testID="toolbar-resign-button"
     />
     <ToolbarButton
-      glyph="‹"
+      icon="chevron-left"
       label="Previous move"
       onPress={onPreviousMove}
       disabled={!canGoToPreviousMove}
       testID="previous-move-button"
     />
     <ToolbarButton
-      glyph="›"
+      icon="chevron-right"
       label="Next move"
       onPress={onNextMove}
       disabled={!canGoToNextMove}
@@ -94,12 +104,5 @@ const styles = StyleSheet.create({
     minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  glyph: {
-    fontSize: 24,
-    color: '#333',
-  },
-  disabled: {
-    color: '#c4c4c4',
   },
 });

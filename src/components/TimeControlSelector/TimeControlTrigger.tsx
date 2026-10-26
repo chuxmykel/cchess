@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import GameTypeIcon from '../GameTypeIcon';
+import Icon from '../Icon';
 import { tintColor } from '../../utils/color';
 import { useCaretRotation } from '../../hooks/useCaretRotation';
 import {
@@ -69,9 +70,9 @@ const TimeControlTrigger: React.FC<TimeControlTriggerProps> = ({
           : selected.label}
       </Text>
       <View style={styles.caretContainer}>
-        <Animated.Text style={[styles.caret, rotateTransform, pulseDipOpacity]}>
-          {'⏷'}
-        </Animated.Text>
+        <Animated.View style={[rotateTransform, pulseDipOpacity]}>
+          <Icon name="chevron-down" size={24} color="#888" />
+        </Animated.View>
       </View>
     </Pressable>
   );
@@ -164,9 +165,5 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  caret: {
-    fontSize: 20,
-    color: '#888',
   },
 });

@@ -5,6 +5,7 @@ import BottomBar from '../../components/BottomBar';
 import GameHeader from '../../components/GameHeader';
 import { MOVE_LIST_HEIGHT } from '../../components/MoveList';
 import SeekCard from '../../components/SeekCard';
+import Icon from '../../components/Icon';
 import { BOARD_THEMES } from '../../constants/boardThemes';
 import { TimeControl } from '../../constants/timeControls';
 import { GUEST_GAMES_ARE_RATED } from '../../constants';
@@ -47,7 +48,7 @@ const SeekingContent: React.FC<SeekingContentProps> = ({
         accessibilityLabel="Cancel"
         testID="matchmaking-cancel-button"
       >
-        <Text style={styles.cancelIcon}>✕</Text>
+        <Icon name="close" size={22} />
         <Text style={styles.cancelLabel}>Cancel</Text>
       </Pressable>
     </BottomBar>
@@ -81,10 +82,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     alignItems: 'center',
     gap: 2,
-  },
-  cancelIcon: {
-    fontSize: 20,
-    color: '#333',
   },
   cancelLabel: {
     fontSize: 11,

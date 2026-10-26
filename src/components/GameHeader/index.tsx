@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { TimeControl } from '../../constants/timeControls';
 import ConnectionStrengthIndicator from '../ConnectionStrengthIndicator';
 import GameTypeIcon from '../GameTypeIcon';
+import Icon from '../Icon';
 import Placeholder from '../Placeholder';
 import PopoverMenu, { PopoverMenuItem } from '../PopoverMenu';
 
@@ -31,7 +32,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
           accessibilityLabel="Back"
           testID="game-header-back"
         >
-          <Text style={styles.back}>‹</Text>
+          <Icon name="chevron-left" size={28} />
         </Pressable>
       ) : (
         <ConnectionStrengthIndicator />
@@ -55,7 +56,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({
       {menuItems && (
         <PopoverMenu
           items={menuItems}
-          triggerLabel="⋯"
+          triggerIcon="dots-horizontal"
           width={MENU_WIDTH}
           testID="game-header-menu"
         />
@@ -80,11 +81,6 @@ const styles = StyleSheet.create({
   },
   trailing: {
     alignItems: 'flex-end',
-  },
-  back: {
-    fontSize: 28,
-    lineHeight: 30,
-    color: '#333',
   },
   title: {
     flex: 1,

@@ -6,6 +6,8 @@ import GameResultIcon from '../../GameResultIcon';
 import { GameSummary } from '../../../network/restClient';
 import { formatTimeAgo } from '../../../utils/timeAgo';
 
+const ROW_ICON_SIZE = 26;
+
 interface GameRowProps {
   game: GameSummary;
 }
@@ -19,7 +21,7 @@ const GameRow: React.FC<GameRowProps> = ({ game }) => {
   return (
     <View style={styles.row} testID={`game-row-${game.id}`}>
       <View style={styles.typeIcon}>
-        <GameTypeIcon type={game.gameType} />
+        <GameTypeIcon type={game.gameType} size={ROW_ICON_SIZE} />
       </View>
       <View style={styles.avatar}>
         <Avatar name={game.opponentDisplayName} size={36} />
@@ -30,7 +32,9 @@ const GameRow: React.FC<GameRowProps> = ({ game }) => {
         </Text>
         <Text style={styles.subtitle}>{subtitleFor(game)}</Text>
       </View>
-      {game.result && <GameResultIcon result={game.result} />}
+      {game.result && (
+        <GameResultIcon result={game.result} size={ROW_ICON_SIZE} />
+      )}
     </View>
   );
 };
@@ -45,7 +49,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   typeIcon: {
-    width: 24,
+    width: ROW_ICON_SIZE,
     alignItems: 'center',
     marginRight: 12,
   },

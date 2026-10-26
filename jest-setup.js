@@ -26,3 +26,13 @@ jest.mock('react-native/Libraries/Modal/Modal', () => {
 
   return { __esModule: true, default: ModalReportingDismissLikeIOS };
 });
+
+// Icon fonts load through expo-asset, which has no asset registry under
+// Jest. Render each icon as a plain Text keeping its props, so tests can
+// check which icon is shown by its name.
+jest.mock('@expo/vector-icons', () => {
+  const { Text } = jest.requireActual('react-native');
+  const React = jest.requireActual('react');
+  const IconStub = (props) => React.createElement(Text, props);
+  return { MaterialCommunityIcons: IconStub };
+});

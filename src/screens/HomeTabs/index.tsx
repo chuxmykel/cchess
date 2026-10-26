@@ -1,5 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
+import Icon from '../../components/Icon';
 import HomeTabStack from '../HomeTabStack';
 import Profile from '../Profile';
 
@@ -23,9 +24,30 @@ const HomeTabs: React.FC = () => {
         <Screen
           name="HomeTabStack"
           component={HomeTabStack}
-          options={{ tabBarLabel: 'Home' }}
+          options={{
+            tabBarLabel: 'Home',
+            tabBarIcon: ({ focused, color, size }) => (
+              <Icon
+                name={focused ? 'home-variant' : 'home-variant-outline'}
+                size={size}
+                color={color}
+              />
+            ),
+          }}
         />
-        <Screen name="Profile" component={Profile} />
+        <Screen
+          name="Profile"
+          component={Profile}
+          options={{
+            tabBarIcon: ({ focused, color, size }) => (
+              <Icon
+                name={focused ? 'account' : 'account-outline'}
+                size={size}
+                color={color}
+              />
+            ),
+          }}
+        />
       </Navigator>
     </>
   );

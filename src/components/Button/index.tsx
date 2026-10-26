@@ -6,13 +6,23 @@ import {
   StyleSheet,
 } from 'react-native';
 
+import Icon, { IconName } from '../Icon';
+import { ACCENT_COLOR } from '../../constants/colors';
+
 type ButtonVariant = 'primary' | 'outline' | 'text';
+
+const DISABLED_COLOR = '#aaa';
+const VARIANT_COLORS: Record<ButtonVariant, string> = {
+  primary: 'white',
+  outline: ACCENT_COLOR,
+  text: ACCENT_COLOR,
+};
 
 interface ButtonProps {
   label: string;
   onPress?: () => void;
   variant?: ButtonVariant;
-  icon?: string;
+  icon?: IconName;
   // Actually disables the button (blocks all presses) - standard Pressable behavior.
   disabled?: boolean;
   // Purely visual - looks disabled but is still pressable. Pressing calls
@@ -54,11 +64,15 @@ const Button: React.FC<ButtonProps> = ({
       disabled={disabled}
       testID={testID}
     >
-      {icon ? (
-        <Text style={[styles.icon, appearsDisabled && styles.disabledIcon]}>
-          {icon}
-        </Text>
-      ) : null}
+      {icon && (
+        <Icon
+          name={icon}
+          size={20}
+          color={appearsDisabled ? DISABLED_COLOR : VARIANT_COLORS[variant]}
+          style={styles.icon}
+          testID={testID && `${testID}-icon`}
+        />
+      )}
       <Text
         style={[
           styles.label,
@@ -83,7 +97,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   icon: {
-    fontSize: 16,
     marginRight: 8,
   },
   label: {
@@ -95,22 +108,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#d0d0d0',
   },
-  disabledIcon: {
-    opacity: 0.4,
-  },
   disabledLabel: {
-    color: '#aaa',
+    color: DISABLED_COLOR,
   },
 });
 
 const variantStyles = StyleSheet.create({
   primary: {
-    backgroundColor: '#769656',
+    backgroundColor: ACCENT_COLOR,
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#769656',
+    borderColor: ACCENT_COLOR,
   },
   text: {
     paddingVertical: 0,
@@ -120,12 +130,12 @@ const variantStyles = StyleSheet.create({
 
 const variantLabelStyles = StyleSheet.create({
   primary: {
-    color: 'white',
+    color: VARIANT_COLORS.primary,
   },
   outline: {
-    color: '#769656',
+    color: VARIANT_COLORS.outline,
   },
   text: {
-    color: '#769656',
+    color: VARIANT_COLORS.text,
   },
 });

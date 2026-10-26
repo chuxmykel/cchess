@@ -1,5 +1,7 @@
 import { View, Text, Image, StyleSheet } from 'react-native';
 
+import Icon from '../Icon';
+
 interface AvatarProps {
   size?: number;
   name?: string;
@@ -48,7 +50,12 @@ const Avatar: React.FC<AvatarProps> = ({
           {getInitials(name)}
         </Text>
       ) : (
-        <Text style={{ fontSize: size * 0.5 }}>{'\u{1F464}'}</Text>
+        <Icon
+          name="account"
+          size={size * 0.6}
+          color="white"
+          testID="avatar-guest-icon"
+        />
       )}
     </View>
   );

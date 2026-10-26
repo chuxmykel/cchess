@@ -67,7 +67,9 @@ describe('Home', () => {
       const { screen } = await renderScreen();
 
       expect(
-        within(screen.getByTestId('avatar-button')).getByText('\u{1F464}'),
+        within(screen.getByTestId('avatar-button')).getByTestId(
+          'avatar-guest-icon',
+        ),
       ).toBeTruthy();
     });
   });

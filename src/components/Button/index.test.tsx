@@ -15,11 +15,16 @@ describe('Button', () => {
   });
 
   it('renders the icon only when one is provided', async () => {
-    const withIcon = await render(<Button label="Go" icon="⚡" testID="btn" />);
+    const withIcon = await render(
+      <Button label="Go" icon="robot-outline" testID="btn" />,
+    );
     const withoutIcon = await render(<Button label="Go" testID="btn2" />);
 
-    expect(withIcon.queryByText('⚡')).not.toBeNull();
-    expect(withoutIcon.queryByText('⚡')).toBeNull();
+    expect(withIcon.getByTestId('btn-icon')).toHaveProp(
+      'name',
+      'robot-outline',
+    );
+    expect(withoutIcon.queryByTestId('btn2-icon')).toBeNull();
   });
 
   it('blocks all presses when disabled, never calling onPress', async () => {
