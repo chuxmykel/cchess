@@ -60,14 +60,21 @@ the opponent while it waits, or before it - either order matches.
 
 ### The scripted opponent: `npm run opponent`
 
-`scripts/opponent.js` creates a guest, seeks, plays a random legal move
-whenever it's its turn, declines draw offers, and exits once the game is
-over. Run it in the background (it stays alive for the whole game):
+`scripts/opponent.js` signs in as the `real_user_bot` account (password
+`password`), seeks, plays a random legal move whenever it's its turn,
+declines draw offers, and exits once the game is over. Run it in the
+background (it stays alive for the whole game):
 
 ```bash
 nohup npm run opponent --silent -- --color w > /tmp/opponent.log 2>&1 &
 ```
 
+- `--guest` - play as a fresh guest instead of `real_user_bot`.
+- **Rated or casual**: the server rates a game only when both players are
+  registered. A signed-in app against `real_user_bot` plays rated; a
+  guest on either side makes it casual. The app must not be signed in as
+  `real_user_bot` itself, or both sides are the same account - sign out
+  (`examples/sign-out.yaml`) or use another account.
 - `--time 3+2` - seek a different time control (must match the app's
   selection).
 - `--delay 300` - ms before each bot move (default 800).
@@ -76,7 +83,8 @@ nohup npm run opponent --silent -- --color w > /tmp/opponent.log 2>&1 &
   this can't request one. If the bot gets the other color it aborts and
   exits with code 2. So `--color w` means "make the app play black."
 - Exit codes: 0 when the game ends, 1 for connection/auth/matchmaking
-  errors, 2 for the wrong color.
+  errors (including `real_user_bot` not existing on that server), 2 for
+  the wrong color.
 
 To force a color, retry until it lands. A fresh launch each time clears
 the aborted game off the app's screen:
