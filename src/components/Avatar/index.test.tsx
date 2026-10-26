@@ -24,6 +24,14 @@ describe('Avatar', () => {
     expect(screen.getByText('A')).toBeTruthy();
   });
 
+  it('fills the placeholder with the given color', async () => {
+    const screen = await render(<Avatar name="Ada" color="#3b82f6" />);
+
+    expect(screen.getByTestId('avatar-placeholder')).toHaveStyle({
+      backgroundColor: '#3b82f6',
+    });
+  });
+
   it("falls back to a placeholder glyph when there's neither an image nor a name", async () => {
     const screen = await render(<Avatar />);
 

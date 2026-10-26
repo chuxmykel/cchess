@@ -4,7 +4,9 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import HomeHeader from '../../components/HomeHeader';
 import FriendsCarousel from '../../components/FriendsCarousel';
 import RecentGamesList from '../../components/RecentGamesList';
+import SignInPrompt from '../../components/SignInPrompt';
 import Button from '../../components/Button';
+import { useAuthSession } from '../../context/AuthSessionContext';
 
 interface HomeProps {
   navigation: {
@@ -13,6 +15,10 @@ interface HomeProps {
 }
 
 const Home: React.FC<HomeProps> = ({ navigation }) => {
+  const session = useAuthSession();
+  const user = session.isReady ? session.user : null;
+  const isSignedIn = user !== null && !user.isGuest;
+
   function play() {
     navigation.navigate('NewGame');
   }
@@ -23,9 +29,21 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
 
   return (
     <View style={styles.screen}>
-      <HomeHeader onAvatarPress={goToProfile} />
+      <HomeHeader
+        avatarName={isSignedIn ? user.displayName : undefined}
+        avatarColor={isSignedIn ? user.avatarColor : undefined}
+        onAvatarPress={goToProfile}
+      />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <FriendsCarousel />
+        {isSignedIn && <FriendsCarousel />}
+        {user?.isGuest && (
+          <View style={styles.signInPrompt}>
+            <SignInPrompt
+              onSignIn={() => navigation.navigate('SignIn')}
+              onCreateAccount={() => navigation.navigate('CreateAccount')}
+            />
+          </View>
+        )}
         <RecentGamesList />
       </ScrollView>
       <View style={styles.playButtonContainer}>
@@ -48,6 +66,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 96,
+  },
+  signInPrompt: {
+    paddingTop: 16,
   },
   playButtonContainer: {
     position: 'absolute',

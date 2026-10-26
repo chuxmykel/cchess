@@ -7,3 +7,4 @@ export const SHARE_FAILED_MESSAGE =
 export const SIGN_IN_FAILED_MESSAGE = "Couldn't sign in. Please try again.";
 export const CREATE_ACCOUNT_FAILED_MESSAGE =
   "Couldn't create your account. Please try again.";
+export const SIGN_OUT_FAILED_MESSAGE = "Couldn't sign out. Please try again.";
