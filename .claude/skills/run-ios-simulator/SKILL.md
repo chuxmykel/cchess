@@ -110,8 +110,9 @@ resign or abort from the app (see `examples/resign.yaml` /
   guests get the same `sign-in-prompt`.
 - **Sign in / Create account**: `sign-in-screen` / `create-account-screen`,
   inputs `username-or-email-input`, `username-input`, `email-input`,
-  `password-input`, plus `account-form-submit`, `account-form-error` and
-  `account-form-switch` (to the other form).
+  `password-input` (its eye button, which shows or hides the password, is
+  `password-input-visibility-toggle`), plus `account-form-submit`,
+  `account-form-error` and `account-form-switch` (to the other form).
 - **Board**: `chessboard`, `square-<file><rank>`, `piece-<file><rank>`,
   `valid-move-<square>`, `drag-guide` - from
   `src/components/ChessBoard/`. These are always named by the real
