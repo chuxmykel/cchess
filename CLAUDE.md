@@ -136,7 +136,7 @@ network/       pure networking infra (REST/socket clients, event types), same st
 - **`src/components/`** (everything else) - also purely presentational,
   consuming hooks/context the same way: in-game UI (`GameClock`,
   `GameControls`, `GameOverBanner`, `GameResultIcon`, `GameTypeIcon`,
-  `PromotionMenu`, `ConnectionStrengthIndicator`), shared primitives used
+  `PlayerBar`, `PromotionMenu`, `ConnectionStrengthIndicator`), shared primitives used
   across screens (`Button`, `Avatar`, `BottomSheet`, `Popover`/
   `PopoverMenu`, `SectionHeader`, `Toast`, `TimeControlSelector`), and
   `Home`-screen-specific pieces (`HomeHeader`, `FriendsCarousel`,

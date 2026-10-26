@@ -98,7 +98,7 @@ exits on its own.
   `valid-move-<square>`, `drag-guide` - from
   `src/components/ChessBoard/`. These are always named by the real
   square, whichever way the board faces.
-- **LiveGame**: `flip-board-button`, `player-row-w` / `player-row-b`,
+- **LiveGame**: `flip-board-button`, `player-bar-w` / `player-bar-b`,
   `abort-button` (before any move) / `resign-button`,
   `offer-draw-button`, `accept-draw-button` / `decline-draw-button`,
   `game-over-banner`, `game-over-done-button` - from
