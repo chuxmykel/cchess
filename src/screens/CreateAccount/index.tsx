@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import AccountForm from '../../components/AccountForm';
+import PasswordField from '../../components/PasswordField';
 import TextField from '../../components/TextField';
 import { CREATE_ACCOUNT_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { useAuthSession } from '../../context/AuthSessionContext';
@@ -67,11 +68,10 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
         keyboardType="email-address"
         testID="email-input"
       />
-      <TextField
+      <PasswordField
         label="Password"
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
         autoComplete="new-password"
         textContentType="newPassword"
         placeholder="At least 8 characters"

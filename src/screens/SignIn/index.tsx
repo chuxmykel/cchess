@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import AccountForm from '../../components/AccountForm';
+import PasswordField from '../../components/PasswordField';
 import TextField from '../../components/TextField';
 import { SIGN_IN_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { useAuthSession } from '../../context/AuthSessionContext';
@@ -50,11 +51,10 @@ const SignIn: React.FC<SignInProps> = ({ navigation }) => {
         returnKeyType="next"
         testID="username-or-email-input"
       />
-      <TextField
+      <PasswordField
         label="Password"
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
         autoComplete="current-password"
         textContentType="password"
         returnKeyType="go"
