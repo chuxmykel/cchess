@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import Icon from '../../components/Icon';
+import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import HomeTabStack from '../HomeTabStack';
 import Profile from '../Profile';
 
@@ -14,6 +15,9 @@ const HomeTabs: React.FC = () => {
         initialRouteName="HomeTabStack"
         screenOptions={{
           headerShown: false,
+          animation: 'shift',
+          tabBarActiveTintColor: ACCENT_COLOR,
+          tabBarInactiveTintColor: MUTED_COLOR,
           tabBarStyle: {
             borderTopWidth: 0,
             elevation: 0,
