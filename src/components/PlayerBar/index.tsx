@@ -5,6 +5,8 @@ import { GameUserSummary } from '../../network/socketEvents';
 import { GameClockResult } from '../../hooks/useGameClock';
 import GameClock from '../GameClock';
 
+export const PLAYER_BAR_HEIGHT = 38;
+
 export interface PlayerBarProps {
   color: Color;
   white: GameUserSummary;
@@ -26,7 +28,10 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   const player = isWhite ? white : black;
 
   return (
-    <View style={styles.container} testID={`player-bar-${color}`}>
+    <View
+      style={[styles.container, isGameOver && styles.faded]}
+      testID={`player-bar-${color}`}
+    >
       <Text style={styles.name}>{player.displayName}</Text>
       <GameClock
         label={isWhite ? 'White' : 'Black'}
@@ -42,10 +47,14 @@ export default PlayerBar;
 const styles = StyleSheet.create({
   container: {
     width: '100%',
+    minHeight: PLAYER_BAR_HEIGHT,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
+  },
+  faded: {
+    opacity: 0.5,
   },
   name: {
     fontSize: 15,
