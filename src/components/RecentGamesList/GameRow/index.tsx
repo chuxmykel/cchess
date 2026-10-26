@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { formatDistanceToNowStrict, min } from 'date-fns';
 
 import Avatar from '../../Avatar';
 import GameTypeIcon from '../../GameTypeIcon';
 import GameResultIcon from '../../GameResultIcon';
 import { GameSummary } from '../../../network/restClient';
-import { formatTimeAgo } from '../../../utils/timeAgo';
 
 const ROW_ICON_SIZE = 26;
 
@@ -13,7 +13,8 @@ interface GameRowProps {
 }
 
 function subtitleFor(game: GameSummary): string {
-  const timeAgo = formatTimeAgo(game.endedAt ?? game.createdAt);
+  const finishedAt = min([game.endedAt ?? game.createdAt, Date.now()]);
+  const timeAgo = formatDistanceToNowStrict(finishedAt, { addSuffix: true });
   return game.status === 'aborted' ? `Aborted • ${timeAgo}` : timeAgo;
 }
 

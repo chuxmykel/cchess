@@ -58,7 +58,7 @@ describe('RecentGamesList', () => {
 
     const row = within(screen.getByTestId(`game-row-${game.id}`));
     expect(row.getByText('Judit Polgar')).toBeTruthy();
-    expect(row.getByText('2h ago')).toBeTruthy();
+    expect(row.getByText('2 hours ago')).toBeTruthy();
     expect(row.getByTestId('game-result-icon-loss')).toBeTruthy();
   });
 
@@ -75,8 +75,20 @@ describe('RecentGamesList', () => {
       />,
     );
 
-    expect(screen.getByText('Aborted • 5m ago')).toBeTruthy();
+    expect(screen.getByText('Aborted • 5 minutes ago')).toBeTruthy();
     expect(screen.queryByTestId(/^game-result-icon-/)).toBeNull();
+  });
+
+  it("never says a game ends in the future when the server's clock is ahead", async () => {
+    const game = makeGameSummary({ endedAt: '2026-10-26T12:00:03.000Z' });
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [game] }}
+        onRetry={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('0 seconds ago')).toBeTruthy();
   });
 
   it('says where games will appear when there are none yet', async () => {
