@@ -64,7 +64,11 @@ export function useBottomSheet({
         toValue: SCREEN_HEIGHT,
         duration: 200,
         useNativeDriver: true,
-      }).start(() => setModalVisible(false));
+      }).start(({ finished: slidOutCompletely }) => {
+        if (slidOutCompletely) {
+          setModalVisible(false);
+        }
+      });
     }
   }, [visible, translateY]);
 
