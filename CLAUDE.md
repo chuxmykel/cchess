@@ -240,7 +240,11 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `CircleIconButton`s), `NotificationsMenu` (the 🔔 in `HomeHeader`'s
   `accessory` slot, with a badge counting incoming challenges and friend
   requests, opening them in a popup), `ChallengeSheet`, `ActivityList`,
-  `MessageList`), more shared primitives (`ActionList`, `SegmentedTabs`;
+  `MessageList`), more shared primitives (`ActionList`, `SegmentedTabs`,
+  `EmptyState` - what every server-backed list shows when it has
+  nothing yet: an SVG illustration from its `illustrations.tsx`, drawn
+  with `react-native-svg`, a title, a line on what will show up there,
+  and an optional action;
   `SectionHeader`'s action is optional), and `Home`-screen-specific pieces
   (`HomeHeader`, `RecentGamesList`, whose rows open the game viewer).
   `GameOverCard` names the winner instead of "You won" for a game you

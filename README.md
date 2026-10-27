@@ -114,7 +114,7 @@ src/
 │   ├── Button/, CircleIconButton/,   Shared presentational primitives reused
 │   │   BottomSheet/, Popover/,       across more than one screen
 │   │   PopoverMenu/, SectionHeader/,
-│   │   Avatar/, ActionList/, SegmentedTabs/,
+│   │   Avatar/, ActionList/, SegmentedTabs/, EmptyState/,
 │   │   Toast/, TimeControlSelector/
 │   │
 │   └── HomeHeader/,                  Home-screen-specific pieces
