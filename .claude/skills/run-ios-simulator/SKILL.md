@@ -157,10 +157,10 @@ resign or abort from the app (see `examples/resign.yaml` /
   (301, 817).
 - **Home**: `avatar-button` (header, opens Profile), `recent-games-loading`,
   `game-row-<gameId>` (opens the game viewer), `recent-games-retry`,
-  `recent-games-see-all` (the full list). Guests see `sign-in-prompt`
+  `recent-games-see-all` (the full list), `recent-games-empty`. Guests see `sign-in-prompt`
   (with `sign-in-button` / `create-account-button`) where signed-in
-  players see Friends: `friends-see-all`, `add-friends-prompt` (no
-  friends yet), and per friend `friend-card-<userId>` (opens their
+  players see Friends: `friends-see-all`, `friends-empty` with its
+  `add-friends-prompt` button (no friends yet), and per friend `friend-card-<userId>` (opens their
   profile) with `friend-online-<id>`, `friend-unread-<id>`,
   `friend-watch-<id>` (📺, while they're playing) and
   `friend-menu-button-<id>` → `friend-message-<id>` /
@@ -194,6 +194,10 @@ resign or abort from the app (see `examples/resign.yaml` /
   it's your game), `game-over-dismiss` on the result card,
   `new-opponent-action` in ☰, `chat-closed` once the chat's 14 days are
   up, and `game-viewer-error`.
+- **Empty states** elsewhere: `notifications-empty`, `online-empty`,
+  `all-friends-empty`, `requests-empty`, `games-empty`,
+  `activity-empty`, `profile-games-empty`, `messages-empty`,
+  `chat-empty`.
 - **Profile**: `profile-screen`, `rating-<category>`, `sign-out-button`;
   guests get the same `sign-in-prompt`.
 - **Sign in / Create account**: `sign-in-screen` / `create-account-screen`,
