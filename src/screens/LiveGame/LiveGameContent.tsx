@@ -24,6 +24,7 @@ import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useMoveNavigation } from '../../hooks/useMoveNavigation';
 import { useGameShare } from '../../hooks/useGameShare';
 import { useGameBookmark } from '../../hooks/useGameBookmark';
+import { materialImbalance } from '../../domain/material';
 import { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
 import { useOnlineChessGameContext } from '../../context/LiveGame/OnlineChessGameContext';
@@ -183,6 +184,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   const myRatingDiff = myColor === 'w' ? whiteRatingDiff : blackRatingDiff;
 
   const topColor: Color = orientation === 'w' ? 'b' : 'w';
+  const material = materialImbalance(moveNavigation.viewedFen ?? fen);
   const sharedPlayerBarProps: Omit<PlayerBarProps, 'color'> = {
     white: snapshot.white,
     black: snapshot.black,
@@ -224,6 +226,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         <PlayerBar
           color={topColor}
           isOnline={topColor === myColor ? undefined : isOpponentOnline}
+          material={material[topColor]}
           {...sharedPlayerBarProps}
         />
 
@@ -264,6 +267,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         <PlayerBar
           color={orientation}
           isOnline={orientation === myColor ? undefined : isOpponentOnline}
+          material={material[orientation]}
           {...sharedPlayerBarProps}
         />
       </View>
