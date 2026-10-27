@@ -64,7 +64,7 @@ describe('SeekingContent', () => {
   it('shows the ratings it will pair with, around your own', async () => {
     const screen = await renderContent({ myRating: 1500 });
 
-    expect(screen.getByText('Rating range 1300–2000')).toBeTruthy();
+    expect(screen.getByText('1300–2000')).toBeTruthy();
   });
 
   it('shows no rating range for a guest, who has no rating', async () => {

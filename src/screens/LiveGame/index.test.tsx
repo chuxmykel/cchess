@@ -214,7 +214,7 @@ describe('LiveGame', () => {
     expect(
       screen.getByText(`${DEFAULT_TIME_CONTROL.label} • Rated`),
     ).toBeTruthy();
-    expect(screen.getByText('Rating range 1450–2150')).toBeTruthy();
+    expect(screen.getByText('1450–2150')).toBeTruthy();
   });
 
   it('shows a guest seek as casual, with no rating range', async () => {

@@ -32,7 +32,7 @@ describe('SeekCard', () => {
       <SeekCard timeControl={bullet2Plus1} ratingRange="1320–2020" />,
     );
 
-    expect(screen.getByText('Rating range 1320–2020')).toBeTruthy();
+    expect(screen.getByText('1320–2020')).toBeTruthy();
   });
 
   it('leaves the rating range out without one', async () => {

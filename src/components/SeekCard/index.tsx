@@ -22,7 +22,7 @@ const SeekCard: React.FC<SeekCardProps> = ({
     </View>
     {ratingRange && (
       <Text style={styles.detail} testID="seek-card-rating-range">
-        {`Rating range ${ratingRange}`}
+        {ratingRange}
       </Text>
     )}
   </View>
