@@ -14,6 +14,7 @@ export type GameUserSummary = {
   displayName: string;
   avatarColor: string;
   rating: number | null;
+  provisional: boolean;
 };
 
 export type GameMoveSummary = {

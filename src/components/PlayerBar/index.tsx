@@ -4,6 +4,7 @@ import { Color } from 'chess.js';
 import { GameUserSummary } from '../../network/socketEvents';
 import { GameClockResult } from '../../hooks/useGameClock';
 import GameClock from '../GameClock';
+import { formatRating } from '../../utils/rating';
 
 export const PLAYER_BAR_HEIGHT = 38;
 
@@ -38,7 +39,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
         </Text>
         {player.rating !== null && (
           <Text style={styles.rating} testID={`player-rating-${color}`}>
-            {player.rating}
+            {formatRating(player.rating, player.provisional)}
           </Text>
         )}
       </View>

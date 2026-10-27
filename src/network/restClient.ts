@@ -38,6 +38,7 @@ export type UserRating = {
   category: GameType;
   rating: number;
   gamesPlayed: number;
+  provisional: boolean;
 };
 
 export type AccountUser = {
@@ -129,6 +130,7 @@ export type GameSummary = {
   opponentUsername: string;
   opponentDisplayName: string;
   opponentRating: number | null;
+  opponentProvisional: boolean;
   ratingDiff: number | null;
   playedAsWhite: boolean;
   createdAt: string;

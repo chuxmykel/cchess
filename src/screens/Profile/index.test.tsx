@@ -20,7 +20,14 @@ const MAGNUS = {
   isGuest: false,
   username: 'magnus',
   displayName: 'Magnus Carlsen',
-  ratings: [{ category: 'blitz' as const, rating: 1516, gamesPlayed: 3 }],
+  ratings: [
+    {
+      category: 'blitz' as const,
+      rating: 1516,
+      gamesPlayed: 3,
+      provisional: false,
+    },
+  ],
 };
 
 describe('Profile', () => {

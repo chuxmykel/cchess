@@ -78,6 +78,25 @@ describe('RecentGamesList', () => {
     );
   });
 
+  it("marks the opponent's rating when it was provisional", async () => {
+    const game = makeGameSummary({
+      opponentRating: 1662,
+      opponentProvisional: true,
+    });
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [game] }}
+        onRetry={jest.fn()}
+      />,
+    );
+
+    expect(
+      within(screen.getByTestId(`game-row-${game.id}`)).getByText('1662?', {
+        exact: false,
+      }),
+    ).toBeTruthy();
+  });
+
   it('shows neither for a game without ratings', async () => {
     const game = makeGameSummary();
     const screen = await render(

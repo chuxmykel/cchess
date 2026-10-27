@@ -11,6 +11,7 @@ describe('PlayerBar', () => {
     displayName: 'Guest White',
     avatarColor: '#fff',
     rating: 1520,
+    provisional: false,
   };
   const black: GameUserSummary = {
     id: 'black-id',
@@ -18,6 +19,7 @@ describe('PlayerBar', () => {
     displayName: 'Guest Black',
     avatarColor: '#000',
     rating: null,
+    provisional: false,
   };
   const clock = { whiteMs: 65000, blackMs: 30000 };
 
@@ -86,6 +88,21 @@ describe('PlayerBar', () => {
     const screen = await renderBar('w');
 
     expect(screen.getByTestId('player-rating-w')).toHaveTextContent('1520');
+  });
+
+  it('marks a provisional rating with a question mark', async () => {
+    const screen = await render(
+      <PlayerBar
+        color="w"
+        white={{ ...white, provisional: true }}
+        black={black}
+        clock={clock}
+        turn="w"
+        isGameOver={false}
+      />,
+    );
+
+    expect(screen.getByTestId('player-rating-w')).toHaveTextContent('1520?');
   });
 
   it("shows no rating for a guest, who doesn't have one", async () => {
