@@ -5,6 +5,7 @@ import GameTypeIcon from '../GameTypeIcon';
 import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import { GameType } from '../../domain/types';
 import { UserRating } from '../../network/restClient';
+import { formatRating } from '../../utils/rating';
 
 interface RatingsListProps {
   ratings: UserRating[];
@@ -29,7 +30,9 @@ const RatingsList: React.FC<RatingsListProps> = ({ ratings }) => (
             <Text style={styles.gamesPlayed}>
               {rating ? gamesPlayedLabel(rating.gamesPlayed) : 'No games yet'}
             </Text>
-            <Text style={styles.rating}>{rating ? rating.rating : '—'}</Text>
+            <Text style={styles.rating}>
+              {rating ? formatRating(rating.rating, rating.provisional) : '—'}
+            </Text>
           </View>
         </Fragment>
       );

@@ -19,7 +19,14 @@ describe('RatingsList', () => {
   it('shows the rating and games played for a category with games', async () => {
     const screen = await render(
       <RatingsList
-        ratings={[{ category: 'blitz', rating: 1516, gamesPlayed: 3 }]}
+        ratings={[
+          {
+            category: 'blitz',
+            rating: 1516,
+            gamesPlayed: 3,
+            provisional: false,
+          },
+        ]}
       />,
     );
 
@@ -32,7 +39,14 @@ describe('RatingsList', () => {
   it('says a single game in the singular', async () => {
     const screen = await render(
       <RatingsList
-        ratings={[{ category: 'rapid', rating: 1520, gamesPlayed: 1 }]}
+        ratings={[
+          {
+            category: 'rapid',
+            rating: 1520,
+            gamesPlayed: 1,
+            provisional: false,
+          },
+        ]}
       />,
     );
 
@@ -47,5 +61,24 @@ describe('RatingsList', () => {
     const bullet = within(screen.getByTestId('rating-bullet'));
     expect(bullet.getByText('No games yet')).toBeTruthy();
     expect(bullet.getByText('—')).toBeTruthy();
+  });
+
+  it('marks a provisional rating with a question mark', async () => {
+    const screen = await render(
+      <RatingsList
+        ratings={[
+          {
+            category: 'blitz',
+            rating: 1662,
+            gamesPlayed: 1,
+            provisional: true,
+          },
+        ]}
+      />,
+    );
+
+    expect(
+      within(screen.getByTestId('rating-blitz')).getByText('1662?'),
+    ).toBeTruthy();
   });
 });

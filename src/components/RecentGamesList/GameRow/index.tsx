@@ -6,6 +6,7 @@ import GameTypeIcon from '../../GameTypeIcon';
 import GameResultIcon from '../../GameResultIcon';
 import RatingDiff from '../../RatingDiff';
 import { GameSummary } from '../../../network/restClient';
+import { formatRating } from '../../../utils/rating';
 
 const ROW_ICON_SIZE = 26;
 
@@ -32,7 +33,10 @@ const GameRow: React.FC<GameRowProps> = ({ game }) => {
         <Text style={styles.name} numberOfLines={1}>
           {game.opponentDisplayName}
           {game.opponentRating !== null && (
-            <Text style={styles.rating}> {game.opponentRating}</Text>
+            <Text style={styles.rating}>
+              {' '}
+              {formatRating(game.opponentRating, game.opponentProvisional)}
+            </Text>
           )}
         </Text>
         <Text style={styles.subtitle}>{subtitleFor(game)}</Text>

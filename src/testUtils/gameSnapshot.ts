@@ -16,6 +16,7 @@ export function makeGameSnapshot(
       displayName: 'White',
       avatarColor: '#fff',
       rating: null,
+      provisional: false,
     },
     black: {
       id: 'black-user',
@@ -23,6 +24,7 @@ export function makeGameSnapshot(
       displayName: 'Black',
       avatarColor: '#000',
       rating: null,
+      provisional: false,
     },
     minutes: 5,
     incrementSeconds: 0,
