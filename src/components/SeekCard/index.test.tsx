@@ -26,4 +26,18 @@ describe('SeekCard', () => {
     expect(screen.getByText('Connecting…')).toBeTruthy();
     expect(screen.queryByText('Waiting for opponent to join…')).toBeNull();
   });
+
+  it('shows the rating range when there is one', async () => {
+    const screen = await render(
+      <SeekCard timeControl={bullet2Plus1} ratingRange="1320–2020" />,
+    );
+
+    expect(screen.getByText('Rating range 1320–2020')).toBeTruthy();
+  });
+
+  it('leaves the rating range out without one', async () => {
+    const screen = await render(<SeekCard timeControl={bullet2Plus1} />);
+
+    expect(screen.queryByTestId('seek-card-rating-range')).toBeNull();
+  });
 });

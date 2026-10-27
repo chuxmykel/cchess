@@ -6,6 +6,8 @@ import Button from '../../components/Button';
 import TimeControlSelector from '../../components/TimeControlSelector';
 import Toast from '../../components/Toast';
 import { useToast } from '../../hooks/useToast';
+import { useAuthSession } from '../../context/AuthSessionContext';
+import { DEFAULT_RATING_RANGE, Seek } from '../../constants/seek';
 import {
   TimeControl,
   DEFAULT_TIME_CONTROL,
@@ -22,9 +24,16 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
   const [timeControl, setTimeControl] =
     useState<TimeControl>(DEFAULT_TIME_CONTROL);
   const toast = useToast();
+  const authSession = useAuthSession();
+  const isGuest = !authSession.isReady || authSession.user.isGuest;
 
   function startNewGame() {
-    navigation.navigate('LiveGame', { timeControl });
+    const seek: Seek = {
+      timeControl,
+      rated: !isGuest,
+      ratingRange: DEFAULT_RATING_RANGE,
+    };
+    navigation.navigate('LiveGame', { seek });
   }
 
   function challengeFriend() {

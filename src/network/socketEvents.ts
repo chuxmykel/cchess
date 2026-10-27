@@ -2,10 +2,16 @@ import { Color, PieceSymbol, Square } from 'chess.js';
 
 import { GameType } from '../domain/types';
 
+export type RatingRange = {
+  below: number | null;
+  above: number | null;
+};
+
 export type SeekPayload = {
   minutes: number;
   incrementSeconds: number;
   rated: boolean;
+  ratingRange: RatingRange;
 };
 
 export type GameUserSummary = {

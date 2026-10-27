@@ -3,6 +3,8 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 import LiveGame from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { DEFAULT_TIME_CONTROL } from '../../constants/timeControls';
+import { Seek } from '../../constants/seek';
+import { AccountUser } from '../../network/restClient';
 import { GAME_RESULT_REASON } from '../../network/socketEvents';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
 import { makeGameSnapshot } from '../../testUtils/gameSnapshot';
@@ -18,14 +20,27 @@ jest.mock('../../components/ConnectionStrengthIndicator', () =>
 
 const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
 const APP_PLAYER_ID = makeGameSnapshot().white.id;
+const RATED_SEEK: Seek = {
+  timeControl: DEFAULT_TIME_CONTROL,
+  rated: true,
+  ratingRange: { below: 200, above: 500 },
+};
+const SIGNED_IN_USER: Partial<AccountUser> = {
+  isGuest: false,
+  ratings: [
+    { category: 'bullet', rating: 1100, gamesPlayed: 3, provisional: true },
+    { category: 'blitz', rating: 1650, gamesPlayed: 40, provisional: false },
+  ],
+};
 
 describe('LiveGame', () => {
   function renderScreen(
     params: Parameters<typeof LiveGame>[0]['route']['params'],
+    user: Partial<AccountUser> = {},
   ) {
     const { socket, trigger } = createFakeSocket();
     (useAuthSession as jest.Mock).mockReturnValue(
-      makeAuthSession({ socket, user: { id: APP_PLAYER_ID } }),
+      makeAuthSession({ socket, user: { id: APP_PLAYER_ID, ...user } }),
     );
     const navigation = {
       goBack: jest.fn(),
@@ -56,7 +71,7 @@ describe('LiveGame', () => {
 
   it('seeks an opponent first, on the waiting screen', async () => {
     const { screenPromise, socket } = renderScreen({
-      timeControl: DEFAULT_TIME_CONTROL,
+      seek: RATED_SEEK,
     });
     const screen = await screenPromise;
 
@@ -66,7 +81,7 @@ describe('LiveGame', () => {
 
   it('starts the matched game in place, without navigating', async () => {
     const { screenPromise, socket, trigger, navigation } = renderScreen({
-      timeControl: DEFAULT_TIME_CONTROL,
+      seek: RATED_SEEK,
     });
     const screen = await screenPromise;
 
@@ -87,7 +102,7 @@ describe('LiveGame', () => {
 
   it('goes back to seeking for a new opponent, then starts the next game fresh', async () => {
     const { screenPromise, socket, trigger } = renderScreen({
-      timeControl: DEFAULT_TIME_CONTROL,
+      seek: RATED_SEEK,
     });
     const screen = await screenPromise;
     const firstGame = makeGameSnapshot({ id: 'game-1' });
@@ -138,7 +153,7 @@ describe('LiveGame', () => {
 
   it('leaves the screen when the seek is cancelled', async () => {
     const { screenPromise, navigation } = renderScreen({
-      timeControl: DEFAULT_TIME_CONTROL,
+      seek: RATED_SEEK,
     });
     const screen = await screenPromise;
 
@@ -149,7 +164,7 @@ describe('LiveGame', () => {
 
   it('shows the matchmaking error and leaves the screen', async () => {
     const { screenPromise, trigger, navigation } = renderScreen({
-      timeControl: DEFAULT_TIME_CONTROL,
+      seek: RATED_SEEK,
     });
     const screen = await screenPromise;
 
@@ -163,7 +178,7 @@ describe('LiveGame', () => {
 
   it('allows swiping back until the game has loaded, then locks it', async () => {
     const { screenPromise, trigger, navigation } = renderScreen({
-      timeControl: DEFAULT_TIME_CONTROL,
+      seek: RATED_SEEK,
     });
     await screenPromise;
     expect(navigation.setOptions).toHaveBeenLastCalledWith({
@@ -183,9 +198,38 @@ describe('LiveGame', () => {
     });
   });
 
+  it('seeks a rated game with your rating range when signed in', async () => {
+    const { screenPromise, socket } = renderScreen(
+      { seek: RATED_SEEK },
+      SIGNED_IN_USER,
+    );
+    const screen = await screenPromise;
+
+    expect(socket.emit).toHaveBeenCalledWith('matchmaking:seek', {
+      minutes: DEFAULT_TIME_CONTROL.minutes,
+      incrementSeconds: DEFAULT_TIME_CONTROL.incrementSeconds,
+      rated: true,
+      ratingRange: { below: 200, above: 500 },
+    });
+    expect(
+      screen.getByText(`${DEFAULT_TIME_CONTROL.label} • Rated`),
+    ).toBeTruthy();
+    expect(screen.getByText('Rating range 1450–2150')).toBeTruthy();
+  });
+
+  it('shows a guest seek as casual, with no rating range', async () => {
+    const { screenPromise } = renderScreen({ seek: RATED_SEEK });
+    const screen = await screenPromise;
+
+    expect(
+      screen.getByText(`${DEFAULT_TIME_CONTROL.label} • Casual`),
+    ).toBeTruthy();
+    expect(screen.queryByTestId('seek-card-rating-range')).toBeNull();
+  });
+
   it('shows the time control it was seeking while the game loads', async () => {
     const { screenPromise, trigger } = renderScreen({
-      timeControl: DEFAULT_TIME_CONTROL,
+      seek: RATED_SEEK,
     });
     const screen = await screenPromise;
 

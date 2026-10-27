@@ -3,10 +3,8 @@ import { act, renderHook } from '@testing-library/react-native';
 import { useMatchmaking } from '../useMatchmaking';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { AppSocket } from '../../network/socketClient';
-import {
-  DEFAULT_TIME_CONTROL,
-  TimeControl,
-} from '../../constants/timeControls';
+import { DEFAULT_TIME_CONTROL } from '../../constants/timeControls';
+import { Seek } from '../../constants/seek';
 import { MATCHMAKING_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
 import {
@@ -21,6 +19,12 @@ jest.mock('../../context/AuthSessionContext', () => ({
 function mockReadyAuthSession(socket: AppSocket) {
   (useAuthSession as jest.Mock).mockReturnValue(makeAuthSession({ socket }));
 }
+
+const RATED_SEEK: Seek = {
+  timeControl: DEFAULT_TIME_CONTROL,
+  rated: true,
+  ratingRange: { below: 200, above: 300 },
+};
 
 function createCallbacks() {
   return { onMatched: jest.fn(), onError: jest.fn() };
@@ -37,29 +41,30 @@ describe('useMatchmaking', () => {
     );
 
     const { result } = await renderHook(() =>
-      useMatchmaking(DEFAULT_TIME_CONTROL, createCallbacks()),
+      useMatchmaking(RATED_SEEK, createCallbacks()),
     );
 
     expect(result.current.isConnecting).toBe(true);
   });
 
-  it('emits matchmaking:seek with the time control once the socket is ready', async () => {
+  it('emits matchmaking:seek with the seek options once the socket is ready', async () => {
     const { socket } = createFakeSocket();
     mockReadyAuthSession(socket);
 
     const { result } = await renderHook(() =>
-      useMatchmaking(DEFAULT_TIME_CONTROL, createCallbacks()),
+      useMatchmaking(RATED_SEEK, createCallbacks()),
     );
 
     expect(result.current.isConnecting).toBe(false);
     expect(socket.emit).toHaveBeenCalledWith('matchmaking:seek', {
       minutes: DEFAULT_TIME_CONTROL.minutes,
       incrementSeconds: DEFAULT_TIME_CONTROL.incrementSeconds,
-      rated: false,
+      rated: true,
+      ratingRange: { below: 200, above: 300 },
     });
   });
 
-  it("doesn't seek without a time control", async () => {
+  it("doesn't seek without a seek", async () => {
     const { socket } = createFakeSocket();
     mockReadyAuthSession(socket);
 
@@ -73,7 +78,7 @@ describe('useMatchmaking', () => {
     mockReadyAuthSession(socket);
     const callbacks = createCallbacks();
 
-    await renderHook(() => useMatchmaking(DEFAULT_TIME_CONTROL, callbacks));
+    await renderHook(() => useMatchmaking(RATED_SEEK, callbacks));
     await act(() => {
       trigger('game:created', { id: 'game-123' });
     });
@@ -86,7 +91,7 @@ describe('useMatchmaking', () => {
     mockReadyAuthSession(socket);
     const callbacks = createCallbacks();
 
-    await renderHook(() => useMatchmaking(DEFAULT_TIME_CONTROL, callbacks));
+    await renderHook(() => useMatchmaking(RATED_SEEK, callbacks));
     await act(() => {
       trigger('matchmaking:error', { message: 'No opponents available' });
     });
@@ -112,7 +117,7 @@ describe('useMatchmaking', () => {
 
     const { rerender } = await renderHook(
       (callbacks: ReturnType<typeof createCallbacks>) =>
-        useMatchmaking(DEFAULT_TIME_CONTROL, callbacks),
+        useMatchmaking(RATED_SEEK, callbacks),
       { initialProps: first },
     );
     await rerender(second);
@@ -125,15 +130,14 @@ describe('useMatchmaking', () => {
     expect(socket.emit).toHaveBeenCalledTimes(1);
   });
 
-  it('cancels the seek when the time control is taken away', async () => {
+  it('cancels the seek when it is taken away', async () => {
     const { socket } = createFakeSocket();
     mockReadyAuthSession(socket);
     const callbacks = createCallbacks();
 
     const { rerender } = await renderHook(
-      (timeControl: TimeControl | null) =>
-        useMatchmaking(timeControl, callbacks),
-      { initialProps: DEFAULT_TIME_CONTROL as TimeControl | null },
+      (seek: Seek | null) => useMatchmaking(seek, callbacks),
+      { initialProps: RATED_SEEK as Seek | null },
     );
     await rerender(null);
 
@@ -145,7 +149,7 @@ describe('useMatchmaking', () => {
     mockReadyAuthSession(socket);
 
     const { unmount } = await renderHook(() =>
-      useMatchmaking(DEFAULT_TIME_CONTROL, createCallbacks()),
+      useMatchmaking(RATED_SEEK, createCallbacks()),
     );
     await act(() => {
       unmount();

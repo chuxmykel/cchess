@@ -7,24 +7,28 @@ import { MOVE_LIST_HEIGHT } from '../../components/MoveList';
 import SeekCard from '../../components/SeekCard';
 import Icon from '../../components/Icon';
 import { BOARD_THEMES } from '../../constants/boardThemes';
-import { TimeControl } from '../../constants/timeControls';
-import { GUEST_GAMES_ARE_RATED } from '../../constants';
+import { Seek } from '../../constants/seek';
+import { formatRatingRange } from '../../utils/rating';
 
 interface SeekingContentProps {
   width: number;
-  timeControl: TimeControl;
+  seek: Seek;
+  isRated: boolean;
+  myRating: number | null;
   isConnecting: boolean;
   onCancel: () => void;
 }
 
 const SeekingContent: React.FC<SeekingContentProps> = ({
   width,
-  timeControl,
+  seek,
+  isRated,
+  myRating,
   isConnecting,
   onCancel,
 }) => (
   <View style={styles.screen} testID="seeking-content">
-    <GameHeader timeControl={timeControl} rated={GUEST_GAMES_ARE_RATED} />
+    <GameHeader timeControl={seek.timeControl} rated={isRated} />
     <View style={styles.moveListSpace} />
 
     <View style={styles.boardArea}>
@@ -32,8 +36,13 @@ const SeekingContent: React.FC<SeekingContentProps> = ({
         <BoardSurface colors={BOARD_THEMES.test} />
         <View style={styles.cardOverlay} pointerEvents="box-none">
           <SeekCard
-            timeControl={timeControl}
+            timeControl={seek.timeControl}
             status={isConnecting ? 'Connecting…' : undefined}
+            ratingRange={
+              myRating === null
+                ? undefined
+                : formatRatingRange(myRating, seek.ratingRange)
+            }
           />
         </View>
       </View>
