@@ -35,11 +35,17 @@ export function useGameSnapshot(
       }
     }
 
+    function joinGame() {
+      socket.emit('game:join', { gameId });
+    }
+
     socket.on('game:state', handleState);
-    socket.emit('game:join', { gameId });
+    socket.on('connect', joinGame);
+    joinGame();
 
     return () => {
       socket.off('game:state', handleState);
+      socket.off('connect', joinGame);
     };
   }, [socket, gameId]);
 

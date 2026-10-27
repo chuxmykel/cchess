@@ -22,6 +22,19 @@ describe('useGameSnapshot', () => {
     });
   });
 
+  it('joins again after the socket reconnects', async () => {
+    const { socket, trigger } = createFakeSocket();
+    await renderHook(() => useGameSnapshot(socket, GAME_ID));
+
+    await act(() => trigger('connect', undefined));
+
+    expect(
+      (socket.emit as jest.Mock).mock.calls.filter(
+        ([event]) => event === 'game:join',
+      ),
+    ).toHaveLength(2);
+  });
+
   it('becomes ready once game:state arrives for this game', async () => {
     const { socket, trigger } = createFakeSocket();
     const { result } = await renderHook(() => useGameSnapshot(socket, GAME_ID));
