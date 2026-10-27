@@ -213,7 +213,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
   until friends are backed by the server), etc.
 
 - **`src/utils/`** - RN `Animated` helpers (`animation.ts`: castling
-  animation, piece ids) and color helpers (`color.ts`), independent of the
+  animation, piece ids), color helpers (`color.ts`) and `formatRating`
+  (`rating.ts`: "1520", or "1520?" while provisional), independent of the
   chess domain. Dates are formatted with `date-fns` rather than helpers
   here.
 
