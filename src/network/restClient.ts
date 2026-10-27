@@ -128,6 +128,8 @@ export type GameSummary = {
   result: GameHistoryResult;
   opponentUsername: string;
   opponentDisplayName: string;
+  opponentRating: number | null;
+  ratingDiff: number | null;
   playedAsWhite: boolean;
   createdAt: string;
   endedAt: string | null;

@@ -4,6 +4,7 @@ import { formatDistanceToNowStrict, min } from 'date-fns';
 import Avatar from '../../Avatar';
 import GameTypeIcon from '../../GameTypeIcon';
 import GameResultIcon from '../../GameResultIcon';
+import RatingDiff from '../../RatingDiff';
 import { GameSummary } from '../../../network/restClient';
 
 const ROW_ICON_SIZE = 26;
@@ -30,12 +31,20 @@ const GameRow: React.FC<GameRowProps> = ({ game }) => {
       <View style={styles.details}>
         <Text style={styles.name} numberOfLines={1}>
           {game.opponentDisplayName}
+          {game.opponentRating !== null && (
+            <Text style={styles.rating}> {game.opponentRating}</Text>
+          )}
         </Text>
         <Text style={styles.subtitle}>{subtitleFor(game)}</Text>
       </View>
-      {game.result && (
-        <GameResultIcon result={game.result} size={ROW_ICON_SIZE} />
-      )}
+      <View style={styles.outcome}>
+        {game.ratingDiff !== null && (
+          <RatingDiff diff={game.ratingDiff} testID="game-row-rating-diff" />
+        )}
+        {game.result && (
+          <GameResultIcon result={game.result} size={ROW_ICON_SIZE} />
+        )}
+      </View>
     </View>
   );
 };
@@ -63,6 +72,15 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  rating: {
+    fontWeight: '400',
+    color: '#888',
+  },
+  outcome: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   subtitle: {
     fontSize: 12,
