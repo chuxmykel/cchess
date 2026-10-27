@@ -20,8 +20,13 @@ export function makeAccountUser(
   };
 }
 
-function makeActions(): AuthSessionActions {
+function makeActions(accessToken: string | null): AuthSessionActions {
   return {
+    authorized: jest.fn((request) =>
+      accessToken === null
+        ? Promise.reject(new Error('There is no session to authorize with'))
+        : request(accessToken),
+    ),
     signIn: jest.fn().mockResolvedValue(undefined),
     register: jest.fn().mockResolvedValue(undefined),
     signOut: jest.fn().mockResolvedValue(undefined),
@@ -41,10 +46,9 @@ export function makeAuthSession({
   return {
     status: AUTH_SESSION_STATUS.READY,
     isReady: true,
-    accessToken,
     user: makeAccountUser(user),
     socket,
-    ...makeActions(),
+    ...makeActions(accessToken),
   };
 }
 
@@ -52,6 +56,6 @@ export function makeBootstrappingAuthSession(): AuthSession {
   return {
     status: AUTH_SESSION_STATUS.BOOTSTRAPPING,
     isReady: false,
-    ...makeActions(),
+    ...makeActions(null),
   };
 }

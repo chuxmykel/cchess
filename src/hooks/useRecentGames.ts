@@ -15,18 +15,14 @@ export type RecentGames =
   | { status: typeof RECENT_GAMES_STATUS.ERROR };
 
 type LoadedGames =
-  | { accessToken: string; games: GameSummary[] }
-  | { accessToken: string; failed: true };
+  { userId: string; games: GameSummary[] } | { userId: string; failed: true };
 
 function isFinished(game: GameSummary): boolean {
   return game.status !== 'active';
 }
 
-function showsGamesFor(
-  loaded: LoadedGames | null,
-  accessToken: string,
-): boolean {
-  return loaded?.accessToken === accessToken && 'games' in loaded;
+function showsGamesFor(loaded: LoadedGames | null, userId: string): boolean {
+  return loaded?.userId === userId && 'games' in loaded;
 }
 
 export function useRecentGames(limit: number): {
@@ -34,31 +30,32 @@ export function useRecentGames(limit: number): {
   reload: () => void;
 } {
   const session = useAuthSession();
-  const accessToken = session.isReady ? session.accessToken : null;
+  const { authorized } = session;
+  const userId = session.isReady ? session.user.id : null;
   const [loaded, setLoaded] = useState<LoadedGames | null>(null);
   const latestRequestId = useRef(0);
 
   const reload = useCallback(() => {
-    if (!accessToken) {
+    if (!userId) {
       return;
     }
     latestRequestId.current += 1;
     const requestId = latestRequestId.current;
-    getMyGames(accessToken, limit)
-      .then((games) => ({ accessToken, games: games.filter(isFinished) }))
-      .catch(() => ({ accessToken, failed: true as const }))
+    authorized((accessToken) => getMyGames(accessToken, limit))
+      .then((games) => ({ userId, games: games.filter(isFinished) }))
+      .catch(() => ({ userId, failed: true as const }))
       .then((result) => {
         if (requestId === latestRequestId.current) {
           setLoaded((previous) =>
-            'failed' in result && showsGamesFor(previous, accessToken)
+            'failed' in result && showsGamesFor(previous, userId)
               ? previous
               : result,
           );
         }
       });
-  }, [accessToken, limit]);
+  }, [userId, authorized, limit]);
 
-  if (!loaded || loaded.accessToken !== accessToken) {
+  if (!loaded || loaded.userId !== userId) {
     return { recentGames: { status: RECENT_GAMES_STATUS.LOADING }, reload };
   }
   if ('failed' in loaded) {

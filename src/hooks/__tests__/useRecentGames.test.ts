@@ -100,11 +100,27 @@ describe('useRecentGames', () => {
     await act(async () => result.current.reload());
 
     (useAuthSession as jest.Mock).mockReturnValue(
-      makeAuthSession({ accessToken: 'token-b' }),
+      makeAuthSession({ user: { id: 'another-user' } }),
     );
     await rerender({});
 
     expect(result.current.recentGames.status).toBe(RECENT_GAMES_STATUS.LOADING);
+  });
+
+  it('keeps showing the games when only the access token is refreshed', async () => {
+    (getMyGames as jest.Mock).mockResolvedValue([FINISHED]);
+    const { result, rerender } = await renderHook(() => useRecentGames(10));
+    await act(async () => result.current.reload());
+
+    (useAuthSession as jest.Mock).mockReturnValue(
+      makeAuthSession({ accessToken: 'refreshed-token' }),
+    );
+    await rerender({});
+
+    expect(result.current.recentGames).toEqual({
+      status: RECENT_GAMES_STATUS.READY,
+      games: [FINISHED],
+    });
   });
 
   it('ignores a slower, earlier response once a newer one has arrived', async () => {

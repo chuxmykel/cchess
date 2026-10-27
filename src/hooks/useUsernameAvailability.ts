@@ -25,9 +25,9 @@ export function useUsernameAvailability(
   username: string,
 ): UsernameAvailability {
   const session = useAuthSession();
-  const accessToken = session.isReady ? session.accessToken : null;
+  const { authorized } = session;
   const candidate = username.trim();
-  const isCheckable = accessToken !== null && USERNAME_PATTERN.test(candidate);
+  const isCheckable = session.isReady && USERNAME_PATTERN.test(candidate);
   const [checked, setChecked] = useState<CheckedUsername | null>(null);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function useUsernameAvailability(
     }
     let isCurrent = true;
     const timer = setTimeout(() => {
-      isUsernameAvailable(candidate, accessToken)
+      authorized((accessToken) => isUsernameAvailable(candidate, accessToken))
         .then((available) =>
           available
             ? USERNAME_AVAILABILITY.AVAILABLE
@@ -54,7 +54,7 @@ export function useUsernameAvailability(
       isCurrent = false;
       clearTimeout(timer);
     };
-  }, [candidate, accessToken, isCheckable]);
+  }, [candidate, authorized, isCheckable]);
 
   if (!isCheckable) {
     return USERNAME_AVAILABILITY.NOT_CHECKED;
