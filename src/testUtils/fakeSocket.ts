@@ -12,7 +12,9 @@ export function createFakeSocket(): FakeSocket {
   const handlers = new Map<string, Set<(payload: unknown) => void>>();
   const socket = {
     connected: true,
+    auth: {},
     emit: jest.fn(),
+    connect: jest.fn(),
     disconnect: jest.fn(),
     on: jest.fn((event: string, handler: (payload: unknown) => void) => {
       if (!handlers.has(event)) handlers.set(event, new Set());
@@ -29,6 +31,9 @@ export function createFakeSocket(): FakeSocket {
     // still around to observe the event itself.
     if (event === 'disconnect') {
       socket.connected = false;
+    }
+    if (event === 'connect') {
+      socket.connected = true;
     }
     handlers.get(event)?.forEach((handler) => handler(payload));
   }
