@@ -13,12 +13,15 @@ interface FriendsCarouselProps extends FriendActions {
   friends: Friend[] | null;
   unreadByUserId: Record<string, number>;
   onSeeAll: () => void;
+  /** The empty state's way to go looking for friends. */
+  onFindFriends: () => void;
 }
 
 const FriendsCarousel: React.FC<FriendsCarouselProps> = ({
   friends,
   unreadByUserId,
   onSeeAll,
+  onFindFriends,
   ...actions
 }) => {
   if (friends === null) {
@@ -40,7 +43,7 @@ const FriendsCarousel: React.FC<FriendsCarouselProps> = ({
           message="Your friends will show up here once you connect. Add some to message and challenge them."
           action={{
             label: 'Find friends',
-            onPress: onSeeAll,
+            onPress: onFindFriends,
             testID: 'add-friends-prompt',
           }}
           testID="friends-empty"

@@ -27,6 +27,7 @@ describe('FriendsCarousel', () => {
       friends: [away, playing],
       unreadByUserId: {},
       onSeeAll: jest.fn(),
+      onFindFriends: jest.fn(),
       onPress: jest.fn(),
       onMessage: jest.fn(),
       onChallenge: jest.fn(),

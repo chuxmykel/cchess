@@ -124,6 +124,9 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
             friends={social.friends}
             unreadByUserId={social.unreadByUserId}
             onSeeAll={() => navigation.navigate('Friends')}
+            onFindFriends={() =>
+              navigation.navigate('Friends', { focusSearch: true })
+            }
             onPress={friendActions.openProfile}
             onMessage={friendActions.message}
             onChallenge={friendActions.startChallenge}

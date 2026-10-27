@@ -1,20 +1,18 @@
 import { useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, StyleSheet, View } from 'react-native';
 
-import Button from '../../components/Button';
 import ChallengeSheet from '../../components/ChallengeSheet';
 import EmptyState from '../../components/EmptyState';
 import FriendRequestCard from '../../components/FriendRequestCard';
 import FriendRow from '../../components/FriendRow';
 import SegmentedTabs from '../../components/SegmentedTabs';
-import TextField from '../../components/TextField';
 import Toast from '../../components/Toast';
-import { FRIEND_ACTION_FAILED_MESSAGE } from '../../constants/errorMessages';
+import UserSearchField from '../../components/UserSearchField';
 import { useSocialContext } from '../../context/SocialContext';
-import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { useFriendActions } from '../../hooks/useFriendActions';
 import { useToast } from '../../hooks/useToast';
+import { useUserSearch } from '../../hooks/useUserSearch';
 import { Friend } from '../../network/restClient';
 import { byPresence } from '../../utils/presence';
 import { HomeTabStackScreenProps } from '../HomeTabStack/types';
@@ -25,9 +23,12 @@ function counted(count: number, noun: string): string {
   return `${count} ${count === 1 ? noun : `${noun}s`}`;
 }
 
-type FriendsProps = Pick<HomeTabStackScreenProps<'Friends'>, 'navigation'>;
+type FriendsProps = Pick<
+  HomeTabStackScreenProps<'Friends'>,
+  'navigation' | 'route'
+>;
 
-const Friends: React.FC<FriendsProps> = ({ navigation }) => {
+const Friends: React.FC<FriendsProps> = ({ navigation, route }) => {
   const social = useSocialContext();
   const toast = useToast();
   const friendActions = useFriendActions(navigation, (friend) =>
@@ -35,12 +36,8 @@ const Friends: React.FC<FriendsProps> = ({ navigation }) => {
   );
   const [tab, setTab] = useState<FriendsTab>('online');
   useFocusEffect(social.reload);
-  const [username, setUsername] = useState('');
-  const addFriend = useAsyncAction(async () => {
-    await social.sendFriendRequest(username.trim());
-    setUsername('');
-    toast.show('Friend request sent');
-  }, FRIEND_ACTION_FAILED_MESSAGE);
+  const [searchQuery, setSearchQuery] = useState('');
+  const userSearch = useUserSearch(searchQuery);
 
   const friends = [...(social.friends ?? [])].sort(byPresence);
   const onlineFriends = friends.filter(
@@ -137,32 +134,17 @@ const Friends: React.FC<FriendsProps> = ({ navigation }) => {
 
   return (
     <View style={styles.screen} testID="friends-screen">
-      <View style={styles.addFriend}>
-        <View style={styles.addFriendField}>
-          <TextField
-            label="Add a friend"
-            placeholder="Username"
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="send"
-            onSubmitEditing={addFriend.run}
-            testID="add-friend-input"
-          />
-        </View>
-        <Button
-          label="Add"
-          onPress={addFriend.run}
-          disabled={!username.trim() || addFriend.isRunning}
-          testID="add-friend-button"
+      <View style={styles.search}>
+        <UserSearchField
+          query={searchQuery}
+          onChangeQuery={setSearchQuery}
+          search={userSearch}
+          autoFocus={route.params?.focusSearch}
+          onSelect={(user) =>
+            navigation.navigate('UserProfile', { username: user.username })
+          }
         />
       </View>
-      {addFriend.errorMessage && (
-        <Text style={styles.error} testID="add-friend-error">
-          {addFriend.errorMessage}
-        </Text>
-      )}
       <SegmentedTabs<FriendsTab>
         tabs={[
           { key: 'online', label: `${onlineFriends.length} online` },
@@ -183,10 +165,12 @@ const Friends: React.FC<FriendsProps> = ({ navigation }) => {
             tab === 'online' ? (
               <EmptyState
                 illustration="friends"
-                title="Nobody's online"
+                title={
+                  friends.length === 0 ? 'Add some friends' : "Nobody's online"
+                }
                 message={
                   friends.length === 0
-                    ? 'Your friends will show up here once you connect. Add one by username above.'
+                    ? 'Friends who are online will show up on this tab. Search for players above to add some.'
                     : 'Friends who are online right now will show up here.'
                 }
                 testID="online-empty"
@@ -195,7 +179,7 @@ const Friends: React.FC<FriendsProps> = ({ navigation }) => {
               <EmptyState
                 illustration="friends"
                 title="No friends yet"
-                message="Your friends will show up here once you connect. Add one by username above."
+                message="Your friends will show up here once you connect. Search for players above to add some."
                 testID="all-friends-empty"
               />
             )
@@ -220,19 +204,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'white',
   },
-  addFriend: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
+  search: {
     padding: 16,
-  },
-  addFriendField: {
-    flex: 1,
-  },
-  error: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-    color: '#d33',
+    zIndex: 1,
   },
   requests: {
     gap: 8,

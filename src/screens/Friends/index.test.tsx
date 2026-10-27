@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 import Friends from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { useSocialContext } from '../../context/SocialContext';
-import { ApiError } from '../../network/restClient';
+import { useUserSearch } from '../../hooks/useUserSearch';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { withSafeArea } from '../../testUtils/safeArea';
 import {
@@ -22,6 +22,9 @@ jest.mock('../../context/SocialContext', () => ({
 jest.mock('@react-navigation/native', () =>
   jest.requireActual('../../testUtils/focusEffectRunsOnMount'),
 );
+jest.mock('../../hooks/useUserSearch', () => ({
+  useUserSearch: jest.fn(() => ({ status: 'idle' })),
+}));
 jest.mock('../../hooks/usePopoverMenu', () =>
   jest.requireActual('../../testUtils/popoverMenuStartingOpen'),
 );
@@ -32,10 +35,17 @@ const ONLINE = makeFriend({
   online: true,
 });
 const AWAY = makeFriend({ id: 'away', username: 'away', displayName: 'Away' });
+const MAGNUS = {
+  id: 'magnus-id',
+  username: 'magnus',
+  displayName: 'Magnus Carlsen',
+  avatarColor: '#3b82f6',
+};
 
 describe('Friends', () => {
   async function renderScreen(
     social = makeSocial({ friends: [ONLINE, AWAY] }),
+    params: { focusSearch?: boolean } | undefined = undefined,
   ) {
     (useAuthSession as jest.Mock).mockReturnValue(
       makeAuthSession({ user: { isGuest: false } }),
@@ -43,7 +53,12 @@ describe('Friends', () => {
     (useSocialContext as jest.Mock).mockReturnValue(social);
     const navigation = { navigate: jest.fn() };
     const screen = await render(
-      withSafeArea(<Friends navigation={navigation as never} />),
+      withSafeArea(
+        <Friends
+          navigation={navigation as never}
+          route={{ key: 'k', name: 'Friends', params }}
+        />,
+      ),
     );
     return { screen, navigation, social };
   }
@@ -75,37 +90,37 @@ describe('Friends', () => {
     });
   });
 
-  it('sends a friend request by username', async () => {
-    const { screen, social } = await renderScreen();
+  it('opens ready to search when asked to', async () => {
+    const { screen } = await renderScreen(makeSocial(), { focusSearch: true });
 
-    await fireEvent.changeText(
-      screen.getByTestId('add-friend-input'),
-      ' magnus ',
+    expect(screen.getByTestId('user-search-input')).toHaveProp(
+      'autoFocus',
+      true,
     );
-    await fireEvent.press(screen.getByTestId('add-friend-button'));
-
-    expect(social.sendFriendRequest).toHaveBeenCalledWith('magnus');
-    expect(screen.getByText('Friend request sent')).toBeTruthy();
   });
 
-  it("shows why a friend request couldn't be sent", async () => {
-    const social = makeSocial({
-      friends: [],
-      sendFriendRequest: jest
-        .fn()
-        .mockRejectedValue(new ApiError(404, 'User not found')),
+  it("doesn't grab the keyboard otherwise", async () => {
+    const { screen } = await renderScreen();
+
+    expect(screen.getByTestId('user-search-input')).not.toHaveProp(
+      'autoFocus',
+      true,
+    );
+  });
+
+  it('finds a player and opens their profile', async () => {
+    (useUserSearch as jest.Mock).mockImplementation((query: string) =>
+      query ? { status: 'done', results: [MAGNUS] } : { status: 'idle' },
+    );
+    const { screen, navigation } = await renderScreen();
+
+    await fireEvent.changeText(screen.getByTestId('user-search-input'), 'mag');
+    await fireEvent.press(screen.getByTestId('user-search-result-magnus'));
+
+    expect(useUserSearch).toHaveBeenLastCalledWith('');
+    expect(navigation.navigate).toHaveBeenCalledWith('UserProfile', {
+      username: 'magnus',
     });
-    const { screen } = await renderScreen(social);
-
-    await fireEvent.changeText(
-      screen.getByTestId('add-friend-input'),
-      'nobody',
-    );
-    await fireEvent.press(screen.getByTestId('add-friend-button'));
-
-    expect(screen.getByTestId('add-friend-error')).toHaveTextContent(
-      'User not found',
-    );
   });
 
   it('answers and cancels friend requests', async () => {
@@ -146,7 +161,7 @@ describe('Friends', () => {
     const { screen } = await renderScreen(makeSocial());
 
     expect(screen.getByTestId('online-empty')).toHaveTextContent(
-      /Your friends will show up here once you connect/,
+      /Add some friends/,
     );
     await fireEvent.press(screen.getByTestId('tab-all'));
     expect(screen.getByTestId('all-friends-empty')).toBeTruthy();

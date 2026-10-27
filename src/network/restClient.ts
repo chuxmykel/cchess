@@ -268,6 +268,27 @@ export type ActivityDay = Score & {
   ratingDiff: number | null;
 };
 
+export type UserSearchResult = {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarColor: string;
+};
+
+/** Registered players whose name contains the search, closest first. */
+export async function searchUsers(
+  search: string,
+  accessToken: string,
+  limit = 10,
+): Promise<UserSearchResult[]> {
+  return (
+    await apiClient.get<UserSearchResult[]>('/users', {
+      ...bearer(accessToken),
+      params: { search, limit },
+    })
+  ).data;
+}
+
 export async function getUserProfile(
   username: string,
   accessToken: string,

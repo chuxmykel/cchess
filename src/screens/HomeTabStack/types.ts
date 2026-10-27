@@ -15,7 +15,8 @@ export type ConversationPartner = {
 export type HomeTabStackParamList = {
   Home: undefined;
   NewGame: undefined;
-  Friends: undefined;
+  /** focusSearch opens it ready to type in the player search. */
+  Friends: { focusSearch?: boolean } | undefined;
   UserProfile: { username: string };
   Conversation: ConversationPartner;
   /** Someone's games; your own without a username. */

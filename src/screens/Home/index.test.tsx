@@ -163,7 +163,9 @@ describe('Home', () => {
 
       await fireEvent.press(screen.getByTestId('add-friends-prompt'));
 
-      expect(navigation.navigate).toHaveBeenCalledWith('Friends');
+      expect(navigation.navigate).toHaveBeenCalledWith('Friends', {
+        focusSearch: true,
+      });
     });
 
     const CHALLENGE = makeChallenge({
