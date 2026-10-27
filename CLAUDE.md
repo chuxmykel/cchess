@@ -89,7 +89,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `http://localhost:3000`), `restClient.ts` (every REST call, on one
   axios instance whose response interceptor turns failures into
   `ApiError`s carrying the server's own message - auth: guest, sign in,
-  register, refresh, logout; plus `/users/me`, game history and PGN),
+  register, refresh, logout; plus `/users/me`, game history, PGN and
+  bookmarks),
   `accessToken.ts` (reads a JWT access token's expiry),
   `socketClient.ts` (the one `AppSocket` singleton - `connectSocket`/
   `disconnectSocket`/`getSocket`, plus `updateSocketToken` so later
@@ -129,18 +130,28 @@ network/       pure networking infra (REST/socket clients, event types), same st
     rating range, reporting `game:created` or an error back to its
     caller), `useGameSession` (a game screen's two phases - seeking an
     opponent, then playing the matched game - keeping the seek so "New
-    opponent" reuses its rated choice and range), `useGameSnapshot` (the `game:join` fetch that seeds a
-    game once matched), `useOnlineChessGame` (drives an
+    opponent" reuses its rated choice and range), `useLobbyStats`
+    (players online and games in play, pushed while seeking),
+    `useGameSnapshot` (the `game:join` fetch that seeds a game once
+    matched, joining again after a reconnect so the server stops counting
+    the player as gone), `useOnlineChessGame` (drives an
     in-progress game on top of `useChessGame`, delegating server-push
-    handling to `useGameServerEvents` - status/result/clocks/draw offers,
-    and replaying the opponent's moves idempotently via a fen comparison
-    against the echo of our own), `useGameClock` (client-side ticking
-    between authoritative server clock updates), and
+    handling to `useGameServerEvents` - status/result/clocks/draw offers
+    and the first-move deadline, and replaying the opponent's moves
+    idempotently via a fen comparison against the echo of our own - and
+    owning the opponent's presence (`useOpponentPresence`) and the game's
+    chat (`useGameChat`: history, new messages, the unread count while
+    closed), `useGameClock` (client-side ticking
+    between authoritative server clock updates; paused until both sides
+    have moved), `useFirstMoveCountdown` (seconds left to play the first
+    move), and
     `useConnectionLatency`/`useConnectionStrengthIndicator` (the ack-ping
     round-trip sample and its bars/label derivation), `useMoveNavigation`
     (stepping back/forward through a game's moves to view earlier
-    positions, snapping back to live on a new move), and `useGameShare`
-    (fetches a game's PGN and opens the native share sheet).
+    positions, snapping back to live on a new move), `useGameShare`
+    (fetches a game's PGN and opens the native share sheet), and
+    `useGameBookmark` (whether you've bookmarked the game, toggled
+    optimistically).
   - Small reusable UI-state hooks with no game-domain knowledge at all:
     `usePopoverMenu`, `useToast`/`useToastBubbleAnimation`,
     `useBottomSheet`, `useCaretRotation`, `useGameScreenGestureLock`,
@@ -179,11 +190,14 @@ network/       pure networking infra (REST/socket clients, event types), same st
 
 - **`src/components/`** (everything else) - also purely presentational,
   consuming hooks/context the same way: in-game UI (`GameHeader`,
-  `MoveList`, `GameToolbar`, `BottomBar`, `GameClock`, `GameOverCard`, `GameResultIcon`,
-  `GameTypeIcon`, `PlayerBar` (name, rating and clock), `RatingDiff` (a
+  `MoveList`, `GameToolbar` (with the chat button's unread badge),
+  `BottomBar`, `GameClock`, `GameOverCard`, `GameResultIcon`,
+  `GameTypeIcon`, `PlayerBar` (name, rating, clock, the opponent's
+  online dot and the first-move countdown), `ChatSheet`, `RatingDiff` (a
   green/red/grey "+12"/"−12"/"±0", on the game-over card and in Recent
   Games), `PromotionMenu`, `DrawOfferPrompt`,
-  `SeekCard`, `LiveGameSkeleton`, `ConnectionStrengthIndicator`), shared
+  `SeekCard` (the waiting card: time control, rating range, lobby stats),
+  `LiveGameSkeleton`, `ConnectionStrengthIndicator`), shared
   primitives used across screens (`Button`, `Avatar`, `BottomSheet`,
   `ActionSheet`, `Placeholder`, `Popover`/`PopoverMenu`, `SectionHeader`,
   `Toast`, `TimeControlSelector`, `GameSettings` (New Game's "Game
@@ -228,7 +242,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
   hands to LiveGame, and the rating range's default, step and limit),
   the app's accent and muted colors
   (`colors.ts`, a start on a fuller theme), account rules mirrored from
-  the server (`account.ts`), user-facing error-message fallbacks
+  the server (`account.ts`) and the chat message limit (`chat.ts`),
+  user-facing error-message fallbacks
   (`errorMessages.ts`), home-screen placeholder data (`friends.ts`,
   until friends are backed by the server), etc.
 
