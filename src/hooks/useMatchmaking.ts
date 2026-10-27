@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 
 import { MATCHMAKING_FAILED_MESSAGE } from '../constants/errorMessages';
-import { TimeControl } from '../constants/timeControls';
+import { Seek } from '../constants/seek';
 import { GameSnapshot, MatchmakingErrorPayload } from '../network/socketEvents';
 import { useAuthSession } from '../context/AuthSessionContext';
 
@@ -15,7 +15,7 @@ export type UseMatchmakingResult = {
 };
 
 export function useMatchmaking(
-  timeControl: TimeControl | null,
+  seek: Seek | null,
   callbacks: MatchmakingCallbacks,
 ): UseMatchmakingResult {
   const authSession = useAuthSession();
@@ -27,14 +27,15 @@ export function useMatchmaking(
   });
 
   useEffect(() => {
-    if (!socket || !timeControl) {
+    if (!socket || !seek) {
       return;
     }
 
     socket.emit('matchmaking:seek', {
-      minutes: timeControl.minutes,
-      incrementSeconds: timeControl.incrementSeconds,
-      rated: false, // TODO: wire up once rated-game selection UI exists.
+      minutes: seek.timeControl.minutes,
+      incrementSeconds: seek.timeControl.incrementSeconds,
+      rated: seek.rated,
+      ratingRange: seek.ratingRange,
     });
 
     function handleGameCreated(payload: GameSnapshot) {
@@ -55,7 +56,7 @@ export function useMatchmaking(
       socket.off('game:created', handleGameCreated);
       socket.off('matchmaking:error', handleMatchmakingError);
     };
-  }, [socket, timeControl]);
+  }, [socket, seek]);
 
   return { isConnecting: !socket };
 }

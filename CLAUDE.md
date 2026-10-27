@@ -125,10 +125,11 @@ network/       pure networking infra (REST/socket clients, event types), same st
     `useUsernameAvailability` (whether a sign-up username is free, asked
     of `GET /users/:username` once typing pauses and the name fits the
     server's rules),
-    `useMatchmaking` (seek/cancel, reporting
-    `game:created` or an error back to its caller), `useGameSession` (a
-    game screen's two phases - seeking an opponent, then playing the
-    matched game), `useGameSnapshot` (the `game:join` fetch that seeds a
+    `useMatchmaking` (seek/cancel with the time control, rated choice and
+    rating range, reporting `game:created` or an error back to its
+    caller), `useGameSession` (a game screen's two phases - seeking an
+    opponent, then playing the matched game - keeping the seek so "New
+    opponent" reuses its rated choice and range), `useGameSnapshot` (the `game:join` fetch that seeds a
     game once matched), `useOnlineChessGame` (drives an
     in-progress game on top of `useChessGame`, delegating server-push
     handling to `useGameServerEvents` - status/result/clocks/draw offers,
@@ -185,7 +186,14 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `SeekCard`, `LiveGameSkeleton`, `ConnectionStrengthIndicator`), shared
   primitives used across screens (`Button`, `Avatar`, `BottomSheet`,
   `ActionSheet`, `Placeholder`, `Popover`/`PopoverMenu`, `SectionHeader`,
-  `Toast`, `TimeControlSelector`, `TextField`/`PasswordField`, and
+  `Toast`, `TimeControlSelector`, `GameSettings` (New Game's "Game
+  Settings" cog, opening a sheet with a Rated switch (a guest pressing
+  it gets a toast to sign in, rendered inside the sheet's modal through
+  its `overlay` slot) and a
+  `RatingRangeSelector` - two sliders, `@react-native-community/slider`,
+  for how far below and above your rating an opponent may be, each with
+  an "Open" checkbox that leaves that side unlimited, shown as "+∞"),
+  `TextField`/`PasswordField`, and
   `Icon` - every icon in the app goes through it, a thin wrapper over
   `@expo/vector-icons`' MaterialCommunityIcons, so the set can be
   swapped in one place), account UI
@@ -201,7 +209,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `HomeTabs` (bottom tabs: `HomeTabStack`, `Profile`) -> `HomeTabStack`
   (native-stack: `Home`, `NewGame`). A fresh launch lands on the `Home` tab
   (not the board) - the path to a game is Home -> New Game -> Start New
-  Game -> LiveGame. `LiveGame` covers the whole online game in one screen:
+  Game -> LiveGame. New Game picks the time control, Casual or Rated
+  (guests can only play casual) and, when signed in, a rating range; the
+  server pairs two seeks only when all of them agree. `LiveGame` covers the whole online game in one screen:
   it opens seeking an opponent (a waiting card over an empty board), then
   plays the matched game in place, with no navigation in between - and
   "New opponent" puts it back to seeking. `LiveGame` is named for what
@@ -214,16 +224,19 @@ network/       pure networking infra (REST/socket clients, event types), same st
 
 - **`src/constants/`** - board size, piece image lookups
   (`PIECES['wk' | 'bq' | ...]`), castling squares, time controls, board
-  themes (`boardThemes.ts`), the app's accent and muted colors
+  themes (`boardThemes.ts`), seeks (`seek.ts`: the `Seek` that New Game
+  hands to LiveGame, and the rating range's default, step and limit),
+  the app's accent and muted colors
   (`colors.ts`, a start on a fuller theme), account rules mirrored from
   the server (`account.ts`), user-facing error-message fallbacks
   (`errorMessages.ts`), home-screen placeholder data (`friends.ts`,
   until friends are backed by the server), etc.
 
 - **`src/utils/`** - RN `Animated` helpers (`animation.ts`: castling
-  animation, piece ids), color helpers (`color.ts`) and `formatRating`
-  (`rating.ts`: "1520", or "1520?" while provisional), independent of the
-  chess domain. Dates are formatted with `date-fns` rather than helpers
+  animation, piece ids), color helpers (`color.ts`) and rating formatting
+  (`rating.ts`: `formatRating` - "1520", or "1520?" while provisional -
+  and `formatRatingRange`, "1320–2020"), independent of the chess
+  domain. Dates are formatted with `date-fns` rather than helpers
   here.
 
 - **`src/testUtils/`** - Jest/RNTL helpers: simulated PanResponder gestures
@@ -242,7 +255,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `Modal` report `onDismiss` when it hides, as iOS does, so actions that
   wait on it run in tests too, and renders `@expo/vector-icons` as plain
   `Text`s keeping their props (icon fonts can't load under Jest) - so
-  tests assert which icon shows by its `name` prop, via a `testID`.
+  tests assert which icon shows by its `name` prop, via a `testID`. It
+  renders the slider as a plain `View` keeping its props too, so tests
+  fire `valueChange` on it directly.
 
 ## Testing
 

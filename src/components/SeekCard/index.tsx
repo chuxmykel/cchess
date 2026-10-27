@@ -6,11 +6,13 @@ import GameTypeIcon from '../GameTypeIcon';
 interface SeekCardProps {
   timeControl: TimeControl;
   status?: string;
+  ratingRange?: string;
 }
 
 const SeekCard: React.FC<SeekCardProps> = ({
   timeControl,
   status = 'Waiting for opponent to join…',
+  ratingRange,
 }) => (
   <View style={styles.card} testID="seek-card">
     <Text style={styles.status}>{status}</Text>
@@ -18,6 +20,11 @@ const SeekCard: React.FC<SeekCardProps> = ({
       <GameTypeIcon type={timeControl.type} size={20} />
       <Text style={styles.timeControlLabel}>{timeControl.label}</Text>
     </View>
+    {ratingRange && (
+      <Text style={styles.detail} testID="seek-card-rating-range">
+        {`Rating range ${ratingRange}`}
+      </Text>
+    )}
   </View>
 );
 
@@ -51,5 +58,9 @@ const styles = StyleSheet.create({
   timeControlLabel: {
     fontSize: 22,
     fontWeight: '700',
+  },
+  detail: {
+    fontSize: 14,
+    color: '#555',
   },
 });

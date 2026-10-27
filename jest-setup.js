@@ -36,3 +36,12 @@ jest.mock('@expo/vector-icons', () => {
   const IconStub = (props) => React.createElement(Text, props);
   return { MaterialCommunityIcons: IconStub };
 });
+
+// The native slider reports its value only through a native event. Render it
+// as a plain View keeping its props, so tests can fire valueChange directly.
+jest.mock('@react-native-community/slider', () => {
+  const { View } = jest.requireActual('react-native');
+  const React = jest.requireActual('react');
+  const SliderStub = (props) => React.createElement(View, props);
+  return { __esModule: true, default: SliderStub };
+});

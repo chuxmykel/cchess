@@ -6,7 +6,7 @@
 # Run with: maestro --device <UDID> test -e USERNAME=user_123456 create-account.yaml
 appId: host.exp.Exponent
 env:
-  PASSWORD: secret123
+  PASSWORD: password
 ---
 - tapOn:
     id: "create-account-button"

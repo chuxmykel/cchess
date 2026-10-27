@@ -16,6 +16,7 @@ interface BottomSheetProps {
   onClose: () => void;
   onDismiss?: () => void;
   children: ReactNode;
+  overlay?: ReactNode;
 }
 
 const BottomSheet: React.FC<BottomSheetProps> = ({
@@ -23,6 +24,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   onClose,
   onDismiss,
   children,
+  overlay,
 }) => {
   const insets = useSafeAreaInsets();
   const { modalVisible, translateY, backdropOpacity, panHandlers } =
@@ -60,6 +62,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
             {children}
           </ScrollView>
         </Animated.View>
+        {overlay}
       </View>
     </Modal>
   );

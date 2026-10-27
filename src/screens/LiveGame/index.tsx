@@ -8,7 +8,6 @@ import { useToast } from '../../hooks/useToast';
 import { useGameSession } from '../../hooks/useGameSession';
 import { useMatchmaking } from '../../hooks/useMatchmaking';
 import { useSwipeBackUntilGameLoads } from '../../hooks/useSwipeBackUntilGameLoads';
-import { GUEST_GAMES_ARE_RATED } from '../../constants';
 import {
   GAME_SNAPSHOT_STATUS,
   useGameSnapshot,
@@ -30,17 +29,22 @@ const LiveGame: React.FC<LiveGameProps> = ({ navigation, route }) => {
   const toast = useToast();
   const { session, startGame, seekNewOpponent } = useGameSession(route.params);
   const isSeeking = session.phase === 'seeking';
+  const user =
+    isAuthReady && !authSession.user.isGuest ? authSession.user : null;
+  const isRatedSeek = user !== null && session.seek?.rated === true;
+  const myRating = session.seek
+    ? (user?.ratings.find(
+        (rating) => rating.category === session.seek.timeControl.type,
+      )?.rating ?? null)
+    : null;
 
-  const { isConnecting } = useMatchmaking(
-    isSeeking ? session.timeControl : null,
-    {
-      onMatched: startGame,
-      onError: (message) => {
-        toast.show(message);
-        navigation.goBack();
-      },
+  const { isConnecting } = useMatchmaking(isSeeking ? session.seek : null, {
+    onMatched: startGame,
+    onError: (message) => {
+      toast.show(message);
+      navigation.goBack();
     },
-  );
+  });
   const snapshotResult = useGameSnapshot(
     socket,
     session.phase === 'playing' ? session.gameId : null,
@@ -57,7 +61,9 @@ const LiveGame: React.FC<LiveGameProps> = ({ navigation, route }) => {
       return (
         <SeekingContent
           width={width}
-          timeControl={session.timeControl}
+          seek={session.seek}
+          isRated={isRatedSeek}
+          myRating={myRating}
           isConnecting={isConnecting}
           onCancel={() => navigation.goBack()}
         />
@@ -68,8 +74,8 @@ const LiveGame: React.FC<LiveGameProps> = ({ navigation, route }) => {
       return (
         <LiveGameSkeleton
           width={width}
-          timeControl={session.timeControl}
-          rated={GUEST_GAMES_ARE_RATED}
+          timeControl={session.seek?.timeControl}
+          rated={isRatedSeek}
         />
       );
     }
