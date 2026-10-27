@@ -110,6 +110,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     whiteRatingDiff,
     blackRatingDiff,
     canAbort,
+    isOpponentOnline,
     resign,
     offerDraw,
     respondToDraw,
@@ -207,7 +208,11 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
       />
 
       <View style={styles.board} testID="game-board-area">
-        <PlayerBar color={topColor} {...sharedPlayerBarProps} />
+        <PlayerBar
+          color={topColor}
+          isOnline={topColor === myColor ? undefined : isOpponentOnline}
+          {...sharedPlayerBarProps}
+        />
 
         <View>
           <Chessboard
@@ -243,7 +248,11 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
           )}
         </View>
 
-        <PlayerBar color={orientation} {...sharedPlayerBarProps} />
+        <PlayerBar
+          color={orientation}
+          isOnline={orientation === myColor ? undefined : isOpponentOnline}
+          {...sharedPlayerBarProps}
+        />
       </View>
 
       {!isGameOver && drawOfferedByOpponent && (

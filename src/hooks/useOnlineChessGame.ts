@@ -11,6 +11,7 @@ import {
 } from '../network/socketEvents';
 import { useChessGame, UseChessGameResult } from './useChessGame';
 import { GameStatus, useGameServerEvents } from './useGameServerEvents';
+import { useOpponentPresence } from './useOpponentPresence';
 
 export type { GameStatus };
 
@@ -31,6 +32,7 @@ export type UseOnlineChessGameResult = Omit<
   whiteRatingDiff: number | null;
   blackRatingDiff: number | null;
   canAbort: boolean;
+  isOpponentOnline: boolean;
   attemptMove: (from: Square, to: Square) => MoveResult;
   handleSquareTap: (square: Square) => void;
   resign: () => void;
@@ -63,6 +65,8 @@ export function useOnlineChessGame(
     blackRatingDiff,
     clearDrawOffer,
   } = useGameServerEvents(socket, gameId, snapshot, game, onError);
+  const opponent = myColor === 'w' ? snapshot.black : snapshot.white;
+  const isOpponentOnline = useOpponentPresence(socket, gameId, opponent.id);
 
   const pliesPlayedIncludingOurUnconfirmedMove = plyCountFromFen(game.fen);
   const canAbort =
@@ -131,6 +135,7 @@ export function useOnlineChessGame(
     whiteRatingDiff,
     blackRatingDiff,
     canAbort,
+    isOpponentOnline,
     attemptMove,
     handleSquareTap,
     resign,

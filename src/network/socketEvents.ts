@@ -120,6 +120,12 @@ export type DrawRespondPayload = {
   accept: boolean;
 };
 
+export type GamePresencePayload = {
+  gameId: string;
+  userId: string;
+  online: boolean;
+};
+
 export type LobbyStats = {
   playersOnline: number;
   gamesInPlay: number;
@@ -146,6 +152,7 @@ export interface ServerToClientEvents {
   'game:drawOffered': (payload: DrawOfferedPayload) => void;
   'game:drawDeclined': (payload: { gameId: string }) => void;
   'lobby:stats': (payload: LobbyStats) => void;
+  'game:presence': (payload: GamePresencePayload) => void;
   'game:error': (payload: GameErrorPayload) => void;
   'matchmaking:error': (payload: MatchmakingErrorPayload) => void;
   'auth:error': (payload: { message: string }) => void;

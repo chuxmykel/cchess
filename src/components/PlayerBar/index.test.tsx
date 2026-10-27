@@ -29,6 +29,7 @@ describe('PlayerBar', () => {
       turn: Color;
       isGameOver: boolean;
       firstMoveSecondsLeft: number | null;
+      isOnline: boolean;
     }> = {},
   ) {
     return render(
@@ -40,6 +41,7 @@ describe('PlayerBar', () => {
         turn={overrides.turn ?? 'w'}
         isGameOver={overrides.isGameOver ?? false}
         firstMoveSecondsLeft={overrides.firstMoveSecondsLeft ?? null}
+        isOnline={overrides.isOnline}
       />,
     );
   }
@@ -143,6 +145,23 @@ describe('PlayerBar', () => {
         isGameOver: true,
       });
       expect(over.queryByTestId('first-move-countdown-w')).toBeNull();
+    });
+  });
+
+  describe('presence', () => {
+    it('shows whether the player is online when known', async () => {
+      const online = await renderBar('b', { isOnline: true });
+      expect(online.getByLabelText('Online')).toBeTruthy();
+      await online.unmount();
+
+      const offline = await renderBar('b', { isOnline: false });
+      expect(offline.getByLabelText('Offline')).toBeTruthy();
+    });
+
+    it('shows no dot without presence', async () => {
+      const screen = await renderBar('w');
+
+      expect(screen.queryByTestId('presence-w')).toBeNull();
     });
   });
 });

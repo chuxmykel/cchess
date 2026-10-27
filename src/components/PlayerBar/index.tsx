@@ -5,6 +5,7 @@ import { GameUserSummary } from '../../network/socketEvents';
 import { GameClockResult } from '../../hooks/useGameClock';
 import GameClock from '../GameClock';
 import { formatRating } from '../../utils/rating';
+import { ACCENT_COLOR } from '../../constants/colors';
 
 export const PLAYER_BAR_HEIGHT = 38;
 const FIRST_MOVE_WARNING_SECONDS = 10;
@@ -17,6 +18,7 @@ export interface PlayerBarProps {
   turn: Color;
   isGameOver: boolean;
   firstMoveSecondsLeft?: number | null;
+  isOnline?: boolean;
 }
 
 const PlayerBar: React.FC<PlayerBarProps> = ({
@@ -27,6 +29,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   turn,
   isGameOver,
   firstMoveSecondsLeft = null,
+  isOnline,
 }) => {
   const isWhite = color === 'w';
   const player = isWhite ? white : black;
@@ -40,6 +43,13 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
     >
       <View style={styles.details}>
         <View style={styles.identity}>
+          {isOnline !== undefined && (
+            <View
+              style={[styles.presence, !isOnline && styles.offline]}
+              accessibilityLabel={isOnline ? 'Online' : 'Offline'}
+              testID={`presence-${color}`}
+            />
+          )}
           <Text style={styles.name} numberOfLines={1}>
             {player.displayName}
           </Text>
@@ -91,8 +101,19 @@ const styles = StyleSheet.create({
   },
   identity: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     gap: 6,
+  },
+  presence: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: ACCENT_COLOR,
+  },
+  offline: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: '#bbb',
   },
   firstMoveCountdown: {
     fontSize: 12,

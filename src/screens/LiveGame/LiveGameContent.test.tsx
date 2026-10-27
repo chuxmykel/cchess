@@ -145,6 +145,23 @@ describe('LiveGameContent', () => {
     expect(screen.queryByTestId('first-move-countdown-b')).toBeNull();
   });
 
+  it("shows only the opponent's presence, dimmed once they drop", async () => {
+    const { screen, snapshot, trigger } = await renderContent('w');
+
+    expect(screen.queryByTestId('presence-w')).toBeNull();
+    expect(screen.getByTestId('presence-b')).toHaveAccessibleName('Online');
+
+    await act(() =>
+      trigger('game:presence', {
+        gameId: snapshot.id,
+        userId: snapshot.black.id,
+        online: false,
+      }),
+    );
+
+    expect(screen.getByTestId('presence-b')).toHaveAccessibleName('Offline');
+  });
+
   it('shows the time control and whether the game is rated in the header', async () => {
     const { screen } = await renderContent('w');
 
