@@ -5,14 +5,18 @@
 // seeks a game, and plays a random legal move whenever it's its turn. Draw
 // offers are declined automatically.
 //
-// Games are rated only between two registered accounts, so play as
-// real_user_bot against a signed-in app for a rated game, or pass --guest
-// for a casual one. The app can't be signed in as real_user_bot itself -
-// that would put the same account on both sides.
+// real_user_bot seeks a rated game unless --casual is passed, and a guest
+// always seeks a casual one. Seeks only pair when both are rated or both
+// casual, so match the mode chosen on the app's New Game screen: a rated
+// seek from a signed-in app, or --casual/--guest for a casual one (guests
+// on the app can only play casual). The bot accepts any opponent rating.
+// The app can't be signed in as real_user_bot itself - that would put the
+// same account on both sides.
 //
 // Usage (Node 22, see .nvmrc):
 //   npm run opponent                     # seek 5+0, take either color
 //   npm run opponent -- --guest          # play as a new guest instead
+//   npm run opponent -- --casual         # seek a casual game
 //   npm run opponent -- --color w        # only accept white (bot is white,
 //                                        # so the app plays black)
 //   npm run opponent -- --time 3+2 --delay 300
@@ -42,6 +46,7 @@ const { values: args } = parseArgs({
     time: { type: 'string', default: '5+0' },
     delay: { type: 'string', default: '800' },
     guest: { type: 'boolean', default: false },
+    casual: { type: 'boolean', default: false },
   },
 });
 
@@ -120,11 +125,12 @@ async function main() {
   }
 
   socket.on('connect', () => {
-    log(`connected to ${SERVER_URL}, seeking ${args.time}`);
+    const mode = args.guest || args.casual ? 'casual' : 'rated';
+    log(`connected to ${SERVER_URL}, seeking ${args.time} ${mode}`);
     socket.emit('matchmaking:seek', {
       minutes,
       incrementSeconds,
-      rated: false,
+      rated: !args.guest && !args.casual,
     });
   });
 
