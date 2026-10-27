@@ -9,35 +9,44 @@ export type ActionListItem = {
   /** Leave out for a row that only shows information. */
   onPress?: () => void;
   destructive?: boolean;
+  /** Shown greyed out, and can't be pressed. */
+  disabled?: boolean;
   testID?: string;
 };
 
 const ActionList: React.FC<{ items: ActionListItem[] }> = ({ items }) => (
   <View style={styles.card}>
-    {items.map((item, index) => (
-      <Fragment key={item.label}>
-        {index > 0 && <View style={styles.divider} />}
-        <Pressable
-          style={({ pressed }) => [
-            styles.row,
-            pressed && item.onPress && styles.pressed,
-          ]}
-          onPress={item.onPress}
-          disabled={!item.onPress}
-          accessibilityRole={item.onPress ? 'button' : 'text'}
-          testID={item.testID}
-        >
-          <Icon
-            name={item.icon}
-            size={22}
-            color={item.destructive ? '#d33' : '#444'}
-          />
-          <Text style={[styles.label, item.destructive && styles.destructive]}>
-            {item.label}
-          </Text>
-        </Pressable>
-      </Fragment>
-    ))}
+    {items.map((item, index) => {
+      const isPressable = Boolean(item.onPress) && !item.disabled;
+      return (
+        <Fragment key={item.label}>
+          {index > 0 && <View style={styles.divider} />}
+          <Pressable
+            style={({ pressed }) => [
+              styles.row,
+              pressed && isPressable && styles.pressed,
+              item.disabled && styles.disabled,
+            ]}
+            onPress={item.onPress}
+            disabled={!isPressable}
+            accessibilityRole={item.onPress ? 'button' : 'text'}
+            accessibilityState={{ disabled: Boolean(item.disabled) }}
+            testID={item.testID}
+          >
+            <Icon
+              name={item.icon}
+              size={22}
+              color={item.destructive ? '#d33' : '#444'}
+            />
+            <Text
+              style={[styles.label, item.destructive && styles.destructive]}
+            >
+              {item.label}
+            </Text>
+          </Pressable>
+        </Fragment>
+      );
+    })}
   </View>
 );
 
@@ -58,6 +67,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.6,
+  },
+  disabled: {
+    opacity: 0.4,
   },
   label: {
     fontSize: 15,

@@ -24,4 +24,27 @@ describe('ActionList', () => {
     expect(onPress).toHaveBeenCalled();
     expect(screen.getByTestId('info')).toBeDisabled();
   });
+
+  it("greys out a disabled row and doesn't run it", async () => {
+    const onPress = jest.fn();
+    const screen = await render(
+      <ActionList
+        items={[
+          {
+            label: 'Watch game',
+            icon: 'television-play',
+            onPress,
+            disabled: true,
+            testID: 'watch',
+          },
+        ]}
+      />,
+    );
+
+    await fireEvent.press(screen.getByTestId('watch'));
+
+    expect(onPress).not.toHaveBeenCalled();
+    expect(screen.getByTestId('watch')).toBeDisabled();
+    expect(screen.getByTestId('watch')).toHaveStyle({ opacity: 0.4 });
+  });
 });

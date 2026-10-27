@@ -76,7 +76,7 @@ describe('UserProfile', () => {
     );
     expect(screen.getByTestId('profile-challenge')).toBeTruthy();
     expect(screen.getByTestId('profile-message')).toBeTruthy();
-    expect(screen.queryByTestId('profile-watch')).toBeNull();
+    expect(screen.getByTestId('profile-watch')).toBeDisabled();
   });
 
   it('messages a friend', async () => {
@@ -117,6 +117,42 @@ describe('UserProfile', () => {
 
     expect(social.sendFriendRequest).toHaveBeenCalledWith(profile.username);
     expect(getUserProfile).toHaveBeenCalledTimes(2);
+  });
+
+  it("challenges someone I'm not friends with", async () => {
+    const { screen } = await renderScreen(
+      makeUserProfile({ friendship: { status: 'none', requestId: null } }),
+    );
+
+    await fireEvent.press(screen.getByTestId('profile-challenge'));
+
+    expect(screen.getByTestId('challenge-sheet')).toBeTruthy();
+  });
+
+  it("can't watch a player who isn't in a game", async () => {
+    const { screen } = await renderScreen(
+      makeUserProfile({
+        friendship: { status: 'none', requestId: null },
+        playingGameId: null,
+      }),
+    );
+
+    expect(screen.getByTestId('profile-watch')).toBeDisabled();
+  });
+
+  it("watches the game of a player I'm not friends with", async () => {
+    const { screen, navigation } = await renderScreen(
+      makeUserProfile({
+        friendship: { status: 'none', requestId: null },
+        playingGameId: 'their-live-game',
+      }),
+    );
+
+    await fireEvent.press(screen.getByTestId('profile-watch'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('GameViewer', {
+      gameId: 'their-live-game',
+    });
   });
 
   it('accepts a friend request they sent me', async () => {

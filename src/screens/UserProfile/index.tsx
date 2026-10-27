@@ -85,22 +85,25 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
         testID: 'profile-score',
       });
     }
-    if (playingGameId) {
-      items.push({
+    items.push(
+      {
         label: 'Watch game',
         icon: 'television-play',
-        onPress: () => friendActions.watch(playingGameId),
+        onPress: playingGameId
+          ? () => friendActions.watch(playingGameId)
+          : undefined,
+        disabled: !playingGameId,
         testID: 'profile-watch',
-      });
-    }
+      },
+      {
+        label: 'Challenge',
+        icon: 'sword-cross',
+        onPress: () => friendActions.startChallenge(profile),
+        testID: 'profile-challenge',
+      },
+    );
     if (friendship.status === 'friends') {
       items.push(
-        {
-          label: 'Challenge',
-          icon: 'sword-cross',
-          onPress: () => friendActions.startChallenge(profile),
-          testID: 'profile-challenge',
-        },
         {
           label: 'Message',
           icon: 'message-outline',
