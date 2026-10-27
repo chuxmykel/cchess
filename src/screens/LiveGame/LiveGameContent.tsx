@@ -14,6 +14,7 @@ import GameHeader from '../../components/GameHeader';
 import GameToolbar from '../../components/GameToolbar';
 import BottomBar from '../../components/BottomBar';
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
+import ChatSheet from '../../components/ChatSheet';
 import DrawOfferPrompt from '../../components/DrawOfferPrompt';
 import GameOverCard from '../../components/GameOverCard';
 import { useGameScreenGestureLock } from '../../hooks/useGameScreenGestureLock';
@@ -112,6 +113,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     blackRatingDiff,
     canAbort,
     isOpponentOnline,
+    chat,
     resign,
     offerDraw,
     respondToDraw,
@@ -278,6 +280,8 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
           onOpenMenu={() => setIsMenuOpen(true)}
           onResign={confirmResign}
           canResign={!isGameOver && !canAbort}
+          onOpenChat={chat.open}
+          unreadChatCount={chat.unreadCount}
           onPreviousMove={moveNavigation.back}
           onNextMove={moveNavigation.forward}
           canGoToPreviousMove={moveNavigation.canGoBack}
@@ -289,6 +293,14 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         visible={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         actions={menuActions}
+      />
+
+      <ChatSheet
+        visible={chat.isOpen}
+        onClose={chat.close}
+        messages={chat.messages}
+        myUserId={chat.myUserId}
+        onSend={chat.send}
       />
     </View>
   );

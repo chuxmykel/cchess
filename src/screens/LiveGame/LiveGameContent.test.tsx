@@ -181,6 +181,31 @@ describe('LiveGameContent', () => {
     expect(mockShareGame).toHaveBeenCalledTimes(1);
   });
 
+  it('chats with the opponent, counting unread messages until opened', async () => {
+    const { screen, socket, snapshot, trigger } = await renderContent('w');
+    const fromOpponent = {
+      id: 'chat-1',
+      gameId: snapshot.id,
+      userId: snapshot.black.id,
+      text: 'good luck',
+      createdAt: '2026-10-27T10:00:00.000Z',
+    };
+
+    await act(() => trigger('game:chat', fromOpponent));
+    expect(screen.getByTestId('chat-button-badge')).toHaveTextContent('1');
+
+    await fireEvent.press(screen.getByTestId('chat-button'));
+    expect(screen.getByText('good luck')).toBeTruthy();
+    expect(screen.queryByTestId('chat-button-badge')).toBeNull();
+
+    await fireEvent.changeText(screen.getByTestId('chat-input'), 'thanks');
+    await fireEvent.press(screen.getByTestId('chat-send-button'));
+    expect(socket.emit).toHaveBeenCalledWith('game:chat', {
+      gameId: snapshot.id,
+      text: 'thanks',
+    });
+  });
+
   it("bookmarks the game from the header's menu", async () => {
     const { screen } = await renderContent('w');
 
