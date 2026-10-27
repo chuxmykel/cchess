@@ -1,11 +1,18 @@
 #!/usr/bin/env node
-// A scripted guest opponent for driving LiveGame against a local cchess-be,
+// A scripted opponent for driving LiveGame against a local cchess-be,
 // since reaching a real game through matchmaking needs a second player.
-// Creates a guest session, seeks a game, and plays a random legal move
-// whenever it's its turn. Draw offers are declined automatically.
+// Signs in as the real_user_bot account (or a fresh guest with --guest),
+// seeks a game, and plays a random legal move whenever it's its turn. Draw
+// offers are declined automatically.
+//
+// Games are rated only between two registered accounts, so play as
+// real_user_bot against a signed-in app for a rated game, or pass --guest
+// for a casual one. The app can't be signed in as real_user_bot itself -
+// that would put the same account on both sides.
 //
 // Usage (Node 22, see .nvmrc):
 //   npm run opponent                     # seek 5+0, take either color
+//   npm run opponent -- --guest          # play as a new guest instead
 //   npm run opponent -- --color w        # only accept white (bot is white,
 //                                        # so the app plays black)
 //   npm run opponent -- --time 3+2 --delay 300
@@ -16,7 +23,8 @@
 // app and run this again until it lands the color you want.
 //
 // Exit codes: 0 once the game is over, 1 on a connection/auth/matchmaking
-// error, 2 if --color was given and the bot got the other color.
+// error (including real_user_bot not existing on this server), 2 if
+// --color was given and the bot got the other color.
 //
 // The server URL comes from EXPO_PUBLIC_SERVER_URL, as for the app itself
 // (src/network/env.ts), defaulting to http://localhost:3000.
@@ -26,12 +34,14 @@ const { Chess } = require('chess.js');
 
 const SERVER_URL =
   process.env.EXPO_PUBLIC_SERVER_URL ?? 'http://localhost:3000';
+const BOT_ACCOUNT = { usernameOrEmail: 'real_user_bot', password: 'password' };
 
 const { values: args } = parseArgs({
   options: {
     color: { type: 'string' },
     time: { type: 'string', default: '5+0' },
     delay: { type: 'string', default: '800' },
+    guest: { type: 'boolean', default: false },
   },
 });
 
@@ -50,18 +60,35 @@ function log(...parts) {
   console.log('[opponent]', ...parts);
 }
 
-async function createGuestSession() {
-  const response = await fetch(`${SERVER_URL}/auth/guest`, { method: 'POST' });
+async function postJson(path, body) {
+  const response = await fetch(`${SERVER_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body && JSON.stringify(body),
+  });
   if (!response.ok) {
-    throw new Error(`POST /auth/guest failed: ${response.status}`);
+    throw new Error(`POST ${path} failed: ${response.status}`);
   }
   return response.json();
 }
 
+async function signInAsBot() {
+  try {
+    return await postJson('/auth/login', BOT_ACCOUNT);
+  } catch (error) {
+    throw new Error(
+      `${error.message} - create the ${BOT_ACCOUNT.usernameOrEmail} account ` +
+        'on this server (password "password"), or pass --guest',
+    );
+  }
+}
+
 async function main() {
-  const session = await createGuestSession();
+  const session = args.guest
+    ? await postJson('/auth/guest')
+    : await signInAsBot();
   const myUserId = session.user.id;
-  log('guest', myUserId);
+  log(args.guest ? 'guest' : 'signed in as', session.user.username);
 
   const socket = io(SERVER_URL, {
     auth: { token: session.accessToken },

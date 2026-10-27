@@ -13,6 +13,7 @@ import {
   ConnectionLatencyStatus,
 } from '../useConnectionLatency';
 import { useAuthSession } from '../../context/AuthSessionContext';
+import { makeAuthSession } from '../../testUtils/authSession';
 
 jest.mock('../useConnectionLatency');
 jest.mock('../../context/AuthSessionContext', () => ({
@@ -23,12 +24,7 @@ function mockLatency(
   status: ConnectionLatencyStatus,
   latencyMs: number | null,
 ) {
-  (useAuthSession as jest.Mock).mockReturnValue({
-    isReady: true,
-    accessToken: 't',
-    userId: 'u',
-    socket: {},
-  });
+  (useAuthSession as jest.Mock).mockReturnValue(makeAuthSession());
   (useConnectionLatency as jest.Mock).mockReturnValue({ status, latencyMs });
 }
 

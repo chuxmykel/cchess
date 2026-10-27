@@ -1,8 +1,11 @@
 import { View, Text, Image, StyleSheet } from 'react-native';
 
+import Icon from '../Icon';
+
 interface AvatarProps {
   size?: number;
   name?: string;
+  color?: string;
   imageUri?: string;
 }
 
@@ -17,6 +20,7 @@ function getInitials(name: string): string {
 const Avatar: React.FC<AvatarProps> = ({
   size = DEFAULT_SIZE,
   name,
+  color,
   imageUri,
 }) => {
   const dimensions = { width: size, height: size, borderRadius: size / 2 };
@@ -32,13 +36,26 @@ const Avatar: React.FC<AvatarProps> = ({
   }
 
   return (
-    <View style={[styles.avatar, styles.placeholder, dimensions]}>
+    <View
+      style={[
+        styles.avatar,
+        styles.placeholder,
+        color && { backgroundColor: color },
+        dimensions,
+      ]}
+      testID="avatar-placeholder"
+    >
       {name ? (
         <Text style={[styles.initials, { fontSize: size * 0.4 }]}>
           {getInitials(name)}
         </Text>
       ) : (
-        <Text style={{ fontSize: size * 0.5 }}>{'\u{1F464}'}</Text>
+        <Icon
+          name="account"
+          size={size * 0.6}
+          color="white"
+          testID="avatar-guest-icon"
+        />
       )}
     </View>
   );

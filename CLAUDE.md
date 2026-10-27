@@ -85,14 +85,18 @@ network/       pure networking infra (REST/socket clients, event types), same st
 - **`src/network/`** - a second framework-agnostic layer, mirroring
   `domain/`'s pure-infra style but for talking to `cchess-be` (the
   NestJS/Socket.IO backend): `env.ts` (`SERVER_URL`, defaulting to
-  `http://localhost:3000`), `restClient.ts` (guest-session REST calls),
+  `http://localhost:3000`), `restClient.ts` (every REST call, on one
+  axios instance whose response interceptor turns failures into
+  `ApiError`s carrying the server's own message - auth: guest, sign in,
+  register, refresh, logout; plus `/users/me`, game history and PGN),
   `socketClient.ts` (the one `AppSocket` singleton - `connectSocket`/
-  `disconnectSocket`/`getSocket`, plus `waitForServerRejection` for
-  detecting a stale token that connects but then gets kicked),
+  `disconnectSocket`/`getSocket`),
   `socketEvents.ts` (every client<->server event's payload types,
   confirmed against a live backend instance rather than just inferred -
   see that file's own header comment), and `tokenStorage.ts`
-  (`expo-secure-store` wrapper for the access/refresh token pair).
+  (`expo-secure-store` wrapper for the refresh token - access tokens
+  last 15 minutes, so every launch trades the stored refresh token for a
+  fresh pair instead of keeping one).
 
 - **`src/hooks/`** - two families, both consumed by `components/`/`screens/`
   above them:
@@ -104,8 +108,16 @@ network/       pure networking infra (REST/socket clients, event types), same st
     (`usePieceAnimations`, `useDragGuide`, `useValidMoveIndicators`,
     `usePieceGesture`) - none of these know chess rules themselves.
   - Online-play orchestration, each wrapping the `network/` layer:
-    `useAuthSessionBootstrap` (guest session + socket bootstrap, backs
-    `AuthSessionContext`), `useMatchmaking` (seek/cancel, reporting
+    `useAuthSessionLifecycle` (backs `AuthSessionContext`: on launch
+    resumes the stored account via `/auth/refresh`, falling back to a new
+    guest only when the server rejects it; then sign in, create account
+    and sign out, each swapping the tokens and reconnecting the socket -
+    the newest session to succeed wins, and replaced ones are revoked),
+    `useRecentGames` (the player's finished games, from `GET /games`),
+    `useUsernameAvailability` (whether a sign-up username is free, asked
+    of `GET /users/:username` once typing pauses and the name fits the
+    server's rules),
+    `useMatchmaking` (seek/cancel, reporting
     `game:created` or an error back to its caller), `useGameSession` (a
     game screen's two phases - seeking an opponent, then playing the
     matched game), `useGameSnapshot` (the `game:join` fetch that seeds a
@@ -124,9 +136,12 @@ network/       pure networking infra (REST/socket clients, event types), same st
     `usePopoverMenu`, `useToast`/`useToastBubbleAnimation`,
     `useBottomSheet`, `useCaretRotation`, `useGameScreenGestureLock`,
     `useSwipeBackUntilGameLoads` (keeps a game screen's swipe-back gesture
-    available until its game has loaded), and `useRunAfterDismiss` (holds a menu/sheet action until its modal has
-    finished closing - on iOS, presenting the share sheet or an Alert
-    while a modal is still animating away silently does nothing).
+    available until its game has loaded), `useRunAfterDismiss` (holds a
+    menu/sheet action until its modal has finished closing - on iOS,
+    presenting the share sheet or an Alert while a modal is still
+    animating away silently does nothing), and `useAsyncAction` (runs a
+    server request for a form or button: in-flight state, no double
+    submits, and the server's message or a fallback on failure).
 
 - **`src/context/`** - every file that defines a React context lives here,
   one top-level directory, rather than scattered across the layers that
@@ -139,10 +154,11 @@ network/       pure networking infra (REST/socket clients, event types), same st
   - `LiveGame/OnlineChessGameContext.tsx` - the online counterpart, backed
     by `useOnlineChessGame`; nested under `LiveGame/` since it's specific
     to that one screen.
-  - `AuthSessionContext.tsx` - wraps `useAuthSessionBootstrap` the same way
-    the two above wrap their own hooks; the one piece of genuinely app-wide
-    state here (guest session + socket connection), mounted once in
-    `App.tsx`, rather than scoped to a single screen.
+  - `AuthSessionContext.tsx` - wraps `useAuthSessionLifecycle` the same
+    way the two above wrap their own hooks; the one piece of genuinely
+    app-wide state here (the signed-in account or guest, its socket, and
+    the actions that switch between them), mounted once in `App.tsx`,
+    rather than scoped to a single screen.
 
 - **`src/components/ChessBoard/`** - composes the board from
   `ChessGameContext` + the hooks above; everything under it
@@ -159,12 +175,19 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `SeekCard`, `LiveGameSkeleton`, `ConnectionStrengthIndicator`), shared
   primitives used across screens (`Button`, `Avatar`, `BottomSheet`,
   `ActionSheet`, `Placeholder`, `Popover`/`PopoverMenu`, `SectionHeader`,
-  `Toast`, `TimeControlSelector`), and
-  `Home`-screen-specific pieces (`HomeHeader`, `FriendsCarousel`,
+  `Toast`, `TimeControlSelector`, `TextField`/`PasswordField`, and
+  `Icon` - every icon in the app goes through it, a thin wrapper over
+  `@expo/vector-icons`' MaterialCommunityIcons, so the set can be
+  swapped in one place), account UI
+  (`AccountForm`, the layout shared by Sign in and Create account;
+  `SignInPrompt`, shown to guests on Home and Profile; `RatingsList`;
+  `UsernameAvailabilityIndicator`, the ✓/✕ beside the sign-up username),
+  and `Home`-screen-specific pieces (`HomeHeader`, `FriendsCarousel`,
   `RecentGamesList`).
 
 - **Navigation** (React Navigation, nested stacks/tabs):
-  `App.tsx` (root native-stack) -> `HomeStack` (`HomeTabs`, `LiveGame`) ->
+  `App.tsx` (root native-stack) -> `HomeStack` (`HomeTabs`, `LiveGame`,
+  `SignIn`, `CreateAccount`) ->
   `HomeTabs` (bottom tabs: `HomeTabStack`, `Profile`) -> `HomeTabStack`
   (native-stack: `Home`, `NewGame`). A fresh launch lands on the `Home` tab
   (not the board) - the path to a game is Home -> New Game -> Start New
@@ -174,29 +197,40 @@ network/       pure networking infra (REST/socket clients, event types), same st
   "New opponent" puts it back to seeking. `LiveGame` is named for what
   it is today - a server-driven online game - not a generic "any game"
   screen; a future local/offline game would get its own screen rather than
-  being folded into this one.
+  being folded into this one. Guests reach `SignIn`/`CreateAccount`
+  from the prompt on Home or Profile; both pop back on success. They're
+  pushed over the tabs, so nobody can sign in or out mid-game -
+  `LiveGame` covers the tabs and locks swipe-back while playing.
 
 - **`src/constants/`** - board size, piece image lookups
   (`PIECES['wk' | 'bq' | ...]`), castling squares, time controls, board
-  themes (`boardThemes.ts`), user-facing error-message fallbacks
+  themes (`boardThemes.ts`), the app's accent and muted colors
+  (`colors.ts`, a start on a fuller theme), account rules mirrored from
+  the server (`account.ts`), user-facing error-message fallbacks
   (`errorMessages.ts`), home-screen placeholder data (`friends.ts`,
-  `recentGames.ts`), etc.
+  until friends are backed by the server), etc.
 
 - **`src/utils/`** - RN `Animated` helpers (`animation.ts`: castling
   animation, piece ids) and color helpers (`color.ts`), independent of the
-  chess domain.
+  chess domain. Dates are formatted with `date-fns` rather than helpers
+  here.
 
 - **`src/testUtils/`** - Jest/RNTL helpers: simulated PanResponder gestures
   (`panResponderGesture.ts`), `Animated.Value` read helpers, a text-based
   board visualizer for debugging board state in test failures, a fake
   `AppSocket` for hooks that talk to the server (`fakeSocket.ts`), a
-  `GameSnapshot` fixture builder (`gameSnapshot.ts`), a safe-area
+  `GameSnapshot` fixture builder (`gameSnapshot.ts`), `makeAuthSession`/
+  `makeBootstrappingAuthSession` for mocking `useAuthSession`
+  (`authSession.ts`), a `GameSummary` builder (`gameSummary.ts`), a safe-area
   wrapper for components that read insets (`safeArea.tsx`),
   `waitForSheetToClose` (`modal.ts`), and shared mock modules for
   `jest.mock` factories (`ConnectionStrengthIndicatorStub.tsx`,
-  `popoverMenuStartingOpen.ts`). `jest-setup.js` makes the mocked
+  `popoverMenuStartingOpen.ts`, and `focusEffectRunsOnMount.ts` for
+  screens that use `useFocusEffect`). `jest-setup.js` makes the mocked
   `Modal` report `onDismiss` when it hides, as iOS does, so actions that
-  wait on it run in tests too.
+  wait on it run in tests too, and renders `@expo/vector-icons` as plain
+  `Text`s keeping their props (icon fonts can't load under Jest) - so
+  tests assert which icon shows by its `name` prop, via a `testID`.
 
 ## Testing
 

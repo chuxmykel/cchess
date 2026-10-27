@@ -1,0 +1,36 @@
+# From a guest's sign-in prompt (Home or Profile) -> Create account ->
+# submit, then waits until the prompt is gone. Usernames are unique on
+# the server, so pass a fresh one each run (3-20 letters, numbers or
+# underscores).
+#
+# Run with: maestro --device <UDID> test -e USERNAME=user_123456 create-account.yaml
+appId: host.exp.Exponent
+env:
+  PASSWORD: secret123
+---
+- tapOn:
+    id: "create-account-button"
+- tapOn:
+    id: "username-input"
+- inputText: ${USERNAME}
+- tapOn:
+    id: "email-input"
+- inputText: ${USERNAME}@example.com
+- tapOn:
+    id: "password-input"
+# iOS's "Use Strong Password?" sheet takes over a new-password field and
+# swallows typing. Like the save prompt, it's outside the app's hierarchy:
+# close its ✕ by point, then clear whatever got typed before it opened.
+- waitForAnimationToEnd
+- tapOn:
+    point: "370,507"
+- eraseText: 20
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn:
+    id: "account-form-submit"
+- runFlow: dismiss-save-password.yaml
+- extendedWaitUntil:
+    notVisible:
+      id: "sign-in-prompt"
+    timeout: 10000

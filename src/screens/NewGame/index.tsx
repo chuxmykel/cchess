@@ -57,7 +57,7 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
             onDisabledPress={challengeFriend}
             appearsDisabled
             variant="outline"
-            icon={'\u{1F91D}'}
+            icon="sword-cross"
             style={styles.secondaryButtonSpacing}
             testID="challenge-friend-button"
           />
@@ -66,7 +66,7 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
             onDisabledPress={playStockfish}
             appearsDisabled
             variant="outline"
-            icon={'\u{1F916}'}
+            icon="robot-outline"
             testID="play-stockfish-button"
           />
         </View>

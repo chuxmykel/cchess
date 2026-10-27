@@ -1,31 +1,41 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { formatDistanceToNowStrict, min } from 'date-fns';
 
 import Avatar from '../../Avatar';
 import GameTypeIcon from '../../GameTypeIcon';
 import GameResultIcon from '../../GameResultIcon';
-import { RecentGame } from '../../../constants/recentGames';
+import { GameSummary } from '../../../network/restClient';
+
+const ROW_ICON_SIZE = 26;
 
 interface GameRowProps {
-  game: RecentGame;
+  game: GameSummary;
+}
+
+function subtitleFor(game: GameSummary): string {
+  const finishedAt = min([game.endedAt ?? game.createdAt, Date.now()]);
+  const timeAgo = formatDistanceToNowStrict(finishedAt, { addSuffix: true });
+  return game.status === 'aborted' ? `Aborted • ${timeAgo}` : timeAgo;
 }
 
 const GameRow: React.FC<GameRowProps> = ({ game }) => {
   return (
     <View style={styles.row} testID={`game-row-${game.id}`}>
       <View style={styles.typeIcon}>
-        <GameTypeIcon type={game.type} />
+        <GameTypeIcon type={game.gameType} size={ROW_ICON_SIZE} />
       </View>
       <View style={styles.avatar}>
-        <Avatar name={game.opponentName} size={36} />
+        <Avatar name={game.opponentDisplayName} size={36} />
       </View>
       <View style={styles.details}>
         <Text style={styles.name} numberOfLines={1}>
-          {game.opponentName}{' '}
-          <Text style={styles.rating}>({game.opponentRating})</Text>
+          {game.opponentDisplayName}
         </Text>
-        <Text style={styles.playedAt}>{game.playedAt}</Text>
+        <Text style={styles.subtitle}>{subtitleFor(game)}</Text>
       </View>
-      <GameResultIcon result={game.result} />
+      {game.result && (
+        <GameResultIcon result={game.result} size={ROW_ICON_SIZE} />
+      )}
     </View>
   );
 };
@@ -40,7 +50,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   typeIcon: {
-    width: 24,
+    width: ROW_ICON_SIZE,
     alignItems: 'center',
     marginRight: 12,
   },
@@ -54,11 +64,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  rating: {
-    fontWeight: '400',
-    color: '#888',
-  },
-  playedAt: {
+  subtitle: {
     fontSize: 12,
     color: '#888',
     marginTop: 2,

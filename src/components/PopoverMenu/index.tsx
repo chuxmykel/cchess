@@ -8,20 +8,22 @@ import {
 
 import { usePopoverMenu } from '../../hooks/usePopoverMenu';
 import { useRunAfterDismiss } from '../../hooks/useRunAfterDismiss';
+import Icon, { IconName } from '../Icon';
 import Popover, { POPOVER_TRIGGER_HIT_SLOP } from '../Popover';
 
 const DEFAULT_MENU_WIDTH = 160;
+const MUTED_COLOR = '#666';
 
 export interface PopoverMenuItem {
   label: string;
-  icon?: string;
+  icon?: IconName;
   onPress: () => void;
   testID?: string;
 }
 
 interface PopoverMenuProps {
   items: PopoverMenuItem[];
-  triggerLabel?: string;
+  triggerIcon?: IconName;
   width?: number;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -29,7 +31,7 @@ interface PopoverMenuProps {
 
 const PopoverMenu: React.FC<PopoverMenuProps> = ({
   items,
-  triggerLabel = '⋮',
+  triggerIcon = 'dots-vertical',
   width = DEFAULT_MENU_WIDTH,
   style,
   testID,
@@ -51,7 +53,12 @@ const PopoverMenu: React.FC<PopoverMenuProps> = ({
         hitSlop={POPOVER_TRIGGER_HIT_SLOP}
         testID={testID}
       >
-        <Text style={styles.triggerText}>{triggerLabel}</Text>
+        <Icon
+          name={triggerIcon}
+          size={20}
+          color={MUTED_COLOR}
+          testID="popover-menu-trigger-icon"
+        />
       </Pressable>
       <Popover
         visible={visible}
@@ -69,7 +76,14 @@ const PopoverMenu: React.FC<PopoverMenuProps> = ({
             testID={item.testID}
           >
             <Text style={styles.menuItemText}>{item.label}</Text>
-            {item.icon && <Text style={styles.menuItemIcon}>{item.icon}</Text>}
+            {item.icon && (
+              <Icon
+                name={item.icon}
+                size={18}
+                color={MUTED_COLOR}
+                testID="popover-menu-item-icon"
+              />
+            )}
           </Pressable>
         ))}
       </Popover>
@@ -83,10 +97,6 @@ const styles = StyleSheet.create({
   trigger: {
     padding: 4,
   },
-  triggerText: {
-    fontSize: 16,
-    color: '#666',
-  },
   menuContent: {
     paddingVertical: 4,
   },
@@ -99,9 +109,5 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 15,
-  },
-  menuItemIcon: {
-    fontSize: 15,
-    color: '#666',
   },
 });

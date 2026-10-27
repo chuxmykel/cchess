@@ -4,10 +4,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Avatar from '../Avatar';
 
 interface HomeHeaderProps {
+  avatarName?: string;
+  avatarColor?: string;
   onAvatarPress: () => void;
 }
 
-const HomeHeader: React.FC<HomeHeaderProps> = ({ onAvatarPress }) => {
+const HomeHeader: React.FC<HomeHeaderProps> = ({
+  avatarName,
+  avatarColor,
+  onAvatarPress,
+}) => {
   const insets = useSafeAreaInsets();
 
   return (
@@ -17,7 +23,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({ onAvatarPress }) => {
         style={styles.logo}
       />
       <Pressable onPress={onAvatarPress} testID="avatar-button">
-        <Avatar />
+        <Avatar name={avatarName} color={avatarColor} />
       </Pressable>
     </View>
   );

@@ -3,9 +3,16 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeTabs from '../HomeTabs';
 import LiveGame from '../LiveGame';
+import SignIn from '../SignIn';
+import CreateAccount from '../CreateAccount';
 import { HomeStackParamList } from './types';
 
 const { Navigator, Screen } = createNativeStackNavigator<HomeStackParamList>();
+
+const ACCOUNT_SCREEN_OPTIONS = {
+  headerShown: true,
+  headerBackButtonDisplayMode: 'minimal',
+} as const;
 
 const HomeStack: React.FC = () => {
   return (
@@ -22,6 +29,16 @@ const HomeStack: React.FC = () => {
           name="LiveGame"
           component={LiveGame}
           options={{ gestureEnabled: false }}
+        />
+        <Screen
+          name="SignIn"
+          component={SignIn}
+          options={{ ...ACCOUNT_SCREEN_OPTIONS, title: 'Sign in' }}
+        />
+        <Screen
+          name="CreateAccount"
+          component={CreateAccount}
+          options={{ ...ACCOUNT_SCREEN_OPTIONS, title: 'Create account' }}
         />
       </Navigator>
     </>

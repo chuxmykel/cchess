@@ -179,7 +179,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         menuItems={[
           {
             label: 'Share & export',
-            icon: '⇪',
+            icon: 'export-variant',
             onPress: shareGame,
             testID: 'share-game-item',
           },

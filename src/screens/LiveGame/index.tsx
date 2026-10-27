@@ -75,7 +75,7 @@ const LiveGame: React.FC<LiveGameProps> = ({ navigation, route }) => {
     }
 
     const { snapshot } = snapshotResult;
-    const myUserId = isAuthReady ? authSession.userId : '';
+    const myUserId = isAuthReady ? authSession.user.id : '';
     const myColor = snapshot.white.id === myUserId ? 'w' : 'b';
 
     return (

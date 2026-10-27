@@ -24,9 +24,17 @@ describe('Avatar', () => {
     expect(screen.getByText('A')).toBeTruthy();
   });
 
-  it("falls back to a placeholder glyph when there's neither an image nor a name", async () => {
+  it('fills the placeholder with the given color', async () => {
+    const screen = await render(<Avatar name="Ada" color="#3b82f6" />);
+
+    expect(screen.getByTestId('avatar-placeholder')).toHaveStyle({
+      backgroundColor: '#3b82f6',
+    });
+  });
+
+  it("falls back to a guest icon when there's neither an image nor a name", async () => {
     const screen = await render(<Avatar />);
 
-    expect(screen.getByText('\u{1F464}')).toBeTruthy();
+    expect(screen.getByTestId('avatar-guest-icon')).toBeTruthy();
   });
 });

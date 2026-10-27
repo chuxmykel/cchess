@@ -1,6 +1,10 @@
 import * as SecureStore from 'expo-secure-store';
 
-import { clearTokens, getTokens, saveTokens } from '../tokenStorage';
+import {
+  clearRefreshToken,
+  getRefreshToken,
+  saveRefreshToken,
+} from '../tokenStorage';
 
 jest.mock('expo-secure-store', () => ({
   setItemAsync: jest.fn(),
@@ -8,61 +12,37 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(),
 }));
 
-const TOKENS = {
-  accessToken: 'access-123',
-  refreshToken: 'refresh-456',
-  userId: 'user-789',
-};
-
 describe('tokenStorage', () => {
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('saves all three values under their own keys', async () => {
-    await saveTokens(TOKENS);
+  it('saves the refresh token in secure storage', async () => {
+    await saveRefreshToken('refresh-456');
 
-    expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-      'cchess.accessToken',
-      TOKENS.accessToken,
-    );
     expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
       'cchess.refreshToken',
-      TOKENS.refreshToken,
-    );
-    expect(SecureStore.setItemAsync).toHaveBeenCalledWith(
-      'cchess.userId',
-      TOKENS.userId,
+      'refresh-456',
     );
   });
 
-  it('returns the stored tokens when all three are present', async () => {
-    (SecureStore.getItemAsync as jest.Mock)
-      .mockResolvedValueOnce(TOKENS.accessToken)
-      .mockResolvedValueOnce(TOKENS.refreshToken)
-      .mockResolvedValueOnce(TOKENS.userId);
+  it('reads the stored refresh token back', async () => {
+    (SecureStore.getItemAsync as jest.Mock).mockResolvedValue('refresh-456');
 
-    await expect(getTokens()).resolves.toEqual(TOKENS);
+    await expect(getRefreshToken()).resolves.toBe('refresh-456');
   });
 
-  it('returns null if any value is missing', async () => {
-    (SecureStore.getItemAsync as jest.Mock)
-      .mockResolvedValueOnce(TOKENS.accessToken)
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(TOKENS.userId);
+  it('resolves null when nothing is stored', async () => {
+    (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(null);
 
-    await expect(getTokens()).resolves.toBeNull();
+    await expect(getRefreshToken()).resolves.toBeNull();
   });
 
-  it('deletes all three keys', async () => {
-    await clearTokens();
+  it('deletes the stored refresh token', async () => {
+    await clearRefreshToken();
 
-    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
-      'cchess.accessToken',
-    );
     expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
       'cchess.refreshToken',
     );
-    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('cchess.userId');
   });
 });

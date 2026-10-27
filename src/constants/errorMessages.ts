@@ -4,3 +4,7 @@ export const MATCHMAKING_FAILED_MESSAGE =
   "Couldn't find a match. Please try again.";
 export const SHARE_FAILED_MESSAGE =
   "Couldn't export this game. Please try again.";
+export const SIGN_IN_FAILED_MESSAGE = "Couldn't sign in. Please try again.";
+export const CREATE_ACCOUNT_FAILED_MESSAGE =
+  "Couldn't create your account. Please try again.";
+export const SIGN_OUT_FAILED_MESSAGE = "Couldn't sign out. Please try again.";
