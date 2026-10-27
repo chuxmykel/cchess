@@ -5,6 +5,7 @@ import { useAuthSession } from '../../context/AuthSessionContext';
 import { DEFAULT_RATING_RANGE } from '../../constants/seek';
 import { DEFAULT_TIME_CONTROL } from '../../constants/timeControls';
 import { withSafeArea } from '../../testUtils/safeArea';
+import { waitForSheetToClose } from '../../testUtils/modal';
 import { makeAuthSession } from '../../testUtils/authSession';
 
 jest.mock('../../context/AuthSessionContext', () => ({
@@ -38,9 +39,41 @@ describe('NewGame', () => {
     });
   });
 
-  it('seeks a casual game as a guest', async () => {
+  it('seeks with the chosen mode and range', async () => {
+    const { screenPromise, navigation } = renderScreen({ isGuest: false });
+    const screen = await screenPromise;
+
+    await fireEvent.press(screen.getByTestId('game-settings-trigger'));
+    expect(screen.getByTestId('rated-switch').props.value).toBe(true);
+    await fireEvent(screen.getByTestId('rated-switch'), 'valueChange', false);
+    await fireEvent(
+      screen.getByTestId('rating-range-below-slider'),
+      'valueChange',
+      400,
+    );
+    await fireEvent.press(screen.getByTestId('game-settings-done'));
+    await waitForSheetToClose();
+
+    await fireEvent.press(screen.getByTestId('start-new-game-button'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('LiveGame', {
+      seek: {
+        timeControl: DEFAULT_TIME_CONTROL,
+        rated: false,
+        ratingRange: { ...DEFAULT_RATING_RANGE, below: 400 },
+      },
+    });
+  });
+
+  it('lets guests play casual games only, without a rating range', async () => {
     const { screenPromise, navigation } = renderScreen({ isGuest: true });
     const screen = await screenPromise;
+
+    await fireEvent.press(screen.getByTestId('game-settings-trigger'));
+    expect(screen.getByTestId('rated-switch').props.value).toBe(false);
+    expect(screen.getByText('Sign in to play rated games.')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('game-settings-done'));
+    await waitForSheetToClose();
 
     await fireEvent.press(screen.getByTestId('start-new-game-button'));
 

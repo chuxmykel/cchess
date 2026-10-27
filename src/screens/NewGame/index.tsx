@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Button from '../../components/Button';
+import GameSettings from '../../components/GameSettings';
 import TimeControlSelector from '../../components/TimeControlSelector';
 import Toast from '../../components/Toast';
 import { useToast } from '../../hooks/useToast';
@@ -23,16 +24,15 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [timeControl, setTimeControl] =
     useState<TimeControl>(DEFAULT_TIME_CONTROL);
+  const [chosenRated, setChosenRated] = useState(true);
+  const [ratingRange, setRatingRange] = useState(DEFAULT_RATING_RANGE);
   const toast = useToast();
   const authSession = useAuthSession();
   const isGuest = !authSession.isReady || authSession.user.isGuest;
+  const rated = !isGuest && chosenRated;
 
   function startNewGame() {
-    const seek: Seek = {
-      timeControl,
-      rated: !isGuest,
-      ratingRange: DEFAULT_RATING_RANGE,
-    };
+    const seek: Seek = { timeControl, rated, ratingRange };
     navigation.navigate('LiveGame', { seek });
   }
 
@@ -51,6 +51,13 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
 
         <Text style={styles.sectionLabel}>Time Control</Text>
         <TimeControlSelector selected={timeControl} onSelect={setTimeControl} />
+        <GameSettings
+          rated={rated}
+          ratingRange={ratingRange}
+          canPlayRated={!isGuest}
+          onChangeRated={setChosenRated}
+          onChangeRatingRange={setRatingRange}
+        />
 
         <Button
           label="Start New Game"
