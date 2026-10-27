@@ -7,6 +7,7 @@ describe('MessageList', () => {
   it('groups messages by day and tells mine from theirs', async () => {
     const screen = await render(
       <MessageList
+        otherName="Judit"
         messages={[
           makeDirectMessage({
             id: 'a',
@@ -36,10 +37,27 @@ describe('MessageList', () => {
     });
   });
 
+  it('invites a first message to the friend', async () => {
+    const screen = await render(
+      <MessageList
+        otherName="Judit"
+        messages={[]}
+        myUserId="user-1"
+        hasOlder={false}
+        onLoadOlder={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('messages-empty')).toHaveTextContent(
+      /Say hello to Judit!/,
+    );
+  });
+
   it('loads earlier messages when there are more', async () => {
     const onLoadOlder = jest.fn();
     const screen = await render(
       <MessageList
+        otherName="Judit"
         messages={[]}
         myUserId="user-1"
         hasOlder

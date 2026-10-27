@@ -21,6 +21,7 @@ describe('ActivityList', () => {
   it("shows each day's games, results and rating change", async () => {
     const screen = await render(
       <ActivityList
+        emptyMessage=""
         activity={[
           day({}),
           day({ category: 'blitz', games: 1, wins: 1, draws: 0, losses: 0 }),
@@ -45,8 +46,14 @@ describe('ActivityList', () => {
   });
 
   it('says when there were no games', async () => {
-    const screen = await render(<ActivityList activity={[]} />);
+    const screen = await render(
+      <ActivityList
+        activity={[]}
+        emptyMessage="Judit's games will show here."
+      />,
+    );
 
     expect(screen.getByTestId('activity-empty')).toBeTruthy();
+    expect(screen.getByText("Judit's games will show here.")).toBeTruthy();
   });
 });

@@ -4,6 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import Button from '../Button';
 import Placeholder from '../Placeholder';
 import SectionHeader from '../SectionHeader';
+import EmptyState from '../EmptyState';
 import GameRow from './GameRow';
 import { RECENT_GAMES_STATUS, RecentGames } from '../../hooks/useRecentGames';
 import { GameSummary } from '../../network/restClient';
@@ -55,9 +56,13 @@ const RecentGamesList: React.FC<RecentGamesListProps> = ({
       case RECENT_GAMES_STATUS.READY:
         if (recentGames.games.length === 0) {
           return (
-            <View style={styles.message}>
-              <Text style={styles.messageText}>Your games will show here.</Text>
-            </View>
+            <EmptyState
+              illustration="games"
+              title="No games yet"
+              message="Your recent games will show up here once you play one."
+              compact
+              testID="recent-games-empty"
+            />
           );
         }
         return recentGames.games.map((game, index) => (

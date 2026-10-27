@@ -1,9 +1,8 @@
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 
-import Icon from '../Icon';
+import EmptyState from '../EmptyState';
 import SectionHeader from '../SectionHeader';
 import FriendCard, { FriendCardProps } from './FriendCard';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { Friend } from '../../network/restClient';
 import { byPresence } from '../../utils/presence';
 
@@ -35,17 +34,17 @@ const FriendsCarousel: React.FC<FriendsCarouselProps> = ({
         testID="friends-see-all"
       />
       {friends.length === 0 ? (
-        <Pressable
-          style={styles.empty}
-          onPress={onSeeAll}
-          accessibilityRole="button"
-          testID="add-friends-prompt"
-        >
-          <Icon name="account-plus-outline" size={24} color={ACCENT_COLOR} />
-          <Text style={styles.emptyText}>
-            Add friends to message and challenge them.
-          </Text>
-        </Pressable>
+        <EmptyState
+          illustration="friends"
+          title="No friends yet"
+          message="Your friends will show up here once you connect. Add some to message and challenge them."
+          action={{
+            label: 'Find friends',
+            onPress: onSeeAll,
+            testID: 'add-friends-prompt',
+          }}
+          testID="friends-empty"
+        />
       ) : (
         <FlatList
           data={[...friends].sort(byPresence)}
@@ -79,20 +78,5 @@ const styles = StyleSheet.create({
   },
   separator: {
     width: 12,
-  },
-  empty: {
-    marginHorizontal: 16,
-    marginTop: 8,
-    padding: 16,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  emptyText: {
-    flex: 1,
-    fontSize: 14,
-    color: MUTED_COLOR,
   },
 });

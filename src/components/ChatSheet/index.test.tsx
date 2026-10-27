@@ -32,7 +32,8 @@ describe('ChatSheet', () => {
   it('invites the first message when there are none', async () => {
     const screen = await renderSheet();
 
-    expect(screen.getByText('No messages yet. Say hello!')).toBeTruthy();
+    expect(screen.getByTestId('chat-empty')).toBeTruthy();
+    expect(screen.getByText('Say hello to your opponent!')).toBeTruthy();
   });
 
   it('puts your messages on the right and theirs on the left', async () => {

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import BottomSheet from '../BottomSheet';
+import EmptyState from '../EmptyState';
 import Icon from '../Icon';
 import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { MAX_CHAT_MESSAGE_LENGTH } from '../../constants/chat';
@@ -59,7 +60,17 @@ const ChatSheet: React.FC<ChatSheetProps> = ({
           }
         >
           {messages.length === 0 ? (
-            <Text style={styles.empty}>No messages yet. Say hello!</Text>
+            <EmptyState
+              illustration="messages"
+              title="No messages yet"
+              message={
+                isClosed
+                  ? 'Nobody chatted during this game.'
+                  : 'Say hello to your opponent!'
+              }
+              compact
+              testID="chat-empty"
+            />
           ) : (
             messages.map((message) => {
               const isMine = message.userId === myUserId;
@@ -131,11 +142,6 @@ const styles = StyleSheet.create({
   messagesContent: {
     gap: 6,
     paddingBottom: 8,
-  },
-  empty: {
-    marginTop: 24,
-    textAlign: 'center',
-    color: MUTED_COLOR,
   },
   bubble: {
     maxWidth: '80%',

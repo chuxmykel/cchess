@@ -9,10 +9,10 @@ import {
   type ViewInstance,
 } from 'react-native';
 
+import EmptyState from '../EmptyState';
 import Icon from '../Icon';
 import Popover, { POPOVER_TRIGGER_HIT_SLOP } from '../Popover';
 import { MenuPosition, SCREEN_EDGE_MARGIN } from '../../hooks/usePopoverMenu';
-import { MUTED_COLOR } from '../../constants/colors';
 
 interface NotificationsMenuProps {
   /** Shown on the bell's badge: what's waiting for an answer. */
@@ -82,9 +82,13 @@ const NotificationsMenu: React.FC<NotificationsMenuProps> = ({
       >
         <Text style={styles.title}>Notifications</Text>
         {isEmpty ? (
-          <Text style={styles.empty} testID="notifications-empty">
-            No new notifications
-          </Text>
+          <EmptyState
+            illustration="notifications"
+            title="You're all caught up"
+            message="Challenges and friend requests will show up here."
+            compact
+            testID="notifications-empty"
+          />
         ) : (
           <ScrollView
             style={styles.list}
@@ -141,11 +145,5 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 12,
     gap: 8,
-  },
-  empty: {
-    paddingHorizontal: 12,
-    paddingVertical: 16,
-    textAlign: 'center',
-    color: MUTED_COLOR,
   },
 });

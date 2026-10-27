@@ -9,6 +9,7 @@ import {
 import { format, isSameDay, parseISO } from 'date-fns';
 
 import Button from '../Button';
+import EmptyState from '../EmptyState';
 import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { DirectMessage } from '../../network/restClient';
 
@@ -16,6 +17,8 @@ interface MessageListProps {
   /** Oldest first. */
   messages: DirectMessage[];
   myUserId: string;
+  /** Who the conversation is with, for the empty state. */
+  otherName: string;
   hasOlder: boolean;
   onLoadOlder: () => void;
 }
@@ -23,6 +26,7 @@ interface MessageListProps {
 const MessageList: React.FC<MessageListProps> = ({
   messages,
   myUserId,
+  otherName,
   hasOlder,
   onLoadOlder,
 }) => {
@@ -44,7 +48,12 @@ const MessageList: React.FC<MessageListProps> = ({
         />
       )}
       {messages.length === 0 && (
-        <Text style={styles.empty}>No messages yet. Say hello!</Text>
+        <EmptyState
+          illustration="messages"
+          title="No messages yet"
+          message={`Say hello to ${otherName}! Your conversation will show up here.`}
+          testID="messages-empty"
+        />
       )}
       {messages.map((message, index) => {
         const sentAt = parseISO(message.createdAt);
@@ -84,11 +93,6 @@ const styles = StyleSheet.create({
   content: {
     gap: 6,
     padding: 16,
-  },
-  empty: {
-    marginTop: 24,
-    textAlign: 'center',
-    color: MUTED_COLOR,
   },
   day: {
     alignSelf: 'center',

@@ -32,16 +32,18 @@ jest.mock('../../network/restClient', () => ({
 }));
 
 describe('UserProfile', () => {
-  async function renderScreen(profile: Profile, social = makeSocial()) {
+  async function renderScreen(
+    profile: Profile,
+    social = makeSocial(),
+    games = [makeGameSummary({ id: 'their-game' })],
+  ) {
     (useAuthSession as jest.Mock).mockReturnValue(
       makeAuthSession({ user: { isGuest: false } }),
     );
     (useSocialContext as jest.Mock).mockReturnValue(social);
     (getUserProfile as jest.Mock).mockResolvedValue(profile);
     (getUserActivity as jest.Mock).mockResolvedValue([]);
-    (getUserGames as jest.Mock).mockResolvedValue([
-      makeGameSummary({ id: 'their-game' }),
-    ]);
+    (getUserGames as jest.Mock).mockResolvedValue(games);
     const navigation = { navigate: jest.fn() };
     const screen = await render(
       withSafeArea(
@@ -139,6 +141,32 @@ describe('UserProfile', () => {
 
     expect(screen.queryByTestId('profile-score')).toBeNull();
     expect(screen.queryByTestId('profile-add-friend')).toBeNull();
+  });
+
+  it('says their games and activity will show up once they play', async () => {
+    const { screen } = await renderScreen(makeUserProfile(), makeSocial(), []);
+
+    expect(screen.getByTestId('profile-games-empty')).toHaveTextContent(
+      /Judit Polgar's recent games will show up here/,
+    );
+    expect(screen.getByTestId('activity-empty')).toHaveTextContent(
+      /Judit Polgar's games from the last 30 days/,
+    );
+  });
+
+  it('speaks to me about my own empty profile', async () => {
+    const { screen } = await renderScreen(
+      makeUserProfile({
+        friendship: { status: 'self', requestId: null },
+        score: null,
+      }),
+      makeSocial(),
+      [],
+    );
+
+    expect(screen.getByTestId('profile-games-empty')).toHaveTextContent(
+      /Your recent games will show up here/,
+    );
   });
 
   it('opens one of their recent games', async () => {

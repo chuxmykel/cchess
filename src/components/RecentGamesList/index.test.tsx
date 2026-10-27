@@ -168,7 +168,12 @@ describe('RecentGamesList', () => {
       />,
     );
 
-    expect(screen.getByText('Your games will show here.')).toBeTruthy();
+    expect(screen.getByTestId('recent-games-empty')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Your recent games will show up here once you play one.',
+      ),
+    ).toBeTruthy();
   });
 
   it('offers to try again when the games failed to load', async () => {

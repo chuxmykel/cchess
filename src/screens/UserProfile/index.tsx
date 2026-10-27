@@ -7,6 +7,7 @@ import ActivityList from '../../components/ActivityList';
 import Avatar from '../../components/Avatar';
 import Button from '../../components/Button';
 import ChallengeSheet from '../../components/ChallengeSheet';
+import EmptyState from '../../components/EmptyState';
 import Placeholder from '../../components/Placeholder';
 import RatingsList from '../../components/RatingsList';
 import GameRow from '../../components/RecentGamesList/GameRow';
@@ -162,6 +163,7 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
   }
 
   const { profile, activity } = state;
+  const isSelf = profile.friendship.status === 'self';
   const actions = actionsFor(profile);
 
   return (
@@ -212,7 +214,14 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
         <View style={styles.section}>
           <SectionHeader title="Activity" />
         </View>
-        <ActivityList activity={activity} />
+        <ActivityList
+          activity={activity}
+          emptyMessage={
+            isSelf
+              ? 'Your games from the last 30 days will show up here.'
+              : `${profile.displayName}'s games from the last 30 days will show up here.`
+          }
+        />
 
         <View style={styles.section}>
           <SectionHeader
@@ -229,7 +238,17 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
         </View>
         <View style={styles.gamesCard}>
           {recentGames.games.length === 0 ? (
-            <Text style={styles.noGames}>No games yet.</Text>
+            <EmptyState
+              illustration="games"
+              title="No games yet"
+              message={
+                isSelf
+                  ? 'Your recent games will show up here once you play one.'
+                  : `${profile.displayName}'s recent games will show up here once they play one.`
+              }
+              compact
+              testID="profile-games-empty"
+            />
           ) : (
             recentGames.games.map((game, index) => (
               <Fragment key={game.id}>
@@ -319,10 +338,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     borderRadius: 8,
     backgroundColor: '#f0f0f0',
-  },
-  noGames: {
-    padding: 16,
-    color: MUTED_COLOR,
   },
   divider: {
     height: StyleSheet.hairlineWidth,

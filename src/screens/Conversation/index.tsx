@@ -110,6 +110,7 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
       ) : (
         <MessageList
           messages={conversation.messages}
+          otherName={displayName}
           myUserId={session.isReady ? session.user.id : ''}
           hasOlder={conversation.hasOlder}
           onLoadOlder={conversation.loadOlder}

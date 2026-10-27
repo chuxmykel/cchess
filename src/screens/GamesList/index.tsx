@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 
 import Button from '../../components/Button';
+import EmptyState from '../../components/EmptyState';
 import GameRow from '../../components/RecentGamesList/GameRow';
 import { MUTED_COLOR } from '../../constants/colors';
 import { usePagedGames } from '../../hooks/usePagedGames';
@@ -68,7 +69,16 @@ const GamesList: React.FC<GamesListProps> = ({ navigation, route }) => {
         games.isLoadingMore ? <ActivityIndicator style={styles.more} /> : null
       }
       ListEmptyComponent={
-        <Text style={[styles.messageText, styles.empty]}>No games yet.</Text>
+        <EmptyState
+          illustration="games"
+          title="No games yet"
+          message={
+            displayName
+              ? `${displayName}'s finished games will show up here.`
+              : 'Every game you finish will show up here.'
+          }
+          testID="games-empty"
+        />
       }
       testID="games-list"
     />
@@ -93,10 +103,6 @@ const styles = StyleSheet.create({
   },
   messageText: {
     color: MUTED_COLOR,
-  },
-  empty: {
-    marginTop: 24,
-    textAlign: 'center',
   },
   divider: {
     height: StyleSheet.hairlineWidth,

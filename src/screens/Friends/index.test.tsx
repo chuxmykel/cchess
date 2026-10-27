@@ -142,6 +142,26 @@ describe('Friends', () => {
     expect(social.removeFriend).toHaveBeenCalledWith('away');
   });
 
+  it('says where friends will show up before I have any', async () => {
+    const { screen } = await renderScreen(makeSocial());
+
+    expect(screen.getByTestId('online-empty')).toHaveTextContent(
+      /Your friends will show up here once you connect/,
+    );
+    await fireEvent.press(screen.getByTestId('tab-all'));
+    expect(screen.getByTestId('all-friends-empty')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('tab-requests'));
+    expect(screen.getByTestId('requests-empty')).toBeTruthy();
+  });
+
+  it("says nobody's online when my friends are away", async () => {
+    const { screen } = await renderScreen(makeSocial({ friends: [AWAY] }));
+
+    expect(screen.getByTestId('online-empty')).toHaveTextContent(
+      /Friends who are online right now will show up here/,
+    );
+  });
+
   it('counts a single friend in the singular', async () => {
     const { screen } = await renderScreen(makeSocial({ friends: [AWAY] }));
 

@@ -4,12 +4,12 @@ import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
 
 import Button from '../../components/Button';
 import ChallengeSheet from '../../components/ChallengeSheet';
+import EmptyState from '../../components/EmptyState';
 import FriendRequestCard from '../../components/FriendRequestCard';
 import FriendRow from '../../components/FriendRow';
 import SegmentedTabs from '../../components/SegmentedTabs';
 import TextField from '../../components/TextField';
 import Toast from '../../components/Toast';
-import { MUTED_COLOR } from '../../constants/colors';
 import { FRIEND_ACTION_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { useSocialContext } from '../../context/SocialContext';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
@@ -97,7 +97,14 @@ const Friends: React.FC<FriendsProps> = ({ navigation }) => {
 
   function renderRequests() {
     if (requestCount === 0) {
-      return <Text style={styles.empty}>No friend requests.</Text>;
+      return (
+        <EmptyState
+          illustration="notifications"
+          title="No friend requests"
+          message="Requests you send and receive will show up here."
+          testID="requests-empty"
+        />
+      );
     }
     return (
       <View style={styles.requests}>
@@ -173,9 +180,25 @@ const Friends: React.FC<FriendsProps> = ({ navigation }) => {
           keyExtractor={(friend) => friend.id}
           renderItem={renderFriend}
           ListEmptyComponent={
-            <Text style={styles.empty}>
-              {tab === 'online' ? 'No friends online.' : 'No friends yet.'}
-            </Text>
+            tab === 'online' ? (
+              <EmptyState
+                illustration="friends"
+                title="Nobody's online"
+                message={
+                  friends.length === 0
+                    ? 'Your friends will show up here once you connect. Add one by username above.'
+                    : 'Friends who are online right now will show up here.'
+                }
+                testID="online-empty"
+              />
+            ) : (
+              <EmptyState
+                illustration="friends"
+                title="No friends yet"
+                message="Your friends will show up here once you connect. Add one by username above."
+                testID="all-friends-empty"
+              />
+            )
           }
         />
       )}
@@ -215,10 +238,5 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingTop: 12,
     paddingHorizontal: 16,
-  },
-  empty: {
-    marginTop: 24,
-    textAlign: 'center',
-    color: MUTED_COLOR,
   },
 });

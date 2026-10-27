@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { format, parseISO } from 'date-fns';
 
+import EmptyState from '../EmptyState';
 import GameTypeIcon from '../GameTypeIcon';
 import RatingDiff from '../RatingDiff';
 import { MUTED_COLOR } from '../../constants/colors';
@@ -15,12 +16,25 @@ function playedLabel(day: ActivityDay): string {
   return `Played ${day.games} ${category} ${day.games === 1 ? 'game' : 'games'}`;
 }
 
-const ActivityList: React.FC<{ activity: ActivityDay[] }> = ({ activity }) => {
+interface ActivityListProps {
+  activity: ActivityDay[];
+  /** Says whose games would be here, when there are none. */
+  emptyMessage: string;
+}
+
+const ActivityList: React.FC<ActivityListProps> = ({
+  activity,
+  emptyMessage,
+}) => {
   if (activity.length === 0) {
     return (
-      <Text style={styles.empty} testID="activity-empty">
-        No games in the last 30 days.
-      </Text>
+      <EmptyState
+        illustration="activity"
+        title="No recent activity"
+        message={emptyMessage}
+        compact
+        testID="activity-empty"
+      />
     );
   }
   return (
@@ -81,10 +95,6 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     borderRadius: 8,
     backgroundColor: '#f0f0f0',
-  },
-  empty: {
-    marginHorizontal: 16,
-    color: MUTED_COLOR,
   },
   date: {
     marginTop: 12,

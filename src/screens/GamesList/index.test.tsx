@@ -69,6 +69,24 @@ describe('GamesList', () => {
     expect(screen.getByTestId('game-row-theirs')).toBeTruthy();
   });
 
+  it.each([
+    [{}, 'Every game you finish will show up here.'],
+    [
+      { username: 'judit', displayName: 'Judit' },
+      "Judit's finished games will show up here.",
+    ],
+  ])(
+    'says whose games will show up when there are none',
+    async (params, text) => {
+      (getMyGames as jest.Mock).mockResolvedValue([]);
+      (getUserGames as jest.Mock).mockResolvedValue([]);
+      const { screen } = await renderScreen(params);
+
+      expect(screen.getByTestId('games-empty')).toBeTruthy();
+      expect(screen.getByText(text)).toBeTruthy();
+    },
+  );
+
   it('offers to retry when the games fail to load', async () => {
     (getMyGames as jest.Mock).mockRejectedValueOnce(new Error('offline'));
     const { screen } = await renderScreen({});
