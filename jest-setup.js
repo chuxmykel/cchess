@@ -27,14 +27,14 @@ jest.mock('react-native/Libraries/Modal/Modal', () => {
   return { __esModule: true, default: ModalReportingDismissLikeIOS };
 });
 
-// Icon fonts load through expo-asset, which has no asset registry under
-// Jest. Render each icon as a plain Text keeping its props, so tests can
-// check which icon is shown by its name.
-jest.mock('@expo/vector-icons', () => {
+// Icon fonts load at runtime through expo-font, which can't load fonts
+// under Jest. Render each icon as a plain Text keeping its props, so tests
+// can check which icon is shown by its name.
+jest.mock('@react-native-vector-icons/material-design-icons', () => {
   const { Text } = jest.requireActual('react-native');
   const React = jest.requireActual('react');
   const IconStub = (props) => React.createElement(Text, props);
-  return { MaterialCommunityIcons: IconStub };
+  return { MaterialDesignIcons: IconStub };
 });
 
 // The native slider reports its value only through a native event. Render it

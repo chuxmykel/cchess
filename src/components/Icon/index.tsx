@@ -1,8 +1,10 @@
-import { ComponentProps } from 'react';
 import { StyleProp, TextStyle } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import {
+  MaterialDesignIcons,
+  type MaterialDesignIconsIconName,
+} from '@react-native-vector-icons/material-design-icons';
 
-export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
+export type IconName = MaterialDesignIconsIconName;
 
 interface IconProps {
   name: IconName;
@@ -22,7 +24,7 @@ const Icon: React.FC<IconProps> = ({
   style,
   testID,
 }) => (
-  <MaterialCommunityIcons
+  <MaterialDesignIcons
     name={name}
     size={size}
     color={color}
