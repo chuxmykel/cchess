@@ -255,7 +255,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `SectionHeader`'s action is optional), and `Home`-screen-specific pieces
   (`HomeHeader`, `RecentGamesList`, whose rows open the game viewer).
   `GameOverCard` names the winner instead of "You won" for a game you
-  didn't play, and can be dismissed.
+  didn't play, and can be dismissed. A player's profile offers Watch game
+  and Challenge to anyone, friend or not - Watch game is a `disabled`
+  `ActionList` row while they aren't in a game - and Message only to
+  friends.
 
 - **Navigation** (React Navigation, nested stacks/tabs):
   `App.tsx` (root native-stack) -> `HomeStack` (`HomeTabs`, `LiveGame`,
