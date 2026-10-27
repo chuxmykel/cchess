@@ -191,6 +191,44 @@ describe('useGameServerEvents', () => {
     expect(result.current.blackTimeMs).toBe(45000);
   });
 
+  it("starts with the snapshot's rating changes", async () => {
+    const { socket } = createFakeSocket();
+    const snapshot = makeGameSnapshot({
+      status: 'completed',
+      whiteRatingDiff: 8,
+      blackRatingDiff: -8,
+    });
+    const { result } = await renderHook(() =>
+      useGameServerEvents(socket, GAME_ID, snapshot, makeFakeGame()),
+    );
+
+    expect(result.current.whiteRatingDiff).toBe(8);
+    expect(result.current.blackRatingDiff).toBe(-8);
+  });
+
+  it('takes the rating changes from game:over', async () => {
+    const { socket, trigger } = createFakeSocket();
+    const snapshot = makeGameSnapshot({ rated: true });
+    const { result } = await renderHook(() =>
+      useGameServerEvents(socket, GAME_ID, snapshot, makeFakeGame()),
+    );
+    expect(result.current.whiteRatingDiff).toBeNull();
+
+    await act(() => {
+      trigger('game:over', {
+        ...snapshot,
+        status: 'completed',
+        result: 'black',
+        resultReason: GAME_RESULT_REASON.CHECKMATE,
+        whiteRatingDiff: -12,
+        blackRatingDiff: 12,
+      });
+    });
+
+    expect(result.current.whiteRatingDiff).toBe(-12);
+    expect(result.current.blackRatingDiff).toBe(12);
+  });
+
   it('tracks an incoming draw offer and clears it on decline', async () => {
     const { socket, trigger } = createFakeSocket();
     const snapshot = makeGameSnapshot();

@@ -105,6 +105,8 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     blackTimeMs,
     drawOfferedBy,
     moves,
+    whiteRatingDiff,
+    blackRatingDiff,
     canAbort,
     resign,
     offerDraw,
@@ -160,6 +162,9 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     confirmResign,
     offerDraw,
   });
+
+  const myPlayer = myColor === 'w' ? snapshot.white : snapshot.black;
+  const myRatingDiff = myColor === 'w' ? whiteRatingDiff : blackRatingDiff;
 
   const topColor: Color = orientation === 'w' ? 'b' : 'w';
   const sharedPlayerBarProps: Omit<PlayerBarProps, 'color'> = {
@@ -221,6 +226,8 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
                 result={result}
                 myColor={myColor}
                 resultReason={resultReason}
+                myRating={myPlayer.rating}
+                myRatingDiff={myRatingDiff}
                 onNewOpponent={findNewOpponent}
               />
             </View>

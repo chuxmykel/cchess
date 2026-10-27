@@ -43,9 +43,12 @@ describe('LiveGameContent', () => {
     jest.restoreAllMocks();
   });
 
-  async function renderContent(myColor: Color) {
+  async function renderContent(
+    myColor: Color,
+    snapshotOverrides: Partial<ReturnType<typeof makeGameSnapshot>> = {},
+  ) {
     const { socket, trigger } = createFakeSocket();
-    const snapshot = makeGameSnapshot();
+    const snapshot = makeGameSnapshot(snapshotOverrides);
     const navigation: LiveGameContentNavigation = {
       setOptions: jest.fn(),
       popToTop: jest.fn(),
@@ -390,6 +393,51 @@ describe('LiveGameContent', () => {
 
       expect(screen.getByTestId('game-over-overlay')).toBeTruthy();
       expect(screen.getByText('You won')).toBeTruthy();
+    });
+
+    describe('ratings', () => {
+      function withRatings(whiteRating: number, blackRating: number) {
+        const { white, black } = makeGameSnapshot();
+        return {
+          rated: true,
+          white: { ...white, rating: whiteRating },
+          black: { ...black, rating: blackRating },
+        };
+      }
+
+      it('shows both players with their ratings', async () => {
+        const { screen } = await renderContent('w', withRatings(1500, 1480));
+
+        expect(screen.getByTestId('player-rating-w')).toHaveTextContent('1500');
+        expect(screen.getByTestId('player-rating-b')).toHaveTextContent('1480');
+      });
+
+      it("shows the player's own new rating and change once a rated game ends", async () => {
+        const { screen, snapshot, trigger } = await renderContent(
+          'b',
+          withRatings(1500, 1480),
+        );
+
+        await finishGame(trigger, snapshot, {
+          result: 'black',
+          whiteRatingDiff: -12,
+          blackRatingDiff: 12,
+        });
+
+        expect(screen.getByText('Rating 1492')).toBeTruthy();
+        expect(screen.getByText('+12')).toBeTruthy();
+      });
+
+      it('shows no rating on the card after a casual game', async () => {
+        const { screen, snapshot, trigger } = await renderContent(
+          'w',
+          withRatings(1500, 1480),
+        );
+
+        await finishGame(trigger, snapshot);
+
+        expect(screen.queryByTestId('game-over-rating')).toBeNull();
+      });
     });
 
     it('says an aborted game was aborted', async () => {

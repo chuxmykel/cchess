@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 
 import Button from '../Button';
 import GameResultIcon from '../GameResultIcon';
+import RatingDiff from '../RatingDiff';
 import { GameResult } from '../../domain/types';
 import {
   GAME_RESULT_REASON,
@@ -13,6 +14,8 @@ interface GameOverCardProps {
   result: 'white' | 'black' | 'draw' | null;
   myColor: Color;
   resultReason: GameResultReason | null;
+  myRating: number | null;
+  myRatingDiff: number | null;
   onNewOpponent: () => void;
 }
 
@@ -71,6 +74,8 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
   result,
   myColor,
   resultReason,
+  myRating,
+  myRatingDiff,
   onNewOpponent,
 }) => {
   const myResult = toMyResult(result, myColor);
@@ -91,6 +96,14 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
       {resultReason && !wasAborted ? (
         <Text style={styles.reason}>{describeReason(resultReason)}</Text>
       ) : null}
+      {myRating !== null && myRatingDiff !== null && (
+        <View style={styles.rating} testID="game-over-rating">
+          <Text style={styles.ratingLabel}>
+            Rating {myRating + myRatingDiff}
+          </Text>
+          <RatingDiff diff={myRatingDiff} />
+        </View>
+      )}
       <Button
         label="New opponent"
         onPress={onNewOpponent}
@@ -127,6 +140,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#666',
     textTransform: 'capitalize',
+  },
+  rating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  ratingLabel: {
+    fontSize: 15,
+    color: '#333',
   },
   newOpponentButton: {
     minWidth: 180,
