@@ -152,6 +152,16 @@ describe('LiveGameContent', () => {
     expect(screen.queryByTestId('first-move-countdown-b')).toBeNull();
   });
 
+  it('shows the material each side is up beside its name', async () => {
+    const { screen } = await renderContent('w', {
+      fen: 'rnbqkbnr/ppp1pppp/8/3P4/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2',
+      turn: 'b',
+    });
+
+    expect(screen.getByTestId('material-score-w')).toHaveTextContent('+1');
+    expect(screen.queryByTestId('captured-pieces-b')).toBeNull();
+  });
+
   it("shows only the opponent's presence, dimmed once they drop", async () => {
     const { screen, snapshot, trigger } = await renderContent('w');
 

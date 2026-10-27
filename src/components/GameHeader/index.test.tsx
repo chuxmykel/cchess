@@ -71,4 +71,14 @@ describe('GameHeader', () => {
     expect(screen.getByTestId('game-header-placeholder')).toBeTruthy();
     expect(screen.getByTestId('connection-strength-indicator')).toBeTruthy();
   });
+
+  it('shows a subtitle under the title', async () => {
+    const screen = await render(
+      <GameHeader timeControl={bullet2Plus1} subtitle="16 hours ago" />,
+    );
+
+    expect(screen.getByTestId('game-header-subtitle')).toHaveTextContent(
+      '16 hours ago',
+    );
+  });
 });

@@ -1,11 +1,17 @@
-import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React, { useCallback } from 'react';
+import { useNavigation } from '@react-navigation/native';
+import {
+  createNativeStackNavigator,
+  NativeStackNavigationProp,
+} from '@react-navigation/native-stack';
 
+import { SocialProvider } from '../../context/SocialContext';
 import HomeTabs from '../HomeTabs';
 import LiveGame from '../LiveGame';
+import GameViewer from '../GameViewer';
 import SignIn from '../SignIn';
 import CreateAccount from '../CreateAccount';
-import { HomeStackParamList } from './types';
+import { HomeStackParamList, RootStackParamList } from './types';
 
 const { Navigator, Screen } = createNativeStackNavigator<HomeStackParamList>();
 
@@ -15,8 +21,19 @@ const ACCOUNT_SCREEN_OPTIONS = {
 } as const;
 
 const HomeStack: React.FC = () => {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const openGame = useCallback(
+    (gameId: string) =>
+      navigation.navigate('HomeStack', {
+        screen: 'LiveGame',
+        params: { gameId },
+      }),
+    [navigation],
+  );
+
   return (
-    <>
+    <SocialProvider onGameStarted={openGame}>
       <Navigator
         id="HomeStack"
         initialRouteName="HomeTabs"
@@ -30,6 +47,7 @@ const HomeStack: React.FC = () => {
           component={LiveGame}
           options={{ gestureEnabled: false }}
         />
+        <Screen name="GameViewer" component={GameViewer} />
         <Screen
           name="SignIn"
           component={SignIn}
@@ -41,7 +59,7 @@ const HomeStack: React.FC = () => {
           options={{ ...ACCOUNT_SCREEN_OPTIONS, title: 'Create account' }}
         />
       </Navigator>
-    </>
+    </SocialProvider>
   );
 };
 

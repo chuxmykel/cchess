@@ -12,6 +12,8 @@ const MENU_WIDTH = 200;
 interface GameHeaderProps {
   timeControl?: TimeControl;
   rated?: boolean;
+  /** A line under the title, such as when the game was played. */
+  subtitle?: string;
   onBack?: () => void;
   menuItems?: PopoverMenuItem[];
 }
@@ -19,6 +21,7 @@ interface GameHeaderProps {
 const GameHeader: React.FC<GameHeaderProps> = ({
   timeControl,
   rated,
+  subtitle,
   onBack,
   menuItems,
 }) => (
@@ -39,16 +42,27 @@ const GameHeader: React.FC<GameHeaderProps> = ({
       )}
     </View>
 
-    <View style={styles.title}>
-      {timeControl ? (
-        <>
-          <GameTypeIcon type={timeControl.type} size={16} />
-          <Text style={styles.titleText}>
-            {timeControl.label} • {rated ? 'Rated' : 'Casual'}
-          </Text>
-        </>
-      ) : (
-        <Placeholder width={120} height={20} testID="game-header-placeholder" />
+    <View style={styles.titleColumn}>
+      <View style={styles.title}>
+        {timeControl ? (
+          <>
+            <GameTypeIcon type={timeControl.type} size={16} />
+            <Text style={styles.titleText}>
+              {timeControl.label} • {rated ? 'Rated' : 'Casual'}
+            </Text>
+          </>
+        ) : (
+          <Placeholder
+            width={120}
+            height={20}
+            testID="game-header-placeholder"
+          />
+        )}
+      </View>
+      {subtitle && (
+        <Text style={styles.subtitle} testID="game-header-subtitle">
+          {subtitle}
+        </Text>
       )}
     </View>
 
@@ -82,8 +96,15 @@ const styles = StyleSheet.create({
   trailing: {
     alignItems: 'flex-end',
   },
-  title: {
+  titleColumn: {
     flex: 1,
+    alignItems: 'center',
+  },
+  subtitle: {
+    fontSize: 12,
+    color: '#888',
+  },
+  title: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

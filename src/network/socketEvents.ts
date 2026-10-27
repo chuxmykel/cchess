@@ -1,6 +1,7 @@
 import { Color, PieceSymbol, Square } from 'chess.js';
 
 import { GameType } from '../domain/types';
+import type { Challenge, DirectMessage, FriendRequest } from './restClient';
 
 export type RatingRange = {
   below: number | null;
@@ -59,6 +60,8 @@ export type GameSnapshot = {
   moves: GameMoveSummary[];
   createdAt: string;
   endedAt: string | null;
+  /** When the chat stops taking messages; null while the game is on. */
+  chatClosesAt: string | null;
 };
 
 // Mirrors cchess-be's own GameResultReason - a closed set at the source (the
@@ -139,6 +142,12 @@ export type GamePresencePayload = {
   online: boolean;
 };
 
+export type FriendStatusPayload = {
+  userId: string;
+  online: boolean;
+  playingGameId: string | null;
+};
+
 export type LobbyStats = {
   playersOnline: number;
   gamesInPlay: number;
@@ -156,6 +165,8 @@ export interface ClientToServerEvents {
   'game:drawRespond': (payload: DrawRespondPayload) => void;
   'game:chat': (payload: { gameId: string; text: string }) => void;
   'game:chatHistory': (payload: { gameId: string }) => void;
+  'game:watch': (payload: { gameId: string }) => void;
+  'game:unwatch': (payload: { gameId: string }) => void;
   ping: (clientTimeMs: number, ack: () => void) => void;
 }
 
@@ -173,4 +184,13 @@ export interface ServerToClientEvents {
   'game:error': (payload: GameErrorPayload) => void;
   'matchmaking:error': (payload: MatchmakingErrorPayload) => void;
   'auth:error': (payload: { message: string }) => void;
+  'friend:requestReceived': (payload: FriendRequest) => void;
+  'friend:requestAccepted': (payload: { id: string }) => void;
+  'friend:requestResolved': (payload: { id: string }) => void;
+  'friend:removed': (payload: { userIds: string[] }) => void;
+  'friend:status': (payload: FriendStatusPayload) => void;
+  'challenge:received': (payload: Challenge) => void;
+  'challenge:accepted': (payload: Challenge) => void;
+  'challenge:resolved': (payload: Challenge) => void;
+  'dm:message': (payload: DirectMessage) => void;
 }

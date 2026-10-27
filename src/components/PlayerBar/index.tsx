@@ -4,6 +4,8 @@ import { Color } from 'chess.js';
 import { GameUserSummary } from '../../network/socketEvents';
 import { GameClockResult } from '../../hooks/useGameClock';
 import GameClock from '../GameClock';
+import CapturedPieces from '../CapturedPieces';
+import { SideMaterial } from '../../domain/material';
 import { formatRating } from '../../utils/rating';
 import { ACCENT_COLOR } from '../../constants/colors';
 
@@ -19,6 +21,7 @@ export interface PlayerBarProps {
   isGameOver: boolean;
   firstMoveSecondsLeft?: number | null;
   isOnline?: boolean;
+  material?: SideMaterial;
 }
 
 const PlayerBar: React.FC<PlayerBarProps> = ({
@@ -30,6 +33,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   isGameOver,
   firstMoveSecondsLeft = null,
   isOnline,
+  material,
 }) => {
   const isWhite = color === 'w';
   const player = isWhite ? white : black;
@@ -70,6 +74,9 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           >
             {`${firstMoveSecondsLeft} seconds to play the first move`}
           </Text>
+        )}
+        {!showsFirstMoveCountdown && material && (
+          <CapturedPieces color={color} material={material} />
         )}
       </View>
       <GameClock

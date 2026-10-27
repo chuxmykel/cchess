@@ -2,6 +2,7 @@ import { render } from '@testing-library/react-native';
 import { Color } from 'chess.js';
 
 import PlayerBar from '.';
+import { SideMaterial } from '../../domain/material';
 import { GameUserSummary } from '../../network/socketEvents';
 
 describe('PlayerBar', () => {
@@ -30,6 +31,7 @@ describe('PlayerBar', () => {
       isGameOver: boolean;
       firstMoveSecondsLeft: number | null;
       isOnline: boolean;
+      material: SideMaterial;
     }> = {},
   ) {
     return render(
@@ -42,6 +44,7 @@ describe('PlayerBar', () => {
         isGameOver={overrides.isGameOver ?? false}
         firstMoveSecondsLeft={overrides.firstMoveSecondsLeft ?? null}
         isOnline={overrides.isOnline}
+        material={overrides.material}
       />,
     );
   }
@@ -163,5 +166,33 @@ describe('PlayerBar', () => {
 
       expect(screen.queryByTestId('presence-w')).toBeNull();
     });
+  });
+
+  it("shows the opponent's pieces the player is up, and by how much", async () => {
+    const screen = await renderBar('w', {
+      material: { pieces: ['n', 'p'], score: 4 },
+    });
+
+    expect(screen.getAllByTestId('captured-piece-w')).toHaveLength(2);
+    expect(screen.getByTestId('material-score-w')).toHaveTextContent('+4');
+  });
+
+  it('shows no material when the sides are level', async () => {
+    const screen = await renderBar('w', {
+      material: { pieces: [], score: 0 },
+    });
+
+    expect(screen.queryByTestId('captured-pieces-w')).toBeNull();
+  });
+
+  it('shows the first-move countdown in place of the material', async () => {
+    const screen = await renderBar('w', {
+      turn: 'w',
+      firstMoveSecondsLeft: 20,
+      material: { pieces: ['p'], score: 1 },
+    });
+
+    expect(screen.getByTestId('first-move-countdown-w')).toBeTruthy();
+    expect(screen.queryByTestId('captured-pieces-w')).toBeNull();
   });
 });

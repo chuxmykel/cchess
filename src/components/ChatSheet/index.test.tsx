@@ -32,7 +32,8 @@ describe('ChatSheet', () => {
   it('invites the first message when there are none', async () => {
     const screen = await renderSheet();
 
-    expect(screen.getByText('No messages yet. Say hello!')).toBeTruthy();
+    expect(screen.getByTestId('chat-empty')).toBeTruthy();
+    expect(screen.getByText('Say hello to your opponent!')).toBeTruthy();
   });
 
   it('puts your messages on the right and theirs on the left', async () => {
@@ -65,5 +66,23 @@ describe('ChatSheet', () => {
     const screen = await renderSheet();
 
     expect(screen.getByTestId('chat-input').props.maxLength).toBe(140);
+  });
+
+  it('shows the history but no way to send once the chat has closed', async () => {
+    const screen = await render(
+      withSafeArea(
+        <ChatSheet
+          visible
+          onClose={jest.fn()}
+          messages={[]}
+          myUserId="me"
+          onSend={jest.fn()}
+          isClosed
+        />,
+      ),
+    );
+
+    expect(screen.getByTestId('chat-closed')).toBeTruthy();
+    expect(screen.queryByTestId('chat-input')).toBeNull();
   });
 });

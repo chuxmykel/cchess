@@ -2,6 +2,7 @@ import { act, fireEvent, render, within } from '@testing-library/react-native';
 
 import Home from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
+import { useSocialContext } from '../../context/SocialContext';
 import { getMyGames } from '../../network/restClient';
 import {
   makeAuthSession,
@@ -9,9 +10,18 @@ import {
 } from '../../testUtils/authSession';
 import { makeGameSummary } from '../../testUtils/gameSummary';
 import { withSafeArea } from '../../testUtils/safeArea';
+import {
+  makeChallenge,
+  makeFriend,
+  makeFriendRequest,
+  makeSocial,
+} from '../../testUtils/social';
 
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
+}));
+jest.mock('../../context/SocialContext', () => ({
+  useSocialContext: jest.fn(),
 }));
 jest.mock('../../network/restClient', () => ({
   ...jest.requireActual('../../network/restClient'),
@@ -38,6 +48,7 @@ describe('Home', () => {
 
   beforeEach(() => {
     (getMyGames as jest.Mock).mockResolvedValue([]);
+    (useSocialContext as jest.Mock).mockReturnValue(makeSocial());
   });
 
   afterEach(() => {
@@ -117,5 +128,153 @@ describe('Home', () => {
     await fireEvent.press(screen.getByTestId('play-button'));
 
     expect(navigation.navigate).toHaveBeenCalledWith('NewGame');
+  });
+
+  describe('friends and challenges', () => {
+    const FRIEND = makeFriend({ online: true });
+
+    async function renderSignedIn(social = makeSocial()) {
+      (useSocialContext as jest.Mock).mockReturnValue(social);
+      return renderScreen(makeAuthSession({ user: MAGNUS }));
+    }
+
+    it("shows my friends and opens a friend's profile", async () => {
+      const { screen, navigation } = await renderSignedIn(
+        makeSocial({ friends: [FRIEND] }),
+      );
+
+      await fireEvent.press(screen.getByTestId(`friend-card-${FRIEND.id}`));
+
+      expect(navigation.navigate).toHaveBeenCalledWith('UserProfile', {
+        username: FRIEND.username,
+      });
+    });
+
+    it('reloads friends when it comes into focus', async () => {
+      const social = makeSocial();
+
+      await renderSignedIn(social);
+
+      expect(social.reload).toHaveBeenCalled();
+    });
+
+    it('invites me to add friends when I have none', async () => {
+      const { screen, navigation } = await renderSignedIn();
+
+      await fireEvent.press(screen.getByTestId('add-friends-prompt'));
+
+      expect(navigation.navigate).toHaveBeenCalledWith('Friends', {
+        focusSearch: true,
+      });
+    });
+
+    const CHALLENGE = makeChallenge({
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    });
+
+    it('counts incoming challenges and friend requests on the bell', async () => {
+      const { screen } = await renderSignedIn(
+        makeSocial({
+          challenges: { incoming: [CHALLENGE], outgoing: [makeChallenge()] },
+          requests: { incoming: [makeFriendRequest()], outgoing: [] },
+        }),
+      );
+
+      expect(screen.getByTestId('notifications-badge')).toHaveTextContent('2');
+      expect(screen.queryByTestId('notifications-menu')).toBeNull();
+    });
+
+    it('accepts and declines an incoming challenge', async () => {
+      const challenge = CHALLENGE;
+      const social = makeSocial({
+        challenges: { incoming: [challenge], outgoing: [] },
+      });
+      const { screen } = await renderSignedIn(social);
+
+      await fireEvent.press(screen.getByTestId('notifications-button'));
+      await fireEvent.press(
+        screen.getByTestId(`accept-challenge-${challenge.id}`),
+      );
+      await fireEvent.press(
+        screen.getByTestId(`decline-challenge-${challenge.id}`),
+      );
+
+      expect(social.acceptChallenge).toHaveBeenCalledWith(challenge.id);
+      expect(social.declineChallenge).toHaveBeenCalledWith(challenge.id);
+    });
+
+    it('accepts an incoming friend request', async () => {
+      const request = makeFriendRequest();
+      const social = makeSocial({
+        requests: { incoming: [request], outgoing: [] },
+      });
+      const { screen } = await renderSignedIn(social);
+
+      await fireEvent.press(screen.getByTestId('notifications-button'));
+      await fireEvent.press(screen.getByTestId(`accept-friend-${request.id}`));
+
+      expect(social.respondToFriendRequest).toHaveBeenCalledWith(
+        request.id,
+        true,
+      );
+    });
+
+    it('closes the notifications to show what went wrong', async () => {
+      const social = makeSocial({
+        challenges: { incoming: [CHALLENGE], outgoing: [] },
+        acceptChallenge: jest
+          .fn()
+          .mockRejectedValue(new Error('Challenge expired')),
+      });
+      const { screen } = await renderSignedIn(social);
+
+      await fireEvent.press(screen.getByTestId('notifications-button'));
+      await fireEvent.press(
+        screen.getByTestId(`accept-challenge-${CHALLENGE.id}`),
+      );
+
+      expect(screen.queryByTestId('notifications-menu')).toBeNull();
+      expect(screen.getByText('Challenge expired')).toBeTruthy();
+    });
+
+    it('has no bell for a guest', async () => {
+      const { screen } = await renderScreen();
+
+      expect(screen.queryByTestId('notifications-button')).toBeNull();
+    });
+
+    it("opens a friend's live game from their card", async () => {
+      const playing = makeFriend({ online: true, playingGameId: 'game-5' });
+      const { screen, navigation } = await renderSignedIn(
+        makeSocial({ friends: [playing] }),
+      );
+
+      await fireEvent.press(screen.getByTestId(`friend-watch-${playing.id}`));
+
+      expect(navigation.navigate).toHaveBeenCalledWith('GameViewer', {
+        gameId: 'game-5',
+      });
+    });
+  });
+
+  it('opens a recent game in the viewer', async () => {
+    (getMyGames as jest.Mock).mockResolvedValue([
+      makeGameSummary({ id: 'game-3' }),
+    ]);
+    const { screen, navigation } = await renderScreen();
+
+    await fireEvent.press(screen.getByTestId('game-row-game-3'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('GameViewer', {
+      gameId: 'game-3',
+    });
+  });
+
+  it('shows all my games from See All', async () => {
+    const { screen, navigation } = await renderScreen();
+
+    await fireEvent.press(screen.getByTestId('recent-games-see-all'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('GamesList', {});
   });
 });

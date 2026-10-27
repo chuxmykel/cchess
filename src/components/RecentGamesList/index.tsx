@@ -4,12 +4,16 @@ import { View, Text, StyleSheet } from 'react-native';
 import Button from '../Button';
 import Placeholder from '../Placeholder';
 import SectionHeader from '../SectionHeader';
+import EmptyState from '../EmptyState';
 import GameRow from './GameRow';
 import { RECENT_GAMES_STATUS, RecentGames } from '../../hooks/useRecentGames';
+import { GameSummary } from '../../network/restClient';
 
 interface RecentGamesListProps {
   recentGames: RecentGames;
   onRetry: () => void;
+  onPressGame: (game: GameSummary) => void;
+  onSeeAll: () => void;
 }
 
 const LOADING_ROW_COUNT = 3;
@@ -28,11 +32,9 @@ const LoadingRows: React.FC = () => (
 const RecentGamesList: React.FC<RecentGamesListProps> = ({
   recentGames,
   onRetry,
+  onPressGame,
+  onSeeAll,
 }) => {
-  function handleSeeAll() {
-    // TODO: navigate to a full game history list once it exists.
-  }
-
   function renderContent() {
     switch (recentGames.status) {
       case RECENT_GAMES_STATUS.LOADING:
@@ -54,15 +56,19 @@ const RecentGamesList: React.FC<RecentGamesListProps> = ({
       case RECENT_GAMES_STATUS.READY:
         if (recentGames.games.length === 0) {
           return (
-            <View style={styles.message}>
-              <Text style={styles.messageText}>Your games will show here.</Text>
-            </View>
+            <EmptyState
+              illustration="games"
+              title="No games yet"
+              message="Your recent games will show up here once you play one."
+              compact
+              testID="recent-games-empty"
+            />
           );
         }
         return recentGames.games.map((game, index) => (
           <Fragment key={game.id}>
             {index > 0 && <View style={styles.divider} />}
-            <GameRow game={game} />
+            <GameRow game={game} onPress={onPressGame} />
           </Fragment>
         ));
     }
@@ -73,7 +79,7 @@ const RecentGamesList: React.FC<RecentGamesListProps> = ({
       <SectionHeader
         title="Recent Games"
         actionLabel="See All"
-        onActionPress={handleSeeAll}
+        onActionPress={onSeeAll}
         testID="recent-games-see-all"
       />
       <View style={styles.card}>{renderContent()}</View>

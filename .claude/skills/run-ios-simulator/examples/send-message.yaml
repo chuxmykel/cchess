@@ -1,0 +1,22 @@
+# From Home: a friend card's ⋯ → Message, sends a message, and waits for
+# the friend-mode bot's "You said: ..." reply.
+#
+# Run with: maestro --device <UDID> test send-message.yaml
+appId: host.exp.Exponent
+---
+- tapOn:
+    id: "friend-menu-button-.*"
+- tapOn:
+    id: "friend-message-.*"
+- extendedWaitUntil:
+    visible:
+      id: "message-input"
+    timeout: 8000
+- tapOn:
+    id: "message-input"
+- inputText: "Fancy a game?"
+- tapOn:
+    id: "send-message-button"
+- extendedWaitUntil:
+    visible: "You said: Fancy a game?"
+    timeout: 8000

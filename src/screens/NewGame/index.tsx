@@ -37,7 +37,11 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
   }
 
   function challengeFriend() {
-    toast.show('Coming soon');
+    if (isGuest) {
+      toast.show('Sign in to challenge friends.');
+    } else {
+      navigation.navigate('Friends');
+    }
   }
 
   function playStockfish() {
@@ -70,8 +74,9 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
         <View style={styles.secondaryRow}>
           <Button
             label="Challenge a Friend"
+            onPress={challengeFriend}
             onDisabledPress={challengeFriend}
-            appearsDisabled
+            appearsDisabled={isGuest}
             variant="outline"
             icon="sword-cross"
             style={styles.secondaryButtonSpacing}

@@ -84,4 +84,23 @@ describe('NewGame', () => {
       }),
     );
   });
+
+  it('opens Friends from Challenge a Friend', async () => {
+    const { screenPromise, navigation } = renderScreen({ isGuest: false });
+    const screen = await screenPromise;
+
+    await fireEvent.press(screen.getByTestId('challenge-friend-button'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('Friends');
+  });
+
+  it('asks a guest to sign in before challenging friends', async () => {
+    const { screenPromise, navigation } = renderScreen({ isGuest: true });
+    const screen = await screenPromise;
+
+    await fireEvent.press(screen.getByTestId('challenge-friend-button'));
+
+    expect(navigation.navigate).not.toHaveBeenCalled();
+    expect(screen.getByText('Sign in to challenge friends.')).toBeTruthy();
+  });
 });

@@ -1,0 +1,19 @@
+# From Home: watches a friend's game in progress from their card's 📺.
+# Needs the friend in a game with someone else, e.g. two seeking bots:
+#   nohup npm run opponent --silent -- --casual --delay 4000 > /tmp/a.log 2>&1 &
+#   nohup npm run opponent --silent -- --guest --delay 4000 > /tmp/b.log 2>&1 &
+#
+# Run with: maestro --device <UDID> test watch-friend.yaml
+appId: host.exp.Exponent
+---
+- extendedWaitUntil:
+    visible:
+      id: "friend-watch-.*"
+    timeout: 10000
+- tapOn:
+    id: "friend-watch-.*"
+- extendedWaitUntil:
+    visible:
+      id: "game-viewer"
+    timeout: 8000
+- assertVisible: "Playing now"

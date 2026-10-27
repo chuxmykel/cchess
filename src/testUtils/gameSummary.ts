@@ -13,6 +13,7 @@ export function makeGameSummary(
     result: 'win',
     opponentUsername: 'judit',
     opponentDisplayName: 'Judit Polgar',
+    opponentAvatarColor: '#D64545',
     opponentRating: null,
     opponentProvisional: false,
     ratingDiff: null,

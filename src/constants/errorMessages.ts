@@ -10,3 +10,7 @@ export const SIGN_IN_FAILED_MESSAGE = "Couldn't sign in. Please try again.";
 export const CREATE_ACCOUNT_FAILED_MESSAGE =
   "Couldn't create your account. Please try again.";
 export const SIGN_OUT_FAILED_MESSAGE = "Couldn't sign out. Please try again.";
+export const CHALLENGE_FAILED_MESSAGE =
+  "Couldn't send the challenge. Please try again.";
+export const MESSAGE_FAILED_MESSAGE =
+  "Couldn't send your message. Please try again.";
