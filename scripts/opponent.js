@@ -17,6 +17,9 @@
 //   npm run opponent                     # seek 5+0, take either color
 //   npm run opponent -- --guest          # play as a new guest instead
 //   npm run opponent -- --casual         # seek a casual game
+//   npm run opponent -- --chat           # say "Good luck!" and answer chat
+//   npm run opponent -- --idle           # never move, so the game is
+//                                        # aborted for no first move
 //   npm run opponent -- --color w        # only accept white (bot is white,
 //                                        # so the app plays black)
 //   npm run opponent -- --time 3+2 --delay 300
@@ -47,6 +50,8 @@ const { values: args } = parseArgs({
     delay: { type: 'string', default: '800' },
     guest: { type: 'boolean', default: false },
     casual: { type: 'boolean', default: false },
+    chat: { type: 'boolean', default: false },
+    idle: { type: 'boolean', default: false },
   },
 });
 
@@ -109,7 +114,7 @@ async function main() {
   }
 
   function playIfMyTurn(fen, turn) {
-    if (!gameId || turn !== myColor) return;
+    if (!gameId || turn !== myColor || args.idle) return;
     const moves = new Chess(fen).moves({ verbose: true });
     if (moves.length === 0) return;
     const move = moves[Math.floor(Math.random() * moves.length)];
@@ -162,7 +167,18 @@ async function main() {
     }
 
     socket.emit('game:join', { gameId });
+    if (args.chat) {
+      socket.emit('game:chat', { gameId, text: 'Good luck!' });
+    }
     playIfMyTurn(snapshot.fen, snapshot.turn);
+  });
+
+  socket.on('game:chat', (message) => {
+    if (message.gameId !== gameId || message.userId === myUserId) return;
+    log('chat:', message.text);
+    if (args.chat) {
+      socket.emit('game:chat', { gameId, text: `You said: ${message.text}` });
+    }
   });
 
   socket.on('game:move', (payload) => {
