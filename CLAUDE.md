@@ -92,8 +92,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
   axios instance whose response interceptor turns failures into
   `ApiError`s carrying the server's own message - auth: guest, sign in,
   register, refresh, logout; plus `/users/me`, game history (yours or a
-  player's, a page at a time), a single game, PGN, bookmarks, profiles and
-  activity, friends and friend requests, challenges, and direct messages),
+  player's, a page at a time), a single game, PGN, bookmarks, player
+  search, profiles and activity, friends and friend requests, challenges, and direct messages),
   `accessToken.ts` (reads a JWT access token's expiry),
   `socketClient.ts` (the one `AppSocket` singleton - `connectSocket`/
   `disconnectSocket`/`getSocket`, plus `updateSocketToken` so later
@@ -166,8 +166,11 @@ network/       pure networking infra (REST/socket clients, event types), same st
     profile, a message, a challenge through `ChallengeSheet`, watching
     their game), `useUserProfile` (a player's profile and activity),
     `usePagedGames` (game history a page at a time, yours or a player's),
-    and `useDirectMessages` (one conversation: paged history, new messages,
-    marked read while open, sending and clearing).
+    `useDirectMessages` (one conversation: paged history, new messages,
+    marked read while open, sending and clearing), and `useUserSearch`
+    (players matching what's typed in Friends' search, asked of
+    `GET /users?search=` once typing pauses and at least two letters are
+    in).
   - Small reusable UI-state hooks with no game-domain knowledge at all:
     `usePopoverMenu`, `useToast`/`useToastBubbleAnimation`,
     `useBottomSheet`, `useCaretRotation`, `useGameScreenGestureLock`,
@@ -240,7 +243,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `FriendRequestCard` and `ChallengeCard` (answered with ✓/✕
   `CircleIconButton`s), `NotificationsMenu` (the 🔔 in `HomeHeader`'s
   `accessory` slot, with a badge counting incoming challenges and friend
-  requests, opening them in a popup), `ChallengeSheet`, `ActivityList`,
+  requests, opening them in a popup), `UserSearchField` (Friends'
+  search, with matching players in a dropdown that open their profile,
+  where they can be added; Home's "Find friends" opens Friends with it
+  focused), `ChallengeSheet`, `ActivityList`,
   `MessageList`), more shared primitives (`ActionList`, `SegmentedTabs`,
   `EmptyState` - what every server-backed list shows when it has
   nothing yet: an SVG illustration from its `illustrations.tsx`, drawn

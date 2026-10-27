@@ -108,6 +108,7 @@ src/
 │   │   FriendRequestCard/,           activity, direct messages
 │   │   ChallengeCard/,
 │   │   NotificationsMenu/,
+│   │   UserSearchField/,
 │   │   ChallengeSheet/,
 │   │   ActivityList/, MessageList/
 │   │
