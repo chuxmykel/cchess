@@ -51,9 +51,10 @@ nvm is installed, since lint-staged/ESLint don't run on this machine's
 older default Node. lint-staged is held at 16.x: 17+ needs Node >=
 22.22.1, newer than the pinned 22.16.0.
 
-GitHub Actions runs lint, the Jest suite, and the Maestro e2e suite on every
-push to `main` and on every PR (`.github/workflows/{lint,test,e2e}.yml`,
-each a separate workflow file).
+GitHub Actions runs lint and the Jest suite on every push to `main` and on
+every PR (`.github/workflows/{lint,test}.yml`). The Maestro e2e suite
+(`e2e.yml`) only runs when started by hand from the Actions tab
+("Run workflow"): it takes too long to hold up every PR.
 
 ## Architecture
 
@@ -89,8 +90,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
   axios instance whose response interceptor turns failures into
   `ApiError`s carrying the server's own message - auth: guest, sign in,
   register, refresh, logout; plus `/users/me`, game history and PGN),
+  `accessToken.ts` (reads a JWT access token's expiry),
   `socketClient.ts` (the one `AppSocket` singleton - `connectSocket`/
-  `disconnectSocket`/`getSocket`),
+  `disconnectSocket`/`getSocket`, plus `updateSocketToken` so later
+  reconnects use a refreshed token without dropping the connection),
   `socketEvents.ts` (every client<->server event's payload types,
   confirmed against a live backend instance rather than just inferred -
   see that file's own header comment), and `tokenStorage.ts`
@@ -112,7 +115,12 @@ network/       pure networking infra (REST/socket clients, event types), same st
     resumes the stored account via `/auth/refresh`, falling back to a new
     guest only when the server rejects it; then sign in, create account
     and sign out, each swapping the tokens and reconnecting the socket -
-    the newest session to succeed wins, and replaced ones are revoked),
+    the newest session to succeed wins, and replaced ones are revoked;
+    access tokens last 15 minutes, so REST calls go through `authorized`,
+    which refreshes a token about to expire or rejected with a 401 and
+    retries once, one refresh at a time since refresh tokens rotate, and a
+    socket kicked by the server for a stale token is refreshed and
+    reconnected once),
     `useRecentGames` (the player's finished games, from `GET /games`),
     `useUsernameAvailability` (whether a sign-up username is free, asked
     of `GET /users/:username` once typing pauses and the name fits the
@@ -224,7 +232,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `AppSocket` for hooks that talk to the server (`fakeSocket.ts`), a
   `GameSnapshot` fixture builder (`gameSnapshot.ts`), `makeAuthSession`/
   `makeBootstrappingAuthSession` for mocking `useAuthSession`
-  (`authSession.ts`), a `GameSummary` builder (`gameSummary.ts`), a safe-area
+  (`authSession.ts`), `makeAccessToken` for a JWT that expires when a test
+  needs (`accessToken.ts`), a `GameSummary` builder (`gameSummary.ts`), a safe-area
   wrapper for components that read insets (`safeArea.tsx`),
   `waitForSheetToClose` (`modal.ts`), and shared mock modules for
   `jest.mock` factories (`ConnectionStrengthIndicatorStub.tsx`,

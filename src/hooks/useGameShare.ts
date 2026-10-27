@@ -9,19 +9,16 @@ export function useGameShare(
   gameId: string,
   onError?: (message: string) => void,
 ): () => Promise<void> {
-  const authSession = useAuthSession();
-  const accessToken = authSession.isReady ? authSession.accessToken : null;
+  const { authorized } = useAuthSession();
 
   return useCallback(async () => {
-    if (!accessToken) {
-      onError?.(SHARE_FAILED_MESSAGE);
-      return;
-    }
     try {
-      const pgn = await getGamePgn(gameId, accessToken);
+      const pgn = await authorized((accessToken) =>
+        getGamePgn(gameId, accessToken),
+      );
       await Share.share({ message: pgn });
     } catch {
       onError?.(SHARE_FAILED_MESSAGE);
     }
-  }, [gameId, accessToken, onError]);
+  }, [gameId, authorized, onError]);
 }

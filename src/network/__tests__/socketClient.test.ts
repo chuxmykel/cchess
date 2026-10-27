@@ -1,6 +1,11 @@
 import { io } from 'socket.io-client';
 
-import { connectSocket, disconnectSocket, getSocket } from '../socketClient';
+import {
+  connectSocket,
+  disconnectSocket,
+  getSocket,
+  updateSocketToken,
+} from '../socketClient';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
 
 jest.mock('socket.io-client', () => ({
@@ -40,6 +45,19 @@ describe('socketClient', () => {
     expect(io).toHaveBeenCalledTimes(2);
     expect(result).toBe(secondSocket);
     expect(getSocket()).toBe(secondSocket);
+  });
+
+  it('gives later reconnects a new token without dropping the connection', () => {
+    const { socket: fakeSocket } = createFakeSocket();
+    (io as jest.Mock).mockReturnValue(fakeSocket);
+    connectSocket('token-a');
+
+    updateSocketToken('token-b');
+
+    expect(fakeSocket.auth).toEqual({ token: 'token-b' });
+    expect(fakeSocket.disconnect).not.toHaveBeenCalled();
+    expect(connectSocket('token-b')).toBe(fakeSocket);
+    expect(io).toHaveBeenCalledTimes(1);
   });
 
   it('getSocket returns null before any connection and after disconnecting', () => {

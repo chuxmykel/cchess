@@ -15,9 +15,15 @@ import {
   revokeRefreshToken,
   signIn,
 } from '../../network/restClient';
-import { AppSocket, connectSocket } from '../../network/socketClient';
+import {
+  AppSocket,
+  connectSocket,
+  updateSocketToken,
+} from '../../network/socketClient';
 import { getRefreshToken, saveRefreshToken } from '../../network/tokenStorage';
+import { makeAccessToken } from '../../testUtils/accessToken';
 import { makeAccountUser } from '../../testUtils/authSession';
+import { createFakeSocket, FakeSocket } from '../../testUtils/fakeSocket';
 
 jest.mock('../../network/restClient', () => ({
   ...jest.requireActual('../../network/restClient'),
@@ -44,8 +50,17 @@ const ANOTHER_GUEST = makeAuthResponse('another-guest', true);
 const MAGNUS = makeAuthResponse('magnus', false);
 const CREDENTIALS = { usernameOrEmail: 'magnus', password: 'secret123' };
 
-function socketFor(accessToken: string) {
-  return { token: accessToken } as unknown as AppSocket;
+const fakeSocketsByToken = new Map<string, FakeSocket>();
+
+function fakeSocketFor(accessToken: string): FakeSocket {
+  if (!fakeSocketsByToken.has(accessToken)) {
+    fakeSocketsByToken.set(accessToken, createFakeSocket());
+  }
+  return fakeSocketsByToken.get(accessToken)!;
+}
+
+function socketFor(accessToken: string): AppSocket {
+  return fakeSocketFor(accessToken).socket;
 }
 
 function deferred<T>() {
@@ -75,6 +90,7 @@ describe('useAuthSessionLifecycle', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    fakeSocketsByToken.clear();
   });
 
   describe('on launch', () => {
@@ -87,7 +103,6 @@ describe('useAuthSessionLifecycle', () => {
       await waitFor(() =>
         expect(result.current).toMatchObject({
           status: AUTH_SESSION_STATUS.READY,
-          accessToken: GUEST.accessToken,
           user: GUEST.user,
           socket: socketFor(GUEST.accessToken),
         }),
@@ -103,7 +118,6 @@ describe('useAuthSessionLifecycle', () => {
 
       await waitFor(() =>
         expect(result.current).toMatchObject({
-          accessToken: MAGNUS.accessToken,
           user: MAGNUS.user,
         }),
       );
@@ -176,7 +190,6 @@ describe('useAuthSessionLifecycle', () => {
         await act(() => switchAccount(result.current));
 
         expect(result.current).toMatchObject({
-          accessToken: MAGNUS.accessToken,
           user: MAGNUS.user,
           socket: socketFor(MAGNUS.accessToken),
         });
@@ -221,6 +234,184 @@ describe('useAuthSessionLifecycle', () => {
 
       expect(result.current).toMatchObject({ user: MAGNUS.user });
       expect(revokeRefreshToken).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('keeping the access token fresh', () => {
+    const MINUTE = 60_000;
+
+    function withAccessTokenExpiringIn(
+      response: AuthResponse,
+      expiresInMs: number,
+    ): AuthResponse {
+      return {
+        ...response,
+        accessToken: makeAccessToken(Date.now() + expiresInMs),
+      };
+    }
+
+    const MAGNUS_REFRESHED = withAccessTokenExpiringIn(
+      { ...MAGNUS, refreshToken: 'refresh-magnus-2' },
+      15 * MINUTE,
+    );
+
+    function echoAccessToken(accessToken: string) {
+      return Promise.resolve(accessToken);
+    }
+
+    it('uses the current access token while it is still fresh', async () => {
+      const session = withAccessTokenExpiringIn(MAGNUS, 10 * MINUTE);
+      const { result } = await renderSignedInAs(session);
+
+      await expect(result.current.authorized(echoAccessToken)).resolves.toBe(
+        session.accessToken,
+      );
+      expect(refreshSession).not.toHaveBeenCalled();
+    });
+
+    it('refreshes first when the access token is about to expire', async () => {
+      const session = withAccessTokenExpiringIn(MAGNUS, 30_000);
+      const { result } = await renderSignedInAs(session);
+      (refreshSession as jest.Mock).mockResolvedValue(MAGNUS_REFRESHED);
+
+      let usedToken: string;
+      await act(async () => {
+        usedToken = await result.current.authorized(echoAccessToken);
+      });
+
+      expect(refreshSession).toHaveBeenCalledWith(MAGNUS.refreshToken);
+      expect(usedToken).toBe(MAGNUS_REFRESHED.accessToken);
+      expect(saveRefreshToken).toHaveBeenCalledWith('refresh-magnus-2');
+      expect(updateSocketToken).toHaveBeenCalledWith(
+        MAGNUS_REFRESHED.accessToken,
+      );
+    });
+
+    it('refreshes and retries once when the server rejects the access token', async () => {
+      const { result } = await renderSignedInAs(MAGNUS);
+      (refreshSession as jest.Mock).mockResolvedValue(MAGNUS_REFRESHED);
+      const request = jest
+        .fn()
+        .mockRejectedValueOnce(new ApiError(401, 'Unauthorized'))
+        .mockResolvedValueOnce('games');
+
+      let response: unknown;
+      await act(async () => {
+        response = await result.current.authorized(request);
+      });
+
+      expect(response).toBe('games');
+      expect(request).toHaveBeenNthCalledWith(1, MAGNUS.accessToken);
+      expect(request).toHaveBeenNthCalledWith(2, MAGNUS_REFRESHED.accessToken);
+      expect(refreshSession).toHaveBeenCalledTimes(1);
+    });
+
+    it("doesn't refresh for any other failure", async () => {
+      const { result } = await renderSignedInAs(MAGNUS);
+      const failure = new ApiError(500, 'boom');
+
+      await act(() =>
+        expect(
+          result.current.authorized(() => Promise.reject(failure)),
+        ).rejects.toBe(failure),
+      );
+
+      expect(refreshSession).not.toHaveBeenCalled();
+    });
+
+    it('shares one refresh between requests made at the same time', async () => {
+      const session = withAccessTokenExpiringIn(MAGNUS, 30_000);
+      const { result } = await renderSignedInAs(session);
+      (refreshSession as jest.Mock).mockResolvedValue(MAGNUS_REFRESHED);
+
+      await act(() =>
+        Promise.all([
+          result.current.authorized(echoAccessToken),
+          result.current.authorized(echoAccessToken),
+        ]),
+      );
+
+      expect(refreshSession).toHaveBeenCalledTimes(1);
+    });
+
+    it('starts as a new guest when the refresh token has been rejected', async () => {
+      const session = withAccessTokenExpiringIn(MAGNUS, 30_000);
+      const { result } = await renderSignedInAs(session);
+      (refreshSession as jest.Mock).mockRejectedValue(
+        new ApiError(401, 'Invalid or expired refresh token'),
+      );
+      (createGuestSession as jest.Mock).mockResolvedValue(ANOTHER_GUEST);
+
+      await act(() =>
+        expect(
+          result.current.authorized(echoAccessToken),
+        ).rejects.toBeInstanceOf(ApiError),
+      );
+
+      expect(result.current).toMatchObject({ user: ANOTHER_GUEST.user });
+    });
+
+    it('throws away a refresh that finishes after switching accounts', async () => {
+      const session = withAccessTokenExpiringIn(GUEST, 30_000);
+      const { result } = await renderSignedInAs(session);
+      const refresh = deferred<AuthResponse>();
+      (refreshSession as jest.Mock).mockReturnValue(refresh.promise);
+      (signIn as jest.Mock).mockResolvedValue(MAGNUS);
+
+      let pending: Promise<string>;
+      await act(async () => {
+        pending = result.current.authorized(echoAccessToken);
+      });
+      await act(() => result.current.signIn(CREDENTIALS));
+      const lateRefresh = { ...GUEST, refreshToken: 'refresh-guest-late' };
+      await act(async () => {
+        refresh.resolve(lateRefresh);
+        await pending;
+      });
+
+      expect(result.current).toMatchObject({ user: MAGNUS.user });
+      expect(revokeRefreshToken).toHaveBeenCalledWith('refresh-guest-late');
+      expect(saveRefreshToken).not.toHaveBeenCalledWith('refresh-guest-late');
+    });
+
+    describe('when the server kicks the socket', () => {
+      it('refreshes and reconnects', async () => {
+        await renderSignedInAs(MAGNUS);
+        (refreshSession as jest.Mock).mockResolvedValue(MAGNUS_REFRESHED);
+        const { socket, trigger } = fakeSocketFor(MAGNUS.accessToken);
+
+        await act(async () => trigger('disconnect', 'io server disconnect'));
+
+        expect(refreshSession).toHaveBeenCalledTimes(1);
+        expect(updateSocketToken).toHaveBeenCalledWith(
+          MAGNUS_REFRESHED.accessToken,
+        );
+        expect(socket.connect).toHaveBeenCalledTimes(1);
+      });
+
+      it('tries only once until the socket connects again', async () => {
+        await renderSignedInAs(MAGNUS);
+        (refreshSession as jest.Mock).mockResolvedValue(MAGNUS_REFRESHED);
+        const { trigger } = fakeSocketFor(MAGNUS.accessToken);
+
+        await act(async () => trigger('disconnect', 'io server disconnect'));
+        await act(async () => trigger('disconnect', 'io server disconnect'));
+        expect(refreshSession).toHaveBeenCalledTimes(1);
+
+        await act(async () => trigger('connect', undefined));
+        await act(async () => trigger('disconnect', 'io server disconnect'));
+        expect(refreshSession).toHaveBeenCalledTimes(2);
+      });
+
+      it('leaves an ordinary connection drop to socket.io', async () => {
+        await renderSignedInAs(MAGNUS);
+        const { socket, trigger } = fakeSocketFor(MAGNUS.accessToken);
+
+        await act(async () => trigger('disconnect', 'transport close'));
+
+        expect(refreshSession).not.toHaveBeenCalled();
+        expect(socket.connect).not.toHaveBeenCalled();
+      });
     });
   });
 

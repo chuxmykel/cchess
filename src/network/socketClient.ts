@@ -27,6 +27,14 @@ export function connectSocket(accessToken: string): AppSocket {
   return socket;
 }
 
+export function updateSocketToken(accessToken: string): void {
+  if (!socket) {
+    return;
+  }
+  socket.auth = { token: accessToken };
+  connectedWithToken = accessToken;
+}
+
 export function disconnectSocket(): void {
   socket?.disconnect();
   socket = null;
