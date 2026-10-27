@@ -82,6 +82,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
     without re-deriving it from the engine.
   - `boardCoordinates.ts` - square <-> pixel math.
   - `castlingSquares.ts` - castling rook from/to squares.
+  - `material.ts` - `materialImbalance(fen)`: the pieces each side is up
+    and by how much, as shown beside the players' names.
 
 - **`src/network/`** - a second framework-agnostic layer, mirroring
   `domain/`'s pure-infra style but for talking to `cchess-be` (the
@@ -89,8 +91,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `http://localhost:3000`), `restClient.ts` (every REST call, on one
   axios instance whose response interceptor turns failures into
   `ApiError`s carrying the server's own message - auth: guest, sign in,
-  register, refresh, logout; plus `/users/me`, game history, PGN and
-  bookmarks),
+  register, refresh, logout; plus `/users/me`, game history (yours or a
+  player's, a page at a time), a single game, PGN, bookmarks, profiles and
+  activity, friends and friend requests, challenges, and direct messages),
   `accessToken.ts` (reads a JWT access token's expiry),
   `socketClient.ts` (the one `AppSocket` singleton - `connectSocket`/
   `disconnectSocket`/`getSocket`, plus `updateSocketToken` so later
@@ -151,7 +154,20 @@ network/       pure networking infra (REST/socket clients, event types), same st
     positions, snapping back to live on a new move), `useGameShare`
     (fetches a game's PGN and opens the native share sheet), and
     `useGameBookmark` (whether you've bookmarked the game, toggled
-    optimistically).
+    optimistically), and `useGameViewer` (one game to look through, fetched
+    once and - while it's still being played - watched with `game:watch`;
+    `clocksAtPly` gives each side's clock at any position).
+  - Friends and everything around them: `useSocial` (backs
+    `SocialContext`: friends with their live status, friend requests,
+    challenges and unread message counts, kept current from the
+    `friend:*`/`challenge:*`/`dm:message` pushes, plus the actions on them;
+    accepting a challenge, or hearing one you sent was accepted, starts the
+    game), `useFriendActions` (what a friend card or profile offers: their
+    profile, a message, a challenge through `ChallengeSheet`, watching
+    their game), `useUserProfile` (a player's profile and activity),
+    `usePagedGames` (game history a page at a time, yours or a player's),
+    and `useDirectMessages` (one conversation: paged history, new messages,
+    marked read while open, sending and clearing).
   - Small reusable UI-state hooks with no game-domain knowledge at all:
     `usePopoverMenu`, `useToast`/`useToastBubbleAnimation`,
     `useBottomSheet`, `useCaretRotation`, `useGameScreenGestureLock`,
@@ -179,6 +195,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
     app-wide state here (the signed-in account or guest, its socket, and
     the actions that switch between them), mounted once in `App.tsx`,
     rather than scoped to a single screen.
+  - `SocialContext.tsx` - wraps `useSocial`, mounted in `HomeStack` (inside
+    navigation, so a game started from a challenge can open `LiveGame`
+    from any screen).
 
 - **`src/components/ChessBoard/`** - composes the board from
   `ChessGameContext` + the hooks above; everything under it
@@ -193,7 +212,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `MoveList`, `GameToolbar` (with the chat button's unread badge),
   `BottomBar`, `GameClock`, `GameOverCard`, `GameResultIcon`,
   `GameTypeIcon`, `PlayerBar` (name, rating, clock, the opponent's
-  online dot and the first-move countdown), `ChatSheet`, `RatingDiff` (a
+  online dot, the first-move countdown and `CapturedPieces`), `ChatSheet`
+  (read-only once a game's chat has closed), `RatingDiff` (a
   green/red/grey "+12"/"−12"/"±0", on the game-over card and in Recent
   Games), `PromotionMenu`, `DrawOfferPrompt`,
   `SeekCard` (the waiting card: time control, rating range, lobby stats),
@@ -214,14 +234,31 @@ network/       pure networking infra (REST/socket clients, event types), same st
   (`AccountForm`, the layout shared by Sign in and Create account;
   `SignInPrompt`, shown to guests on Home and Profile; `RatingsList`;
   `UsernameAvailabilityIndicator`, the ✓/✕ beside the sign-up username),
-  and `Home`-screen-specific pieces (`HomeHeader`, `FriendsCarousel`,
-  `RecentGamesList`).
+  friends UI (`FriendsCarousel`/`FriendCard` - status line, unread
+  messages, watch while playing, Message/Challenge menu - `FriendRow`,
+  `FriendRequestCard` and `ChallengeCard` (answered with ✓/✕
+  `CircleIconButton`s), `NotificationsMenu` (the 🔔 in `HomeHeader`'s
+  `accessory` slot, with a badge counting incoming challenges and friend
+  requests, opening them in a popup), `ChallengeSheet`, `ActivityList`,
+  `MessageList`), more shared primitives (`ActionList`, `SegmentedTabs`;
+  `SectionHeader`'s action is optional), and `Home`-screen-specific pieces
+  (`HomeHeader`, `RecentGamesList`, whose rows open the game viewer).
+  `GameOverCard` names the winner instead of "You won" for a game you
+  didn't play, and can be dismissed.
 
 - **Navigation** (React Navigation, nested stacks/tabs):
   `App.tsx` (root native-stack) -> `HomeStack` (`HomeTabs`, `LiveGame`,
-  `SignIn`, `CreateAccount`) ->
+  `GameViewer`, `SignIn`, `CreateAccount`) ->
   `HomeTabs` (bottom tabs: `HomeTabStack`, `Profile`) -> `HomeTabStack`
-  (native-stack: `Home`, `NewGame`). A fresh launch lands on the `Home` tab
+  (native-stack: `Home`, `NewGame`, `Friends`, `UserProfile`,
+  `Conversation`, `GamesList`). Route params are typed in each navigator's
+  `types.ts`; a tab-stack screen's `HomeTabStackScreenProps` can also open
+  the screens over the tabs. Home's friend cards open a friend's
+  `UserProfile`; Message opens their `Conversation`; Challenge sends one
+  from a sheet, and the friend accepts it from Home, which opens `LiveGame`
+  for both. A recent game opens `GameViewer` (any finished game, or a
+  friend's game in progress - your own game in progress opens `LiveGame`
+  instead), and "See All" opens `Friends` or `GamesList`. A fresh launch lands on the `Home` tab
   (not the board) - the path to a game is Home -> New Game -> Start New
   Game -> LiveGame. New Game picks the time control, Casual or Rated
   (guests can only play casual) and, when signed in, a rating range; the
@@ -242,16 +279,17 @@ network/       pure networking infra (REST/socket clients, event types), same st
   hands to LiveGame, and the rating range's default, step and limit),
   the app's accent and muted colors
   (`colors.ts`, a start on a fuller theme), account rules mirrored from
-  the server (`account.ts`) and the chat message limit (`chat.ts`),
-  user-facing error-message fallbacks
-  (`errorMessages.ts`), home-screen placeholder data (`friends.ts`,
-  until friends are backed by the server), etc.
+  the server (`account.ts`) and the chat and direct message limits
+  (`chat.ts`), user-facing error-message fallbacks (`errorMessages.ts`),
+  etc.
 
 - **`src/utils/`** - RN `Animated` helpers (`animation.ts`: castling
   animation, piece ids), color helpers (`color.ts`) and rating formatting
   (`rating.ts`: `formatRating` - "1520", or "1520?" while provisional -
-  and `formatRatingRange`, "1320–2020"), independent of the chess
-  domain. Dates are formatted with `date-fns` rather than helpers
+  `formatRatingRange`, "1320–2020", `highestRating`, `formatScore`,
+  "2½ - 3½", and `formatTimePlayed`) and presence (`presence.ts`:
+  "Playing right now"/"Online"/"Active 5 minutes ago", and the order
+  friends are listed in), independent of the chess domain. Dates are formatted with `date-fns` rather than helpers
   here.
 
 - **`src/testUtils/`** - Jest/RNTL helpers: simulated PanResponder gestures
@@ -261,7 +299,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `GameSnapshot` fixture builder (`gameSnapshot.ts`), `makeAuthSession`/
   `makeBootstrappingAuthSession` for mocking `useAuthSession`
   (`authSession.ts`), `makeAccessToken` for a JWT that expires when a test
-  needs (`accessToken.ts`), a `GameSummary` builder (`gameSummary.ts`), a safe-area
+  needs (`accessToken.ts`), a `GameSummary` builder (`gameSummary.ts`),
+  friend/request/challenge/profile/message builders and `makeSocial` for
+  mocking `useSocialContext` (`social.ts`), a safe-area
   wrapper for components that read insets (`safeArea.tsx`),
   `waitForSheetToClose` (`modal.ts`), and shared mock modules for
   `jest.mock` factories (`ConnectionStrengthIndicatorStub.tsx`,

@@ -95,34 +95,48 @@ src/
 │   │   │
 │   │   └── Square/                   One square, with coordinate labels
 │   │
-│   ├── GameClock/, GameControls/,    In-game UI - clock display, resign/abort/draw
-│   │   GameOverBanner/,              controls, result banner, result/piece icons,
-│   │   GameResultIcon/,              connection-strength indicator, promotion picker
+│   ├── GameHeader/, GameToolbar/,    In-game UI - header, toolbar, move list, player
+│   │   MoveList/, PlayerBar/,        bars with captured pieces, clocks, result card,
+│   │   CapturedPieces/, GameClock/,  chat, result/piece icons, connection strength,
+│   │   GameOverCard/, ChatSheet/,    promotion picker
+│   │   GameResultIcon/,
 │   │   GameTypeIcon/,
 │   │   ConnectionStrengthIndicator/,
 │   │   PromotionMenu/
 │   │
-│   ├── Button/, Avatar/,             Shared presentational primitives reused
+│   ├── FriendsCarousel/, FriendRow/, Friends, requests, challenges, a player's
+│   │   FriendRequestCard/,           activity, direct messages
+│   │   ChallengeCard/,
+│   │   NotificationsMenu/,
+│   │   ChallengeSheet/,
+│   │   ActivityList/, MessageList/
+│   │
+│   ├── Button/, CircleIconButton/,   Shared presentational primitives reused
 │   │   BottomSheet/, Popover/,       across more than one screen
 │   │   PopoverMenu/, SectionHeader/,
+│   │   Avatar/, ActionList/, SegmentedTabs/,
 │   │   Toast/, TimeControlSelector/
 │   │
 │   └── HomeHeader/,                  Home-screen-specific pieces
-│       FriendsCarousel/,
 │       RecentGamesList/
 │
 ├── screens/
-│   ├── Home/, HomeStack/,            App.tsx -> HomeStack (HomeTabs, Matchmaking,
-│   │   HomeTabs/, HomeTabStack/,     LiveGame) -> HomeTabs (bottom tabs: HomeTabStack,
-│   │   Profile/                      Profile) -> HomeTabStack (Home, NewGame)
+│   ├── Home/, HomeStack/,            App.tsx -> HomeStack (HomeTabs, LiveGame,
+│   │   HomeTabs/, HomeTabStack/,     GameViewer, SignIn, CreateAccount) -> HomeTabs
+│   │   Profile/                      (bottom tabs: HomeTabStack, Profile) ->
+│   │                                 HomeTabStack (Home, NewGame, Friends,
+│   │                                 UserProfile, Conversation, GamesList)
 │   │
-│   ├── NewGame/                      Time-control picker; navigates into Matchmaking
+│   ├── NewGame/                      Time control and game settings; opens LiveGame
 │   │
-│   ├── Matchmaking/                  Seeks a match, shows a connection-strength readout
-│   │                                 while waiting, replaces into LiveGame once matched
+│   ├── LiveGame/                     The server-driven online game screen: seeks an
+│   │                                 opponent, then plays the matched game in place
 │   │
-│   └── LiveGame/                     The server-driven online game screen - hosts the
-│                                     board behind an OnlineChessGameContext provider
+│   ├── GameViewer/                   Steps through a finished game, or watches one
+│   │                                 in progress
+│   │
+│   └── Friends/, UserProfile/,       Friends and requests, a player's profile, a
+│       Conversation/, GamesList/     conversation, and a full game history
 │
 ├── constants/                        Board size, piece image lookups, square list, board
 │                                     themes, time controls, error-message fallbacks
