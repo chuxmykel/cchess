@@ -1,9 +1,11 @@
 name: E2E
 
 on:
-  push:
-    branches: [main]
-  pull_request:
+  # Paused: the suite takes too long to hold up every PR. Run it by hand
+  # from the Actions tab, and uncomment these to run it automatically again.
+  # push:
+  #   branches: [main]
+  # pull_request:
   workflow_dispatch:
 
 concurrency:
