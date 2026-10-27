@@ -14,7 +14,11 @@ env:
 - tapOn:
     id: "password-input"
 - inputText: ${PASSWORD}
-- hideKeyboard
+# hideKeyboard fails when no on-screen keyboard is up (it depends on the
+# simulator's keyboard setting); a tap on empty space dismisses one if it
+# is, and does nothing otherwise.
+- tapOn:
+    point: "200,700"
 - tapOn:
     id: "account-form-submit"
 - runFlow: dismiss-save-password.yaml
