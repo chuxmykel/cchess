@@ -51,9 +51,10 @@ nvm is installed, since lint-staged/ESLint don't run on this machine's
 older default Node. lint-staged is held at 16.x: 17+ needs Node >=
 22.22.1, newer than the pinned 22.16.0.
 
-GitHub Actions runs lint, the Jest suite, and the Maestro e2e suite on every
-push to `main` and on every PR (`.github/workflows/{lint,test,e2e}.yml`,
-each a separate workflow file).
+GitHub Actions runs lint and the Jest suite on every push to `main` and on
+every PR (`.github/workflows/{lint,test}.yml`). The Maestro e2e suite
+(`e2e.yml`) only runs when started by hand from the Actions tab
+("Run workflow"): it takes too long to hold up every PR.
 
 ## Architecture
 

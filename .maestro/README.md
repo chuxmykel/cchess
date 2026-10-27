@@ -27,6 +27,9 @@ npm run test:e2e              # every flow in this directory except needs-live-s
 maestro test .maestro/tap-to-move.yaml   # a single flow, while iterating
 ```
 
+In CI, `.github/workflows/e2e.yml` runs the same suite, but only when
+started by hand from the Actions tab - not on every push or PR.
+
 **Flows tagged `needs-live-server` are excluded from `npm run test:e2e`
 (and so from CI) as of the guest-auth/matchmaking/live-game slice.**
 `common/to-board.yaml` now goes through real matchmaking - tapping
