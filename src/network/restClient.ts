@@ -160,3 +160,39 @@ export async function getGamePgn(
     })
   ).data;
 }
+
+type BookmarkState = { bookmarked: boolean };
+
+function bookmarkPath(gameId: string): string {
+  return `/games/${encodeURIComponent(gameId)}/bookmark`;
+}
+
+export async function isGameBookmarked(
+  gameId: string,
+  accessToken: string,
+): Promise<boolean> {
+  return (
+    await apiClient.get<BookmarkState>(
+      bookmarkPath(gameId),
+      bearer(accessToken),
+    )
+  ).data.bookmarked;
+}
+
+export async function setGameBookmarked(
+  gameId: string,
+  bookmarked: boolean,
+  accessToken: string,
+): Promise<boolean> {
+  const response = bookmarked
+    ? await apiClient.put<BookmarkState>(
+        bookmarkPath(gameId),
+        undefined,
+        bearer(accessToken),
+      )
+    : await apiClient.delete<BookmarkState>(
+        bookmarkPath(gameId),
+        bearer(accessToken),
+      );
+  return response.data.bookmarked;
+}

@@ -14,6 +14,9 @@ import { makeAuthSession } from '../../testUtils/authSession';
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
 }));
+jest.mock('../../hooks/useGameBookmark', () => ({
+  useGameBookmark: () => ({ isBookmarked: false, toggleBookmark: jest.fn() }),
+}));
 jest.mock('../../components/ConnectionStrengthIndicator', () =>
   jest.requireActual('../../testUtils/ConnectionStrengthIndicatorStub'),
 );

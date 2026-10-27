@@ -22,6 +22,7 @@ import { useFirstMoveCountdown } from '../../hooks/useFirstMoveCountdown';
 import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useMoveNavigation } from '../../hooks/useMoveNavigation';
 import { useGameShare } from '../../hooks/useGameShare';
+import { useGameBookmark } from '../../hooks/useGameBookmark';
 import { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
 import { useOnlineChessGameContext } from '../../context/LiveGame/OnlineChessGameContext';
@@ -120,6 +121,10 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   const { orientation, flip } = useBoardOrientation(myColor);
   const moveNavigation = useMoveNavigation(moves);
   const shareGame = useGameShare(snapshot.id, onError);
+  const { isBookmarked, toggleBookmark } = useGameBookmark(
+    snapshot.id,
+    onError,
+  );
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useGameScreenGestureLock(navigation, isGameOver);
@@ -197,6 +202,12 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
             icon: 'export-variant',
             onPress: shareGame,
             testID: 'share-game-item',
+          },
+          {
+            label: isBookmarked ? 'Remove bookmark' : 'Bookmark this game',
+            icon: isBookmarked ? 'bookmark' : 'bookmark-outline',
+            onPress: toggleBookmark,
+            testID: 'bookmark-game-item',
           },
         ]}
       />

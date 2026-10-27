@@ -24,6 +24,11 @@ jest.mock('../../hooks/useGameShare', () => ({
   useGameShare: () => mockShareGame,
 }));
 
+const mockBookmark = { isBookmarked: false, toggleBookmark: jest.fn() };
+jest.mock('../../hooks/useGameBookmark', () => ({
+  useGameBookmark: () => mockBookmark,
+}));
+
 jest.mock('../../hooks/usePopoverMenu', () =>
   jest.requireActual('../../testUtils/popoverMenuStartingOpen'),
 );
@@ -174,6 +179,25 @@ describe('LiveGameContent', () => {
     await fireEvent.press(screen.getByTestId('share-game-item'));
 
     expect(mockShareGame).toHaveBeenCalledTimes(1);
+  });
+
+  it("bookmarks the game from the header's menu", async () => {
+    const { screen } = await renderContent('w');
+
+    await fireEvent.press(screen.getByText('Bookmark this game'));
+
+    expect(mockBookmark.toggleBookmark).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers to remove a bookmark the game already has', async () => {
+    mockBookmark.isBookmarked = true;
+    try {
+      const { screen } = await renderContent('w');
+
+      expect(screen.getByText('Remove bookmark')).toBeTruthy();
+    } finally {
+      mockBookmark.isBookmarked = false;
+    }
   });
 
   it.each([
