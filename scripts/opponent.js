@@ -23,13 +23,21 @@
 //   npm run opponent -- --color w        # only accept white (bot is white,
 //                                        # so the app plays black)
 //   npm run opponent -- --time 3+2 --delay 300
+//   npm run opponent -- --friend glicko_65163
+//                                        # befriend that account instead of
+//                                        # seeking: accept its friend
+//                                        # request (or send one), answer its
+//                                        # messages, accept its challenges
+//                                        # and play them, until stopped
+//   npm run opponent -- --friend glicko_65163 --challenge
+//                                        # ...and challenge it at --time
 //
 // Colors are assigned at random by the server, so --color can't request
 // one - instead, if the bot is matched with the other color it aborts the
 // game straight away and exits with code 2. Start a fresh seek from the
 // app and run this again until it lands the color you want.
 //
-// Exit codes: 0 once the game is over, 1 on a connection/auth/matchmaking
+// Exit codes (friend mode keeps running instead): 0 once the game is over, 1 on a connection/auth/matchmaking
 // error (including real_user_bot not existing on this server), 2 if
 // --color was given and the bot got the other color.
 //
@@ -52,6 +60,8 @@ const { values: args } = parseArgs({
     casual: { type: 'boolean', default: false },
     chat: { type: 'boolean', default: false },
     idle: { type: 'boolean', default: false },
+    friend: { type: 'string' },
+    challenge: { type: 'boolean', default: false },
   },
 });
 
@@ -70,16 +80,53 @@ function log(...parts) {
   console.log('[opponent]', ...parts);
 }
 
-async function postJson(path, body) {
+async function request(method, path, { body, token } = {}) {
   const response = await fetch(`${SERVER_URL}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
     body: body && JSON.stringify(body),
   });
   if (!response.ok) {
-    throw new Error(`POST ${path} failed: ${response.status}`);
+    const error = new Error(`${method} ${path} failed: ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
-  return response.json();
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+
+function postJson(path, body) {
+  return request('POST', path, { body });
+}
+
+// Friend mode: become friends with args.friend, then answer its messages
+// and challenges.
+async function befriend(token) {
+  const { incoming } = await request('GET', '/friends/requests', { token });
+  const theirRequest = incoming.find(
+    (pending) => pending.user.username === args.friend,
+  );
+  if (theirRequest) {
+    await request('POST', `/friends/requests/${theirRequest.id}/accept`, {
+      token,
+    });
+    log('accepted the friend request from', args.friend);
+    return;
+  }
+  try {
+    await request('POST', '/friends/requests', {
+      token,
+      body: { username: args.friend },
+    });
+    log('sent a friend request to', args.friend);
+  } catch (error) {
+    // 409: already friends, or a request is already waiting.
+    if (error.status !== 409) throw error;
+    log('already friends (or a request is pending) with', args.friend);
+  }
 }
 
 async function signInAsBot() {
@@ -129,7 +176,32 @@ async function main() {
     }, moveDelayMs);
   }
 
+  const token = session.accessToken;
+  const friendMode = Boolean(args.friend);
+
   socket.on('connect', () => {
+    if (friendMode) {
+      log(`connected to ${SERVER_URL} as a friend of ${args.friend}`);
+      befriend(token)
+        .then(async () => {
+          if (!args.challenge) return;
+          await request('POST', '/challenges', {
+            token,
+            body: {
+              opponentUsername: args.friend,
+              minutes,
+              incrementSeconds,
+              rated: !args.casual,
+            },
+          });
+          log(`challenged ${args.friend} to ${args.time}`);
+        })
+        .catch((error) => {
+          console.error('[opponent]', error.message);
+          exit(1);
+        });
+      return;
+    }
     const mode = args.guest || args.casual ? 'casual' : 'rated';
     log(`connected to ${SERVER_URL}, seeking ${args.time} ${mode}`);
     socket.emit('matchmaking:seek', {
@@ -195,7 +267,35 @@ async function main() {
   socket.on('game:over', (snapshot) => {
     if (snapshot.id !== gameId) return;
     log('game over:', snapshot.result, snapshot.resultReason);
+    if (friendMode) {
+      gameId = null;
+      return;
+    }
     exit(0);
+  });
+
+  socket.on('friend:requestReceived', (pending) => {
+    if (!friendMode || pending.user.username !== args.friend) return;
+    request('POST', `/friends/requests/${pending.id}/accept`, { token })
+      .then(() => log('accepted the friend request from', args.friend))
+      .catch((error) => log('could not accept:', error.message));
+  });
+
+  socket.on('challenge:received', (challenge) => {
+    if (!friendMode || challenge.challenger.username !== args.friend) return;
+    log('accepting the challenge from', args.friend);
+    request('POST', `/challenges/${challenge.id}/accept`, { token }).catch(
+      (error) => log('could not accept:', error.message),
+    );
+  });
+
+  socket.on('dm:message', (message) => {
+    if (!friendMode || message.senderId === myUserId) return;
+    log('message:', message.text);
+    request('POST', `/messages/${args.friend}`, {
+      token,
+      body: { text: `You said: ${message.text}` },
+    }).catch((error) => log('could not reply:', error.message));
   });
 }
 
