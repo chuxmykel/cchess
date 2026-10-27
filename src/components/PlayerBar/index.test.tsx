@@ -25,7 +25,11 @@ describe('PlayerBar', () => {
 
   function renderBar(
     color: Color,
-    overrides: Partial<{ turn: Color; isGameOver: boolean }> = {},
+    overrides: Partial<{
+      turn: Color;
+      isGameOver: boolean;
+      firstMoveSecondsLeft: number | null;
+    }> = {},
   ) {
     return render(
       <PlayerBar
@@ -35,6 +39,7 @@ describe('PlayerBar', () => {
         clock={clock}
         turn={overrides.turn ?? 'w'}
         isGameOver={overrides.isGameOver ?? false}
+        firstMoveSecondsLeft={overrides.firstMoveSecondsLeft ?? null}
       />,
     );
   }
@@ -109,5 +114,35 @@ describe('PlayerBar', () => {
     const screen = await renderBar('b');
 
     expect(screen.queryByTestId('player-rating-b')).toBeNull();
+  });
+
+  describe('first move countdown', () => {
+    it('tells the side to move how long it has to play its first move', async () => {
+      const screen = await renderBar('w', { firstMoveSecondsLeft: 25 });
+
+      expect(
+        screen.getByText('25 seconds to play the first move'),
+      ).not.toHaveStyle({ color: '#d33' });
+    });
+
+    it('turns red with 10 seconds or less left', async () => {
+      const screen = await renderBar('w', { firstMoveSecondsLeft: 10 });
+
+      expect(screen.getByText('10 seconds to play the first move')).toHaveStyle(
+        { color: '#d33' },
+      );
+    });
+
+    it("isn't shown for the side waiting, or once the game is over", async () => {
+      const waiting = await renderBar('b', { firstMoveSecondsLeft: 25 });
+      expect(waiting.queryByTestId('first-move-countdown-b')).toBeNull();
+      await waiting.unmount();
+
+      const over = await renderBar('w', {
+        firstMoveSecondsLeft: 25,
+        isGameOver: true,
+      });
+      expect(over.queryByTestId('first-move-countdown-w')).toBeNull();
+    });
   });
 });

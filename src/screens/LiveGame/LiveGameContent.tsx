@@ -18,6 +18,7 @@ import DrawOfferPrompt from '../../components/DrawOfferPrompt';
 import GameOverCard from '../../components/GameOverCard';
 import { useGameScreenGestureLock } from '../../hooks/useGameScreenGestureLock';
 import { useGameClock } from '../../hooks/useGameClock';
+import { useFirstMoveCountdown } from '../../hooks/useFirstMoveCountdown';
 import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useMoveNavigation } from '../../hooks/useMoveNavigation';
 import { useGameShare } from '../../hooks/useGameShare';
@@ -104,6 +105,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     whiteTimeMs,
     blackTimeMs,
     drawOfferedBy,
+    firstMoveDeadline,
     moves,
     whiteRatingDiff,
     blackRatingDiff,
@@ -120,7 +122,13 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useGameScreenGestureLock(navigation, isGameOver);
-  const clock = useGameClock(whiteTimeMs, blackTimeMs, turn, !isGameOver);
+  const clock = useGameClock(
+    whiteTimeMs,
+    blackTimeMs,
+    turn,
+    !isGameOver && !firstMoveDeadline,
+  );
+  const firstMoveSecondsLeft = useFirstMoveCountdown(firstMoveDeadline);
 
   const timeControl = findTimeControl(
     snapshot.minutes,
@@ -173,6 +181,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     clock,
     turn,
     isGameOver,
+    firstMoveSecondsLeft,
   };
 
   return (

@@ -21,6 +21,7 @@ export type GameServerEventsResult = {
   whiteTimeMs: number;
   blackTimeMs: number;
   drawOfferedBy: Color | null;
+  firstMoveDeadline: string | null;
   moves: GameMoveSummary[];
   whiteRatingDiff: number | null;
   blackRatingDiff: number | null;
@@ -57,6 +58,9 @@ export function useGameServerEvents(
     blackTimeMs: snapshot.blackTimeRemainingMs,
   });
   const [drawOfferedBy, setDrawOfferedBy] = useState(snapshot.drawOfferedBy);
+  const [firstMoveDeadline, setFirstMoveDeadline] = useState(
+    snapshot.firstMoveDeadline,
+  );
   const [moves, setMoves] = useState<GameMoveSummary[]>(snapshot.moves);
   const [ratingDiffs, setRatingDiffs] = useState({
     whiteRatingDiff: snapshot.whiteRatingDiff,
@@ -77,6 +81,7 @@ export function useGameServerEvents(
         whiteTimeMs: payload.whiteTimeRemainingMs,
         blackTimeMs: payload.blackTimeRemainingMs,
       });
+      setFirstMoveDeadline(payload.firstMoveDeadline);
       setMoves((previous) => withMoveAdded(previous, payload.move));
       if (payload.fen === gameRef.current.fen) {
         return; // the echo of a move we already applied optimistically
@@ -98,6 +103,7 @@ export function useGameServerEvents(
         return;
       }
       setGameStatus(payload.status);
+      setFirstMoveDeadline(null);
       setResult(payload.result);
       setResultReason(payload.resultReason);
       setClocks({
@@ -155,6 +161,7 @@ export function useGameServerEvents(
     whiteTimeMs: clocks.whiteTimeMs,
     blackTimeMs: clocks.blackTimeMs,
     drawOfferedBy,
+    firstMoveDeadline,
     moves,
     ...ratingDiffs,
     clearDrawOffer,

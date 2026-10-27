@@ -26,6 +26,7 @@ export type UseOnlineChessGameResult = Omit<
   whiteTimeMs: number;
   blackTimeMs: number;
   drawOfferedBy: Color | null;
+  firstMoveDeadline: string | null;
   moves: GameMoveSummary[];
   whiteRatingDiff: number | null;
   blackRatingDiff: number | null;
@@ -56,6 +57,7 @@ export function useOnlineChessGame(
     whiteTimeMs,
     blackTimeMs,
     drawOfferedBy,
+    firstMoveDeadline,
     moves,
     whiteRatingDiff,
     blackRatingDiff,
@@ -124,6 +126,7 @@ export function useOnlineChessGame(
     whiteTimeMs,
     blackTimeMs,
     drawOfferedBy,
+    firstMoveDeadline,
     moves,
     whiteRatingDiff,
     blackRatingDiff,

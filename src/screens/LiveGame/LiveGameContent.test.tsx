@@ -133,6 +133,18 @@ describe('LiveGameContent', () => {
     });
   }
 
+  it('tells the side to move how long it has to play its first move', async () => {
+    const deadline = new Date(Date.now() + 25_500).toISOString();
+    const { screen } = await renderContent('w', {
+      firstMoveDeadline: deadline,
+    });
+
+    expect(
+      await screen.findByText('26 seconds to play the first move'),
+    ).toBeTruthy();
+    expect(screen.queryByTestId('first-move-countdown-b')).toBeNull();
+  });
+
   it('shows the time control and whether the game is rated in the header', async () => {
     const { screen } = await renderContent('w');
 

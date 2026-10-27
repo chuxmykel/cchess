@@ -7,6 +7,7 @@ import GameClock from '../GameClock';
 import { formatRating } from '../../utils/rating';
 
 export const PLAYER_BAR_HEIGHT = 38;
+const FIRST_MOVE_WARNING_SECONDS = 10;
 
 export interface PlayerBarProps {
   color: Color;
@@ -15,6 +16,7 @@ export interface PlayerBarProps {
   clock: GameClockResult;
   turn: Color;
   isGameOver: boolean;
+  firstMoveSecondsLeft?: number | null;
 }
 
 const PlayerBar: React.FC<PlayerBarProps> = ({
@@ -24,22 +26,39 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   clock,
   turn,
   isGameOver,
+  firstMoveSecondsLeft = null,
 }) => {
   const isWhite = color === 'w';
   const player = isWhite ? white : black;
+  const showsFirstMoveCountdown =
+    !isGameOver && turn === color && firstMoveSecondsLeft !== null;
 
   return (
     <View
       style={[styles.container, isGameOver && styles.faded]}
       testID={`player-bar-${color}`}
     >
-      <View style={styles.identity}>
-        <Text style={styles.name} numberOfLines={1}>
-          {player.displayName}
-        </Text>
-        {player.rating !== null && (
-          <Text style={styles.rating} testID={`player-rating-${color}`}>
-            {formatRating(player.rating, player.provisional)}
+      <View style={styles.details}>
+        <View style={styles.identity}>
+          <Text style={styles.name} numberOfLines={1}>
+            {player.displayName}
+          </Text>
+          {player.rating !== null && (
+            <Text style={styles.rating} testID={`player-rating-${color}`}>
+              {formatRating(player.rating, player.provisional)}
+            </Text>
+          )}
+        </View>
+        {showsFirstMoveCountdown && (
+          <Text
+            style={[
+              styles.firstMoveCountdown,
+              firstMoveSecondsLeft <= FIRST_MOVE_WARNING_SECONDS &&
+                styles.firstMoveWarning,
+            ]}
+            testID={`first-move-countdown-${color}`}
+          >
+            {`${firstMoveSecondsLeft} seconds to play the first move`}
           </Text>
         )}
       </View>
@@ -66,12 +85,22 @@ const styles = StyleSheet.create({
   faded: {
     opacity: 0.5,
   },
-  identity: {
+  details: {
     flexShrink: 1,
+    marginRight: 12,
+  },
+  identity: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 6,
-    marginRight: 12,
+  },
+  firstMoveCountdown: {
+    fontSize: 12,
+    color: '#888',
+  },
+  firstMoveWarning: {
+    color: '#d33',
+    fontWeight: '600',
   },
   name: {
     flexShrink: 1,

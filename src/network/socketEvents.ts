@@ -55,6 +55,7 @@ export type GameSnapshot = {
   blackTimeRemainingMs: number;
   lastMoveAt: string | null;
   drawOfferedBy: Color | null;
+  firstMoveDeadline: string | null;
   moves: GameMoveSummary[];
   createdAt: string;
   endedAt: string | null;
@@ -106,6 +107,7 @@ export type GameMovePushPayload = {
   turn: Color;
   whiteTimeRemainingMs: number;
   blackTimeRemainingMs: number;
+  firstMoveDeadline: string | null;
 };
 
 export type DrawOfferedPayload = {
