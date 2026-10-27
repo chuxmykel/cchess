@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { Pressable, View, Text, StyleSheet } from 'react-native';
 import { formatDistanceToNowStrict, min } from 'date-fns';
 
 import Avatar from '../../Avatar';
@@ -12,6 +12,7 @@ const ROW_ICON_SIZE = 26;
 
 interface GameRowProps {
   game: GameSummary;
+  onPress?: (game: GameSummary) => void;
 }
 
 function subtitleFor(game: GameSummary): string {
@@ -20,14 +21,24 @@ function subtitleFor(game: GameSummary): string {
   return game.status === 'aborted' ? `Aborted • ${timeAgo}` : timeAgo;
 }
 
-const GameRow: React.FC<GameRowProps> = ({ game }) => {
+const GameRow: React.FC<GameRowProps> = ({ game, onPress }) => {
   return (
-    <View style={styles.row} testID={`game-row-${game.id}`}>
+    <Pressable
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      onPress={onPress && (() => onPress(game))}
+      disabled={!onPress}
+      accessibilityRole="button"
+      testID={`game-row-${game.id}`}
+    >
       <View style={styles.typeIcon}>
         <GameTypeIcon type={game.gameType} size={ROW_ICON_SIZE} />
       </View>
       <View style={styles.avatar}>
-        <Avatar name={game.opponentDisplayName} size={36} />
+        <Avatar
+          name={game.opponentDisplayName}
+          color={game.opponentAvatarColor}
+          size={36}
+        />
       </View>
       <View style={styles.details}>
         <Text style={styles.name} numberOfLines={1}>
@@ -49,13 +60,16 @@ const GameRow: React.FC<GameRowProps> = ({ game }) => {
           <GameResultIcon result={game.result} size={ROW_ICON_SIZE} />
         )}
       </View>
-    </View>
+    </Pressable>
   );
 };
 
 export default GameRow;
 
 const styles = StyleSheet.create({
+  pressed: {
+    opacity: 0.6,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

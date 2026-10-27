@@ -9,10 +9,12 @@ const MAX_BADGE_COUNT = 9;
 
 interface GameToolbarProps {
   onOpenMenu: () => void;
-  onResign: () => void;
-  canResign: boolean;
-  onOpenChat: () => void;
-  unreadChatCount: number;
+  /** Leave out to hide the resign button, e.g. when watching. */
+  onResign?: () => void;
+  canResign?: boolean;
+  /** Leave out to hide the chat button. */
+  onOpenChat?: () => void;
+  unreadChatCount?: number;
   onPreviousMove: () => void;
   onNextMove: () => void;
   canGoToPreviousMove: boolean;
@@ -64,9 +66,9 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
 const GameToolbar: React.FC<GameToolbarProps> = ({
   onOpenMenu,
   onResign,
-  canResign,
+  canResign = false,
   onOpenChat,
-  unreadChatCount,
+  unreadChatCount = 0,
   onPreviousMove,
   onNextMove,
   canGoToPreviousMove,
@@ -79,20 +81,24 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
       onPress={onOpenMenu}
       testID="game-menu-button"
     />
-    <ToolbarButton
-      icon="flag-variant-outline"
-      label="Resign"
-      onPress={onResign}
-      disabled={!canResign}
-      testID="toolbar-resign-button"
-    />
-    <ToolbarButton
-      icon="chat-outline"
-      label={unreadChatCount > 0 ? `Chat, ${unreadChatCount} unread` : 'Chat'}
-      onPress={onOpenChat}
-      badgeCount={unreadChatCount}
-      testID="chat-button"
-    />
+    {onResign && (
+      <ToolbarButton
+        icon="flag-variant-outline"
+        label="Resign"
+        onPress={onResign}
+        disabled={!canResign}
+        testID="toolbar-resign-button"
+      />
+    )}
+    {onOpenChat && (
+      <ToolbarButton
+        icon="chat-outline"
+        label={unreadChatCount > 0 ? `Chat, ${unreadChatCount} unread` : 'Chat'}
+        onPress={onOpenChat}
+        badgeCount={unreadChatCount}
+        testID="chat-button"
+      />
+    )}
     <ToolbarButton
       icon="chevron-left"
       label="Previous move"

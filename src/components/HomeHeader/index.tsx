@@ -7,12 +7,15 @@ interface HomeHeaderProps {
   avatarName?: string;
   avatarColor?: string;
   onAvatarPress: () => void;
+  /** Shown beside the avatar, e.g. the notifications bell. */
+  accessory?: React.ReactNode;
 }
 
 const HomeHeader: React.FC<HomeHeaderProps> = ({
   avatarName,
   avatarColor,
   onAvatarPress,
+  accessory,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -22,9 +25,12 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({
         source={require('../../../assets/icon.png')} // FIXME: Change to actual logo when ready.
         style={styles.logo}
       />
-      <Pressable onPress={onAvatarPress} testID="avatar-button">
-        <Avatar name={avatarName} color={avatarColor} />
-      </Pressable>
+      <View style={styles.trailing}>
+        {accessory}
+        <Pressable onPress={onAvatarPress} testID="avatar-button">
+          <Avatar name={avatarName} color={avatarColor} />
+        </Pressable>
+      </View>
     </View>
   );
 };
@@ -38,6 +44,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 8,
+  },
+  trailing: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
   },
   logo: {
     width: 36,

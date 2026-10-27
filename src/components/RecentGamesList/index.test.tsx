@@ -20,6 +20,8 @@ describe('RecentGamesList', () => {
       <RecentGamesList
         recentGames={{ status: RECENT_GAMES_STATUS.LOADING }}
         onRetry={jest.fn()}
+        onPressGame={jest.fn()}
+        onSeeAll={jest.fn()}
       />,
     );
 
@@ -35,6 +37,8 @@ describe('RecentGamesList', () => {
       <RecentGamesList
         recentGames={{ status: RECENT_GAMES_STATUS.READY, games }}
         onRetry={jest.fn()}
+        onPressGame={jest.fn()}
+        onSeeAll={jest.fn()}
       />,
     );
 
@@ -53,6 +57,8 @@ describe('RecentGamesList', () => {
       <RecentGamesList
         recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [game] }}
         onRetry={jest.fn()}
+        onPressGame={jest.fn()}
+        onSeeAll={jest.fn()}
       />,
     );
 
@@ -68,6 +74,8 @@ describe('RecentGamesList', () => {
       <RecentGamesList
         recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [game] }}
         onRetry={jest.fn()}
+        onPressGame={jest.fn()}
+        onSeeAll={jest.fn()}
       />,
     );
 
@@ -87,6 +95,8 @@ describe('RecentGamesList', () => {
       <RecentGamesList
         recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [game] }}
         onRetry={jest.fn()}
+        onPressGame={jest.fn()}
+        onSeeAll={jest.fn()}
       />,
     );
 
@@ -103,6 +113,8 @@ describe('RecentGamesList', () => {
       <RecentGamesList
         recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [game] }}
         onRetry={jest.fn()}
+        onPressGame={jest.fn()}
+        onSeeAll={jest.fn()}
       />,
     );
 
@@ -123,6 +135,8 @@ describe('RecentGamesList', () => {
       <RecentGamesList
         recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [game] }}
         onRetry={jest.fn()}
+        onPressGame={jest.fn()}
+        onSeeAll={jest.fn()}
       />,
     );
 
@@ -136,6 +150,8 @@ describe('RecentGamesList', () => {
       <RecentGamesList
         recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [game] }}
         onRetry={jest.fn()}
+        onPressGame={jest.fn()}
+        onSeeAll={jest.fn()}
       />,
     );
 
@@ -147,6 +163,8 @@ describe('RecentGamesList', () => {
       <RecentGamesList
         recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [] }}
         onRetry={jest.fn()}
+        onPressGame={jest.fn()}
+        onSeeAll={jest.fn()}
       />,
     );
 
@@ -159,6 +177,8 @@ describe('RecentGamesList', () => {
       <RecentGamesList
         recentGames={{ status: RECENT_GAMES_STATUS.ERROR }}
         onRetry={onRetry}
+        onPressGame={jest.fn()}
+        onSeeAll={jest.fn()}
       />,
     );
 
@@ -172,10 +192,45 @@ describe('RecentGamesList', () => {
       <RecentGamesList
         recentGames={{ status: RECENT_GAMES_STATUS.LOADING }}
         onRetry={jest.fn()}
+        onPressGame={jest.fn()}
+        onSeeAll={jest.fn()}
       />,
     );
 
     expect(screen.getByText('Recent Games')).toBeTruthy();
     expect(screen.getByTestId('recent-games-see-all')).toBeTruthy();
+  });
+
+  it('opens a game when its row is tapped', async () => {
+    const game = makeGameSummary({ id: 'tapped' });
+    const onPressGame = jest.fn();
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [game] }}
+        onRetry={jest.fn()}
+        onPressGame={onPressGame}
+        onSeeAll={jest.fn()}
+      />,
+    );
+
+    await fireEvent.press(screen.getByTestId('game-row-tapped'));
+
+    expect(onPressGame).toHaveBeenCalledWith(game);
+  });
+
+  it('shows every game from See All', async () => {
+    const onSeeAll = jest.fn();
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [] }}
+        onRetry={jest.fn()}
+        onPressGame={jest.fn()}
+        onSeeAll={onSeeAll}
+      />,
+    );
+
+    await fireEvent.press(screen.getByTestId('recent-games-see-all'));
+
+    expect(onSeeAll).toHaveBeenCalled();
   });
 });

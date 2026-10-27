@@ -66,4 +66,22 @@ describe('ChatSheet', () => {
 
     expect(screen.getByTestId('chat-input').props.maxLength).toBe(140);
   });
+
+  it('shows the history but no way to send once the chat has closed', async () => {
+    const screen = await render(
+      withSafeArea(
+        <ChatSheet
+          visible
+          onClose={jest.fn()}
+          messages={[]}
+          myUserId="me"
+          onSend={jest.fn()}
+          isClosed
+        />,
+      ),
+    );
+
+    expect(screen.getByTestId('chat-closed')).toBeTruthy();
+    expect(screen.queryByTestId('chat-input')).toBeNull();
+  });
 });

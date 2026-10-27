@@ -24,6 +24,8 @@ interface ChatSheetProps {
   messages: ChatMessage[];
   myUserId: string;
   onSend: (text: string) => void;
+  /** No more messages can be sent; the history stays readable. */
+  isClosed?: boolean;
 }
 
 const ChatSheet: React.FC<ChatSheetProps> = ({
@@ -32,6 +34,7 @@ const ChatSheet: React.FC<ChatSheetProps> = ({
   messages,
   myUserId,
   onSend,
+  isClosed = false,
 }) => {
   const [draft, setDraft] = useState('');
   const messagesRef = useRef<ScrollViewInstance>(null);
@@ -74,34 +77,40 @@ const ChatSheet: React.FC<ChatSheetProps> = ({
             })
           )}
         </ScrollView>
-        <View style={styles.composer}>
-          <TextInput
-            style={styles.input}
-            value={draft}
-            onChangeText={setDraft}
-            onSubmitEditing={send}
-            placeholder="Message"
-            maxLength={MAX_CHAT_MESSAGE_LENGTH}
-            returnKeyType="send"
-            submitBehavior="submit"
-            testID="chat-input"
-          />
-          <Pressable
-            onPress={send}
-            disabled={!canSend}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Send"
-            accessibilityState={{ disabled: !canSend }}
-            testID="chat-send-button"
-          >
-            <Icon
-              name="send"
-              size={24}
-              color={canSend ? ACCENT_COLOR : '#c4c4c4'}
+        {isClosed ? (
+          <Text style={styles.closed} testID="chat-closed">
+            Chat is closed for this game
+          </Text>
+        ) : (
+          <View style={styles.composer}>
+            <TextInput
+              style={styles.input}
+              value={draft}
+              onChangeText={setDraft}
+              onSubmitEditing={send}
+              placeholder="Message"
+              maxLength={MAX_CHAT_MESSAGE_LENGTH}
+              returnKeyType="send"
+              submitBehavior="submit"
+              testID="chat-input"
             />
-          </Pressable>
-        </View>
+            <Pressable
+              onPress={send}
+              disabled={!canSend}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Send"
+              accessibilityState={{ disabled: !canSend }}
+              testID="chat-send-button"
+            >
+              <Icon
+                name="send"
+                size={24}
+                color={canSend ? ACCENT_COLOR : '#c4c4c4'}
+              />
+            </Pressable>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </BottomSheet>
   );
@@ -149,6 +158,12 @@ const styles = StyleSheet.create({
   theirsText: {
     color: '#222',
     fontSize: 15,
+  },
+  closed: {
+    marginTop: 8,
+    paddingVertical: 10,
+    textAlign: 'center',
+    color: MUTED_COLOR,
   },
   composer: {
     flexDirection: 'row',

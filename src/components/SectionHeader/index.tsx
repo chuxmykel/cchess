@@ -4,8 +4,8 @@ import Button from '../Button';
 
 interface SectionHeaderProps {
   title: string;
-  actionLabel: string;
-  onActionPress: () => void;
+  actionLabel?: string;
+  onActionPress?: () => void;
   testID?: string;
 }
 
@@ -18,12 +18,14 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
   return (
     <View style={styles.row}>
       <Text style={styles.title}>{title}</Text>
-      <Button
-        label={actionLabel}
-        onPress={onActionPress}
-        variant="text"
-        testID={testID}
-      />
+      {actionLabel && onActionPress && (
+        <Button
+          label={actionLabel}
+          onPress={onActionPress}
+          variant="text"
+          testID={testID}
+        />
+      )}
     </View>
   );
 };
@@ -35,6 +37,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    minHeight: 44,
     paddingHorizontal: 16,
     marginBottom: 12,
   },

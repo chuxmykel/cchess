@@ -1,8 +1,9 @@
 import { Color } from 'chess.js';
-import { View, Text, StyleSheet } from 'react-native';
+import { Pressable, View, Text, StyleSheet } from 'react-native';
 
 import Button from '../Button';
 import GameResultIcon from '../GameResultIcon';
+import Icon from '../Icon';
 import RatingDiff from '../RatingDiff';
 import { GameResult } from '../../domain/types';
 import {
@@ -12,12 +13,17 @@ import {
 
 interface GameOverCardProps {
   result: 'white' | 'black' | 'draw' | null;
-  myColor: Color;
+  /** Null when the viewer didn't play in the game. */
+  myColor: Color | null;
   resultReason: GameResultReason | null;
   myRating: number | null;
   myRatingDiff: number | null;
   onNewOpponent: () => void;
+  /** Shows a close button that hides the card. */
+  onDismiss?: () => void;
 }
+
+const WINNER_LABELS = { white: 'White won', black: 'Black won' } as const;
 
 // A null result (an aborted game) means neither side won
 // or lost. There's no GameResult for that, so it's handled as its own case
@@ -77,13 +83,30 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
   myRating,
   myRatingDiff,
   onNewOpponent,
+  onDismiss,
 }) => {
-  const myResult = toMyResult(result, myColor);
+  const myResult = myColor === null ? null : toMyResult(result, myColor);
   const wasAborted = resultReason === GAME_RESULT_REASON.ABORT;
 
   return (
     <View style={styles.card} testID="game-over-card">
-      {myResult ? (
+      {onDismiss && (
+        <Pressable
+          style={styles.dismiss}
+          onPress={onDismiss}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+          testID="game-over-dismiss"
+        >
+          <Icon name="close" size={20} color="#888" />
+        </Pressable>
+      )}
+      {myColor === null && result !== null ? (
+        <Text style={styles.title}>
+          {result === 'draw' ? 'Draw' : WINNER_LABELS[result]}
+        </Text>
+      ) : myResult ? (
         <>
           <GameResultIcon result={myResult} size={40} />
           <Text style={styles.title}>{RESULT_LABELS[myResult]}</Text>
@@ -131,6 +154,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+  },
+  dismiss: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
   },
   title: {
     fontSize: 22,

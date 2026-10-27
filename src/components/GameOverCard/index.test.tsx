@@ -134,4 +134,39 @@ describe('GameOverCard', () => {
       expect(screen.queryByTestId('game-over-rating')).toBeNull();
     });
   });
+
+  it('names the winner for someone who watched the game', async () => {
+    const screen = await render(
+      <GameOverCard
+        result="black"
+        myColor={null}
+        resultReason={GAME_RESULT_REASON.CHECKMATE}
+        myRating={null}
+        myRatingDiff={null}
+        onNewOpponent={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Black won')).toBeTruthy();
+    expect(screen.getByText(REASON_LABELS.checkmate)).toBeTruthy();
+  });
+
+  it('can be dismissed when given a way to close it', async () => {
+    const onDismiss = jest.fn();
+    const screen = await render(
+      <GameOverCard
+        result="draw"
+        myColor="w"
+        resultReason={GAME_RESULT_REASON.STALEMATE}
+        myRating={null}
+        myRatingDiff={null}
+        onNewOpponent={jest.fn()}
+        onDismiss={onDismiss}
+      />,
+    );
+
+    await fireEvent.press(screen.getByTestId('game-over-dismiss'));
+
+    expect(onDismiss).toHaveBeenCalled();
+  });
 });

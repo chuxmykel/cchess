@@ -85,4 +85,16 @@ describe('GameToolbar', () => {
       expect(screen.queryByTestId('chat-button-badge')).toBeNull();
     });
   });
+
+  it('leaves out resign and chat when they have no handler', async () => {
+    const { screenPromise } = renderToolbar({
+      onResign: undefined,
+      onOpenChat: undefined,
+    });
+    const screen = await screenPromise;
+
+    expect(screen.queryByTestId('toolbar-resign-button')).toBeNull();
+    expect(screen.queryByTestId('chat-button')).toBeNull();
+    expect(screen.getByTestId('previous-move-button')).toBeTruthy();
+  });
 });
