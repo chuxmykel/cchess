@@ -157,11 +157,12 @@ resign or abort from the app (see `examples/resign.yaml` /
   (301, 817).
 - **Home**: `avatar-button` (header, opens Profile), `recent-games-loading`,
   `game-row-<gameId>` (opens the game viewer), `recent-games-retry`,
-  `recent-games-see-all` (the full list), `recent-games-empty`. Guests see `sign-in-prompt`
-  (with `sign-in-button` / `create-account-button`) where signed-in
-  players see Friends: `friends-see-all`, `friends-empty` with its
-  `add-friends-prompt` button (no friends yet), and per friend `friend-card-<userId>` (opens their
-  profile) with `friend-online-<id>`, `friend-unread-<id>`,
+  `recent-games-see-all` (the full list), `recent-games-empty`. Guests
+  see `sign-in-prompt` (with `sign-in-button` /
+  `create-account-button`) where signed-in players see Friends:
+  `friends-see-all`, `friends-empty` with its `add-friends-prompt`
+  button (no friends yet), and per friend `friend-card-<userId>` (opens
+  their profile) with `friend-online-<id>`, `friend-unread-<id>`,
   `friend-watch-<id>` (📺, while they're playing) and
   `friend-menu-button-<id>` → `friend-message-<id>` /
   `friend-challenge-<id>`. In the header, `notifications-button` (🔔)
@@ -174,8 +175,10 @@ resign or abort from the app (see `examples/resign.yaml` /
 - **Challenge sheet**: `challenge-sheet`, `challenge-time-<label>` (e.g.
   `challenge-time-3+2`), `challenge-rated-switch`,
   `send-challenge-button`, `challenge-error`.
-- **Friends**: `friends-screen`, `add-friend-input`, `add-friend-button`,
-  `add-friend-error`, tabs `tab-online` / `tab-all` / `tab-requests`,
+- **Friends**: `friends-screen`, the player search `user-search-input`
+  (with `user-search-clear`) and its dropdown `user-search-results`
+  holding `user-search-result-<username>` (opens their profile, where
+  `profile-add-friend` sends a request) or `user-search-empty`, tabs `tab-online` / `tab-all` / `tab-requests`,
   `friend-row-<id>` with its ⋯ `friend-row-menu-<id>`
   (`remove-friend-<id>` in it), and the request cards above.
 - **A player's profile**: `user-profile-screen`, `profile-presence`,
