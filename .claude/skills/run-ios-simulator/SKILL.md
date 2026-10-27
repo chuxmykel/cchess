@@ -182,8 +182,9 @@ resign or abort from the app (see `examples/resign.yaml` /
   `friend-row-<id>` with its ⋯ `friend-row-menu-<id>`
   (`remove-friend-<id>` in it), and the request cards above.
 - **A player's profile**: `user-profile-screen`, `profile-presence`,
-  `profile-totals`, `profile-score`, `profile-watch`,
-  `profile-challenge`, `profile-message`, `profile-remove-friend` /
+  `profile-totals`, `profile-score`, `profile-watch` (disabled unless
+  they're in a game) and `profile-challenge` for anyone, then for
+  friends `profile-message` and `profile-remove-friend`, otherwise
   `profile-add-friend` / `profile-cancel-request` /
   `profile-accept-request`, `activity-list`, `profile-games-see-all`.
 - **Conversation**: `conversation-screen`, `conversation-presence`,
