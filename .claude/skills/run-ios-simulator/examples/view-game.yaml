@@ -1,0 +1,19 @@
+# From Home: opens the newest recent game in the game viewer, dismisses
+# the result card, and steps back one move.
+#
+# Run with: maestro --device <UDID> test view-game.yaml
+appId: host.exp.Exponent
+---
+- tapOn:
+    id: "game-row-.*"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: "game-viewer"
+    timeout: 8000
+- tapOn:
+    id: "game-over-dismiss"
+- tapOn:
+    id: "previous-move-button"
+- assertNotVisible:
+    id: "game-over-card"

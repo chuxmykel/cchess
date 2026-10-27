@@ -11,7 +11,13 @@ What follows is only what's specific to cchess: the project path, its
 testIDs, how to get from launch into a live game (which now needs a
 backend and an opponent), and known-good example flows.
 
-**Last verified: 2026-10-27.** Checked the Phase 2 additions by hand
+**Last verified: 2026-10-27.** Ran the friends features end to end with
+`scripts/opponent.js --friend`: a friend request accepted from Home, the
+friend card's live status, messages both ways and clearing them, the
+profile, challenges both ways into a game, captured pieces, the game
+viewer (result card, stepping back, post-game chat), watching a friend's
+game, and the full game list - the new example flows below are the ones
+used. Earlier that day: checked the Phase 2 additions by hand
 with `scripts/opponent.js` (`--chat` included): lobby stats on the
 waiting card, the first-move countdown and abort, the opponent's online
 dot, chat both ways, and bookmarking from the ⋯ menu. `drag-move-black.yaml`
@@ -94,6 +100,14 @@ nohup npm run opponent --silent -- --color w > /tmp/opponent.log 2>&1 &
   message with "You said: ...".
 - `--idle` - the bot never moves, so the game is aborted once its
   first-move deadline passes (30s).
+- `--friend <username>` - friend mode: instead of seeking, the bot
+  makes sure it's friends with that account (accepting its request, or
+  sending one the app accepts), answers its direct messages with "You
+  said: ...", and accepts its challenges and plays them. It keeps
+  running between games - stop it by its PID.
+- `--challenge` (with `--friend`) - the bot also challenges the account
+  at `--time`, rated unless `--casual`. The challenge expires after 2
+  minutes; start the bot again for another.
 - `--color w|b` - the color the **bot** must get. The server assigns
   colors at random (a coin flip in `cchess-be`'s matchmaking service), so
   this can't request one. If the bot gets the other color it aborts and
@@ -114,7 +128,8 @@ for i in 1 2 3 4 5 6 7 8; do
 done
 ```
 
-**Stopping the opponent mid-game** (`pkill -f scripts/opponent.js`) makes
+**Stopping the opponent mid-game** (`kill <pid>` - save `$!` when you
+start it; `pkill -f` is blocked here) makes
 the server end the game by abandonment a few moments later, and the app
 shows a "You won - By Abandonment" banner. To end a game deliberately,
 resign or abort from the app (see `examples/resign.yaml` /
@@ -141,9 +156,44 @@ resign or abort from the app (see `examples/resign.yaml` /
   labels aren't matched by text - tap Home at (100, 817) and Profile at
   (301, 817).
 - **Home**: `avatar-button` (header, opens Profile), `recent-games-loading`,
-  `game-row-<gameId>`, `recent-games-retry`. Guests see `sign-in-prompt`
+  `game-row-<gameId>` (opens the game viewer), `recent-games-retry`,
+  `recent-games-see-all` (the full list). Guests see `sign-in-prompt`
   (with `sign-in-button` / `create-account-button`) where signed-in
-  players see Friends.
+  players see Friends: `friends-see-all`, `add-friends-prompt` (no
+  friends yet), and per friend `friend-card-<userId>` (opens their
+  profile) with `friend-online-<id>`, `friend-unread-<id>`,
+  `friend-watch-<id>` (📺, while they're playing) and
+  `friend-menu-button-<id>` → `friend-message-<id>` /
+  `friend-challenge-<id>`. In the header, `notifications-button` (🔔)
+  with `notifications-badge` (incoming challenges plus friend requests)
+  opens `notifications-menu` (or `notifications-empty`), holding
+  `challenge-card-<id>` with `accept-challenge-<id>` (✓) /
+  `decline-challenge-<id>` (✕) (or `cancel-challenge-<id>` for your
+  own), and `friend-request-<id>` with `accept-friend-<id>` /
+  `decline-friend-<id>`. Tap outside the popup to close it.
+- **Challenge sheet**: `challenge-sheet`, `challenge-time-<label>` (e.g.
+  `challenge-time-3+2`), `challenge-rated-switch`,
+  `send-challenge-button`, `challenge-error`.
+- **Friends**: `friends-screen`, `add-friend-input`, `add-friend-button`,
+  `add-friend-error`, tabs `tab-online` / `tab-all` / `tab-requests`,
+  `friend-row-<id>` with its ⋯ `friend-row-menu-<id>`
+  (`remove-friend-<id>` in it), and the request cards above.
+- **A player's profile**: `user-profile-screen`, `profile-presence`,
+  `profile-totals`, `profile-score`, `profile-watch`,
+  `profile-challenge`, `profile-message`, `profile-remove-friend` /
+  `profile-add-friend` / `profile-cancel-request` /
+  `profile-accept-request`, `activity-list`, `profile-games-see-all`.
+- **Conversation**: `conversation-screen`, `conversation-presence`,
+  `message-list`, `message-<id>`, `load-older-messages`,
+  `message-input`, `send-message-button`, and
+  `clear-conversation-button` (🗑, in the header; confirm "Delete").
+- **Game list**: `games-list`, `game-row-<gameId>`, `games-error`.
+- **Game viewer**: `game-viewer`, `game-header-subtitle` ("2 minutes
+  ago", or "Playing now" while watching), the LiveGame header, move
+  list, player bars and toolbar testIDs below (no resign; no chat unless
+  it's your game), `game-over-dismiss` on the result card,
+  `new-opponent-action` in ☰, `chat-closed` once the chat's 14 days are
+  up, and `game-viewer-error`.
 - **Profile**: `profile-screen`, `rating-<category>`, `sign-out-button`;
   guests get the same `sign-in-prompt`.
 - **Sign in / Create account**: `sign-in-screen` / `create-account-screen`,
@@ -174,7 +224,10 @@ resign or abort from the app (see `examples/resign.yaml` /
   - Player bars: `player-bar-w` / `player-bar-b`, with
     `presence-<color>` (the opponent's dot, labelled "Online" or
     "Offline") and `first-move-countdown-<color>` ("N seconds to play the
-    first move", on the side to move until both sides have moved).
+    first move", on the side to move until both sides have moved). In
+    its place once both have moved: `captured-pieces-<color>`, with
+    `captured-piece-<color>` per piece and `material-score-<color>`
+    ("+N") for the side ahead.
   - Earlier positions: `earlier-position` wraps a `static-chessboard`
     drawn over the live board while browsing. It stays mounted but hidden
     (and out of the accessibility tree) while live, so `piece-<square>`
@@ -264,6 +317,18 @@ Account flows (no opponent needed, just the backend):
 
 Run them as create-account → sign-out → sign-in with the same USERNAME.
 
+Friends flows (signed in as `glicko_65163`, with the bot in friend mode -
+see each file's header for how to start it):
+
+- `accept-friend-request.yaml` - accepts the bot's request from Home.
+- `send-message.yaml` - Message from the friend card, and the bot's
+  reply.
+- `accept-challenge-and-play.yaml` - accepts the bot's challenge and
+  plays two moves as whichever color the app gets.
+- `view-game.yaml` - opens the newest recent game in the viewer and
+  steps back a move.
+- `watch-friend.yaml` - watches the friend's game from their card.
+
 ## Gotchas
 
 - **Each side has 30 seconds for its first move, or the game is
@@ -271,6 +336,10 @@ Run them as create-account → sign-out → sign-in with the same USERNAME.
   up, so a chain of separate runs before the app's first move can use up
   the time - the game then shows "Game aborted". Play the first move in
   the same flow that waits for the game, or straight after it.
+- **The result card covers the middle of the board.** Once a game ends
+  (an abort included), a tap meant for a square like e4 lands on "New
+  opponent" and starts a seek - check for `game-over-card` before tapping
+  squares.
 - **"Save Password?" can appear after `sign-in.yaml` finishes**, over
   Home, so the next tap misses. Tap "Not Now" at (127, 547).
 - **Only the hardware keyboard is used on this simulator**, so no

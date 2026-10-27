@@ -1,0 +1,26 @@
+# Opens Home's 🔔 notifications, accepts a friend request, then waits
+# for the new friend's card. Start the bot in friend mode first (it sends the request):
+#   nohup npm run opponent --silent -- --friend glicko_65163 > /tmp/friend.log 2>&1 &
+#
+# Run with: maestro --device <UDID> test accept-friend-request.yaml
+appId: host.exp.Exponent
+---
+- extendedWaitUntil:
+    visible:
+      id: "notifications-badge"
+    timeout: 10000
+- tapOn:
+    id: "notifications-button"
+- extendedWaitUntil:
+    visible:
+      id: "accept-friend-.*"
+    timeout: 5000
+- tapOn:
+    id: "accept-friend-.*"
+# Taps outside the popup to close it.
+- tapOn:
+    point: "50%,90%"
+- extendedWaitUntil:
+    visible:
+      id: "friend-card-.*"
+    timeout: 8000

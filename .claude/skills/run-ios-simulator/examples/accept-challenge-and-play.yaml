@@ -1,0 +1,74 @@
+# On Home: opens the 🔔 notifications, accepts the friend-mode bot's
+# challenge and plays two moves in
+# the same run, whichever color the app gets - separate runs can't make
+# the 30-second first-move deadline. Start the bot so it challenges:
+#   nohup npm run opponent --silent -- --friend glicko_65163 --challenge --delay 300 > /tmp/friend.log 2>&1 &
+# The app is black when the bot (white) has already moved by the time the
+# board shows.
+#
+# Run with: maestro --device <UDID> test accept-challenge-and-play.yaml
+appId: host.exp.Exponent
+---
+- extendedWaitUntil:
+    visible:
+      id: "notifications-badge"
+    timeout: 30000
+- tapOn:
+    id: "notifications-button"
+- extendedWaitUntil:
+    visible:
+      id: "accept-challenge-.*"
+    timeout: 5000
+- tapOn:
+    id: "accept-challenge-.*"
+- extendedWaitUntil:
+    visible:
+      id: "game-toolbar"
+    timeout: 10000
+- extendedWaitUntil:
+    visible:
+      id: "move-1"
+    timeout: 2500
+    optional: true
+- runFlow:
+    when:
+      visible:
+        id: "move-1"
+    commands:
+      - tapOn:
+          id: "square-e7"
+      - tapOn:
+          id: "square-e5"
+      - extendedWaitUntil:
+          visible:
+            id: "move-3"
+          timeout: 8000
+      - tapOn:
+          id: "square-d8"
+      - tapOn:
+          id: "square-h4"
+      - extendedWaitUntil:
+          visible:
+            id: "move-5"
+          timeout: 8000
+- runFlow:
+    when:
+      notVisible:
+        id: "move-1"
+    commands:
+      - tapOn:
+          id: "square-e2"
+      - tapOn:
+          id: "square-e4"
+      - extendedWaitUntil:
+          visible:
+            id: "move-2"
+          timeout: 8000
+      - tapOn:
+          id: "square-d1"
+      - tapOn:
+          id: "square-h5"
+      - extendedWaitUntil:
+          visible:
+            id: "move-4"
+          timeout: 8000
