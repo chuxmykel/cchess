@@ -139,7 +139,9 @@ describe('LiveGameContent', () => {
   }
 
   it('tells the side to move how long it has to play its first move', async () => {
-    const deadline = new Date(Date.now() + 25_500).toISOString();
+    const now = Date.parse('2026-10-27T12:00:00Z');
+    jest.spyOn(Date, 'now').mockReturnValue(now);
+    const deadline = new Date(now + 25_500).toISOString();
     const { screen } = await renderContent('w', {
       firstMoveDeadline: deadline,
     });
