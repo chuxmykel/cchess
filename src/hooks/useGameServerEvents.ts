@@ -22,6 +22,8 @@ export type GameServerEventsResult = {
   blackTimeMs: number;
   drawOfferedBy: Color | null;
   moves: GameMoveSummary[];
+  whiteRatingDiff: number | null;
+  blackRatingDiff: number | null;
   clearDrawOffer: () => void;
 };
 
@@ -56,6 +58,10 @@ export function useGameServerEvents(
   });
   const [drawOfferedBy, setDrawOfferedBy] = useState(snapshot.drawOfferedBy);
   const [moves, setMoves] = useState<GameMoveSummary[]>(snapshot.moves);
+  const [ratingDiffs, setRatingDiffs] = useState({
+    whiteRatingDiff: snapshot.whiteRatingDiff,
+    blackRatingDiff: snapshot.blackRatingDiff,
+  });
 
   const gameRef = useRef(game);
   useLayoutEffect(() => {
@@ -97,6 +103,10 @@ export function useGameServerEvents(
       setClocks({
         whiteTimeMs: payload.whiteTimeRemainingMs,
         blackTimeMs: payload.blackTimeRemainingMs,
+      });
+      setRatingDiffs({
+        whiteRatingDiff: payload.whiteRatingDiff,
+        blackRatingDiff: payload.blackRatingDiff,
       });
     }
 
@@ -146,6 +156,7 @@ export function useGameServerEvents(
     blackTimeMs: clocks.blackTimeMs,
     drawOfferedBy,
     moves,
+    ...ratingDiffs,
     clearDrawOffer,
   };
 }

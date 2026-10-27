@@ -10,6 +10,8 @@ describe('GameOverCard', () => {
         result="white"
         myColor="w"
         resultReason={GAME_RESULT_REASON.RESIGNATION}
+        myRating={null}
+        myRatingDiff={null}
         onNewOpponent={jest.fn()}
       />,
     );
@@ -26,6 +28,8 @@ describe('GameOverCard', () => {
         result="white"
         myColor="b"
         resultReason={GAME_RESULT_REASON.RESIGNATION}
+        myRating={null}
+        myRatingDiff={null}
         onNewOpponent={jest.fn()}
       />,
     );
@@ -39,6 +43,8 @@ describe('GameOverCard', () => {
         result="draw"
         myColor="w"
         resultReason={GAME_RESULT_REASON.DRAW_AGREEMENT}
+        myRating={null}
+        myRatingDiff={null}
         onNewOpponent={jest.fn()}
       />,
     );
@@ -55,6 +61,8 @@ describe('GameOverCard', () => {
         result={null}
         myColor="w"
         resultReason={GAME_RESULT_REASON.ABORT}
+        myRating={null}
+        myRatingDiff={null}
         onNewOpponent={jest.fn()}
       />,
     );
@@ -72,6 +80,8 @@ describe('GameOverCard', () => {
         result="draw"
         myColor="w"
         resultReason={null}
+        myRating={null}
+        myRatingDiff={null}
         onNewOpponent={onNewOpponent}
       />,
     );
@@ -79,5 +89,49 @@ describe('GameOverCard', () => {
     await fireEvent.press(screen.getByTestId('new-opponent-button'));
 
     expect(onNewOpponent).toHaveBeenCalledTimes(1);
+  });
+
+  describe('rating', () => {
+    function renderFinishedRatedGame(myRatingDiff: number) {
+      return render(
+        <GameOverCard
+          result="white"
+          myColor="w"
+          resultReason={GAME_RESULT_REASON.CHECKMATE}
+          myRating={1520}
+          myRatingDiff={myRatingDiff}
+          onNewOpponent={jest.fn()}
+        />,
+      );
+    }
+
+    it('shows the new rating and the gain after a rated win', async () => {
+      const screen = await renderFinishedRatedGame(12);
+
+      expect(screen.getByText('Rating 1532')).toBeTruthy();
+      expect(screen.getByText('+12')).toBeTruthy();
+    });
+
+    it('shows a loss with a minus sign', async () => {
+      const screen = await renderFinishedRatedGame(-12);
+
+      expect(screen.getByText('Rating 1508')).toBeTruthy();
+      expect(screen.getByText('\u221212')).toBeTruthy();
+    });
+
+    it("shows no rating for a game that didn't change it", async () => {
+      const screen = await render(
+        <GameOverCard
+          result="white"
+          myColor="w"
+          resultReason={GAME_RESULT_REASON.CHECKMATE}
+          myRating={1520}
+          myRatingDiff={null}
+          onNewOpponent={jest.fn()}
+        />,
+      );
+
+      expect(screen.queryByTestId('game-over-rating')).toBeNull();
+    });
   });
 });

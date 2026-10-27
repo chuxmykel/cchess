@@ -13,6 +13,8 @@ export function makeGameSummary(
     result: 'win',
     opponentUsername: 'judit',
     opponentDisplayName: 'Judit Polgar',
+    opponentRating: null,
+    ratingDiff: null,
     playedAsWhite: true,
     createdAt: '2026-10-26T10:00:00.000Z',
     endedAt: '2026-10-26T10:08:00.000Z',

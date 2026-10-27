@@ -13,6 +13,7 @@ export type GameUserSummary = {
   username: string;
   displayName: string;
   avatarColor: string;
+  rating: number | null;
 };
 
 export type GameMoveSummary = {
@@ -36,6 +37,8 @@ export type GameSnapshot = {
   incrementSeconds: number;
   gameType: GameType;
   rated: boolean;
+  whiteRatingDiff: number | null;
+  blackRatingDiff: number | null;
   status: 'active' | 'completed' | 'aborted';
   result: 'white' | 'black' | 'draw' | null;
   resultReason: GameResultReason | null;

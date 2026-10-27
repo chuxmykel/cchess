@@ -27,6 +27,8 @@ export type UseOnlineChessGameResult = Omit<
   blackTimeMs: number;
   drawOfferedBy: Color | null;
   moves: GameMoveSummary[];
+  whiteRatingDiff: number | null;
+  blackRatingDiff: number | null;
   canAbort: boolean;
   attemptMove: (from: Square, to: Square) => MoveResult;
   handleSquareTap: (square: Square) => void;
@@ -55,6 +57,8 @@ export function useOnlineChessGame(
     blackTimeMs,
     drawOfferedBy,
     moves,
+    whiteRatingDiff,
+    blackRatingDiff,
     clearDrawOffer,
   } = useGameServerEvents(socket, gameId, snapshot, game, onError);
 
@@ -121,6 +125,8 @@ export function useOnlineChessGame(
     blackTimeMs,
     drawOfferedBy,
     moves,
+    whiteRatingDiff,
+    blackRatingDiff,
     canAbort,
     attemptMove,
     handleSquareTap,

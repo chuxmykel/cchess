@@ -62,6 +62,38 @@ describe('RecentGamesList', () => {
     expect(row.getByTestId('game-result-icon-loss')).toBeTruthy();
   });
 
+  it("shows the opponent's rating and what the game did to mine", async () => {
+    const game = makeGameSummary({ opponentRating: 1529, ratingDiff: -8 });
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [game] }}
+        onRetry={jest.fn()}
+      />,
+    );
+
+    const row = within(screen.getByTestId(`game-row-${game.id}`));
+    expect(row.getByText('1529', { exact: false })).toBeTruthy();
+    expect(row.getByTestId('game-row-rating-diff')).toHaveTextContent(
+      '\u22128',
+    );
+  });
+
+  it('shows neither for a game without ratings', async () => {
+    const game = makeGameSummary();
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [game] }}
+        onRetry={jest.fn()}
+      />,
+    );
+
+    const row = within(screen.getByTestId(`game-row-${game.id}`));
+    expect(row.getByText('Judit Polgar')).toHaveTextContent('Judit Polgar', {
+      exact: true,
+    });
+    expect(row.queryByTestId('game-row-rating-diff')).toBeNull();
+  });
+
   it('marks an aborted game, which has no result', async () => {
     const game = makeGameSummary({
       status: 'aborted',

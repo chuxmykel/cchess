@@ -10,12 +10,14 @@ describe('PlayerBar', () => {
     username: 'guest-white',
     displayName: 'Guest White',
     avatarColor: '#fff',
+    rating: 1520,
   };
   const black: GameUserSummary = {
     id: 'black-id',
     username: 'guest-black',
     displayName: 'Guest Black',
     avatarColor: '#000',
+    rating: null,
   };
   const clock = { whiteMs: 65000, blackMs: 30000 };
 
@@ -78,5 +80,17 @@ describe('PlayerBar', () => {
 
     const over = await renderBar('w', { isGameOver: true });
     expect(over.getByTestId('player-bar-w')).toHaveStyle({ opacity: 0.5 });
+  });
+
+  it("shows a player's rating beside their name", async () => {
+    const screen = await renderBar('w');
+
+    expect(screen.getByTestId('player-rating-w')).toHaveTextContent('1520');
+  });
+
+  it("shows no rating for a guest, who doesn't have one", async () => {
+    const screen = await renderBar('b');
+
+    expect(screen.queryByTestId('player-rating-b')).toBeNull();
   });
 });
