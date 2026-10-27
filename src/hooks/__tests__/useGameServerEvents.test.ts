@@ -166,6 +166,50 @@ describe('useGameServerEvents', () => {
     expect(result.current.blackTimeMs).toBe(300000);
   });
 
+  it('follows the first-move deadline from the snapshot, moves and game over', async () => {
+    const { socket, trigger } = createFakeSocket();
+    const snapshot = makeGameSnapshot({
+      firstMoveDeadline: '2026-10-27T10:00:30.000Z',
+    });
+    const { result } = await renderHook(() =>
+      useGameServerEvents(socket, GAME_ID, snapshot, makeFakeGame()),
+    );
+    expect(result.current.firstMoveDeadline).toBe('2026-10-27T10:00:30.000Z');
+
+    await act(() => {
+      trigger('game:move', {
+        gameId: GAME_ID,
+        move: {
+          ply: 1,
+          from: 'e7',
+          to: 'e5',
+          piece: 'p',
+          color: 'b',
+          san: 'e5',
+          captured: null,
+          promotion: null,
+          fenAfter: OPPONENT_MOVE_FEN,
+          clockAfterMs: 300000,
+        },
+        fen: OPPONENT_MOVE_FEN,
+        turn: 'w',
+        whiteTimeRemainingMs: 300000,
+        blackTimeRemainingMs: 300000,
+        firstMoveDeadline: '2026-10-27T10:00:40.000Z',
+      });
+    });
+    expect(result.current.firstMoveDeadline).toBe('2026-10-27T10:00:40.000Z');
+
+    await act(() => {
+      trigger('game:over', {
+        ...snapshot,
+        status: 'aborted',
+        resultReason: GAME_RESULT_REASON.ABORT,
+      });
+    });
+    expect(result.current.firstMoveDeadline).toBeNull();
+  });
+
   it('updates status/result/reason and clocks on game:over', async () => {
     const { socket, trigger } = createFakeSocket();
     const snapshot = makeGameSnapshot();

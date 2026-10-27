@@ -14,13 +14,16 @@ import GameHeader from '../../components/GameHeader';
 import GameToolbar from '../../components/GameToolbar';
 import BottomBar from '../../components/BottomBar';
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
+import ChatSheet from '../../components/ChatSheet';
 import DrawOfferPrompt from '../../components/DrawOfferPrompt';
 import GameOverCard from '../../components/GameOverCard';
 import { useGameScreenGestureLock } from '../../hooks/useGameScreenGestureLock';
 import { useGameClock } from '../../hooks/useGameClock';
+import { useFirstMoveCountdown } from '../../hooks/useFirstMoveCountdown';
 import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useMoveNavigation } from '../../hooks/useMoveNavigation';
 import { useGameShare } from '../../hooks/useGameShare';
+import { useGameBookmark } from '../../hooks/useGameBookmark';
 import { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
 import { useOnlineChessGameContext } from '../../context/LiveGame/OnlineChessGameContext';
@@ -104,10 +107,13 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     whiteTimeMs,
     blackTimeMs,
     drawOfferedBy,
+    firstMoveDeadline,
     moves,
     whiteRatingDiff,
     blackRatingDiff,
     canAbort,
+    isOpponentOnline,
+    chat,
     resign,
     offerDraw,
     respondToDraw,
@@ -117,10 +123,20 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   const { orientation, flip } = useBoardOrientation(myColor);
   const moveNavigation = useMoveNavigation(moves);
   const shareGame = useGameShare(snapshot.id, onError);
+  const { isBookmarked, toggleBookmark } = useGameBookmark(
+    snapshot.id,
+    onError,
+  );
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useGameScreenGestureLock(navigation, isGameOver);
-  const clock = useGameClock(whiteTimeMs, blackTimeMs, turn, !isGameOver);
+  const clock = useGameClock(
+    whiteTimeMs,
+    blackTimeMs,
+    turn,
+    !isGameOver && !firstMoveDeadline,
+  );
+  const firstMoveSecondsLeft = useFirstMoveCountdown(firstMoveDeadline);
 
   const timeControl = findTimeControl(
     snapshot.minutes,
@@ -173,6 +189,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     clock,
     turn,
     isGameOver,
+    firstMoveSecondsLeft,
   };
 
   return (
@@ -188,6 +205,12 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
             onPress: shareGame,
             testID: 'share-game-item',
           },
+          {
+            label: isBookmarked ? 'Remove bookmark' : 'Bookmark this game',
+            icon: isBookmarked ? 'bookmark' : 'bookmark-outline',
+            onPress: toggleBookmark,
+            testID: 'bookmark-game-item',
+          },
         ]}
       />
 
@@ -198,7 +221,11 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
       />
 
       <View style={styles.board} testID="game-board-area">
-        <PlayerBar color={topColor} {...sharedPlayerBarProps} />
+        <PlayerBar
+          color={topColor}
+          isOnline={topColor === myColor ? undefined : isOpponentOnline}
+          {...sharedPlayerBarProps}
+        />
 
         <View>
           <Chessboard
@@ -234,7 +261,11 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
           )}
         </View>
 
-        <PlayerBar color={orientation} {...sharedPlayerBarProps} />
+        <PlayerBar
+          color={orientation}
+          isOnline={orientation === myColor ? undefined : isOpponentOnline}
+          {...sharedPlayerBarProps}
+        />
       </View>
 
       {!isGameOver && drawOfferedByOpponent && (
@@ -249,6 +280,8 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
           onOpenMenu={() => setIsMenuOpen(true)}
           onResign={confirmResign}
           canResign={!isGameOver && !canAbort}
+          onOpenChat={chat.open}
+          unreadChatCount={chat.unreadCount}
           onPreviousMove={moveNavigation.back}
           onNextMove={moveNavigation.forward}
           canGoToPreviousMove={moveNavigation.canGoBack}
@@ -260,6 +293,14 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         visible={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         actions={menuActions}
+      />
+
+      <ChatSheet
+        visible={chat.isOpen}
+        onClose={chat.close}
+        messages={chat.messages}
+        myUserId={chat.myUserId}
+        onSend={chat.send}
       />
     </View>
   );

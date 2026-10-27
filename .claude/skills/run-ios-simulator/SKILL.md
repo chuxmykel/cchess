@@ -11,7 +11,12 @@ What follows is only what's specific to cchess: the project path, its
 testIDs, how to get from launch into a live game (which now needs a
 backend and an opponent), and known-good example flows.
 
-**Last verified: 2026-10-26.** Added and ran the account flows (create
+**Last verified: 2026-10-27.** Checked the Phase 2 additions by hand
+with `scripts/opponent.js` (`--chat` included): lobby stats on the
+waiting card, the first-move countdown and abort, the opponent's online
+dot, chat both ways, and bookmarking from the ⋯ menu. `drag-move-black.yaml`
+and `resign.yaml` still pass unchanged - the player bars kept their
+height, so the drag coordinates hold. On 2026-10-26: added and ran the account flows (create
 account, sign out, sign in) against a local `cchess-be`, after Home and
 Profile gained a guest sign-in prompt and Recent Games started loading
 from the server. Before that, re-ran every game example flow below on
@@ -85,6 +90,10 @@ nohup npm run opponent --silent -- --color w > /tmp/opponent.log 2>&1 &
 - `--time 3+2` - seek a different time control (must match the app's
   selection).
 - `--delay 300` - ms before each bot move (default 800).
+- `--chat` - the bot says "Good luck!" once matched and answers each
+  message with "You said: ...".
+- `--idle` - the bot never moves, so the game is aborted once its
+  first-move deadline passes (30s).
 - `--color w|b` - the color the **bot** must get. The server assigns
   colors at random (a coin flip in `cchess-be`'s matchmaking service), so
   this can't request one. If the bot gets the other color it aborts and
@@ -150,22 +159,32 @@ resign or abort from the app (see `examples/resign.yaml` /
   `src/components/ChessBoard/`. These are always named by the real
   square, whichever way the board faces.
 - **LiveGame while seeking**: `seeking-content`, `seek-card` (with
-  `seek-card-rating-range` for signed-in players),
+  `seek-card-rating-range` for signed-in players, and
+  `seek-card-lobby-stats` - players online, games in play - once the
+  server sends them),
   `matchmaking-cancel-button` (centered in the bottom bar, where the
   game's toolbar sits).
 - **LiveGame**:
-  - Header: `game-header`, `game-header-menu` (⋯), `share-game-item`
-    (in that menu), `game-header-back` (only once the game is over).
+  - Header: `game-header`, `game-header-menu` (⋯), with
+    `share-game-item` and `bookmark-game-item` ("Bookmark this game" /
+    "Remove bookmark") in that menu - tap them by testID, their text
+    doesn't match - and `game-header-back` (only once the game is over).
   - Move list (under the header): `move-list`, `move-<ply>` (tap to view
     that position; the current one is `selected`).
-  - Player bars: `player-bar-w` / `player-bar-b`.
+  - Player bars: `player-bar-w` / `player-bar-b`, with
+    `presence-<color>` (the opponent's dot, labelled "Online" or
+    "Offline") and `first-move-countdown-<color>` ("N seconds to play the
+    first move", on the side to move until both sides have moved).
   - Earlier positions: `earlier-position` wraps a `static-chessboard`
     drawn over the live board while browsing. It stays mounted but hidden
     (and out of the accessibility tree) while live, so `piece-<square>`
     always resolves to the visible board.
   - Toolbar (`game-toolbar`, in the bottom bar): `game-menu-button` (☰),
     `toolbar-resign-button` (⚑, enabled once both sides have moved),
+    `chat-button` (with `chat-button-badge` counting unread messages),
     `previous-move-button` / `next-move-button`.
+  - Chat (a sheet): `chat-sheet`, `chat-message-<id>`, `chat-input`,
+    `chat-send-button`.
   - ☰ menu (an action sheet): `flip-board-action`, `abort-game-action`
     (until black's first move) / `resign-action`, `offer-draw-action`,
     `action-sheet-cancel`.
@@ -247,6 +266,16 @@ Run them as create-account → sign-out → sign-in with the same USERNAME.
 
 ## Gotchas
 
+- **Each side has 30 seconds for its first move, or the game is
+  aborted.** Every `maestro test` run spends several seconds starting
+  up, so a chain of separate runs before the app's first move can use up
+  the time - the game then shows "Game aborted". Play the first move in
+  the same flow that waits for the game, or straight after it.
+- **"Save Password?" can appear after `sign-in.yaml` finishes**, over
+  Home, so the next tap misses. Tap "Not Now" at (127, 547).
+- **Only the hardware keyboard is used on this simulator**, so no
+  on-screen keyboard shows when typing in chat - the chat sheet's
+  keyboard handling can't be checked here.
 - **A "fresh" launch doesn't sign you out.** `launchApp: clearState`
   clears Expo Go's data but not the iOS keychain, where the refresh token
   lives - so after an account flow, later "fresh" launches (including

@@ -24,6 +24,11 @@ jest.mock('../../hooks/useGameShare', () => ({
   useGameShare: () => mockShareGame,
 }));
 
+const mockBookmark = { isBookmarked: false, toggleBookmark: jest.fn() };
+jest.mock('../../hooks/useGameBookmark', () => ({
+  useGameBookmark: () => mockBookmark,
+}));
+
 jest.mock('../../hooks/usePopoverMenu', () =>
   jest.requireActual('../../testUtils/popoverMenuStartingOpen'),
 );
@@ -133,6 +138,37 @@ describe('LiveGameContent', () => {
     });
   }
 
+  it('tells the side to move how long it has to play its first move', async () => {
+    const now = Date.parse('2026-10-27T12:00:00Z');
+    jest.spyOn(Date, 'now').mockReturnValue(now);
+    const deadline = new Date(now + 25_500).toISOString();
+    const { screen } = await renderContent('w', {
+      firstMoveDeadline: deadline,
+    });
+
+    expect(
+      await screen.findByText('26 seconds to play the first move'),
+    ).toBeTruthy();
+    expect(screen.queryByTestId('first-move-countdown-b')).toBeNull();
+  });
+
+  it("shows only the opponent's presence, dimmed once they drop", async () => {
+    const { screen, snapshot, trigger } = await renderContent('w');
+
+    expect(screen.queryByTestId('presence-w')).toBeNull();
+    expect(screen.getByTestId('presence-b')).toHaveAccessibleName('Online');
+
+    await act(() =>
+      trigger('game:presence', {
+        gameId: snapshot.id,
+        userId: snapshot.black.id,
+        online: false,
+      }),
+    );
+
+    expect(screen.getByTestId('presence-b')).toHaveAccessibleName('Offline');
+  });
+
   it('shows the time control and whether the game is rated in the header', async () => {
     const { screen } = await renderContent('w');
 
@@ -145,6 +181,50 @@ describe('LiveGameContent', () => {
     await fireEvent.press(screen.getByTestId('share-game-item'));
 
     expect(mockShareGame).toHaveBeenCalledTimes(1);
+  });
+
+  it('chats with the opponent, counting unread messages until opened', async () => {
+    const { screen, socket, snapshot, trigger } = await renderContent('w');
+    const fromOpponent = {
+      id: 'chat-1',
+      gameId: snapshot.id,
+      userId: snapshot.black.id,
+      text: 'good luck',
+      createdAt: '2026-10-27T10:00:00.000Z',
+    };
+
+    await act(() => trigger('game:chat', fromOpponent));
+    expect(screen.getByTestId('chat-button-badge')).toHaveTextContent('1');
+
+    await fireEvent.press(screen.getByTestId('chat-button'));
+    expect(screen.getByText('good luck')).toBeTruthy();
+    expect(screen.queryByTestId('chat-button-badge')).toBeNull();
+
+    await fireEvent.changeText(screen.getByTestId('chat-input'), 'thanks');
+    await fireEvent.press(screen.getByTestId('chat-send-button'));
+    expect(socket.emit).toHaveBeenCalledWith('game:chat', {
+      gameId: snapshot.id,
+      text: 'thanks',
+    });
+  });
+
+  it("bookmarks the game from the header's menu", async () => {
+    const { screen } = await renderContent('w');
+
+    await fireEvent.press(screen.getByText('Bookmark this game'));
+
+    expect(mockBookmark.toggleBookmark).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers to remove a bookmark the game already has', async () => {
+    mockBookmark.isBookmarked = true;
+    try {
+      const { screen } = await renderContent('w');
+
+      expect(screen.getByText('Remove bookmark')).toBeTruthy();
+    } finally {
+      mockBookmark.isBookmarked = false;
+    }
   });
 
   it.each([

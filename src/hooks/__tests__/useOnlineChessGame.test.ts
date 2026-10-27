@@ -92,7 +92,11 @@ describe('useOnlineChessGame', () => {
     expect(result.current.whiteTimeMs).toBe(299000);
     // Just the one submission from the tap-to-move above.
     // Proves the echo didn't trigger a re-submission.
-    expect(socket.emit).toHaveBeenCalledTimes(1);
+    expect(
+      (socket.emit as jest.Mock).mock.calls.filter(
+        ([event]) => event === 'game:move',
+      ),
+    ).toHaveLength(1);
   });
 
   it('reports isGameOver once the server reports the game as over', async () => {

@@ -6,6 +6,8 @@ import {
   createGuestSession,
   getGamePgn,
   getMe,
+  isGameBookmarked,
+  setGameBookmarked,
   getMyGames,
   isUsernameAvailable,
   refreshSession,
@@ -188,6 +190,35 @@ describe('restClient', () => {
       const request = sentRequest(transport);
       expect(request.url).toBe('/games/game%201/pgn');
       expect(request.responseType).toBe('text');
+    });
+  });
+
+  describe('bookmarks', () => {
+    it('asks whether a game is bookmarked', async () => {
+      const transport = stubTransport(respondWith({ bookmarked: true }));
+
+      await expect(isGameBookmarked('game 1', 'access-123')).resolves.toBe(
+        true,
+      );
+
+      const request = sentRequest(transport);
+      expect(request.method).toBe('get');
+      expect(request.url).toBe('/games/game%201/bookmark');
+      expect(request.headers.Authorization).toBe('Bearer access-123');
+    });
+
+    it('bookmarks with PUT and removes the bookmark with DELETE', async () => {
+      const transport = stubTransport(respondWith({ bookmarked: true }));
+      await expect(
+        setGameBookmarked('game-1', true, 'access-123'),
+      ).resolves.toBe(true);
+      expect(sentRequest(transport).method).toBe('put');
+
+      const removal = stubTransport(respondWith({ bookmarked: false }));
+      await expect(
+        setGameBookmarked('game-1', false, 'access-123'),
+      ).resolves.toBe(false);
+      expect(sentRequest(removal).method).toBe('delete');
     });
   });
 

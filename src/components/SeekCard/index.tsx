@@ -1,18 +1,25 @@
 import { View, Text, StyleSheet } from 'react-native';
 
 import { TimeControl } from '../../constants/timeControls';
+import { LobbyStats } from '../../network/socketEvents';
 import GameTypeIcon from '../GameTypeIcon';
+
+function countOf(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
 
 interface SeekCardProps {
   timeControl: TimeControl;
   status?: string;
   ratingRange?: string;
+  lobbyStats?: LobbyStats | null;
 }
 
 const SeekCard: React.FC<SeekCardProps> = ({
   timeControl,
   status = 'Waiting for opponent to join…',
   ratingRange,
+  lobbyStats,
 }) => (
   <View style={styles.card} testID="seek-card">
     <Text style={styles.status}>{status}</Text>
@@ -22,8 +29,18 @@ const SeekCard: React.FC<SeekCardProps> = ({
     </View>
     {ratingRange && (
       <Text style={styles.detail} testID="seek-card-rating-range">
-        {`Rating range ${ratingRange}`}
+        {ratingRange}
       </Text>
+    )}
+    {lobbyStats && (
+      <View style={styles.lobbyStats} testID="seek-card-lobby-stats">
+        <Text style={styles.detail}>
+          {countOf(lobbyStats.playersOnline, 'player online', 'players online')}
+        </Text>
+        <Text style={styles.detail}>
+          {countOf(lobbyStats.gamesInPlay, 'game in play', 'games in play')}
+        </Text>
+      </View>
     )}
   </View>
 );
@@ -58,6 +75,10 @@ const styles = StyleSheet.create({
   timeControlLabel: {
     fontSize: 22,
     fontWeight: '700',
+  },
+  lobbyStats: {
+    alignItems: 'center',
+    marginTop: 4,
   },
   detail: {
     fontSize: 14,

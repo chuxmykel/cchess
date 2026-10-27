@@ -22,6 +22,8 @@ describe('formatRatingRange', () => {
       'up to 2020',
     );
     expect(formatRatingRange(1520, { below: 200, above: null })).toBe('1320+');
-    expect(formatRatingRange(1520, { below: null, above: null })).toBe('any');
+    expect(formatRatingRange(1520, { below: null, above: null })).toBe(
+      'Any rating',
+    );
   });
 });

@@ -6,7 +6,7 @@ export function formatRating(rating: number, provisional: boolean): string {
 
 export function formatRatingRange(rating: number, range: RatingRange): string {
   if (range.below === null && range.above === null) {
-    return 'any';
+    return 'Any rating';
   }
   if (range.below === null) {
     return `up to ${rating + range.above}`;

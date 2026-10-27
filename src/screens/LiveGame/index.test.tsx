@@ -14,6 +14,9 @@ import { makeAuthSession } from '../../testUtils/authSession';
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
 }));
+jest.mock('../../hooks/useGameBookmark', () => ({
+  useGameBookmark: () => ({ isBookmarked: false, toggleBookmark: jest.fn() }),
+}));
 jest.mock('../../components/ConnectionStrengthIndicator', () =>
   jest.requireActual('../../testUtils/ConnectionStrengthIndicatorStub'),
 );
@@ -214,7 +217,19 @@ describe('LiveGame', () => {
     expect(
       screen.getByText(`${DEFAULT_TIME_CONTROL.label} • Rated`),
     ).toBeTruthy();
-    expect(screen.getByText('Rating range 1450–2150')).toBeTruthy();
+    expect(screen.getByText('1450–2150')).toBeTruthy();
+  });
+
+  it('shows the lobby stats the server sends while seeking', async () => {
+    const { screenPromise, trigger } = renderScreen({ seek: RATED_SEEK });
+    const screen = await screenPromise;
+
+    await act(() =>
+      trigger('lobby:stats', { playersOnline: 7, gamesInPlay: 2 }),
+    );
+
+    expect(screen.getByText('7 players online')).toBeTruthy();
+    expect(screen.getByText('2 games in play')).toBeTruthy();
   });
 
   it('shows a guest seek as casual, with no rating range', async () => {

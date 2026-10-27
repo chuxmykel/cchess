@@ -2,6 +2,8 @@
 // server-provided message - the single place these land as more get added.
 export const MATCHMAKING_FAILED_MESSAGE =
   "Couldn't find a match. Please try again.";
+export const BOOKMARK_FAILED_MESSAGE =
+  "Couldn't update the bookmark. Please try again.";
 export const SHARE_FAILED_MESSAGE =
   "Couldn't export this game. Please try again.";
 export const SIGN_IN_FAILED_MESSAGE = "Couldn't sign in. Please try again.";

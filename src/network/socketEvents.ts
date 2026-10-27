@@ -55,6 +55,7 @@ export type GameSnapshot = {
   blackTimeRemainingMs: number;
   lastMoveAt: string | null;
   drawOfferedBy: Color | null;
+  firstMoveDeadline: string | null;
   moves: GameMoveSummary[];
   createdAt: string;
   endedAt: string | null;
@@ -106,6 +107,7 @@ export type GameMovePushPayload = {
   turn: Color;
   whiteTimeRemainingMs: number;
   blackTimeRemainingMs: number;
+  firstMoveDeadline: string | null;
 };
 
 export type DrawOfferedPayload = {
@@ -118,6 +120,30 @@ export type DrawRespondPayload = {
   accept: boolean;
 };
 
+export type ChatMessage = {
+  id: string;
+  gameId: string;
+  userId: string;
+  text: string;
+  createdAt: string;
+};
+
+export type ChatHistoryPayload = {
+  gameId: string;
+  messages: ChatMessage[];
+};
+
+export type GamePresencePayload = {
+  gameId: string;
+  userId: string;
+  online: boolean;
+};
+
+export type LobbyStats = {
+  playersOnline: number;
+  gamesInPlay: number;
+};
+
 export interface ClientToServerEvents {
   'matchmaking:seek': (payload: SeekPayload) => void;
   'matchmaking:cancel': () => void;
@@ -128,6 +154,8 @@ export interface ClientToServerEvents {
   'game:abort': (payload: { gameId: string }) => void;
   'game:drawOffer': (payload: { gameId: string }) => void;
   'game:drawRespond': (payload: DrawRespondPayload) => void;
+  'game:chat': (payload: { gameId: string; text: string }) => void;
+  'game:chatHistory': (payload: { gameId: string }) => void;
   ping: (clientTimeMs: number, ack: () => void) => void;
 }
 
@@ -138,6 +166,10 @@ export interface ServerToClientEvents {
   'game:over': (payload: GameSnapshot) => void;
   'game:drawOffered': (payload: DrawOfferedPayload) => void;
   'game:drawDeclined': (payload: { gameId: string }) => void;
+  'lobby:stats': (payload: LobbyStats) => void;
+  'game:presence': (payload: GamePresencePayload) => void;
+  'game:chat': (payload: ChatMessage) => void;
+  'game:chatHistory': (payload: ChatHistoryPayload) => void;
   'game:error': (payload: GameErrorPayload) => void;
   'matchmaking:error': (payload: MatchmakingErrorPayload) => void;
   'auth:error': (payload: { message: string }) => void;
