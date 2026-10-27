@@ -53,7 +53,8 @@ same screen. Nothing reaches a game without an opponent.
    **New Game** (default time control 5+0).
 2. Tap `start-new-game-button` - the app is now seeking.
 3. Start the scripted opponent (see below) - it seeks 5+0, gets matched
-   with the app, and the game starts in place.
+   with the app, and the game starts in place. Its seek must be rated or
+   casual to match the app's (see "Rated or casual" below).
 
 `examples/to-board.yaml` is steps 1-2 plus waiting for the board. Start
 the opponent while it waits, or before it - either order matches.
@@ -70,11 +71,17 @@ nohup npm run opponent --silent -- --color w > /tmp/opponent.log 2>&1 &
 ```
 
 - `--guest` - play as a fresh guest instead of `real_user_bot`.
-- **Rated or casual**: the server rates a game only when both players are
-  registered. A signed-in app against `real_user_bot` plays rated; a
-  guest on either side makes it casual. The app must not be signed in as
-  `real_user_bot` itself, or both sides are the same account - sign out
-  (`examples/sign-out.yaml`) or use another account.
+- `--casual` - seek a casual game as `real_user_bot`.
+- **Rated or casual**: seeks pair only when both are rated or both
+  casual. New Game defaults to Rated when signed in (`rated-switch` on),
+  and a guest app can only seek casual. So a signed-in app on the default
+  needs the bot with no flags; a guest app, or a signed-in one with Rated
+  switched off, needs `--casual` or `--guest`. A mismatch
+  just leaves both seeking. The bot accepts any opponent rating, but the
+  app's own rating range (default ±500) still has to include the bot's
+  rating. The app must not be signed in as `real_user_bot` itself, or both
+  sides are the same account - sign out (`examples/sign-out.yaml`) or use
+  another account.
 - `--time 3+2` - seek a different time control (must match the app's
   selection).
 - `--delay 300` - ms before each bot move (default 800).
@@ -107,7 +114,21 @@ resign or abort from the app (see `examples/resign.yaml` /
 ## Known testIDs
 
 - **Navigation**: `play-button` (Home), `time-control-trigger` and
-  `start-new-game-button` (New Game). The tab bar has no testIDs and its
+  `start-new-game-button` (New Game).
+- **New Game options**: the "Game Settings" cog under the time control
+  (`game-settings-trigger`) opens a sheet with `rated-switch` (on by
+  default; always off for guests), for signed-in players the
+  `rating-range-below-slider` / `rating-range-above-slider` sliders (their
+  values in `rating-range-below` / `rating-range-above`, "−∞" / "+∞" when
+  open), an "Open" checkbox beside each (`rating-range-below-open` /
+  `rating-range-above-open`), and `game-settings-done`. Both sliders run
+  from 0 on the left to 500 on the right, in steps of 50, and move by
+  swiping their thumb: with the sheet open on iPhone 18 Pro the lower one
+  runs along y ≈ 653, from x ≈ 34 to x ≈ 300. A guest tapping
+  `rated-switch` gets a "Sign in to play rated games." toast at the
+  bottom, over the sheet's Done button, gone after 2s - a
+  `takeScreenshot` step straight after the tap catches it; a separate
+  `simctl` screenshot is too late. The tab bar has no testIDs and its
   labels aren't matched by text - tap Home at (100, 817) and Profile at
   (301, 817).
 - **Home**: `avatar-button` (header, opens Profile), `recent-games-loading`,
@@ -128,7 +149,8 @@ resign or abort from the app (see `examples/resign.yaml` /
   `valid-move-<square>`, `drag-guide` - from
   `src/components/ChessBoard/`. These are always named by the real
   square, whichever way the board faces.
-- **LiveGame while seeking**: `seeking-content`, `seek-card`,
+- **LiveGame while seeking**: `seeking-content`, `seek-card` (with
+  `seek-card-rating-range` for signed-in players),
   `matchmaking-cancel-button` (centered in the bottom bar, where the
   game's toolbar sits).
 - **LiveGame**:
@@ -216,7 +238,9 @@ Account flows (no opponent needed, just the backend):
   Profile, creates an account. Needs a fresh `-e USERNAME=...` each run.
 - `sign-out.yaml` - from either tab, signs out to a new guest.
 - `sign-in.yaml` - from a guest's prompt, signs back in
-  (`-e USERNAME=...`, password `secret123` unless `-e PASSWORD=...`).
+  (`-e USERNAME=...`, password `password` unless `-e PASSWORD=...`).
+  Every test account uses `password`, including `real_user_bot` and
+  `glicko_65163`.
 - `dismiss-save-password.yaml` - used by the two above (see Gotchas).
 
 Run them as create-account → sign-out → sign-in with the same USERNAME.
