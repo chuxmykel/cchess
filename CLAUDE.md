@@ -229,8 +229,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   an "Open" checkbox that leaves that side unlimited, shown as "+∞"),
   `TextField`/`PasswordField`, and
   `Icon` - every icon in the app goes through it, a thin wrapper over
-  `@expo/vector-icons`' MaterialCommunityIcons, so the set can be
-  swapped in one place), account UI
+  `@react-native-vector-icons/material-design-icons`, its font loaded
+  at runtime through `expo-font` so it works in Expo Go, and kept in one
+  place so the set can be swapped), account UI
   (`AccountForm`, the layout shared by Sign in and Create account;
   `SignInPrompt`, shown to guests on Home and Profile; `RatingsList`;
   `UsernameAvailabilityIndicator`, the ✓/✕ beside the sign-up username),
@@ -312,7 +313,7 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `popoverMenuStartingOpen.ts`, and `focusEffectRunsOnMount.ts` for
   screens that use `useFocusEffect`). `jest-setup.js` makes the mocked
   `Modal` report `onDismiss` when it hides, as iOS does, so actions that
-  wait on it run in tests too, and renders `@expo/vector-icons` as plain
+  wait on it run in tests too, and renders the icons as plain
   `Text`s keeping their props (icon fonts can't load under Jest) - so
   tests assert which icon shows by its `name` prop, via a `testID`. It
   renders the slider as a plain `View` keeping its props too, so tests
