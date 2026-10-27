@@ -29,6 +29,7 @@ describe('SeekingContent', () => {
           seek={SEEK}
           isRated={isRated}
           myRating={myRating}
+          lobbyStats={null}
           isConnecting={isConnecting}
           onCancel={onCancel}
         />,

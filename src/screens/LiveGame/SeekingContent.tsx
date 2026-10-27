@@ -8,6 +8,7 @@ import SeekCard from '../../components/SeekCard';
 import Icon from '../../components/Icon';
 import { BOARD_THEMES } from '../../constants/boardThemes';
 import { Seek } from '../../constants/seek';
+import { LobbyStats } from '../../network/socketEvents';
 import { formatRatingRange } from '../../utils/rating';
 
 interface SeekingContentProps {
@@ -15,6 +16,7 @@ interface SeekingContentProps {
   seek: Seek;
   isRated: boolean;
   myRating: number | null;
+  lobbyStats: LobbyStats | null;
   isConnecting: boolean;
   onCancel: () => void;
 }
@@ -24,6 +26,7 @@ const SeekingContent: React.FC<SeekingContentProps> = ({
   seek,
   isRated,
   myRating,
+  lobbyStats,
   isConnecting,
   onCancel,
 }) => (
@@ -43,6 +46,7 @@ const SeekingContent: React.FC<SeekingContentProps> = ({
                 ? undefined
                 : formatRatingRange(myRating, seek.ratingRange)
             }
+            lobbyStats={lobbyStats}
           />
         </View>
       </View>

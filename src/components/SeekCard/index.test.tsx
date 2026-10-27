@@ -35,6 +35,26 @@ describe('SeekCard', () => {
     expect(screen.getByText('1320–2020')).toBeTruthy();
   });
 
+  it('shows players online and games in play once known', async () => {
+    const screen = await render(
+      <SeekCard
+        timeControl={bullet2Plus1}
+        lobbyStats={{ playersOnline: 12, gamesInPlay: 1 }}
+      />,
+    );
+
+    expect(screen.getByText('12 players online')).toBeTruthy();
+    expect(screen.getByText('1 game in play')).toBeTruthy();
+  });
+
+  it('leaves the lobby stats out until they arrive', async () => {
+    const screen = await render(
+      <SeekCard timeControl={bullet2Plus1} lobbyStats={null} />,
+    );
+
+    expect(screen.queryByTestId('seek-card-lobby-stats')).toBeNull();
+  });
+
   it('leaves the rating range out without one', async () => {
     const screen = await render(<SeekCard timeControl={bullet2Plus1} />);
 

@@ -217,6 +217,18 @@ describe('LiveGame', () => {
     expect(screen.getByText('1450–2150')).toBeTruthy();
   });
 
+  it('shows the lobby stats the server sends while seeking', async () => {
+    const { screenPromise, trigger } = renderScreen({ seek: RATED_SEEK });
+    const screen = await screenPromise;
+
+    await act(() =>
+      trigger('lobby:stats', { playersOnline: 7, gamesInPlay: 2 }),
+    );
+
+    expect(screen.getByText('7 players online')).toBeTruthy();
+    expect(screen.getByText('2 games in play')).toBeTruthy();
+  });
+
   it('shows a guest seek as casual, with no rating range', async () => {
     const { screenPromise } = renderScreen({ seek: RATED_SEEK });
     const screen = await screenPromise;

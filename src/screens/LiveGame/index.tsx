@@ -7,6 +7,7 @@ import LiveGameSkeleton from '../../components/LiveGameSkeleton';
 import { useToast } from '../../hooks/useToast';
 import { useGameSession } from '../../hooks/useGameSession';
 import { useMatchmaking } from '../../hooks/useMatchmaking';
+import { useLobbyStats } from '../../hooks/useLobbyStats';
 import { useSwipeBackUntilGameLoads } from '../../hooks/useSwipeBackUntilGameLoads';
 import {
   GAME_SNAPSHOT_STATUS,
@@ -45,6 +46,7 @@ const LiveGame: React.FC<LiveGameProps> = ({ navigation, route }) => {
       navigation.goBack();
     },
   });
+  const lobbyStats = useLobbyStats(socket, isSeeking);
   const snapshotResult = useGameSnapshot(
     socket,
     session.phase === 'playing' ? session.gameId : null,
@@ -64,6 +66,7 @@ const LiveGame: React.FC<LiveGameProps> = ({ navigation, route }) => {
           seek={session.seek}
           isRated={isRatedSeek}
           myRating={myRating}
+          lobbyStats={lobbyStats}
           isConnecting={isConnecting}
           onCancel={() => navigation.goBack()}
         />
