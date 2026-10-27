@@ -171,7 +171,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
 - **`src/components/`** (everything else) - also purely presentational,
   consuming hooks/context the same way: in-game UI (`GameHeader`,
   `MoveList`, `GameToolbar`, `BottomBar`, `GameClock`, `GameOverCard`, `GameResultIcon`,
-  `GameTypeIcon`, `PlayerBar`, `PromotionMenu`, `DrawOfferPrompt`,
+  `GameTypeIcon`, `PlayerBar` (name, rating and clock), `RatingDiff` (a
+  green/red/grey "+12"/"−12"/"±0", on the game-over card and in Recent
+  Games), `PromotionMenu`, `DrawOfferPrompt`,
   `SeekCard`, `LiveGameSkeleton`, `ConnectionStrengthIndicator`), shared
   primitives used across screens (`Button`, `Avatar`, `BottomSheet`,
   `ActionSheet`, `Placeholder`, `Popover`/`PopoverMenu`, `SectionHeader`,
