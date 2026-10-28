@@ -49,22 +49,21 @@ describe('PlayerBar', () => {
     );
   }
 
-  it("shows white's name, clock and label for the white bar", async () => {
+  it("shows white's name and clock for the white bar", async () => {
     const screen = await renderBar('w');
 
     expect(screen.getByTestId('player-bar-w')).toBeTruthy();
     expect(screen.getByText(white.displayName)).toBeTruthy();
-    expect(screen.getByText('White')).toBeTruthy();
-    expect(screen.getByText('1:05')).toBeTruthy();
+    expect(screen.getByLabelText('White clock, 1:05')).toBeTruthy();
+    expect(screen.queryByText('White')).toBeNull();
   });
 
-  it("shows black's name, clock and label for the black bar", async () => {
+  it("shows black's name and clock for the black bar", async () => {
     const screen = await renderBar('b');
 
     expect(screen.getByTestId('player-bar-b')).toBeTruthy();
     expect(screen.getByText(black.displayName)).toBeTruthy();
-    expect(screen.getByText('Black')).toBeTruthy();
-    expect(screen.getByText('0:30')).toBeTruthy();
+    expect(screen.getByLabelText('Black clock, 0:30')).toBeTruthy();
   });
 
   it("highlights the clock only on that side's turn", async () => {

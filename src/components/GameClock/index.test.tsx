@@ -35,11 +35,12 @@ describe('GameClock', () => {
     expect(screen.getByText('0:00.1')).toBeTruthy();
   });
 
-  it('shows the given label', async () => {
+  it('names whose clock it is for screen readers, without showing it', async () => {
     const screen = await render(
-      <GameClock ms={10000} isActive={false} label="Black" />,
+      <GameClock ms={65000} isActive={false} label="Black" />,
     );
 
-    expect(screen.getByText('Black')).toBeTruthy();
+    expect(screen.getByLabelText('Black clock, 1:05')).toBeTruthy();
+    expect(screen.queryByText('Black')).toBeNull();
   });
 });
