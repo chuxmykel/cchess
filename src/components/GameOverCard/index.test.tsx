@@ -123,7 +123,7 @@ describe('GameOverCard', () => {
           myRating={null}
           myRatingDiff={null}
           onNewOpponent={jest.fn()}
-          rematch={{ status, opponentName: 'Judit', onOffer, onDecline }}
+          rematch={{ status, onOffer, onDecline }}
         />,
       );
       return { screen, onOffer, onDecline };
@@ -141,7 +141,7 @@ describe('GameOverCard', () => {
       const { screen, onDecline } = await renderWithRematch('offered');
 
       expect(screen.getByTestId('rematch-status')).toHaveTextContent(
-        'Rematch offered',
+        'Rematch sent',
       );
       await fireEvent.press(screen.getByTestId('rematch-cancel-button'));
       expect(onDecline).toHaveBeenCalledTimes(1);
@@ -152,7 +152,7 @@ describe('GameOverCard', () => {
         await renderWithRematch('received');
 
       expect(screen.getByTestId('rematch-status')).toHaveTextContent(
-        'Judit wants a rematch',
+        'Rematch offered',
       );
       expect(screen.getByLabelText('Accept rematch')).toBeTruthy();
       expect(screen.getByLabelText('Decline rematch')).toBeTruthy();

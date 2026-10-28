@@ -302,10 +302,6 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
                   gameStatus === 'completed'
                     ? {
                         status: rematch.status,
-                        opponentName: (myColor === 'w'
-                          ? snapshot.black
-                          : snapshot.white
-                        ).displayName,
                         onOffer: rematch.offer,
                         onDecline: rematch.decline,
                       }

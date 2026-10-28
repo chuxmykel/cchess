@@ -26,7 +26,6 @@ interface GameOverCardProps {
   /** Offering and answering a rematch, for a game the viewer played. */
   rematch?: {
     status: RematchStatus;
-    opponentName: string;
     onOffer: () => void;
     onDecline: () => void;
   };
@@ -154,7 +153,6 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
 
 const RematchControls: React.FC<NonNullable<GameOverCardProps['rematch']>> = ({
   status,
-  opponentName,
   onOffer,
   onDecline,
 }) => {
@@ -173,7 +171,7 @@ const RematchControls: React.FC<NonNullable<GameOverCardProps['rematch']>> = ({
       return (
         <View style={styles.rematchRow}>
           <Text style={styles.rematchStatus} testID="rematch-status">
-            Rematch offered
+            Rematch sent
           </Text>
           <CircleIconButton
             icon="close"
@@ -187,7 +185,7 @@ const RematchControls: React.FC<NonNullable<GameOverCardProps['rematch']>> = ({
       return (
         <View style={styles.rematchRow}>
           <Text style={styles.rematchStatus} testID="rematch-status">
-            {opponentName} wants a rematch
+            Rematch offered
           </Text>
           <CircleIconButton
             icon="close"

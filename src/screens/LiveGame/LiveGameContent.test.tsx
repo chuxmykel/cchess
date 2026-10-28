@@ -533,7 +533,11 @@ describe('LiveGameContent', () => {
       );
 
       expect(screen.getByTestId('rematch-status')).toHaveTextContent(
-        'Black wants a rematch',
+        'Rematch offered',
+      );
+      expect(screen.getByTestId('rematch-accept-button')).toBeTruthy();
+      expect(screen.getByTestId('rematch-status')).not.toHaveTextContent(
+        'Black',
       );
     });
 
