@@ -74,7 +74,8 @@ the opponent while it waits, or before it - either order matches.
 
 `scripts/opponent.js` signs in as the `real_user_bot` account (password
 `password`), seeks, plays a random legal move whenever it's its turn,
-declines draw offers, and exits once the game is over - or after
+accepts draw offers half the time (a coin flip) and declines the rest,
+and exits once the game is over - or after
 `--games N`, offering a rematch between games and accepting the app's
 (if one is declined, or none starts within 15s, it seeks again).
 `npm run opponent -- --help` prints its man page, with every option and
@@ -269,7 +270,9 @@ resign or abort from the app (see `examples/resign.yaml` /
     (until black's first move) / `resign-action`, `offer-draw-action`,
     `action-sheet-cancel`.
   - Draw offers: `draw-offer-prompt` with `accept-draw-button` /
-    `decline-draw-button`.
+    `decline-draw-button` for the opponent's. Offers and declines also
+    show in the chat as `chat-notice-<message id>`. `offer-draw-action` only
+    appears once both sides have moved.
   - Game over: `game-over-overlay`, `game-over-card`,
     `new-opponent-button`, and for rematches `rematch-button`, then
     `rematch-status` with `rematch-cancel-button` (our offer) or
@@ -277,7 +280,8 @@ resign or abort from the app (see `examples/resign.yaml` /
     `game-over-dismiss` hides the card to show the final position; ☰ then
     has `show-result-action` to bring it back, and `new-opponent-action`.
     A rematch plays in place; `series-points-w` / `series-points-b` show
-    each side's points beside the names.
+    each side's points ("1.5") across the bottom of their avatars
+    (`player-avatar-w` / `player-avatar-b`).
   - Loading: `live-game-skeleton`.
 
   These come from `src/screens/LiveGame/LiveGameContent.tsx` and the
