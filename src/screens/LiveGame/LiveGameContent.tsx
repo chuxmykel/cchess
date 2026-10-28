@@ -28,6 +28,7 @@ import { materialImbalance } from '../../domain/material';
 import { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
 import { useOnlineChessGameContext } from '../../context/LiveGame/OnlineChessGameContext';
+import { RematchStatus } from '../../hooks/useRematch';
 import EarlierPositionOverlay from './EarlierPositionOverlay';
 
 export type LiveGameContentNavigation = Pick<
@@ -51,6 +52,9 @@ type GameMenuOptions = {
   confirmAbort: () => void;
   confirmResign: () => void;
   offerDraw: () => void;
+  findNewOpponent: () => void;
+  /** Brings the result card back; only while it's dismissed. */
+  showResult?: () => void;
 };
 
 function gameMenuActions({
@@ -61,6 +65,8 @@ function gameMenuActions({
   confirmAbort,
   confirmResign,
   offerDraw,
+  findNewOpponent,
+  showResult,
 }: GameMenuOptions): ActionSheetAction[] {
   const flipBoard: ActionSheetAction = {
     label: 'Flip board',
@@ -68,7 +74,23 @@ function gameMenuActions({
     testID: 'flip-board-action',
   };
   if (isGameOver) {
-    return [flipBoard];
+    return [
+      flipBoard,
+      ...(showResult
+        ? [
+            {
+              label: 'Show result',
+              onPress: showResult,
+              testID: 'show-result-action',
+            },
+          ]
+        : []),
+      {
+        label: 'New opponent',
+        onPress: findNewOpponent,
+        testID: 'new-opponent-action',
+      },
+    ];
   }
   const leaveGame: ActionSheetAction = canAbort
     ? {
@@ -102,6 +124,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     pendingPromotion,
     promoteTo,
     isGameOver,
+    gameStatus,
     myColor,
     result,
     resultReason,
@@ -112,6 +135,8 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     moves,
     whiteRatingDiff,
     blackRatingDiff,
+    series,
+    rematch,
     canAbort,
     isOpponentOnline,
     chat,
@@ -129,6 +154,12 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     onError,
   );
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // The rematch status the result card was dismissed at: it stays hidden
+  // until that changes - when the opponent offers a rematch, say - so a
+  // rematch offer is never missed behind a dismissed card.
+  const [resultDismissedAt, setResultDismissedAt] =
+    useState<RematchStatus | null>(null);
+  const isResultDismissed = resultDismissedAt === rematch.status;
 
   useGameScreenGestureLock(navigation, isGameOver);
   const clock = useGameClock(
@@ -178,6 +209,10 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     confirmAbort,
     confirmResign,
     offerDraw,
+    findNewOpponent,
+    showResult: isResultDismissed
+      ? () => setResultDismissedAt(null)
+      : undefined,
   });
 
   const myPlayer = myColor === 'w' ? snapshot.white : snapshot.black;
@@ -194,6 +229,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     firstMoveSecondsLeft,
     onPressPlayer: (player) =>
       navigation.navigate('UserProfile', { username: player.username }),
+    series,
   };
 
   return (
@@ -252,7 +288,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
             width={width}
             orientation={orientation}
           />
-          {isGameOver && moveNavigation.isLive && (
+          {isGameOver && moveNavigation.isLive && !isResultDismissed && (
             <View style={styles.gameOverOverlay} testID="game-over-overlay">
               <GameOverCard
                 result={result}
@@ -261,6 +297,21 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
                 myRating={myPlayer.rating}
                 myRatingDiff={myRatingDiff}
                 onNewOpponent={findNewOpponent}
+                // Only a game played out can be rematched, not one aborted.
+                rematch={
+                  gameStatus === 'completed'
+                    ? {
+                        status: rematch.status,
+                        opponentName: (myColor === 'w'
+                          ? snapshot.black
+                          : snapshot.white
+                        ).displayName,
+                        onOffer: rematch.offer,
+                        onDecline: rematch.decline,
+                      }
+                    : undefined
+                }
+                onDismiss={() => setResultDismissedAt(rematch.status)}
               />
             </View>
           )}

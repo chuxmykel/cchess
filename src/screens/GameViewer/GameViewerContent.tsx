@@ -122,6 +122,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
     turn: snapshot.turn,
     isGameOver,
     onPressPlayer: (player) => onOpenPlayer(player.username),
+    series: snapshot.series,
   };
 
   return (

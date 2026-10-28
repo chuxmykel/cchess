@@ -37,6 +37,9 @@ export type GameMoveSummary = {
   clockAfterMs: number;
 };
 
+/** Each side's points across a rematch series. */
+export type SeriesScore = { white: number; black: number };
+
 export type GameSnapshot = {
   id: string;
   white: GameUserSummary;
@@ -62,6 +65,14 @@ export type GameSnapshot = {
   endedAt: string | null;
   /** When the chat stops taking messages; null while the game is on. */
   chatClosesAt: string | null;
+  /** The game this one is a rematch of. */
+  rematchOfId: string | null;
+  /** The series score, this game included once it's over; null outside a
+   * rematch series. */
+  series: SeriesScore | null;
+  rematchOfferedBy: 'white' | 'black' | null;
+  /** The rematch, once both players agreed to it. */
+  rematchGameId: string | null;
 };
 
 // Mirrors cchess-be's own GameResultReason - a closed set at the source (the
@@ -111,6 +122,12 @@ export type GameMovePushPayload = {
   whiteTimeRemainingMs: number;
   blackTimeRemainingMs: number;
   firstMoveDeadline: string | null;
+};
+
+/** A rematch offer made, or declined or withdrawn, by one side. */
+export type RematchPayload = {
+  gameId: string;
+  by: 'white' | 'black';
 };
 
 export type DrawOfferedPayload = {
@@ -167,6 +184,8 @@ export interface ClientToServerEvents {
   'game:chatHistory': (payload: { gameId: string }) => void;
   'game:watch': (payload: { gameId: string }) => void;
   'game:unwatch': (payload: { gameId: string }) => void;
+  'game:rematchOffer': (payload: { gameId: string }) => void;
+  'game:rematchDecline': (payload: { gameId: string }) => void;
   ping: (clientTimeMs: number, ack: () => void) => void;
 }
 
@@ -177,6 +196,8 @@ export interface ServerToClientEvents {
   'game:over': (payload: GameSnapshot) => void;
   'game:drawOffered': (payload: DrawOfferedPayload) => void;
   'game:drawDeclined': (payload: { gameId: string }) => void;
+  'game:rematchOffered': (payload: RematchPayload) => void;
+  'game:rematchDeclined': (payload: RematchPayload) => void;
   'lobby:stats': (payload: LobbyStats) => void;
   'game:presence': (payload: GamePresencePayload) => void;
   'game:chat': (payload: ChatMessage) => void;

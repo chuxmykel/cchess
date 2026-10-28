@@ -28,14 +28,25 @@ export const OnlineChessGameProvider: React.FC<{
   myColor: Color;
   snapshot: GameSnapshot;
   onError?: (message: string) => void;
+  /** A rematch of this game has started, as the game with this id. */
+  onRematchStarted?: (gameId: string) => void;
   children: React.ReactNode;
-}> = ({ socket, gameId, myColor, snapshot, onError, children }) => {
+}> = ({
+  socket,
+  gameId,
+  myColor,
+  snapshot,
+  onError,
+  onRematchStarted,
+  children,
+}) => {
   const chessGame = useOnlineChessGame(
     socket,
     gameId,
     myColor,
     snapshot,
     onError,
+    onRematchStarted,
   );
   return (
     <OnlineChessGameContext.Provider value={chessGame}>

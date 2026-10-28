@@ -8,11 +8,13 @@ import {
   GameMoveSummary,
   GameResultReason,
   GameSnapshot,
+  SeriesScore,
 } from '../network/socketEvents';
 import { useChessGame, UseChessGameResult } from './useChessGame';
 import { GameStatus, useGameServerEvents } from './useGameServerEvents';
 import { useOpponentPresence } from './useOpponentPresence';
 import { useGameChat, UseGameChatResult } from './useGameChat';
+import { useRematch, UseRematchResult } from './useRematch';
 
 export type { GameStatus };
 
@@ -39,6 +41,9 @@ export type UseOnlineChessGameResult = Omit<
   moves: GameMoveSummary[];
   whiteRatingDiff: number | null;
   blackRatingDiff: number | null;
+  /** The rematch series score; null outside a series. */
+  series: SeriesScore | null;
+  rematch: UseRematchResult;
   canAbort: boolean;
   isOpponentOnline: boolean;
   chat: GameChat;
@@ -58,6 +63,7 @@ export function useOnlineChessGame(
   myColor: Color,
   snapshot: GameSnapshot,
   onError?: (message: string) => void,
+  onRematchStarted?: (gameId: string) => void,
 ): UseOnlineChessGameResult {
   const game = useChessGame(snapshot.fen);
 
@@ -72,8 +78,10 @@ export function useOnlineChessGame(
     moves,
     whiteRatingDiff,
     blackRatingDiff,
+    series,
     clearDrawOffer,
   } = useGameServerEvents(socket, gameId, snapshot, game, onError);
+  const rematch = useRematch(socket, snapshot, myColor, onRematchStarted);
   const opponent = myColor === 'w' ? snapshot.black : snapshot.white;
   const isOpponentOnline = useOpponentPresence(socket, gameId, opponent.id);
   const myUserId = myColor === 'w' ? snapshot.white.id : snapshot.black.id;
@@ -146,6 +154,8 @@ export function useOnlineChessGame(
     moves,
     whiteRatingDiff,
     blackRatingDiff,
+    series,
+    rematch,
     canAbort,
     isOpponentOnline,
     chat: {

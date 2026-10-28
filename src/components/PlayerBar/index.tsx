@@ -1,12 +1,12 @@
 import { Pressable, View, Text, StyleSheet } from 'react-native';
 import { Color } from 'chess.js';
 
-import { GameUserSummary } from '../../network/socketEvents';
+import { GameUserSummary, SeriesScore } from '../../network/socketEvents';
 import { GameClockResult } from '../../hooks/useGameClock';
 import GameClock from '../GameClock';
 import CapturedPieces from '../CapturedPieces';
 import { SideMaterial } from '../../domain/material';
-import { formatRating } from '../../utils/rating';
+import { formatPoints, formatRating } from '../../utils/rating';
 import { ACCENT_COLOR } from '../../constants/colors';
 
 export const PLAYER_BAR_HEIGHT = 38;
@@ -24,6 +24,8 @@ export interface PlayerBarProps {
   material?: SideMaterial;
   /** Makes the player's name open their profile. */
   onPressPlayer?: (player: GameUserSummary) => void;
+  /** A rematch series' score, shown as this side's points. */
+  series?: SeriesScore | null;
 }
 
 const PlayerBar: React.FC<PlayerBarProps> = ({
@@ -37,6 +39,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   isOnline,
   material,
   onPressPlayer,
+  series = null,
 }) => {
   const isWhite = color === 'w';
   const player = isWhite ? white : black;
@@ -70,6 +73,15 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           {player.rating !== null && (
             <Text style={styles.rating} testID={`player-rating-${color}`}>
               {formatRating(player.rating, player.provisional)}
+            </Text>
+          )}
+          {series && (
+            <Text
+              style={styles.seriesPoints}
+              accessibilityLabel={`Series score ${formatPoints(series[isWhite ? 'white' : 'black'])}`}
+              testID={`series-points-${color}`}
+            >
+              {formatPoints(series[isWhite ? 'white' : 'black'])}
             </Text>
           )}
         </Pressable>
@@ -148,5 +160,17 @@ const styles = StyleSheet.create({
   rating: {
     fontSize: 15,
     color: '#888',
+  },
+  seriesPoints: {
+    minWidth: 22,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    overflow: 'hidden',
+    borderRadius: 4,
+    textAlign: 'center',
+    fontSize: 13,
+    fontWeight: '700',
+    color: 'white',
+    backgroundColor: ACCENT_COLOR,
   },
 });

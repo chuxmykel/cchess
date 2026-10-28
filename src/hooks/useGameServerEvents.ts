@@ -9,6 +9,7 @@ import {
   GameMovePushPayload,
   GameResultReason,
   GameSnapshot,
+  SeriesScore,
 } from '../network/socketEvents';
 import { UseChessGameResult } from './useChessGame';
 
@@ -25,6 +26,8 @@ export type GameServerEventsResult = {
   moves: GameMoveSummary[];
   whiteRatingDiff: number | null;
   blackRatingDiff: number | null;
+  /** The rematch series score, updated when the game ends. */
+  series: SeriesScore | null;
   clearDrawOffer: () => void;
 };
 
@@ -66,6 +69,8 @@ export function useGameServerEvents(
     whiteRatingDiff: snapshot.whiteRatingDiff,
     blackRatingDiff: snapshot.blackRatingDiff,
   });
+
+  const [series, setSeries] = useState(snapshot.series);
 
   const gameRef = useRef(game);
   useLayoutEffect(() => {
@@ -114,6 +119,7 @@ export function useGameServerEvents(
         whiteRatingDiff: payload.whiteRatingDiff,
         blackRatingDiff: payload.blackRatingDiff,
       });
+      setSeries(payload.series);
     }
 
     function handleDrawOffered(payload: DrawOfferedPayload) {
@@ -164,6 +170,7 @@ export function useGameServerEvents(
     firstMoveDeadline,
     moves,
     ...ratingDiffs,
+    series,
     clearDrawOffer,
   };
 }

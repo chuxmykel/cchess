@@ -32,7 +32,8 @@ export function highestRating(ratings: UserRating[]): UserRating | null {
     );
 }
 
-function formatPoints(points: number): string {
+/** Points, a draw counting half: "2", "½", "2½". */
+export function formatPoints(points: number): string {
   const whole = Math.floor(points);
   const hasHalf = points !== whole;
   if (!hasHalf) return `${whole}`;

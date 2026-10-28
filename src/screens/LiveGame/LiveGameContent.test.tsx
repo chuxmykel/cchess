@@ -496,6 +496,61 @@ describe('LiveGameContent', () => {
       expect(screen.getByText('You won')).toBeTruthy();
     });
 
+    it('can be dismissed to see the final position, and brought back', async () => {
+      const { screen, snapshot, trigger } = await renderContent('w');
+      await finishGame(trigger, snapshot);
+
+      await fireEvent.press(screen.getByTestId('game-over-dismiss'));
+      expect(screen.queryByTestId('game-over-card')).toBeNull();
+
+      await openGameMenu(screen);
+      await chooseMenuAction(screen, 'show-result-action');
+      expect(screen.getByTestId('game-over-card')).toBeTruthy();
+    });
+
+    it('offers a rematch after a game played out, but not an aborted one', async () => {
+      const played = await renderContent('w');
+      await finishGame(played.trigger, played.snapshot);
+      expect(played.screen.getByTestId('rematch-button')).toBeTruthy();
+
+      const aborted = await renderContent('w');
+      await finishGame(aborted.trigger, aborted.snapshot, {
+        status: 'aborted',
+        result: null,
+        resultReason: GAME_RESULT_REASON.ABORT,
+      });
+      expect(aborted.screen.getByText('Game aborted')).toBeTruthy();
+      expect(aborted.screen.queryByTestId('rematch-button')).toBeNull();
+    });
+
+    it('comes back by itself when the opponent offers a rematch', async () => {
+      const { screen, snapshot, trigger } = await renderContent('w');
+      await finishGame(trigger, snapshot);
+      await fireEvent.press(screen.getByTestId('game-over-dismiss'));
+
+      await act(() =>
+        trigger('game:rematchOffered', { gameId: snapshot.id, by: 'black' }),
+      );
+
+      expect(screen.getByTestId('rematch-status')).toHaveTextContent(
+        'Black wants a rematch',
+      );
+    });
+
+    it('offers a new opponent from the menu once the game is over', async () => {
+      const { screen, snapshot, trigger, onNewOpponent } =
+        await renderContent('w');
+      await finishGame(trigger, snapshot);
+
+      await openGameMenu(screen);
+      expect(screen.queryByTestId('show-result-action')).toBeNull();
+      await chooseMenuAction(screen, 'new-opponent-action');
+
+      expect(onNewOpponent).toHaveBeenCalledWith(
+        expect.objectContaining({ initialSeconds: 300, incrementSeconds: 0 }),
+      );
+    });
+
     describe('ratings', () => {
       function withRatings(whiteRating: number, blackRating: number) {
         const { white, black } = makeGameSnapshot();

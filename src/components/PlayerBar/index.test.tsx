@@ -32,6 +32,7 @@ describe('PlayerBar', () => {
       firstMoveSecondsLeft: number | null;
       isOnline: boolean;
       material: SideMaterial;
+      series: { white: number; black: number } | null;
     }> = {},
   ) {
     return render(
@@ -45,6 +46,7 @@ describe('PlayerBar', () => {
         firstMoveSecondsLeft={overrides.firstMoveSecondsLeft ?? null}
         isOnline={overrides.isOnline}
         material={overrides.material}
+        series={overrides.series}
       />,
     );
   }
@@ -91,6 +93,21 @@ describe('PlayerBar', () => {
 
     const over = await renderBar('w', { isGameOver: true });
     expect(over.getByTestId('player-bar-w')).toHaveStyle({ opacity: 0.5 });
+  });
+
+  it("shows each side's points in a rematch series", async () => {
+    const series = { white: 1.5, black: 0.5 };
+
+    const whiteBar = await renderBar('w', { series });
+    expect(whiteBar.getByTestId('series-points-w')).toHaveTextContent('1½');
+    const blackBar = await renderBar('b', { series });
+    expect(blackBar.getByTestId('series-points-b')).toHaveTextContent('½');
+  });
+
+  it('shows no points outside a series', async () => {
+    const screen = await renderBar('w');
+
+    expect(screen.queryByTestId('series-points-w')).toBeNull();
   });
 
   it("shows a player's rating beside their name", async () => {

@@ -285,4 +285,38 @@ describe('LiveGame', () => {
     expect(seekCount(socket)).toBe(0);
     expect(socket.emit).toHaveBeenCalledWith('game:join', { gameId: 'game-1' });
   });
+
+  it('plays a rematch in place once both players agree, colors swapped', async () => {
+    const { screenPromise, socket, trigger } = renderScreen({
+      gameId: 'game-1',
+    });
+    const screen = await screenPromise;
+    const first = makeGameSnapshot({
+      id: 'game-1',
+      status: 'completed',
+      result: 'white',
+      resultReason: 'resignation',
+    });
+    await act(() => trigger('game:state', first));
+
+    await fireEvent.press(screen.getByTestId('rematch-button'));
+    expect(socket.emit).toHaveBeenCalledWith('game:rematchOffer', {
+      gameId: 'game-1',
+    });
+
+    const rematch = makeGameSnapshot({
+      id: 'game-2',
+      white: first.black,
+      black: first.white,
+      rematchOfId: 'game-1',
+      series: { white: 0, black: 1 },
+    });
+    await act(() => trigger('game:created', rematch));
+    expect(socket.emit).toHaveBeenCalledWith('game:join', { gameId: 'game-2' });
+    await act(() => trigger('game:state', rematch));
+
+    expect(screen.queryByTestId('game-over-card')).toBeNull();
+    expect(screen.getByTestId('series-points-b')).toHaveTextContent('1');
+    expect(screen.getByTestId('series-points-w')).toHaveTextContent('0');
+  });
 });
