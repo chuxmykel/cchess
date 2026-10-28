@@ -37,6 +37,9 @@ export type GameMoveSummary = {
   clockAfterMs: number;
 };
 
+/** Each side's points across a rematch series. */
+export type SeriesScore = { white: number; black: number };
+
 export type GameSnapshot = {
   id: string;
   white: GameUserSummary;
@@ -55,13 +58,21 @@ export type GameSnapshot = {
   whiteTimeRemainingMs: number;
   blackTimeRemainingMs: number;
   lastMoveAt: string | null;
-  drawOfferedBy: Color | null;
+  drawOfferedBy: Side | null;
   firstMoveDeadline: string | null;
   moves: GameMoveSummary[];
   createdAt: string;
   endedAt: string | null;
   /** When the chat stops taking messages; null while the game is on. */
   chatClosesAt: string | null;
+  /** The game this one is a rematch of. */
+  rematchOfId: string | null;
+  /** The series score, this game included once it's over; null outside a
+   * rematch series. */
+  series: SeriesScore | null;
+  rematchOfferedBy: 'white' | 'black' | null;
+  /** The rematch, once both players agreed to it. */
+  rematchGameId: string | null;
 };
 
 // Mirrors cchess-be's own GameResultReason - a closed set at the source (the
@@ -113,9 +124,19 @@ export type GameMovePushPayload = {
   firstMoveDeadline: string | null;
 };
 
+/** A side as the server names it in draw and rematch offers - not the
+ * 'w'/'b' of a Color. */
+export type Side = 'white' | 'black';
+
+/** A rematch offer made, or declined or withdrawn, by one side. */
+export type RematchPayload = {
+  gameId: string;
+  by: Side;
+};
+
 export type DrawOfferedPayload = {
   gameId: string;
-  by: Color;
+  by: Side;
 };
 
 export type DrawRespondPayload = {
@@ -123,10 +144,17 @@ export type DrawRespondPayload = {
   accept: boolean;
 };
 
+/** A player's own words, or a note of a draw they offered, declined or
+ * accepted - which has no text of its own. */
+export type ChatMessageKind =
+  'message' | 'draw-offered' | 'draw-declined' | 'draw-accepted';
+
 export type ChatMessage = {
   id: string;
   gameId: string;
+  /** Who sent it - or, for a note, who did what it notes. */
   userId: string;
+  kind: ChatMessageKind;
   text: string;
   createdAt: string;
 };
@@ -134,6 +162,8 @@ export type ChatMessage = {
 export type ChatHistoryPayload = {
   gameId: string;
   messages: ChatMessage[];
+  /** How far I've read the chat; null if I never have. */
+  readAt: string | null;
 };
 
 export type GamePresencePayload = {
@@ -165,8 +195,11 @@ export interface ClientToServerEvents {
   'game:drawRespond': (payload: DrawRespondPayload) => void;
   'game:chat': (payload: { gameId: string; text: string }) => void;
   'game:chatHistory': (payload: { gameId: string }) => void;
+  'game:chatRead': (payload: { gameId: string }) => void;
   'game:watch': (payload: { gameId: string }) => void;
   'game:unwatch': (payload: { gameId: string }) => void;
+  'game:rematchOffer': (payload: { gameId: string }) => void;
+  'game:rematchDecline': (payload: { gameId: string }) => void;
   ping: (clientTimeMs: number, ack: () => void) => void;
 }
 
@@ -177,6 +210,8 @@ export interface ServerToClientEvents {
   'game:over': (payload: GameSnapshot) => void;
   'game:drawOffered': (payload: DrawOfferedPayload) => void;
   'game:drawDeclined': (payload: { gameId: string }) => void;
+  'game:rematchOffered': (payload: RematchPayload) => void;
+  'game:rematchDeclined': (payload: RematchPayload) => void;
   'lobby:stats': (payload: LobbyStats) => void;
   'game:presence': (payload: GamePresencePayload) => void;
   'game:chat': (payload: ChatMessage) => void;

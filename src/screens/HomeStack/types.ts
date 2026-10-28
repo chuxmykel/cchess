@@ -17,6 +17,11 @@ export type HomeStackParamList = {
   GameViewer: { gameId: string };
   UserProfile: { username: string };
   Conversation: ConversationPartner;
+  /** Friends over the tabs, for screens there to open; focusSearch opens
+   * it ready to type in the player search. */
+  FindFriends: { focusSearch?: boolean } | undefined;
+  /** Everyone a player is friends with. */
+  UserFriends: { username: string; displayName: string };
   /** Someone's games; your own without a username. */
   GamesList: { username?: string; displayName?: string };
   /** A player's rating history and results in one category. */

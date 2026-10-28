@@ -139,6 +139,15 @@ describe('LiveGameContent', () => {
     });
   }
 
+  /** 1. e4 e5 - after which a draw can be offered. */
+  function playFirstMoves(
+    trigger: (event: string, payload: unknown) => void,
+    gameId: string,
+  ) {
+    pushMove(trigger, gameId, moveSummary(1, 'e2', 'e4', AFTER_E4));
+    pushMove(trigger, gameId, moveSummary(2, 'e7', 'e5', AFTER_E5));
+  }
+
   it('tells the side to move how long it has to play its first move', async () => {
     const now = Date.parse('2026-10-27T12:00:00Z');
     jest.spyOn(Date, 'now').mockReturnValue(now);
@@ -210,6 +219,7 @@ describe('LiveGameContent', () => {
       id: 'chat-1',
       gameId: snapshot.id,
       userId: snapshot.black.id,
+      kind: 'message',
       text: 'good luck',
       createdAt: '2026-10-27T10:00:00.000Z',
     };
@@ -337,8 +347,17 @@ describe('LiveGameContent', () => {
       );
     });
 
-    it('offers a draw', async () => {
-      const { screen, socket, snapshot } = await renderContent('w');
+    it("doesn't offer a draw before both sides have moved", async () => {
+      const { screen } = await renderContent('w');
+
+      await openGameMenu(screen);
+
+      expect(screen.queryByTestId('offer-draw-action')).toBeNull();
+    });
+
+    it('offers a draw once both sides have moved', async () => {
+      const { screen, socket, snapshot, trigger } = await renderContent('w');
+      await playFirstMoves(trigger, snapshot.id);
 
       await openGameMenu(screen);
       await chooseMenuAction(screen, 'offer-draw-action');
@@ -353,7 +372,7 @@ describe('LiveGameContent', () => {
     const { screen, socket, snapshot, trigger } = await renderContent('b');
 
     await act(() =>
-      trigger('game:drawOffered', { gameId: snapshot.id, by: 'w' }),
+      trigger('game:drawOffered', { gameId: snapshot.id, by: 'white' }),
     );
     await fireEvent.press(screen.getByTestId('accept-draw-button'));
 
@@ -361,6 +380,61 @@ describe('LiveGameContent', () => {
       gameId: snapshot.id,
       accept: true,
     });
+  });
+
+  it("doesn't ask me to answer my own draw offer", async () => {
+    const { screen, snapshot, trigger } = await renderContent('b');
+    await act(() => playFirstMoves(trigger, snapshot.id));
+
+    await act(() =>
+      trigger('game:drawOffered', { gameId: snapshot.id, by: 'black' }),
+    );
+
+    expect(screen.queryByTestId('draw-offer-prompt')).toBeNull();
+    await openGameMenu(screen);
+    expect(screen.queryByTestId('offer-draw-action')).toBeNull();
+  });
+
+  it('drops a draw offer when a move is played, as the server does', async () => {
+    const { screen, snapshot, trigger } = await renderContent('b');
+    await act(() =>
+      trigger('game:drawOffered', { gameId: snapshot.id, by: 'white' }),
+    );
+    expect(screen.getByTestId('draw-offer-prompt')).toBeTruthy();
+
+    await act(() =>
+      pushMove(trigger, snapshot.id, moveSummary(1, 'e2', 'e4', AFTER_E4)),
+    );
+
+    expect(screen.queryByTestId('draw-offer-prompt')).toBeNull();
+  });
+
+  it("shows the server's notes of draws in the chat, mine counting as unread too", async () => {
+    const { screen, snapshot, trigger } = await renderContent('b');
+    const note = (id: string, userId: string, kind: string) => ({
+      id,
+      gameId: snapshot.id,
+      userId,
+      kind,
+      text: '',
+      createdAt: `2026-10-27T10:00:0${id}.000Z`,
+    });
+
+    await act(() =>
+      trigger('game:chat', note('1', snapshot.black.id, 'draw-offered')),
+    );
+    await act(() =>
+      trigger('game:chat', note('2', snapshot.white.id, 'draw-declined')),
+    );
+
+    expect(screen.getByTestId('chat-button-badge')).toHaveTextContent('2');
+    await fireEvent.press(screen.getByTestId('chat-button'));
+    expect(screen.getByTestId('chat-notice-1')).toHaveTextContent(
+      'You offered a draw',
+    );
+    expect(screen.getByTestId('chat-notice-2')).toHaveTextContent(
+      `${snapshot.white.displayName} declined the draw`,
+    );
   });
 
   describe('move navigation', () => {
@@ -494,6 +568,82 @@ describe('LiveGameContent', () => {
 
       expect(screen.getByTestId('game-over-overlay')).toBeTruthy();
       expect(screen.getByText('You won')).toBeTruthy();
+    });
+
+    it('can be dismissed to see the final position, and brought back', async () => {
+      const { screen, snapshot, trigger } = await renderContent('w');
+      await finishGame(trigger, snapshot);
+
+      expect(screen.getByTestId(WHITE_PLAYER_BAR)).toHaveStyle({
+        opacity: 0.5,
+      });
+
+      await fireEvent.press(screen.getByTestId('game-over-dismiss'));
+      expect(screen.queryByTestId('game-over-card')).toBeNull();
+      // Not dimmed once the card is put away.
+      expect(screen.getByTestId(WHITE_PLAYER_BAR)).not.toHaveStyle({
+        opacity: 0.5,
+      });
+
+      await openGameMenu(screen);
+      await chooseMenuAction(screen, 'show-result-action');
+      expect(screen.getByTestId('game-over-card')).toBeTruthy();
+    });
+
+    it('goes away when the board around it is tapped', async () => {
+      const { screen, snapshot, trigger } = await renderContent('w');
+      await finishGame(trigger, snapshot);
+
+      await fireEvent.press(screen.getByTestId('game-over-overlay'));
+
+      expect(screen.queryByTestId('game-over-card')).toBeNull();
+    });
+
+    it('offers a rematch after a game played out, but not an aborted one', async () => {
+      const played = await renderContent('w');
+      await finishGame(played.trigger, played.snapshot);
+      expect(played.screen.getByTestId('rematch-button')).toBeTruthy();
+
+      const aborted = await renderContent('w');
+      await finishGame(aborted.trigger, aborted.snapshot, {
+        status: 'aborted',
+        result: null,
+        resultReason: GAME_RESULT_REASON.ABORT,
+      });
+      expect(aborted.screen.getByText('Game aborted')).toBeTruthy();
+      expect(aborted.screen.queryByTestId('rematch-button')).toBeNull();
+    });
+
+    it('comes back by itself when the opponent offers a rematch', async () => {
+      const { screen, snapshot, trigger } = await renderContent('w');
+      await finishGame(trigger, snapshot);
+      await fireEvent.press(screen.getByTestId('game-over-dismiss'));
+
+      await act(() =>
+        trigger('game:rematchOffered', { gameId: snapshot.id, by: 'black' }),
+      );
+
+      expect(screen.getByTestId('rematch-status')).toHaveTextContent(
+        'Rematch offered',
+      );
+      expect(screen.getByTestId('rematch-accept-button')).toBeTruthy();
+      expect(screen.getByTestId('rematch-status')).not.toHaveTextContent(
+        'Black',
+      );
+    });
+
+    it('offers a new opponent from the menu once the game is over', async () => {
+      const { screen, snapshot, trigger, onNewOpponent } =
+        await renderContent('w');
+      await finishGame(trigger, snapshot);
+
+      await openGameMenu(screen);
+      expect(screen.queryByTestId('show-result-action')).toBeNull();
+      await chooseMenuAction(screen, 'new-opponent-action');
+
+      expect(onNewOpponent).toHaveBeenCalledWith(
+        expect.objectContaining({ initialSeconds: 300, incrementSeconds: 0 }),
+      );
     });
 
     describe('ratings', () => {

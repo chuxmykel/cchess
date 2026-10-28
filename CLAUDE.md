@@ -93,7 +93,7 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `ApiError`s carrying the server's own message - auth: guest, sign in,
   register, refresh, logout; plus `/users/me`, game history (yours or a
   player's, a page at a time), a single game, PGN, bookmarks, player
-  search, profiles, activity and rating stats, friends and friend requests, challenges, and direct messages),
+  search, profiles, a player's friends, activity and rating stats, friends and friend requests, challenges, and direct messages),
   `accessToken.ts` (reads a JWT access token's expiry),
   `socketClient.ts` (the one `AppSocket` singleton - `connectSocket`/
   `disconnectSocket`/`getSocket`, plus `updateSocketToken` so later
@@ -146,8 +146,12 @@ network/       pure networking infra (REST/socket clients, event types), same st
     and the first-move deadline, and replaying the opponent's moves
     idempotently via a fen comparison against the echo of our own - and
     owning the opponent's presence (`useOpponentPresence`) and the game's
-    chat (`useGameChat`: history, new messages, the unread count while
-    closed), `useGameClock` (client-side ticking
+    chat (`useGameChat`: history, new messages, and the unread count -
+    from how far the server says you've read, every draw note counting
+    until seen, yours too - marking it read there with `game:chatRead`
+    while open) and rematches (`useRematch`: offering one, answering the
+    opponent's, and handing over the new game when the server starts it,
+    which `LiveGame` then plays in place), `useGameClock` (client-side ticking
     between authoritative server clock updates; paused until both sides
     have moved), `useFirstMoveCountdown` (seconds left to play the first
     move), and
@@ -168,12 +172,13 @@ network/       pure networking infra (REST/socket clients, event types), same st
     game), `useFriendActions` (what a friend card or profile offers: their
     profile, a message, a challenge through `ChallengeSheet`, watching
     their game), `useUserProfile` (a player's profile and activity),
+    `useUserFriends` (anyone's friends, for their profile and its list),
     `usePagedGames` (game history a page at a time, yours or a player's),
     `useDirectMessages` (one conversation: paged history, new messages,
     marked read while open, sending and clearing), and `useUserSearch`
     (players matching what's typed in Friends' search, asked of
     `GET /users?search=` once typing pauses and at least two letters are
-    in), and `useRatingStats` (a player's rating history and results in one
+    in, then 20 more at a time as the list nears its end), and `useRatingStats` (a player's rating history and results in one
     category over a period, keeping the last period's shown while the next
     loads).
   - Small reusable UI-state hooks with no game-domain knowledge at all:
@@ -224,13 +229,22 @@ network/       pure networking infra (REST/socket clients, event types), same st
   consuming hooks/context the same way: in-game UI (`GameHeader`,
   `MoveList`, `GameToolbar` (with the chat button's unread badge),
   `BottomBar`, `GameClock`, `GameOverCard`, `GameResultIcon`,
-  `GameTypeIcon`, `PlayerBar` (name, rating, clock, the opponent's
-  online dot, the first-move countdown and `CapturedPieces`; tapping the
-  name opens that player's profile, and Back returns to the game),
-  `ChatSheet` (80% of the screen above the keyboard, keeping the newest
+  `GameTypeIcon`, `PlayerBar` (a square avatar - the opponent's online
+  badge on its corner, and in a rematch series that side's points, "1.5",
+  in a band across its bottom, the initials lifted clear of it - then the name, rating, clock, and under
+  the name the first-move countdown or `CapturedPieces`, a line that keeps
+  its height empty or not, so the bar never changes size; tapping the
+  avatar or name opens that player's profile, and Back returns to the
+  game; dimmed only while the result card shows),
+  `ChatSheet` (the server's notes of draws offered, declined and
+  accepted - chat messages of their own `kind` - as faint lines among the
+  messages, naming who; 80%
+  of the screen above the keyboard, keeping the newest
   messages in view; read-only once a game's chat has closed), `RatingDiff` (a
   green/red/grey "+12"/"−12"/"±0", on the game-over card and in Recent
-  Games), `PromotionMenu`, `DrawOfferPrompt`,
+  Games), `PromotionMenu`, `DrawOfferPrompt` (the opponent's draw offer, to accept or
+  decline; offering one waits, like resigning, until both sides have
+  moved - the server refuses either before that),
   `SeekCard` (the waiting card: time control, rating range, lobby stats),
   `LiveGameSkeleton`, `ConnectionStrengthIndicator`), shared
   primitives used across screens (`Button`, `Avatar`, `BottomSheet` -
@@ -261,14 +275,25 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `CircleIconButton`s), `NotificationsMenu` (the 🔔 in `HomeHeader`'s
   `accessory` slot, with a badge counting incoming challenges and friend
   requests, opening them in a popup), `UserSearchField` (Friends'
-  search, with matching players in a dropdown that open their profile,
-  where they can be added; Home's "Find friends" opens Friends with it
-  focused), `ChallengeSheet`, `ActivityList`,
+  search box; Home's "Find friends" opens Friends with it focused) and
+  `UserSearchResults` (its matches, in place of Friends' tabs while
+  searching: a list that scrolls clear of the keyboard, closes it on a
+  drag and pages in more, each opening that player's profile, where
+  they can be added), `ChallengeSheet`, `ActivityList`, `ProfileFriends` (a profile's
+  Friends section: the count beside the title, up to ten friends online
+  first, then - on your own, the Profile tab's - an Add friends tile, and
+  View All), `FriendListControls`
+  (the friends list's "Online" filter and sort dropdown),
   `MessageList`), rating stats UI (`RatingChart` - the rating as a line
-  over the period, drawn with `victory-native` on
+  over the period, one point per day (the server sends each day's closing
+  rating), drawn with `victory-native` on
   `@shopify/react-native-skia` (held at victory-native 42: 43 needs a
-  newer Skia than Expo SDK 58 bundles), whose press gesture shows the
-  rating at the point touched; `utils/ratingChart.ts` shapes its data -
+  newer Skia than Expo SDK 58 bundles), where a tap picks the nearest
+  point and a hold scrubs, the point picked staying shown - a light
+  green, white-ringed dot on the green line, with a grey guide the chart's full
+  height - until another is (victory-native resets its press state whenever `data` changes, so
+  the data is memoized, the period rounded to the minute; and its press
+  only starts after a 100ms hold, so taps are handled separately); `utils/ratingChart.ts` shapes its data -
   `RatingChange`, a green ▲ or red ▼ with the points gained or lost, in
   italics (skewed, since `fontStyle` can't slant the icon font's arrow),
   `RatingCategoryPicker`, the stats header's title, a dropdown that
@@ -279,11 +304,19 @@ network/       pure networking infra (REST/socket clients, event types), same st
   nothing yet: an SVG illustration from its `illustrations.tsx`, drawn
   with `react-native-svg`, a title, a line on what will show up there,
   and an optional action;
-  `SectionHeader`'s action is optional), and `Home`-screen-specific pieces
+  `SectionHeader`'s action is optional, and it can show a count beside
+  the title), and `Home`-screen-specific pieces
   (`HomeHeader`, `RecentGamesList`, whose rows open the game viewer).
   `GameOverCard` names the winner instead of "You won" for a game you
   didn't play - and offers "Play 5+0" (the game's time control) rather
-  than "New opponent", as does the viewer's ☰ - and can be dismissed. A player's profile offers Watch game
+  than "New opponent", as does the viewer's ☰ - and can be dismissed,
+  with its ✕ or a tap on the board around it (`GameOverOverlay`) - every
+  popup closes on a tap outside it. In
+  `LiveGame` it also offers a rematch: Rematch, then "Rematch sent"
+  (✕ to cancel), "Rematch offered" with ✕ / ✓ for theirs or "Rematch
+  declined". Dismissed there, it comes back from ☰ "Show result" (☰ also
+  has "New opponent" once the game is over), or by itself when the rematch
+  status changes, so an offer is never hidden. A player's profile offers Watch game
   and Challenge to anyone, friend or not - Watch game is a `disabled`
   `ActionList` row while they aren't in a game - and Message only to
   friends. Its `RatingsList` rows - and your own on the Profile tab -
@@ -295,9 +328,20 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `App.tsx` (root native-stack, inside a `GestureHandlerRootView` for
   the chart's gestures) -> `HomeStack` (`HomeTabs`, `LiveGame`,
   `GameViewer`, `UserProfile`, `Conversation`, `GamesList`,
-  `RatingStats`, `SignIn`, `CreateAccount`) ->
+  `RatingStats`, `UserFriends`, `FindFriends`, `SignIn`, `CreateAccount`) ->
   `HomeTabs` (bottom tabs: `HomeTabStack`, `Profile`) -> `HomeTabStack`
-  (native-stack: `Home`, `NewGame`, `Friends`). Route params are typed in
+  (native-stack: `Home`, `NewGame`, `Friends`). Every screen with a shown
+  header uses `screens/plainHeaderOptions.tsx`: no line under it, and a
+  plain chevron (`HeaderBackButton`) in place of the native back button,
+  whose glass circle iOS 26+ draws - header buttons go in as
+  `plainHeaderItem`s, which turn that circle off (`hidesSharedBackground`). A
+  player's profile leaves its header title empty until the avatar block
+  scrolls out of view, then fades the username in there. Its Friends
+  section's View All opens `UserFriends`, every friend - or only those
+  online - sorted online first, by name or most recently added; the Profile
+  tab's Add friends opens `FindFriends` - the `Friends` screen again, over
+  the tabs so Back returns there - with its search focused; a friend there or in the carousel is
+  pushed as another `UserProfile`. Route params are typed in
   each navigator's `types.ts`; a tab-stack screen's
   `HomeTabStackScreenProps` can also open the screens over the tabs.
   Profiles, conversations, game lists and rating stats sit over the tabs
@@ -338,9 +382,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `formatRatingRange`, "1320–2020", `highestRating`, `formatScore`,
   "2½ - 3½", and `formatTimePlayed`) and presence (`presence.ts`:
   "Playing right now"/"Online"/"Active 5 minutes ago", and the order
-  friends are listed in) and the rating chart's data (`ratingChart.ts`:
-  the points, the last rating held to the period's end, and a rating
-  range rounded to tens with its ticks), independent of the chess domain. Dates are formatted with `date-fns` rather than helpers
+  friends are listed in), the friend list's orders (`friendSort.ts`) and
+  the rating chart's data (`ratingChart.ts`:
+  the points, the last rating held to the period's end, and the point
+  nearest a tap - victory-native picks the rating axis and its ticks), independent of the chess domain. Dates are formatted with `date-fns` rather than helpers
   here.
 
 - **`src/testUtils/`** - Jest/RNTL helpers: simulated PanResponder gestures

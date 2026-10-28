@@ -2,10 +2,12 @@ import { Color } from 'chess.js';
 import { Pressable, View, Text, StyleSheet } from 'react-native';
 
 import Button from '../Button';
+import CircleIconButton from '../CircleIconButton';
 import GameResultIcon from '../GameResultIcon';
 import Icon from '../Icon';
 import RatingDiff from '../RatingDiff';
 import { GameResult } from '../../domain/types';
+import { RematchStatus } from '../../hooks/useRematch';
 import {
   GAME_RESULT_REASON,
   GameResultReason,
@@ -21,6 +23,12 @@ interface GameOverCardProps {
   onNewOpponent: () => void;
   /** What the new-game button says - "New opponent" unless given. */
   newGameLabel?: string;
+  /** Offering and answering a rematch, for a game the viewer played. */
+  rematch?: {
+    status: RematchStatus;
+    onOffer: () => void;
+    onDecline: () => void;
+  };
   /** Shows a close button that hides the card. */
   onDismiss?: () => void;
 }
@@ -86,6 +94,7 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
   myRatingDiff,
   onNewOpponent,
   newGameLabel = 'New opponent',
+  rematch,
   onDismiss,
 }) => {
   const myResult = myColor === null ? null : toMyResult(result, myColor);
@@ -137,8 +146,69 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
         style={styles.newOpponentButton}
         testID="new-opponent-button"
       />
+      {rematch && <RematchControls {...rematch} />}
     </View>
   );
+};
+
+const RematchControls: React.FC<NonNullable<GameOverCardProps['rematch']>> = ({
+  status,
+  onOffer,
+  onDecline,
+}) => {
+  switch (status) {
+    case 'none':
+      return (
+        <Button
+          label="Rematch"
+          onPress={onOffer}
+          variant="outline"
+          style={styles.newOpponentButton}
+          testID="rematch-button"
+        />
+      );
+    case 'offered':
+      return (
+        <View style={styles.rematchRow}>
+          <Text style={styles.rematchStatus} testID="rematch-status">
+            Rematch sent
+          </Text>
+          <CircleIconButton
+            icon="close"
+            label="Cancel rematch"
+            onPress={onDecline}
+            testID="rematch-cancel-button"
+          />
+        </View>
+      );
+    case 'received':
+      return (
+        <View style={styles.rematchRow}>
+          <Text style={styles.rematchStatus} testID="rematch-status">
+            Rematch offered
+          </Text>
+          <CircleIconButton
+            icon="close"
+            label="Decline rematch"
+            onPress={onDecline}
+            testID="rematch-decline-button"
+          />
+          <CircleIconButton
+            icon="check"
+            label="Accept rematch"
+            variant="primary"
+            onPress={onOffer}
+            testID="rematch-accept-button"
+          />
+        </View>
+      );
+    case 'declined':
+      return (
+        <Text style={styles.rematchStatus} testID="rematch-status">
+          Rematch declined
+        </Text>
+      );
+  }
 };
 
 export default GameOverCard;
@@ -184,5 +254,15 @@ const styles = StyleSheet.create({
   newOpponentButton: {
     minWidth: 180,
     marginTop: 8,
+  },
+  rematchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  rematchStatus: {
+    fontSize: 14,
+    color: '#666',
   },
 });

@@ -109,6 +109,84 @@ describe('GameOverCard', () => {
     );
   });
 
+  describe('rematch', () => {
+    async function renderWithRematch(
+      status: 'none' | 'offered' | 'received' | 'declined',
+    ) {
+      const onOffer = jest.fn();
+      const onDecline = jest.fn();
+      const screen = await render(
+        <GameOverCard
+          result="white"
+          myColor="w"
+          resultReason={null}
+          myRating={null}
+          myRatingDiff={null}
+          onNewOpponent={jest.fn()}
+          rematch={{ status, onOffer, onDecline }}
+        />,
+      );
+      return { screen, onOffer, onDecline };
+    }
+
+    it('offers a rematch', async () => {
+      const { screen, onOffer } = await renderWithRematch('none');
+
+      await fireEvent.press(screen.getByTestId('rematch-button'));
+
+      expect(onOffer).toHaveBeenCalledTimes(1);
+    });
+
+    it('waits on an offer made, which can be withdrawn', async () => {
+      const { screen, onDecline } = await renderWithRematch('offered');
+
+      expect(screen.getByTestId('rematch-status')).toHaveTextContent(
+        'Rematch sent',
+      );
+      await fireEvent.press(screen.getByTestId('rematch-cancel-button'));
+      expect(onDecline).toHaveBeenCalledTimes(1);
+    });
+
+    it("answers the opponent's offer", async () => {
+      const { screen, onOffer, onDecline } =
+        await renderWithRematch('received');
+
+      expect(screen.getByTestId('rematch-status')).toHaveTextContent(
+        'Rematch offered',
+      );
+      expect(screen.getByLabelText('Accept rematch')).toBeTruthy();
+      expect(screen.getByLabelText('Decline rematch')).toBeTruthy();
+      await fireEvent.press(screen.getByTestId('rematch-accept-button'));
+      await fireEvent.press(screen.getByTestId('rematch-decline-button'));
+      expect(onOffer).toHaveBeenCalledTimes(1);
+      expect(onDecline).toHaveBeenCalledTimes(1);
+    });
+
+    it('says when the opponent declined', async () => {
+      const { screen } = await renderWithRematch('declined');
+
+      expect(screen.getByTestId('rematch-status')).toHaveTextContent(
+        'Rematch declined',
+      );
+      expect(screen.queryByTestId('rematch-button')).toBeNull();
+    });
+
+    it("isn't offered without a way to rematch", async () => {
+      const screen = await render(
+        <GameOverCard
+          result="white"
+          myColor={null}
+          resultReason={null}
+          myRating={null}
+          myRatingDiff={null}
+          onNewOpponent={jest.fn()}
+        />,
+      );
+
+      expect(screen.queryByTestId('rematch-button')).toBeNull();
+    });
+  });
+
   describe('rating', () => {
     function renderFinishedRatedGame(myRatingDiff: number) {
       return render(

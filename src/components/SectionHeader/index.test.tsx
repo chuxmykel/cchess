@@ -34,4 +34,14 @@ describe('SectionHeader', () => {
 
     expect(onActionPress).toHaveBeenCalledTimes(1);
   });
+
+  it('shows a count beside the title', async () => {
+    const screen = await render(
+      <SectionHeader title="Friends" count={12} testID="friends" />,
+    );
+
+    expect(screen.getByTestId('friends-count')).toHaveTextContent('12', {
+      exact: false,
+    });
+  });
 });

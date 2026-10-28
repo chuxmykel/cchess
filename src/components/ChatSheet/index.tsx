@@ -18,11 +18,32 @@ import { ChatMessage } from '../../network/socketEvents';
 
 const SHEET_HEIGHT_RATIO = 0.8;
 
+const NOTE_VERBS: Record<Exclude<ChatMessage['kind'], 'message'>, string> = {
+  'draw-offered': 'offered a draw',
+  'draw-declined': 'declined the draw',
+  'draw-accepted': 'accepted the draw',
+};
+
+/** "You offered a draw", "Judit declined the draw". */
+function noteText(
+  message: ChatMessage,
+  myUserId: string,
+  playerNames: Record<string, string>,
+): string {
+  const who =
+    message.userId === myUserId
+      ? 'You'
+      : (playerNames[message.userId] ?? 'Your opponent');
+  return `${who} ${NOTE_VERBS[message.kind as keyof typeof NOTE_VERBS]}`;
+}
+
 interface ChatSheetProps {
   visible: boolean;
   onClose: () => void;
   messages: ChatMessage[];
   myUserId: string;
+  /** Each player's name by id, for the notes of what they did. */
+  playerNames: Record<string, string>;
   onSend: (text: string) => void;
   /** No more messages can be sent; the history stays readable. */
   isClosed?: boolean;
@@ -33,6 +54,7 @@ const ChatSheet: React.FC<ChatSheetProps> = ({
   onClose,
   messages,
   myUserId,
+  playerNames,
   onSend,
   isClosed = false,
 }) => {
@@ -80,6 +102,17 @@ const ChatSheet: React.FC<ChatSheetProps> = ({
             />
           ) : (
             messages.map((message) => {
+              if (message.kind !== 'message') {
+                return (
+                  <Text
+                    key={message.id}
+                    style={styles.notice}
+                    testID={`chat-notice-${message.id}`}
+                  >
+                    {noteText(message, myUserId, playerNames)}
+                  </Text>
+                );
+              }
               const isMine = message.userId === myUserId;
               return (
                 <View
@@ -174,6 +207,13 @@ const styles = StyleSheet.create({
   theirsText: {
     color: '#222',
     fontSize: 15,
+  },
+  // A line from the game, not a player: faint, between the bubbles.
+  notice: {
+    alignSelf: 'center',
+    paddingVertical: 2,
+    fontSize: 13,
+    color: '#aaa',
   },
   closed: {
     marginTop: 8,

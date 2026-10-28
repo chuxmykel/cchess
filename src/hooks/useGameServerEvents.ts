@@ -9,10 +9,18 @@ import {
   GameMovePushPayload,
   GameResultReason,
   GameSnapshot,
+  SeriesScore,
+  Side,
 } from '../network/socketEvents';
 import { UseChessGameResult } from './useChessGame';
 
 export type GameStatus = 'active' | 'completed' | 'aborted';
+
+/** The server names sides 'white'/'black'; the board works in Colors. */
+function colorOf(side: Side | null): Color | null {
+  if (side === null) return null;
+  return side === 'white' ? 'w' : 'b';
+}
 
 export type GameServerEventsResult = {
   gameStatus: GameStatus;
@@ -25,6 +33,8 @@ export type GameServerEventsResult = {
   moves: GameMoveSummary[];
   whiteRatingDiff: number | null;
   blackRatingDiff: number | null;
+  /** The rematch series score, updated when the game ends. */
+  series: SeriesScore | null;
   clearDrawOffer: () => void;
 };
 
@@ -57,7 +67,10 @@ export function useGameServerEvents(
     whiteTimeMs: snapshot.whiteTimeRemainingMs,
     blackTimeMs: snapshot.blackTimeRemainingMs,
   });
-  const [drawOfferedBy, setDrawOfferedBy] = useState(snapshot.drawOfferedBy);
+  const [drawOfferedBy, setDrawOfferedBy] = useState(
+    colorOf(snapshot.drawOfferedBy),
+  );
+
   const [firstMoveDeadline, setFirstMoveDeadline] = useState(
     snapshot.firstMoveDeadline,
   );
@@ -66,6 +79,8 @@ export function useGameServerEvents(
     whiteRatingDiff: snapshot.whiteRatingDiff,
     blackRatingDiff: snapshot.blackRatingDiff,
   });
+
+  const [series, setSeries] = useState(snapshot.series);
 
   const gameRef = useRef(game);
   useLayoutEffect(() => {
@@ -83,6 +98,8 @@ export function useGameServerEvents(
       });
       setFirstMoveDeadline(payload.firstMoveDeadline);
       setMoves((previous) => withMoveAdded(previous, payload.move));
+      // Any move lapses a draw offer, as it does on the server.
+      setDrawOfferedBy(null);
       if (payload.fen === gameRef.current.fen) {
         return; // the echo of a move we already applied optimistically
       }
@@ -114,11 +131,12 @@ export function useGameServerEvents(
         whiteRatingDiff: payload.whiteRatingDiff,
         blackRatingDiff: payload.blackRatingDiff,
       });
+      setSeries(payload.series);
     }
 
     function handleDrawOffered(payload: DrawOfferedPayload) {
       if (payload.gameId === gameId) {
-        setDrawOfferedBy(payload.by);
+        setDrawOfferedBy(colorOf(payload.by));
       }
     }
 
@@ -164,6 +182,7 @@ export function useGameServerEvents(
     firstMoveDeadline,
     moves,
     ...ratingDiffs,
+    series,
     clearDrawOffer,
   };
 }

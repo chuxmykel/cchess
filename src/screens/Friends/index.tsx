@@ -9,12 +9,14 @@ import FriendRow from '../../components/FriendRow';
 import SegmentedTabs from '../../components/SegmentedTabs';
 import Toast from '../../components/Toast';
 import UserSearchField from '../../components/UserSearchField';
+import UserSearchResults from '../../components/UserSearchResults';
 import { useSocialContext } from '../../context/SocialContext';
 import { useFriendActions } from '../../hooks/useFriendActions';
 import { useToast } from '../../hooks/useToast';
 import { useUserSearch } from '../../hooks/useUserSearch';
 import { Friend } from '../../network/restClient';
 import { byPresence } from '../../utils/presence';
+import { HomeStackScreenProps } from '../HomeStack/types';
 import { HomeTabStackScreenProps } from '../HomeTabStack/types';
 
 type FriendsTab = 'online' | 'all' | 'requests';
@@ -23,10 +25,17 @@ function counted(count: number, noun: string): string {
   return `${count} ${count === 1 ? noun : `${noun}s`}`;
 }
 
-type FriendsProps = Pick<
-  HomeTabStackScreenProps<'Friends'>,
-  'navigation' | 'route'
->;
+// In the Home tab's stack, or over the tabs as FindFriends - opened from a
+// profile, so Back returns there. Either way it opens screens over the tabs.
+type FriendsProps = {
+  navigation: Pick<
+    HomeStackScreenProps<'FindFriends'>['navigation'],
+    'navigate'
+  >;
+  route:
+    | HomeTabStackScreenProps<'Friends'>['route']
+    | HomeStackScreenProps<'FindFriends'>['route'];
+};
 
 const Friends: React.FC<FriendsProps> = ({ navigation, route }) => {
   const social = useSocialContext();
@@ -138,53 +147,65 @@ const Friends: React.FC<FriendsProps> = ({ navigation, route }) => {
         <UserSearchField
           query={searchQuery}
           onChangeQuery={setSearchQuery}
-          search={userSearch}
           autoFocus={route.params?.focusSearch}
+        />
+      </View>
+      {/* While searching, the matches take the place of the friends - kept
+          when you open one, so Back returns to them. */}
+      {userSearch.status !== 'idle' ? (
+        <UserSearchResults
+          query={searchQuery}
+          search={userSearch}
           onSelect={(user) =>
             navigation.navigate('UserProfile', { username: user.username })
           }
         />
-      </View>
-      <SegmentedTabs<FriendsTab>
-        tabs={[
-          { key: 'online', label: `${onlineFriends.length} online` },
-          { key: 'all', label: counted(friends.length, 'friend') },
-          { key: 'requests', label: counted(requestCount, 'request') },
-        ]}
-        selected={tab}
-        onSelect={setTab}
-      />
-      {tab === 'requests' ? (
-        renderRequests()
       ) : (
-        <FlatList
-          data={shownFriends}
-          keyExtractor={(friend) => friend.id}
-          renderItem={renderFriend}
-          ListEmptyComponent={
-            tab === 'online' ? (
-              <EmptyState
-                illustration="friends"
-                title={
-                  friends.length === 0 ? 'Add some friends' : "Nobody's online"
-                }
-                message={
-                  friends.length === 0
-                    ? 'Friends who are online will show up on this tab. Search for players above to add some.'
-                    : 'Friends who are online right now will show up here.'
-                }
-                testID="online-empty"
-              />
-            ) : (
-              <EmptyState
-                illustration="friends"
-                title="No friends yet"
-                message="Your friends will show up here once you connect. Search for players above to add some."
-                testID="all-friends-empty"
-              />
-            )
-          }
-        />
+        <>
+          <SegmentedTabs<FriendsTab>
+            tabs={[
+              { key: 'online', label: `${onlineFriends.length} online` },
+              { key: 'all', label: counted(friends.length, 'friend') },
+              { key: 'requests', label: counted(requestCount, 'request') },
+            ]}
+            selected={tab}
+            onSelect={setTab}
+          />
+          {tab === 'requests' ? (
+            renderRequests()
+          ) : (
+            <FlatList
+              data={shownFriends}
+              keyExtractor={(friend) => friend.id}
+              renderItem={renderFriend}
+              ListEmptyComponent={
+                tab === 'online' ? (
+                  <EmptyState
+                    illustration="friends"
+                    title={
+                      friends.length === 0
+                        ? 'Add some friends'
+                        : "Nobody's online"
+                    }
+                    message={
+                      friends.length === 0
+                        ? 'Friends who are online will show up on this tab. Search for players above to add some.'
+                        : 'Friends who are online right now will show up here.'
+                    }
+                    testID="online-empty"
+                  />
+                ) : (
+                  <EmptyState
+                    illustration="friends"
+                    title="No friends yet"
+                    message="Your friends will show up here once you connect. Search for players above to add some."
+                    testID="all-friends-empty"
+                  />
+                )
+              }
+            />
+          )}
+        </>
       )}
       <ChallengeSheet
         opponentName={friendActions.challengeTarget?.displayName ?? null}
@@ -206,7 +227,6 @@ const styles = StyleSheet.create({
   },
   search: {
     padding: 16,
-    zIndex: 1,
   },
   requests: {
     gap: 8,

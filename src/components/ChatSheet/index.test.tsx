@@ -9,6 +9,7 @@ function message(id: string, userId: string, text: string): ChatMessage {
     id,
     gameId: 'game-1',
     userId,
+    kind: 'message',
     text,
     createdAt: '2026-10-27T10:00:00.000Z',
   };
@@ -23,6 +24,7 @@ describe('ChatSheet', () => {
           onClose={jest.fn()}
           messages={messages}
           myUserId="me"
+          playerNames={{ me: 'Me', them: 'Judit' }}
           onSend={onSend}
         />,
       ),
@@ -48,6 +50,26 @@ describe('ChatSheet', () => {
     expect(screen.getByTestId('chat-message-2')).toHaveStyle({
       alignSelf: 'flex-end',
     });
+  });
+
+  it('shows notes of draws as plain lines naming who, not bubbles', async () => {
+    const screen = await renderSheet([
+      message('1', 'them', 'Good luck'),
+      { ...message('2', 'them', ''), kind: 'draw-offered' },
+      { ...message('3', 'me', ''), kind: 'draw-declined' },
+      { ...message('4', 'them', ''), kind: 'draw-accepted' },
+    ]);
+
+    expect(screen.getByTestId('chat-notice-2')).toHaveTextContent(
+      'Judit offered a draw',
+    );
+    expect(screen.getByTestId('chat-notice-3')).toHaveTextContent(
+      'You declined the draw',
+    );
+    expect(screen.getByTestId('chat-notice-4')).toHaveTextContent(
+      'Judit accepted the draw',
+    );
+    expect(screen.queryByTestId('chat-message-2')).toBeNull();
   });
 
   it('sends the draft and clears it', async () => {
@@ -76,6 +98,7 @@ describe('ChatSheet', () => {
           onClose={jest.fn()}
           messages={[]}
           myUserId="me"
+          playerNames={{}}
           onSend={jest.fn()}
           isClosed
         />,

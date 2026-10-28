@@ -114,10 +114,12 @@ describe('Conversation', () => {
       );
     (clearMessages as jest.Mock).mockResolvedValue(undefined);
     const { screen, navigation } = await renderScreen();
-    const { headerRight } = (navigation.setOptions as jest.Mock).mock.calls.at(
-      -1,
-    )[0];
-    const header = await render(headerRight());
+    const { unstable_headerRightItems } = (
+      navigation.setOptions as jest.Mock
+    ).mock.calls.at(-1)[0];
+    const [trash] = unstable_headerRightItems();
+    expect(trash.hidesSharedBackground).toBe(true);
+    const header = await render(trash.element);
 
     await fireEvent.press(header.getByTestId('clear-conversation-button'));
     await act(async () => {});

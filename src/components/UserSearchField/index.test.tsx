@@ -1,67 +1,27 @@
 import { fireEvent, render } from '@testing-library/react-native';
 
 import UserSearchField from '.';
-import { UserSearch } from '../../hooks/useUserSearch';
-
-const JUDIT = {
-  id: 'judit-id',
-  username: 'judit',
-  displayName: 'Judit Polgar',
-  avatarColor: '#D64545',
-};
 
 describe('UserSearchField', () => {
-  async function renderField(search: UserSearch, query = 'jud') {
+  async function renderField(query = 'jud') {
     const onChangeQuery = jest.fn();
-    const onSelect = jest.fn();
     const screen = await render(
-      <UserSearchField
-        query={query}
-        onChangeQuery={onChangeQuery}
-        search={search}
-        onSelect={onSelect}
-      />,
+      <UserSearchField query={query} onChangeQuery={onChangeQuery} />,
     );
-    return { screen, onChangeQuery, onSelect };
+    return { screen, onChangeQuery };
   }
 
-  it('shows no dropdown before there is anything to search', async () => {
-    const { screen } = await renderField({ status: 'idle' }, '');
+  it('passes on what is typed', async () => {
+    const { screen, onChangeQuery } = await renderField('');
 
-    expect(screen.queryByTestId('user-search-results')).toBeNull();
-  });
+    await fireEvent.changeText(screen.getByTestId('user-search-input'), 'ma');
 
-  it('lists matching players and picks one, clearing the search', async () => {
-    const { screen, onChangeQuery, onSelect } = await renderField({
-      status: 'done',
-      results: [JUDIT],
-    });
-
-    expect(screen.getByText('@judit')).toBeTruthy();
-    await fireEvent.press(screen.getByTestId('user-search-result-judit'));
-
-    expect(onSelect).toHaveBeenCalledWith(JUDIT);
-    expect(onChangeQuery).toHaveBeenCalledWith('');
-  });
-
-  it('says when nobody matches', async () => {
-    const { screen } = await renderField({ status: 'done', results: [] });
-
-    expect(screen.getByTestId('user-search-empty')).toHaveTextContent(
-      'No players match “jud”.',
-    );
-  });
-
-  it('says when the search failed', async () => {
-    const { screen } = await renderField({ status: 'error' });
-
-    expect(screen.getByText(/Couldn't search right now/)).toBeTruthy();
+    expect(onChangeQuery).toHaveBeenCalledWith('ma');
+    expect(screen.queryByTestId('user-search-clear')).toBeNull();
   });
 
   it('clears the search', async () => {
-    const { screen, onChangeQuery } = await renderField({
-      status: 'searching',
-    });
+    const { screen, onChangeQuery } = await renderField();
 
     await fireEvent.press(screen.getByTestId('user-search-clear'));
 

@@ -1,12 +1,12 @@
 import { useCallback, useLayoutEffect, useState } from 'react';
 import {
   Alert,
+  Animated,
   KeyboardAvoidingView,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,10 +19,12 @@ import { MESSAGE_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { useSocialContext } from '../../context/SocialContext';
 import { useDirectMessages } from '../../hooks/useDirectMessages';
+import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
 import { useToast } from '../../hooks/useToast';
 import { ApiError } from '../../network/restClient';
 import { presenceLabel } from '../../utils/presence';
 import { HomeStackScreenProps } from '../HomeStack/types';
+import { plainHeaderItem } from '../plainHeaderOptions';
 
 type ConversationProps = Pick<
   HomeStackScreenProps<'Conversation'>,
@@ -35,6 +37,7 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
   const social = useSocialContext();
   const toast = useToast();
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardHeight();
   const [draft, setDraft] = useState('');
   const markRead = useCallback(
     () => social.markConversationRead(userId),
@@ -65,17 +68,19 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
   useLayoutEffect(() => {
     navigation.setOptions({
       title: displayName,
-      headerRight: () => (
-        <Pressable
-          onPress={confirmClear}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Delete conversation"
-          testID="clear-conversation-button"
-        >
-          <Icon name="trash-can-outline" size={22} />
-        </Pressable>
-      ),
+      unstable_headerRightItems: () => [
+        plainHeaderItem(
+          <Pressable
+            onPress={confirmClear}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Delete conversation"
+            testID="clear-conversation-button"
+          >
+            <Icon name="trash-can-outline" size={22} />
+          </Pressable>,
+        ),
+      ],
     });
   }, [navigation, displayName, confirmClear]);
 
@@ -116,7 +121,20 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
           onLoadOlder={conversation.loadOlder}
         />
       )}
-      <View style={styles.composer}>
+      <Animated.View
+        style={[
+          styles.composer,
+          {
+            // Clear of the home indicator and the screen's rounded corner,
+            // except while the keyboard covers them.
+            paddingBottom: keyboardHeight.interpolate({
+              inputRange: [0, 1],
+              outputRange: [insets.bottom + 8, 8],
+              extrapolate: 'clamp',
+            }),
+          },
+        ]}
+      >
         <TextInput
           style={styles.input}
           value={draft}
@@ -143,7 +161,7 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
             color={canSend ? ACCENT_COLOR : '#c4c4c4'}
           />
         </Pressable>
-      </View>
+      </Animated.View>
       <Toast toasts={toast.toasts} />
     </KeyboardAvoidingView>
   );

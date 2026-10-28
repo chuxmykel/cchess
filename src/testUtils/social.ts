@@ -4,6 +4,7 @@ import {
   DirectMessage,
   Friend,
   FriendRequest,
+  UserFriend,
   UserProfile,
 } from '../network/restClient';
 
@@ -19,6 +20,16 @@ export function makeFriend(overrides: Partial<Friend> = {}): Friend {
     ratings: [
       { category: 'blitz', rating: 1650, gamesPlayed: 40, provisional: false },
     ],
+    ...overrides,
+  };
+}
+
+export function makeUserFriend(
+  overrides: Partial<UserFriend> = {},
+): UserFriend {
+  return {
+    ...makeFriend(),
+    friendsSince: '2026-09-01T10:00:00.000Z',
     ...overrides,
   };
 }
@@ -80,6 +91,7 @@ export function makeUserProfile(
     playingGameId: null,
     gamesPlayed: 42,
     timePlayedMs: 3 * 60 * 60 * 1000,
+    friendsCount: 0,
     friendship: { status: 'friends', requestId: null },
     score: { wins: 2, draws: 1, losses: 3 },
     ...overrides,

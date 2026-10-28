@@ -2,15 +2,20 @@ import { act, fireEvent, render, within } from '@testing-library/react-native';
 
 import Profile from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
-import { ApiError } from '../../network/restClient';
+import { ApiError, getUserFriends } from '../../network/restClient';
 import {
   makeAuthSession,
   makeBootstrappingAuthSession,
 } from '../../testUtils/authSession';
 import { withSafeArea } from '../../testUtils/safeArea';
+import { makeUserFriend } from '../../testUtils/social';
 
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
+}));
+jest.mock('../../network/restClient', () => ({
+  ...jest.requireActual('../../network/restClient'),
+  getUserFriends: jest.fn(),
 }));
 jest.mock('@react-navigation/native', () =>
   jest.requireActual('../../testUtils/focusEffectRunsOnMount'),
@@ -33,6 +38,9 @@ const MAGNUS = {
 describe('Profile', () => {
   function renderScreen(session = makeAuthSession()) {
     (useAuthSession as jest.Mock).mockReturnValue(session);
+    (getUserFriends as jest.Mock).mockResolvedValue([
+      makeUserFriend({ id: 'my-friend', username: 'hikaru' }),
+    ]);
     const navigation = { navigate: jest.fn() };
     return {
       screenPromise: render(withSafeArea(<Profile navigation={navigation} />)),
@@ -52,6 +60,8 @@ describe('Profile', () => {
 
       expect(screen.getByTestId('sign-in-prompt')).toBeTruthy();
       expect(screen.queryByText('Ratings')).toBeNull();
+      expect(screen.queryByTestId('profile-friends-view-all')).toBeNull();
+      expect(getUserFriends).not.toHaveBeenCalled();
       expect(screen.queryByTestId('sign-out-button')).toBeNull();
     });
 
@@ -86,6 +96,32 @@ describe('Profile', () => {
         within(screen.getByTestId('rating-blitz')).getByText('1516'),
       ).toBeTruthy();
       expect(screen.queryByTestId('sign-in-prompt')).toBeNull();
+    });
+
+    it('shows their friends, opening one, all of them, or Friends to add more', async () => {
+      const { screenPromise, navigation } = renderScreen(
+        makeAuthSession({ user: MAGNUS }),
+      );
+      const screen = await screenPromise;
+      await act(async () => {});
+
+      expect(getUserFriends).toHaveBeenCalledWith('magnus', 'access-token');
+      expect(
+        screen.getByTestId('profile-friends-view-all-count'),
+      ).toHaveTextContent('1', { exact: false });
+      await fireEvent.press(screen.getByTestId('profile-friend-my-friend'));
+      expect(navigation.navigate).toHaveBeenCalledWith('UserProfile', {
+        username: 'hikaru',
+      });
+      await fireEvent.press(screen.getByTestId('profile-friends-view-all'));
+      expect(navigation.navigate).toHaveBeenCalledWith('UserFriends', {
+        username: 'magnus',
+        displayName: 'Magnus Carlsen',
+      });
+      await fireEvent.press(screen.getByTestId('profile-add-friends'));
+      expect(navigation.navigate).toHaveBeenCalledWith('FindFriends', {
+        focusSearch: true,
+      });
     });
 
     it('opens their stats in a category', async () => {

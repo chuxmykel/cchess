@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 interface GameClockProps {
   ms: number;
   isActive: boolean;
+  /** Whose clock it is - read out by screen readers, not shown. */
   label: string;
 }
 
@@ -34,9 +35,10 @@ const GameClock: React.FC<GameClockProps> = ({ ms, isActive, label }) => {
   return (
     <View
       style={[styles.container, isActive && styles.active]}
+      accessible
+      accessibilityLabel={`${label} clock, ${formatClock(ms)}`}
       testID={`game-clock-${label}`}
     >
-      <Text style={styles.label}>{label}</Text>
       <Text style={[styles.time, isLowTime(ms) && styles.timeLow]}>
         {formatClock(ms)}
       </Text>
@@ -48,21 +50,15 @@ export default GameClock;
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 8,
     backgroundColor: '#f2f2f2',
-    minWidth: 140,
+    minWidth: 84,
   },
   active: {
     backgroundColor: '#e3edd8',
-  },
-  label: {
-    fontSize: 14,
-    color: '#555',
   },
   time: {
     fontSize: 18,

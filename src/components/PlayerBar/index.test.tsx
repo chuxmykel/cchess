@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react-native';
+import { render, within } from '@testing-library/react-native';
 import { Color } from 'chess.js';
 
 import PlayerBar from '.';
@@ -32,6 +32,7 @@ describe('PlayerBar', () => {
       firstMoveSecondsLeft: number | null;
       isOnline: boolean;
       material: SideMaterial;
+      series: { white: number; black: number } | null;
     }> = {},
   ) {
     return render(
@@ -45,26 +46,26 @@ describe('PlayerBar', () => {
         firstMoveSecondsLeft={overrides.firstMoveSecondsLeft ?? null}
         isOnline={overrides.isOnline}
         material={overrides.material}
+        series={overrides.series}
       />,
     );
   }
 
-  it("shows white's name, clock and label for the white bar", async () => {
+  it("shows white's name and clock for the white bar", async () => {
     const screen = await renderBar('w');
 
     expect(screen.getByTestId('player-bar-w')).toBeTruthy();
     expect(screen.getByText(white.displayName)).toBeTruthy();
-    expect(screen.getByText('White')).toBeTruthy();
-    expect(screen.getByText('1:05')).toBeTruthy();
+    expect(screen.getByLabelText('White clock, 1:05')).toBeTruthy();
+    expect(screen.queryByText('White')).toBeNull();
   });
 
-  it("shows black's name, clock and label for the black bar", async () => {
+  it("shows black's name and clock for the black bar", async () => {
     const screen = await renderBar('b');
 
     expect(screen.getByTestId('player-bar-b')).toBeTruthy();
     expect(screen.getByText(black.displayName)).toBeTruthy();
-    expect(screen.getByText('Black')).toBeTruthy();
-    expect(screen.getByText('0:30')).toBeTruthy();
+    expect(screen.getByLabelText('Black clock, 0:30')).toBeTruthy();
   });
 
   it("highlights the clock only on that side's turn", async () => {
@@ -92,6 +93,40 @@ describe('PlayerBar', () => {
 
     const over = await renderBar('w', { isGameOver: true });
     expect(over.getByTestId('player-bar-w')).toHaveStyle({ opacity: 0.5 });
+  });
+
+  it("shows each side's points in a rematch series, as decimals", async () => {
+    const series = { white: 1.5, black: 0.5 };
+
+    const whiteBar = await renderBar('w', { series });
+    expect(whiteBar.getByTestId('series-points-w')).toHaveTextContent('1.5');
+    const blackBar = await renderBar('b', { series });
+    expect(blackBar.getByTestId('series-points-b')).toHaveTextContent('0.5');
+  });
+
+  it('lifts the initials clear of the series band', async () => {
+    const inSeries = await renderBar('w', { series: { white: 1, black: 0 } });
+    expect(inSeries.getByText('GW')).toHaveStyle({
+      transform: [{ translateY: -6.5 }],
+    });
+    await inSeries.unmount();
+
+    const outside = await renderBar('w');
+    expect(outside.getByText('GW')).not.toHaveStyle({
+      transform: [{ translateY: -6.5 }],
+    });
+  });
+
+  it("shows the player's avatar before their name", async () => {
+    const screen = await renderBar('w');
+
+    expect(screen.getByTestId('player-avatar-w')).toHaveTextContent('GW');
+  });
+
+  it('shows no points outside a series', async () => {
+    const screen = await renderBar('w');
+
+    expect(screen.queryByTestId('series-points-w')).toBeNull();
   });
 
   it("shows a player's rating beside their name", async () => {
@@ -161,6 +196,14 @@ describe('PlayerBar', () => {
       expect(offline.getByLabelText('Offline')).toBeTruthy();
     });
 
+    it('shows it as a badge on the avatar', async () => {
+      const screen = await renderBar('b', { isOnline: true });
+
+      expect(
+        within(screen.getByTestId('player-avatar-b')).getByTestId('presence-b'),
+      ).toBeTruthy();
+    });
+
     it('shows no dot without presence', async () => {
       const screen = await renderBar('w');
 
@@ -194,5 +237,19 @@ describe('PlayerBar', () => {
 
     expect(screen.getByTestId('first-move-countdown-w')).toBeTruthy();
     expect(screen.queryByTestId('captured-pieces-w')).toBeNull();
+  });
+
+  it('keeps the line under the name the same height, empty or not', async () => {
+    const empty = await renderBar('w');
+    expect(empty.getByTestId('player-subline-w')).toHaveStyle({ height: 16 });
+    await empty.unmount();
+
+    const withPieces = await renderBar('w', {
+      material: { pieces: ['p'], score: 1 },
+    });
+    expect(withPieces.getByTestId('player-subline-w')).toHaveStyle({
+      height: 16,
+    });
+    expect(withPieces.getByTestId('player-bar-w')).toHaveStyle({ height: 40 });
   });
 });

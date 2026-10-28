@@ -267,6 +267,7 @@ export type UserProfile = {
   playingGameId: string | null;
   gamesPlayed: number;
   timePlayedMs: number;
+  friendsCount: number;
   friendship: { status: FriendshipStatus; requestId: string | null };
   /** Your results against them; null on your own profile. */
   score: Score | null;
@@ -324,15 +325,17 @@ export type UserSearchResult = {
 };
 
 /** Registered players whose name contains the search, closest first. */
+/** Players matching the search, closest first; `offset` skips that many,
+ * for the next page. */
 export async function searchUsers(
   search: string,
   accessToken: string,
-  limit = 10,
+  page: { limit: number; offset: number } = { limit: 20, offset: 0 },
 ): Promise<UserSearchResult[]> {
   return (
     await apiClient.get<UserSearchResult[]>('/users', {
       ...bearer(accessToken),
-      params: { search, limit },
+      params: { search, ...page },
     })
   ).data;
 }
@@ -343,6 +346,19 @@ export async function getUserProfile(
 ): Promise<UserProfile> {
   return (
     await apiClient.get<UserProfile>(userPath(username), bearer(accessToken))
+  ).data;
+}
+
+/** A player's friends, the most recently added first. */
+export async function getUserFriends(
+  username: string,
+  accessToken: string,
+): Promise<UserFriend[]> {
+  return (
+    await apiClient.get<UserFriend[]>(
+      `${userPath(username)}/friends`,
+      bearer(accessToken),
+    )
   ).data;
 }
 
@@ -381,6 +397,12 @@ export type Friend = {
   online: boolean;
   playingGameId: string | null;
   ratings: UserRating[];
+};
+
+/** Someone's friend, as their profile lists them. */
+export type UserFriend = Friend & {
+  /** When they became friends. */
+  friendsSince: string;
 };
 
 export type FriendRequest = {

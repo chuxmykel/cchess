@@ -9,6 +9,7 @@ import ChatSheet from '../../components/ChatSheet';
 import StaticBoard from '../../components/ChessBoard/StaticBoard';
 import GameHeader from '../../components/GameHeader';
 import GameOverCard from '../../components/GameOverCard';
+import GameOverOverlay from '../../components/GameOverOverlay';
 import GameToolbar from '../../components/GameToolbar';
 import MoveList from '../../components/MoveList';
 import PlayerBar, { PlayerBarProps } from '../../components/PlayerBar';
@@ -121,7 +122,10 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
     clock,
     turn: snapshot.turn,
     isGameOver,
+    // Dimmed behind the result card, not once it's put away.
+    faded: showsResult,
     onPressPlayer: (player) => onOpenPlayer(player.username),
+    series: snapshot.series,
   };
 
   return (
@@ -167,7 +171,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
             orientation={orientation}
           />
           {showsResult && (
-            <View style={styles.resultOverlay} testID="game-over-overlay">
+            <GameOverOverlay onDismiss={() => setIsResultDismissed(true)}>
               <GameOverCard
                 result={snapshot.result}
                 myColor={myColor}
@@ -178,7 +182,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
                 newGameLabel={newGameLabel}
                 onDismiss={() => setIsResultDismissed(true)}
               />
-            </View>
+            </GameOverOverlay>
           )}
         </View>
         <PlayerBar
@@ -212,6 +216,10 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
           onClose={chat.close}
           messages={chat.messages}
           myUserId={chat.myUserId}
+          playerNames={{
+            [snapshot.white.id]: snapshot.white.displayName,
+            [snapshot.black.id]: snapshot.black.displayName,
+          }}
           onSend={chat.send}
           isClosed={chat.isClosed}
         />
@@ -231,15 +239,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     gap: 12,
-  },
-  resultOverlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
   },
 });

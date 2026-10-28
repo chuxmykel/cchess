@@ -17,6 +17,7 @@ import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
 import ChatSheet from '../../components/ChatSheet';
 import DrawOfferPrompt from '../../components/DrawOfferPrompt';
 import GameOverCard from '../../components/GameOverCard';
+import GameOverOverlay from '../../components/GameOverOverlay';
 import { useGameScreenGestureLock } from '../../hooks/useGameScreenGestureLock';
 import { useGameClock } from '../../hooks/useGameClock';
 import { useFirstMoveCountdown } from '../../hooks/useFirstMoveCountdown';
@@ -28,6 +29,7 @@ import { materialImbalance } from '../../domain/material';
 import { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
 import { useOnlineChessGameContext } from '../../context/LiveGame/OnlineChessGameContext';
+import { RematchStatus } from '../../hooks/useRematch';
 import EarlierPositionOverlay from './EarlierPositionOverlay';
 
 export type LiveGameContentNavigation = Pick<
@@ -51,6 +53,9 @@ type GameMenuOptions = {
   confirmAbort: () => void;
   confirmResign: () => void;
   offerDraw: () => void;
+  findNewOpponent: () => void;
+  /** Brings the result card back; only while it's dismissed. */
+  showResult?: () => void;
 };
 
 function gameMenuActions({
@@ -61,6 +66,8 @@ function gameMenuActions({
   confirmAbort,
   confirmResign,
   offerDraw,
+  findNewOpponent,
+  showResult,
 }: GameMenuOptions): ActionSheetAction[] {
   const flipBoard: ActionSheetAction = {
     label: 'Flip board',
@@ -68,7 +75,23 @@ function gameMenuActions({
     testID: 'flip-board-action',
   };
   if (isGameOver) {
-    return [flipBoard];
+    return [
+      flipBoard,
+      ...(showResult
+        ? [
+            {
+              label: 'Show result',
+              onPress: showResult,
+              testID: 'show-result-action',
+            },
+          ]
+        : []),
+      {
+        label: 'New opponent',
+        onPress: findNewOpponent,
+        testID: 'new-opponent-action',
+      },
+    ];
   }
   const leaveGame: ActionSheetAction = canAbort
     ? {
@@ -102,16 +125,19 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     pendingPromotion,
     promoteTo,
     isGameOver,
+    gameStatus,
     myColor,
     result,
     resultReason,
     whiteTimeMs,
     blackTimeMs,
-    drawOfferedBy,
+    drawOffer,
     firstMoveDeadline,
     moves,
     whiteRatingDiff,
     blackRatingDiff,
+    series,
+    rematch,
     canAbort,
     isOpponentOnline,
     chat,
@@ -129,6 +155,12 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     onError,
   );
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // The rematch status the result card was dismissed at: it stays hidden
+  // until that changes - when the opponent offers a rematch, say - so a
+  // rematch offer is never missed behind a dismissed card.
+  const [resultDismissedAt, setResultDismissedAt] =
+    useState<RematchStatus | null>(null);
+  const isResultDismissed = resultDismissedAt === rematch.status;
 
   useGameScreenGestureLock(navigation, isGameOver);
   const clock = useGameClock(
@@ -144,9 +176,6 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     snapshot.incrementSeconds,
     snapshot.gameType,
   );
-  const drawOfferedByMe = drawOfferedBy === myColor;
-  const drawOfferedByOpponent =
-    drawOfferedBy !== null && drawOfferedBy !== myColor;
 
   function leaveGame() {
     navigation.popToTop();
@@ -173,11 +202,17 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   const menuActions = gameMenuActions({
     isGameOver,
     canAbort,
-    canOfferDraw: !drawOfferedByMe && !drawOfferedByOpponent,
+    // Like resigning, only once both sides have moved - before that, the
+    // game can still be aborted.
+    canOfferDraw: !canAbort && drawOffer === 'none',
     flip,
     confirmAbort,
     confirmResign,
     offerDraw,
+    findNewOpponent,
+    showResult: isResultDismissed
+      ? () => setResultDismissedAt(null)
+      : undefined,
   });
 
   const myPlayer = myColor === 'w' ? snapshot.white : snapshot.black;
@@ -185,15 +220,19 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
 
   const topColor: Color = orientation === 'w' ? 'b' : 'w';
   const material = materialImbalance(moveNavigation.viewedFen ?? fen);
+  const showsResult = isGameOver && moveNavigation.isLive && !isResultDismissed;
   const sharedPlayerBarProps: Omit<PlayerBarProps, 'color'> = {
     white: snapshot.white,
     black: snapshot.black,
     clock,
     turn,
     isGameOver,
+    // Dimmed behind the result card, not once it's put away.
+    faded: showsResult,
     firstMoveSecondsLeft,
     onPressPlayer: (player) =>
       navigation.navigate('UserProfile', { username: player.username }),
+    series,
   };
 
   return (
@@ -252,8 +291,10 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
             width={width}
             orientation={orientation}
           />
-          {isGameOver && moveNavigation.isLive && (
-            <View style={styles.gameOverOverlay} testID="game-over-overlay">
+          {showsResult && (
+            <GameOverOverlay
+              onDismiss={() => setResultDismissedAt(rematch.status)}
+            >
               <GameOverCard
                 result={result}
                 myColor={myColor}
@@ -261,8 +302,19 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
                 myRating={myPlayer.rating}
                 myRatingDiff={myRatingDiff}
                 onNewOpponent={findNewOpponent}
+                // Only a game played out can be rematched, not one aborted.
+                rematch={
+                  gameStatus === 'completed'
+                    ? {
+                        status: rematch.status,
+                        onOffer: rematch.offer,
+                        onDecline: rematch.decline,
+                      }
+                    : undefined
+                }
+                onDismiss={() => setResultDismissedAt(rematch.status)}
               />
-            </View>
+            </GameOverOverlay>
           )}
         </View>
 
@@ -274,7 +326,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         />
       </View>
 
-      {!isGameOver && drawOfferedByOpponent && (
+      {!isGameOver && drawOffer === 'received' && (
         <DrawOfferPrompt
           onAccept={() => respondToDraw(true)}
           onDecline={() => respondToDraw(false)}
@@ -306,6 +358,10 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         onClose={chat.close}
         messages={chat.messages}
         myUserId={chat.myUserId}
+        playerNames={{
+          [snapshot.white.id]: snapshot.white.displayName,
+          [snapshot.black.id]: snapshot.black.displayName,
+        }}
         onSend={chat.send}
       />
     </View>
@@ -323,15 +379,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     gap: 12,
-  },
-  gameOverOverlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
   },
 });

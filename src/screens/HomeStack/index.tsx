@@ -13,18 +13,16 @@ import GameViewer from '../GameViewer';
 import UserProfile from '../UserProfile';
 import Conversation from '../Conversation';
 import GamesList from '../GamesList';
+import UserFriends from '../UserFriends';
+import Friends from '../Friends';
 import RatingStats from '../RatingStats';
 import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import SignIn from '../SignIn';
 import CreateAccount from '../CreateAccount';
+import { plainHeaderOptions } from '../plainHeaderOptions';
 import { HomeStackParamList, RootStackParamList } from './types';
 
 const { Navigator, Screen } = createNativeStackNavigator<HomeStackParamList>();
-
-const WITH_HEADER = {
-  headerShown: true,
-  headerBackButtonDisplayMode: 'minimal',
-} as const;
 
 const HomeStack: React.FC = () => {
   const navigation =
@@ -58,34 +56,59 @@ const HomeStack: React.FC = () => {
         <Screen
           name="UserProfile"
           component={UserProfile}
-          options={({ route }) => ({
-            ...WITH_HEADER,
-            title: route.params.username,
+          // The profile shows the username in its title itself, once the
+          // avatar block scrolls away.
+          options={({ navigation }) => ({
+            ...plainHeaderOptions(navigation),
+            title: '',
           })}
         />
         <Screen
           name="Conversation"
           component={Conversation}
-          options={WITH_HEADER}
+          options={({ navigation }) => plainHeaderOptions(navigation)}
         />
-        <Screen name="GamesList" component={GamesList} options={WITH_HEADER} />
+        <Screen
+          name="FindFriends"
+          component={Friends}
+          options={({ navigation }) => ({
+            ...plainHeaderOptions(navigation),
+            title: 'Friends',
+          })}
+        />
+        <Screen
+          name="UserFriends"
+          component={UserFriends}
+          options={({ navigation }) => plainHeaderOptions(navigation)}
+        />
+        <Screen
+          name="GamesList"
+          component={GamesList}
+          options={({ navigation }) => plainHeaderOptions(navigation)}
+        />
         <Screen
           name="RatingStats"
           component={RatingStats}
-          options={({ route }) => ({
-            ...WITH_HEADER,
+          options={({ navigation, route }) => ({
+            ...plainHeaderOptions(navigation),
             title: `${GAME_TYPE_LABELS[route.params.category]} rating`,
           })}
         />
         <Screen
           name="SignIn"
           component={SignIn}
-          options={{ ...WITH_HEADER, title: 'Sign in' }}
+          options={({ navigation }) => ({
+            ...plainHeaderOptions(navigation),
+            title: 'Sign in',
+          })}
         />
         <Screen
           name="CreateAccount"
           component={CreateAccount}
-          options={{ ...WITH_HEADER, title: 'Create account' }}
+          options={({ navigation }) => ({
+            ...plainHeaderOptions(navigation),
+            title: 'Create account',
+          })}
         />
       </Navigator>
     </SocialProvider>

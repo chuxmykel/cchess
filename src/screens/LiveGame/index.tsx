@@ -104,6 +104,7 @@ const LiveGame: React.FC<LiveGameProps> = ({ navigation, route }) => {
         myColor={myColor}
         snapshot={snapshot}
         onError={(message) => toast.show(message)}
+        onRematchStarted={startGame}
       >
         <LiveGameContent
           width={width}

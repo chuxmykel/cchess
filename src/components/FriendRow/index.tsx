@@ -11,7 +11,8 @@ import { highestRating, formatRating } from '../../utils/rating';
 interface FriendRowProps {
   friend: Friend;
   onPress: (friend: Friend) => void;
-  menuItems: PopoverMenuItem[];
+  /** What the row's ⋯ offers; no ⋯ without them. */
+  menuItems?: PopoverMenuItem[];
 }
 
 const FriendRow: React.FC<FriendRowProps> = ({
@@ -52,7 +53,12 @@ const FriendRow: React.FC<FriendRowProps> = ({
           </Text>
         </View>
       )}
-      <PopoverMenu items={menuItems} testID={`friend-row-menu-${friend.id}`} />
+      {menuItems && (
+        <PopoverMenu
+          items={menuItems}
+          testID={`friend-row-menu-${friend.id}`}
+        />
+      )}
     </Pressable>
   );
 };

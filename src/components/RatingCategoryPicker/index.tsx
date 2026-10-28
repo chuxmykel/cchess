@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, useWindowDimensions } from 'react-native';
 
 import GameTypeIcon from '../GameTypeIcon';
 import Icon from '../Icon';
@@ -24,6 +24,13 @@ const RatingCategoryPicker: React.FC<RatingCategoryPickerProps> = ({
 }) => {
   const { triggerRef, visible, position, open, close } =
     usePopoverMenu(MENU_WIDTH);
+  const { width: windowWidth } = useWindowDimensions();
+  // Just below the title, but centered on the screen like the title itself,
+  // rather than hanging off the trigger's right edge.
+  const centeredPosition = position && {
+    top: position.top,
+    left: (windowWidth - MENU_WIDTH) / 2,
+  };
 
   function select(selected: GameType) {
     close();
@@ -47,7 +54,7 @@ const RatingCategoryPicker: React.FC<RatingCategoryPickerProps> = ({
       </Pressable>
       <Popover
         visible={visible}
-        position={position}
+        position={centeredPosition}
         onClose={close}
         width={MENU_WIDTH}
         contentStyle={styles.menu}
@@ -93,8 +100,18 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
   },
+  // A visible edge and a lift off the page, so it reads as a dropdown -
+  // safe here, since this popover has no caret for an edge to cross.
   menu: {
     paddingVertical: 4,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#cfcfcf',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 8,
   },
   option: {
     flexDirection: 'row',

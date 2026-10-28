@@ -39,13 +39,12 @@ function makeFakeGame(
 
 describe('useGameServerEvents', () => {
   it('seeds its state from the initial snapshot', async () => {
-    const drawOfferedBy = 'b';
     const { socket } = createFakeSocket();
     const snapshot = makeGameSnapshot({
       status: 'active',
       whiteTimeRemainingMs: 300000,
       blackTimeRemainingMs: 280000,
-      drawOfferedBy,
+      drawOfferedBy: 'black',
     });
     const { result } = await renderHook(() =>
       useGameServerEvents(socket, GAME_ID, snapshot, makeFakeGame()),
@@ -54,7 +53,7 @@ describe('useGameServerEvents', () => {
     expect(result.current.gameStatus).toBe('active');
     expect(result.current.whiteTimeMs).toBe(300000);
     expect(result.current.blackTimeMs).toBe(280000);
-    expect(result.current.drawOfferedBy).toBe(drawOfferedBy);
+    expect(result.current.drawOfferedBy).toBe('b');
   });
 
   it('replays an incoming opponent move and updates the clocks', async () => {
@@ -281,13 +280,48 @@ describe('useGameServerEvents', () => {
     );
 
     await act(() => {
-      trigger('game:drawOffered', { gameId: GAME_ID, by: 'b' });
+      trigger('game:drawOffered', { gameId: GAME_ID, by: 'black' });
     });
     expect(result.current.drawOfferedBy).toBe('b');
 
     await act(() => {
       trigger('game:drawDeclined', { gameId: GAME_ID });
     });
+    expect(result.current.drawOfferedBy).toBeNull();
+  });
+
+  it('lapses a draw offer when a move is played, as the server does', async () => {
+    const { socket, trigger } = createFakeSocket();
+    const snapshot = makeGameSnapshot();
+    const { result } = await renderHook(() =>
+      useGameServerEvents(socket, GAME_ID, snapshot, makeFakeGame()),
+    );
+    await act(() => {
+      trigger('game:drawOffered', { gameId: GAME_ID, by: 'white' });
+    });
+
+    await act(() => {
+      trigger('game:move', {
+        gameId: GAME_ID,
+        move: {
+          ply: 1,
+          from: 'e2',
+          to: 'e4',
+          piece: 'p',
+          color: 'w',
+          san: 'e4',
+          captured: null,
+          promotion: null,
+          fenAfter: snapshot.fen,
+          clockAfterMs: 300000,
+        },
+        fen: snapshot.fen,
+        turn: 'b',
+        whiteTimeRemainingMs: 300000,
+        blackTimeRemainingMs: 300000,
+      });
+    });
+
     expect(result.current.drawOfferedBy).toBeNull();
   });
 
@@ -299,7 +333,7 @@ describe('useGameServerEvents', () => {
     );
 
     await act(() => {
-      trigger('game:drawOffered', { gameId: GAME_ID, by: 'b' });
+      trigger('game:drawOffered', { gameId: GAME_ID, by: 'black' });
     });
     expect(result.current.drawOfferedBy).toBe('b');
 
