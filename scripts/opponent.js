@@ -21,7 +21,8 @@ DESCRIPTION
        Reaching a real game through matchmaking needs a second player. This
        script is that player: it signs in to a local cchess-be as the
        real_user_bot account (or a fresh guest), seeks a game, and plays a
-       random legal move whenever it's its turn. Draw offers are declined.
+       random legal move whenever it's its turn. It answers a draw offer
+       after 2 seconds, accepting half the time, at random.
 
        It plays one game and exits, or --games N of them. Between games it
        offers a rematch and accepts one offered to it, so the series score
@@ -156,6 +157,7 @@ if (!(gamesToPlay >= 1) || (args.games && !Number.isInteger(gamesToPlay))) {
   process.exit(1);
 }
 // How long to wait for a rematch to start before looking for a new game.
+const DRAW_REPLY_DELAY_MS = 2000;
 const REMATCH_WAIT_MS = 15_000;
 if (args.color && !['w', 'b'].includes(args.color)) {
   console.error('--color must be "w" or "b"');
@@ -385,6 +387,9 @@ async function main() {
 
   socket.on('game:chat', (message) => {
     if (message.gameId !== gameId || message.userId === myUserId) return;
+    // The server's notes of draws offered and answered aren't anything
+    // said - nothing to log or answer.
+    if (message.kind !== 'message') return;
     log('chat:', message.text);
     if (args.chat) {
       socket.emit('game:chat', { gameId, text: `You said: ${message.text}` });
@@ -398,8 +403,16 @@ async function main() {
   });
 
   socket.on('game:drawOffered', () => {
-    log('declining draw offer');
-    socket.emit('game:drawRespond', { gameId, accept: false });
+    // A coin flip, so both outcomes of a draw offer can be tried - after a
+    // moment's thought rather than instantly.
+    const accept = Math.random() < 0.5;
+    const offeredIn = gameId;
+    log(`${accept ? 'accepting' : 'declining'} draw offer`);
+    setTimeout(() => {
+      // The game may have ended, or a rematch begun, while it thought.
+      if (gameId !== offeredIn) return;
+      socket.emit('game:drawRespond', { gameId: offeredIn, accept });
+    }, DRAW_REPLY_DELAY_MS);
   });
 
   socket.on('game:over', (snapshot) => {
