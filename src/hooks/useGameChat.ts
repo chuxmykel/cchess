@@ -9,6 +9,10 @@ export type UseGameChatResult = {
   send: (text: string) => void;
 };
 
+/** How far the chat's been read, and whether this app marked it so -
+ * which the server still needs telling - or heard it from the server. */
+type ReadMark = { at: string | null; isLocal: boolean };
+
 function withMessageAdded(
   messages: ChatMessage[],
   message: ChatMessage,
@@ -18,9 +22,16 @@ function withMessageAdded(
     : [...messages, message];
 }
 
+/** Whether a message counts as unread until seen: the opponent's words,
+ * and every note of a draw - mine too. */
+function countsAsUnread(message: ChatMessage, myUserId: string): boolean {
+  return message.kind !== 'message' || message.userId !== myUserId;
+}
+
 // A game's chat: its history (asked for once listening, and again after a
-// reconnect), new messages as they arrive, and how many of the opponent's
-// arrived while the chat was closed.
+// reconnect), new messages as they arrive, and how many arrived unseen -
+// counted from how far the server says I've read, and marked read there
+// whenever the chat is open.
 export function useGameChat(
   socket: AppSocket,
   gameId: string,
@@ -28,7 +39,7 @@ export function useGameChat(
   isOpen: boolean,
 ): UseGameChatResult {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [readCount, setReadCount] = useState(0);
+  const [read, setRead] = useState<ReadMark>({ at: null, isLocal: false });
 
   useEffect(() => {
     function handleMessage(message: ChatMessage) {
@@ -40,6 +51,7 @@ export function useGameChat(
     function handleHistory(payload: ChatHistoryPayload) {
       if (payload.gameId === gameId) {
         setMessages(payload.messages);
+        setRead({ at: payload.readAt, isLocal: false });
       }
     }
 
@@ -59,13 +71,24 @@ export function useGameChat(
     };
   }, [socket, gameId]);
 
-  if (isOpen && readCount !== messages.length) {
-    setReadCount(messages.length);
+  // Open, everything in it is seen: mark it read up to the newest message.
+  const newest = messages.at(-1)?.createdAt ?? null;
+  if (isOpen && newest && (read.at === null || newest > read.at)) {
+    setRead({ at: newest, isLocal: true });
   }
 
-  const unreadCount = messages
-    .slice(readCount)
-    .filter((message) => message.userId !== myUserId).length;
+  // ...and tell the server, once for each mark made here.
+  useEffect(() => {
+    if (read.isLocal) {
+      socket.emit('game:chatRead', { gameId });
+    }
+  }, [read, socket, gameId]);
+
+  const unreadCount = messages.filter(
+    (message) =>
+      (read.at === null || message.createdAt > read.at) &&
+      countsAsUnread(message, myUserId),
+  ).length;
 
   const send = useCallback(
     (text: string) => {

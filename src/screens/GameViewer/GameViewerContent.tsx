@@ -213,6 +213,10 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
           onClose={chat.close}
           messages={chat.messages}
           myUserId={chat.myUserId}
+          playerNames={{
+            [snapshot.white.id]: snapshot.white.displayName,
+            [snapshot.black.id]: snapshot.black.displayName,
+          }}
           onSend={chat.send}
           isClosed={chat.isClosed}
         />

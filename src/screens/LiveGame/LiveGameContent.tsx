@@ -130,7 +130,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     resultReason,
     whiteTimeMs,
     blackTimeMs,
-    drawOfferedBy,
+    drawOffer,
     firstMoveDeadline,
     moves,
     whiteRatingDiff,
@@ -175,9 +175,6 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     snapshot.incrementSeconds,
     snapshot.gameType,
   );
-  const drawOfferedByMe = drawOfferedBy === myColor;
-  const drawOfferedByOpponent =
-    drawOfferedBy !== null && drawOfferedBy !== myColor;
 
   function leaveGame() {
     navigation.popToTop();
@@ -204,7 +201,9 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   const menuActions = gameMenuActions({
     isGameOver,
     canAbort,
-    canOfferDraw: !drawOfferedByMe && !drawOfferedByOpponent,
+    // Like resigning, only once both sides have moved - before that, the
+    // game can still be aborted.
+    canOfferDraw: !canAbort && drawOffer === 'none',
     flip,
     confirmAbort,
     confirmResign,
@@ -321,7 +320,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         />
       </View>
 
-      {!isGameOver && drawOfferedByOpponent && (
+      {!isGameOver && drawOffer === 'received' && (
         <DrawOfferPrompt
           onAccept={() => respondToDraw(true)}
           onDecline={() => respondToDraw(false)}
@@ -353,6 +352,10 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         onClose={chat.close}
         messages={chat.messages}
         myUserId={chat.myUserId}
+        playerNames={{
+          [snapshot.white.id]: snapshot.white.displayName,
+          [snapshot.black.id]: snapshot.black.displayName,
+        }}
         onSend={chat.send}
       />
     </View>

@@ -144,10 +144,17 @@ export type DrawRespondPayload = {
   accept: boolean;
 };
 
+/** A player's own words, or a note of a draw they offered, declined or
+ * accepted - which has no text of its own. */
+export type ChatMessageKind =
+  'message' | 'draw-offered' | 'draw-declined' | 'draw-accepted';
+
 export type ChatMessage = {
   id: string;
   gameId: string;
+  /** Who sent it - or, for a note, who did what it notes. */
   userId: string;
+  kind: ChatMessageKind;
   text: string;
   createdAt: string;
 };
@@ -155,6 +162,8 @@ export type ChatMessage = {
 export type ChatHistoryPayload = {
   gameId: string;
   messages: ChatMessage[];
+  /** How far I've read the chat; null if I never have. */
+  readAt: string | null;
 };
 
 export type GamePresencePayload = {
@@ -186,6 +195,7 @@ export interface ClientToServerEvents {
   'game:drawRespond': (payload: DrawRespondPayload) => void;
   'game:chat': (payload: { gameId: string; text: string }) => void;
   'game:chatHistory': (payload: { gameId: string }) => void;
+  'game:chatRead': (payload: { gameId: string }) => void;
   'game:watch': (payload: { gameId: string }) => void;
   'game:unwatch': (payload: { gameId: string }) => void;
   'game:rematchOffer': (payload: { gameId: string }) => void;

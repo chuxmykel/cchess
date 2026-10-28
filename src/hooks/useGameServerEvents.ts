@@ -98,6 +98,8 @@ export function useGameServerEvents(
       });
       setFirstMoveDeadline(payload.firstMoveDeadline);
       setMoves((previous) => withMoveAdded(previous, payload.move));
+      // Any move lapses a draw offer, as it does on the server.
+      setDrawOfferedBy(null);
       if (payload.fen === gameRef.current.fen) {
         return; // the echo of a move we already applied optimistically
       }

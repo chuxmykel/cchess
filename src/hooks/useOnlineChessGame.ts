@@ -37,6 +37,8 @@ export type UseOnlineChessGameResult = Omit<
   whiteTimeMs: number;
   blackTimeMs: number;
   drawOfferedBy: Color | null;
+  /** A draw offer waiting for an answer: one I've sent, or received. */
+  drawOffer: DrawOfferStatus;
   firstMoveDeadline: string | null;
   moves: GameMoveSummary[];
   whiteRatingDiff: number | null;
@@ -54,6 +56,8 @@ export type UseOnlineChessGameResult = Omit<
   respondToDraw: (accept: boolean) => void;
   abort: () => void;
 };
+
+export type DrawOfferStatus = 'none' | 'sent' | 'received';
 
 const SERVER_ABORT_PLY_LIMIT = 2;
 
@@ -81,6 +85,9 @@ export function useOnlineChessGame(
     series,
     clearDrawOffer,
   } = useGameServerEvents(socket, gameId, snapshot, game, onError);
+  let drawOffer: DrawOfferStatus = 'none';
+  if (drawOfferedBy === myColor) drawOffer = 'sent';
+  else if (drawOfferedBy) drawOffer = 'received';
   const rematch = useRematch(socket, snapshot, myColor, onRematchStarted);
   const opponent = myColor === 'w' ? snapshot.black : snapshot.white;
   const isOpponentOnline = useOpponentPresence(socket, gameId, opponent.id);
@@ -150,6 +157,7 @@ export function useOnlineChessGame(
     whiteTimeMs,
     blackTimeMs,
     drawOfferedBy,
+    drawOffer,
     firstMoveDeadline,
     moves,
     whiteRatingDiff,
