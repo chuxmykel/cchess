@@ -54,9 +54,11 @@ const HomeStack: React.FC = () => {
         <Screen
           name="UserProfile"
           component={UserProfile}
-          options={({ navigation, route }) => ({
+          // The profile shows the username in its title itself, once the
+          // avatar block scrolls away.
+          options={({ navigation }) => ({
             ...plainHeaderOptions(navigation),
-            title: route.params.username,
+            title: '',
           })}
         />
         <Screen

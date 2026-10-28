@@ -1,5 +1,7 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
 
+import { Animated } from 'react-native';
+
 import UserProfile from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { useSocialContext } from '../../context/SocialContext';
@@ -44,7 +46,10 @@ describe('UserProfile', () => {
     (getUserProfile as jest.Mock).mockResolvedValue(profile);
     (getUserActivity as jest.Mock).mockResolvedValue([]);
     (getUserGames as jest.Mock).mockResolvedValue(games);
-    const navigation = { navigate: jest.fn() };
+    const navigation = {
+      navigate: jest.fn(),
+      setOptions: jest.fn(),
+    };
     const screen = await render(
       withSafeArea(
         <UserProfile
@@ -69,14 +74,47 @@ describe('UserProfile', () => {
     const { screen } = await renderScreen(makeUserProfile());
 
     expect(screen.getByText('@judit')).toBeTruthy();
-    expect(screen.getByText('42 games')).toBeTruthy();
+    expect(screen.getByText('Joined June 1, 2025')).toBeTruthy();
+    expect(screen.getByText('42 games played')).toBeTruthy();
     expect(screen.getByText('Time spent playing: 3 hours')).toBeTruthy();
     expect(screen.getByTestId('profile-score')).toHaveTextContent(
-      'Your score: 2½ - 3½',
+      'Score vs judit: 2½ - 3½',
     );
     expect(screen.getByTestId('profile-challenge')).toBeTruthy();
     expect(screen.getByTestId('profile-message')).toBeTruthy();
     expect(screen.getByTestId('profile-watch')).toBeDisabled();
+  });
+
+  it('fades the username into the header once the avatar block scrolls away', async () => {
+    const timing = jest.spyOn(Animated, 'timing');
+    const { screen, navigation } = await renderScreen(makeUserProfile());
+    const { headerTitle } = (navigation.setOptions as jest.Mock).mock.calls.at(
+      -1,
+    )[0];
+    // Not rendered: a second render would replace the screen under test.
+    expect(headerTitle().props.children).toBe('judit');
+    // The title's fade - other parts of the screen animate too.
+    const fadedTo = () =>
+      timing.mock.calls
+        .filter(([, config]) => config.duration === 200)
+        .at(-1)?.[1].toValue;
+    expect(fadedTo()).toBe(0);
+
+    await fireEvent(screen.getByTestId('profile-identity'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 400, height: 96 } },
+    });
+    const scrollTo = (y: number) =>
+      fireEvent.scroll(screen.getByTestId('user-profile-screen'), {
+        nativeEvent: { contentOffset: { x: 0, y } },
+      });
+
+    await scrollTo(60);
+    expect(fadedTo()).toBe(0);
+    await scrollTo(120);
+    expect(fadedTo()).toBe(1);
+    await scrollTo(10);
+    expect(fadedTo()).toBe(0);
+    timing.mockRestore();
   });
 
   it("opens a player's stats in a category", async () => {

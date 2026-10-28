@@ -1,5 +1,19 @@
-import { Fragment, useCallback } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import {
+  Alert,
+  Animated,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { format, parseISO } from 'date-fns';
 
 import ActionList, { ActionListItem } from '../../components/ActionList';
@@ -25,6 +39,7 @@ import { formatScore, formatTimePlayed } from '../../utils/rating';
 import { HomeStackScreenProps } from '../HomeStack/types';
 
 const RECENT_GAMES_SHOWN = 5;
+const TITLE_FADE_MS = 200;
 
 type UserProfileProps = Pick<
   HomeStackScreenProps<'UserProfile'>,
@@ -47,6 +62,33 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
     [username],
   );
   const recentGames = usePagedGames(fetchGames, RECENT_GAMES_SHOWN);
+  // The username goes in the header only once the avatar block showing it
+  // has scrolled out of view.
+  const [identityBottom, setIdentityBottom] = useState<number | null>(null);
+  const [isIdentityHidden, setIsIdentityHidden] = useState(false);
+  // A lazy-inited, never-reassigned Animated.Value - the standard idiom.
+  // eslint-disable-next-line react-hooks/refs
+  const titleOpacity = useRef(new Animated.Value(0)).current;
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerTitle: () => (
+        <Animated.Text
+          style={[styles.headerTitle, { opacity: titleOpacity }]}
+          numberOfLines={1}
+          testID="profile-header-title"
+        >
+          {username}
+        </Animated.Text>
+      ),
+    });
+  }, [navigation, username, titleOpacity]);
+  useEffect(() => {
+    Animated.timing(titleOpacity, {
+      toValue: isIdentityHidden ? 1 : 0,
+      duration: TITLE_FADE_MS,
+      useNativeDriver: true,
+    }).start();
+  }, [isIdentityHidden, titleOpacity]);
 
   function runThenReload(action: Promise<void>) {
     action.then(reload).catch((error: Error) => toast.show(error.message));
@@ -80,7 +122,7 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
     const items: ActionListItem[] = [];
     if (score) {
       items.push({
-        label: `Your score: ${formatScore(score)}`,
+        label: `Score vs ${profile.username}: ${formatScore(score)}`,
         icon: 'scale-balance',
         testID: 'profile-score',
       });
@@ -173,9 +215,23 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
     <View style={styles.screen}>
       <ScrollView
         contentContainerStyle={styles.content}
+        scrollEventThrottle={16}
+        onScroll={(event) => {
+          const hidden =
+            identityBottom !== null &&
+            event.nativeEvent.contentOffset.y >= identityBottom;
+          if (hidden !== isIdentityHidden) setIsIdentityHidden(hidden);
+        }}
         testID="user-profile-screen"
       >
-        <View style={styles.header}>
+        <View
+          style={styles.header}
+          onLayout={(event) => {
+            const { y, height } = event.nativeEvent.layout;
+            setIdentityBottom(y + height);
+          }}
+          testID="profile-identity"
+        >
           <Avatar
             name={profile.displayName}
             color={profile.avatarColor}
@@ -192,10 +248,11 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
 
         <View style={styles.card} testID="profile-totals">
           <Text style={styles.cardLine}>
-            Member since {format(parseISO(profile.createdAt), 'MMMM d, yyyy')}
+            Joined {format(parseISO(profile.createdAt), 'MMMM d, yyyy')}
           </Text>
           <Text style={styles.cardLine}>
-            {profile.gamesPlayed} {profile.gamesPlayed === 1 ? 'game' : 'games'}
+            {profile.gamesPlayed} {profile.gamesPlayed === 1 ? 'game' : 'games'}{' '}
+            played
           </Text>
           <Text style={styles.cardLine}>
             Time spent playing: {formatTimePlayed(profile.timePlayedMs)}
@@ -290,6 +347,10 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
 export default UserProfileScreen;
 
 const styles = StyleSheet.create({
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
   screen: {
     flex: 1,
     backgroundColor: 'white',
