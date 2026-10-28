@@ -23,6 +23,7 @@ import { useToast } from '../../hooks/useToast';
 import { ApiError } from '../../network/restClient';
 import { presenceLabel } from '../../utils/presence';
 import { HomeStackScreenProps } from '../HomeStack/types';
+import { plainHeaderItem } from '../plainHeaderOptions';
 
 type ConversationProps = Pick<
   HomeStackScreenProps<'Conversation'>,
@@ -65,17 +66,19 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
   useLayoutEffect(() => {
     navigation.setOptions({
       title: displayName,
-      headerRight: () => (
-        <Pressable
-          onPress={confirmClear}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Delete conversation"
-          testID="clear-conversation-button"
-        >
-          <Icon name="trash-can-outline" size={22} />
-        </Pressable>
-      ),
+      unstable_headerRightItems: () => [
+        plainHeaderItem(
+          <Pressable
+            onPress={confirmClear}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Delete conversation"
+            testID="clear-conversation-button"
+          >
+            <Icon name="trash-can-outline" size={22} />
+          </Pressable>,
+        ),
+      ],
     });
   }, [navigation, displayName, confirmClear]);
 

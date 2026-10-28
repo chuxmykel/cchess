@@ -4,15 +4,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from '../Home';
 import NewGame from '../NewGame';
 import Friends from '../Friends';
+import { plainHeaderOptions } from '../plainHeaderOptions';
 import { HomeTabStackParamList } from './types';
 
 const { Navigator, Screen } =
   createNativeStackNavigator<HomeTabStackParamList>();
-
-const WITH_HEADER = {
-  headerShown: true,
-  headerBackButtonDisplayMode: 'minimal',
-} as const;
 
 const HomeTabStack: React.FC = () => {
   return (
@@ -29,7 +25,10 @@ const HomeTabStack: React.FC = () => {
         <Screen
           name="Friends"
           component={Friends}
-          options={{ ...WITH_HEADER, title: 'Friends' }}
+          options={({ navigation }) => ({
+            ...plainHeaderOptions(navigation),
+            title: 'Friends',
+          })}
         />
       </Navigator>
     </>

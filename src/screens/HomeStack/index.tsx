@@ -17,14 +17,10 @@ import RatingStats from '../RatingStats';
 import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import SignIn from '../SignIn';
 import CreateAccount from '../CreateAccount';
+import { plainHeaderOptions } from '../plainHeaderOptions';
 import { HomeStackParamList, RootStackParamList } from './types';
 
 const { Navigator, Screen } = createNativeStackNavigator<HomeStackParamList>();
-
-const WITH_HEADER = {
-  headerShown: true,
-  headerBackButtonDisplayMode: 'minimal',
-} as const;
 
 const HomeStack: React.FC = () => {
   const navigation =
@@ -58,34 +54,44 @@ const HomeStack: React.FC = () => {
         <Screen
           name="UserProfile"
           component={UserProfile}
-          options={({ route }) => ({
-            ...WITH_HEADER,
+          options={({ navigation, route }) => ({
+            ...plainHeaderOptions(navigation),
             title: route.params.username,
           })}
         />
         <Screen
           name="Conversation"
           component={Conversation}
-          options={WITH_HEADER}
+          options={({ navigation }) => plainHeaderOptions(navigation)}
         />
-        <Screen name="GamesList" component={GamesList} options={WITH_HEADER} />
+        <Screen
+          name="GamesList"
+          component={GamesList}
+          options={({ navigation }) => plainHeaderOptions(navigation)}
+        />
         <Screen
           name="RatingStats"
           component={RatingStats}
-          options={({ route }) => ({
-            ...WITH_HEADER,
+          options={({ navigation, route }) => ({
+            ...plainHeaderOptions(navigation),
             title: `${GAME_TYPE_LABELS[route.params.category]} rating`,
           })}
         />
         <Screen
           name="SignIn"
           component={SignIn}
-          options={{ ...WITH_HEADER, title: 'Sign in' }}
+          options={({ navigation }) => ({
+            ...plainHeaderOptions(navigation),
+            title: 'Sign in',
+          })}
         />
         <Screen
           name="CreateAccount"
           component={CreateAccount}
-          options={{ ...WITH_HEADER, title: 'Create account' }}
+          options={({ navigation }) => ({
+            ...plainHeaderOptions(navigation),
+            title: 'Create account',
+          })}
         />
       </Navigator>
     </SocialProvider>
