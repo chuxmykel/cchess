@@ -91,6 +91,24 @@ describe('GameOverCard', () => {
     expect(onNewOpponent).toHaveBeenCalledTimes(1);
   });
 
+  it('says what its new-game button does when told', async () => {
+    const screen = await render(
+      <GameOverCard
+        result="white"
+        myColor={null}
+        resultReason={null}
+        myRating={null}
+        myRatingDiff={null}
+        onNewOpponent={jest.fn()}
+        newGameLabel="Play 5+0"
+      />,
+    );
+
+    expect(screen.getByTestId('new-opponent-button')).toHaveTextContent(
+      'Play 5+0',
+    );
+  });
+
   describe('rating', () => {
     function renderFinishedRatedGame(myRatingDiff: number) {
       return render(

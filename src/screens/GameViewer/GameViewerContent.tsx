@@ -102,10 +102,14 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
         ? snapshot.blackRatingDiff
         : null;
 
+  // Someone who only watched didn't just play an opponent - offer them a
+  // game of their own at the same time control instead.
+  const newGameLabel =
+    myColor === null ? `Play ${timeControl.label}` : 'New opponent';
   const menuActions: ActionSheetAction[] = [
     { label: 'Flip board', onPress: flip, testID: 'flip-board-action' },
     {
-      label: 'New opponent',
+      label: newGameLabel,
       onPress: () => onNewOpponent(timeControl),
       testID: 'new-opponent-action',
     },
@@ -171,6 +175,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
                 myRating={myPlayer?.rating ?? null}
                 myRatingDiff={myRatingDiff}
                 onNewOpponent={() => onNewOpponent(timeControl)}
+                newGameLabel={newGameLabel}
                 onDismiss={() => setIsResultDismissed(true)}
               />
             </View>

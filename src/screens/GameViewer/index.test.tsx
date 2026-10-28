@@ -195,6 +195,35 @@ describe('GameViewer', () => {
     });
   });
 
+  it('offers my own game at that time control after one I only watched', async () => {
+    const { screen, navigation } = await renderScreen(
+      finishedGame(),
+      'someone-else',
+    );
+
+    expect(screen.getByTestId('new-opponent-button')).toHaveTextContent(
+      'Play 5+0',
+    );
+    await fireEvent.press(screen.getByTestId('game-menu-button'));
+    expect(screen.getByTestId('new-opponent-action')).toHaveTextContent(
+      'Play 5+0',
+    );
+    await fireEvent.press(screen.getByTestId('new-opponent-button'));
+    expect(navigation.navigate).toHaveBeenCalledWith('LiveGame', {
+      seek: expect.objectContaining({
+        timeControl: expect.objectContaining({ initialSeconds: 300 }),
+      }),
+    });
+  });
+
+  it('offers a new opponent after a game I played', async () => {
+    const { screen } = await renderScreen(finishedGame());
+
+    expect(screen.getByTestId('new-opponent-button')).toHaveTextContent(
+      'New opponent',
+    );
+  });
+
   it('lets me keep chatting after the game, until the chat closes', async () => {
     const { screen, socket } = await renderScreen(finishedGame());
     await fireEvent.press(screen.getByTestId('chat-button'));
