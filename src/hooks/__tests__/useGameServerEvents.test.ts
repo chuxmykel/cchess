@@ -39,13 +39,12 @@ function makeFakeGame(
 
 describe('useGameServerEvents', () => {
   it('seeds its state from the initial snapshot', async () => {
-    const drawOfferedBy = 'b';
     const { socket } = createFakeSocket();
     const snapshot = makeGameSnapshot({
       status: 'active',
       whiteTimeRemainingMs: 300000,
       blackTimeRemainingMs: 280000,
-      drawOfferedBy,
+      drawOfferedBy: 'black',
     });
     const { result } = await renderHook(() =>
       useGameServerEvents(socket, GAME_ID, snapshot, makeFakeGame()),
@@ -54,7 +53,7 @@ describe('useGameServerEvents', () => {
     expect(result.current.gameStatus).toBe('active');
     expect(result.current.whiteTimeMs).toBe(300000);
     expect(result.current.blackTimeMs).toBe(280000);
-    expect(result.current.drawOfferedBy).toBe(drawOfferedBy);
+    expect(result.current.drawOfferedBy).toBe('b');
   });
 
   it('replays an incoming opponent move and updates the clocks', async () => {
@@ -281,7 +280,7 @@ describe('useGameServerEvents', () => {
     );
 
     await act(() => {
-      trigger('game:drawOffered', { gameId: GAME_ID, by: 'b' });
+      trigger('game:drawOffered', { gameId: GAME_ID, by: 'black' });
     });
     expect(result.current.drawOfferedBy).toBe('b');
 
@@ -299,7 +298,7 @@ describe('useGameServerEvents', () => {
     );
 
     await act(() => {
-      trigger('game:drawOffered', { gameId: GAME_ID, by: 'b' });
+      trigger('game:drawOffered', { gameId: GAME_ID, by: 'black' });
     });
     expect(result.current.drawOfferedBy).toBe('b');
 

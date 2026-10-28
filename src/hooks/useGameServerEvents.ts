@@ -10,10 +10,17 @@ import {
   GameResultReason,
   GameSnapshot,
   SeriesScore,
+  Side,
 } from '../network/socketEvents';
 import { UseChessGameResult } from './useChessGame';
 
 export type GameStatus = 'active' | 'completed' | 'aborted';
+
+/** The server names sides 'white'/'black'; the board works in Colors. */
+function colorOf(side: Side | null): Color | null {
+  if (side === null) return null;
+  return side === 'white' ? 'w' : 'b';
+}
 
 export type GameServerEventsResult = {
   gameStatus: GameStatus;
@@ -60,7 +67,10 @@ export function useGameServerEvents(
     whiteTimeMs: snapshot.whiteTimeRemainingMs,
     blackTimeMs: snapshot.blackTimeRemainingMs,
   });
-  const [drawOfferedBy, setDrawOfferedBy] = useState(snapshot.drawOfferedBy);
+  const [drawOfferedBy, setDrawOfferedBy] = useState(
+    colorOf(snapshot.drawOfferedBy),
+  );
+
   const [firstMoveDeadline, setFirstMoveDeadline] = useState(
     snapshot.firstMoveDeadline,
   );
@@ -124,7 +134,7 @@ export function useGameServerEvents(
 
     function handleDrawOffered(payload: DrawOfferedPayload) {
       if (payload.gameId === gameId) {
-        setDrawOfferedBy(payload.by);
+        setDrawOfferedBy(colorOf(payload.by));
       }
     }
 

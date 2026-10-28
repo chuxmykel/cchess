@@ -58,7 +58,7 @@ export type GameSnapshot = {
   whiteTimeRemainingMs: number;
   blackTimeRemainingMs: number;
   lastMoveAt: string | null;
-  drawOfferedBy: Color | null;
+  drawOfferedBy: Side | null;
   firstMoveDeadline: string | null;
   moves: GameMoveSummary[];
   createdAt: string;
@@ -124,15 +124,19 @@ export type GameMovePushPayload = {
   firstMoveDeadline: string | null;
 };
 
+/** A side as the server names it in draw and rematch offers - not the
+ * 'w'/'b' of a Color. */
+export type Side = 'white' | 'black';
+
 /** A rematch offer made, or declined or withdrawn, by one side. */
 export type RematchPayload = {
   gameId: string;
-  by: 'white' | 'black';
+  by: Side;
 };
 
 export type DrawOfferedPayload = {
   gameId: string;
-  by: Color;
+  by: Side;
 };
 
 export type DrawRespondPayload = {

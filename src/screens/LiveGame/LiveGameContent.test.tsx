@@ -353,7 +353,7 @@ describe('LiveGameContent', () => {
     const { screen, socket, snapshot, trigger } = await renderContent('b');
 
     await act(() =>
-      trigger('game:drawOffered', { gameId: snapshot.id, by: 'w' }),
+      trigger('game:drawOffered', { gameId: snapshot.id, by: 'white' }),
     );
     await fireEvent.press(screen.getByTestId('accept-draw-button'));
 
