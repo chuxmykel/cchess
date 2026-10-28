@@ -22,10 +22,10 @@ import { useDirectMessages } from '../../hooks/useDirectMessages';
 import { useToast } from '../../hooks/useToast';
 import { ApiError } from '../../network/restClient';
 import { presenceLabel } from '../../utils/presence';
-import { HomeTabStackScreenProps } from '../HomeTabStack/types';
+import { HomeStackScreenProps } from '../HomeStack/types';
 
 type ConversationProps = Pick<
-  HomeTabStackScreenProps<'Conversation'>,
+  HomeStackScreenProps<'Conversation'>,
   'navigation' | 'route'
 >;
 

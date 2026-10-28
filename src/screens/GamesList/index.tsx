@@ -13,12 +13,12 @@ import GameRow from '../../components/RecentGamesList/GameRow';
 import { MUTED_COLOR } from '../../constants/colors';
 import { usePagedGames } from '../../hooks/usePagedGames';
 import { getMyGames, getUserGames, GamesPage } from '../../network/restClient';
-import { HomeTabStackScreenProps } from '../HomeTabStack/types';
+import { HomeStackScreenProps } from '../HomeStack/types';
 
 const PAGE_SIZE = 20;
 
 type GamesListProps = Pick<
-  HomeTabStackScreenProps<'GamesList'>,
+  HomeStackScreenProps<'GamesList'>,
   'navigation' | 'route'
 >;
 
