@@ -1,4 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { Dimensions } from 'react-native';
 
 import RatingCategoryPicker from '.';
 
@@ -17,6 +18,18 @@ describe('RatingCategoryPicker', () => {
     );
     expect(screen.getByTestId('rating-category-blitz')).toBeSelected();
     expect(screen.getByTestId('rating-category-rapid')).not.toBeSelected();
+  });
+
+  it('centers its menu on the screen', async () => {
+    const screen = await render(
+      <RatingCategoryPicker category="blitz" onSelect={jest.fn()} />,
+    );
+    const { width } = Dimensions.get('window');
+
+    // The popover places its menu with the wrapper around it.
+    expect(screen.getByTestId('rating-category-menu').parent).toHaveStyle({
+      left: (width - 180) / 2,
+    });
   });
 
   it('switches to another category, closing the menu', async () => {
