@@ -49,7 +49,7 @@ export function useFriendActions(
       }
       await social.challenge({
         opponentUsername: challengeTarget.username,
-        minutes: timeControl.minutes,
+        initialSeconds: timeControl.initialSeconds,
         incrementSeconds: timeControl.incrementSeconds,
         rated,
       });

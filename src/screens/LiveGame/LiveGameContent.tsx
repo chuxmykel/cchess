@@ -140,7 +140,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   const firstMoveSecondsLeft = useFirstMoveCountdown(firstMoveDeadline);
 
   const timeControl = findTimeControl(
-    snapshot.minutes,
+    snapshot.initialSeconds,
     snapshot.incrementSeconds,
     snapshot.gameType,
   );

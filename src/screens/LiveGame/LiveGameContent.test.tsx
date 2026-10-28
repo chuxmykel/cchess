@@ -562,7 +562,7 @@ describe('LiveGameContent', () => {
 
       expect(onNewOpponent).toHaveBeenCalledWith(
         findTimeControl(
-          snapshot.minutes,
+          snapshot.initialSeconds,
           snapshot.incrementSeconds,
           snapshot.gameType,
         ),

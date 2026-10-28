@@ -42,7 +42,7 @@ describe('TimeControlSelector', () => {
     expect(onSelect).toHaveBeenCalledWith({
       type: 'rapid',
       label: '15+0',
-      minutes: 15,
+      initialSeconds: 900,
       incrementSeconds: 0,
     });
 

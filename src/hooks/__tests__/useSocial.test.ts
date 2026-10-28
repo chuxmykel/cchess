@@ -169,7 +169,7 @@ describe('useSocial', () => {
     await act(() =>
       result.current.challenge({
         opponentUsername: 'judit',
-        minutes: 5,
+        initialSeconds: 300,
         incrementSeconds: 0,
         rated: true,
       }),

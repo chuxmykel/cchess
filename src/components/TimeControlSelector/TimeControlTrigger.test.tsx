@@ -6,7 +6,7 @@ import { TimeControl } from '../../constants/timeControls';
 const BLITZ_5_0: TimeControl = {
   type: 'blitz',
   label: '5+0',
-  minutes: 5,
+  initialSeconds: 300,
   incrementSeconds: 0,
 };
 

@@ -84,7 +84,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
       ? liveClock
       : clocksAtPly(snapshot, moveNavigation.currentPly);
   const timeControl = findTimeControl(
-    snapshot.minutes,
+    snapshot.initialSeconds,
     snapshot.incrementSeconds,
     snapshot.gameType,
   );

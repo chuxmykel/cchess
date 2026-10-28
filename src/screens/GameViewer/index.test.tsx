@@ -188,7 +188,7 @@ describe('GameViewer', () => {
     expect(navigation.navigate).toHaveBeenCalledWith('LiveGame', {
       seek: expect.objectContaining({
         timeControl: expect.objectContaining({
-          minutes: 5,
+          initialSeconds: 300,
           incrementSeconds: 0,
         }),
       }),

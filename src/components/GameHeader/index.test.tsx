@@ -11,7 +11,7 @@ describe('GameHeader', () => {
   const bullet2Plus1: TimeControl = {
     type: 'bullet',
     label: '2+1',
-    minutes: 2,
+    initialSeconds: 120,
     incrementSeconds: 1,
   };
 

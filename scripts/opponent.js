@@ -32,7 +32,8 @@ DESCRIPTION
 
 OPTIONS
        --time M+I
-              Seek (or challenge at) M minutes plus I seconds a move. It must
+              Seek (or challenge at) M minutes plus I seconds a move; write
+              Ns+I for a start of N seconds instead, e.g. 15s+0. It must
               match the app's time control. Default: 5+0.
 
        --delay MS
@@ -116,14 +117,23 @@ if (args.help) {
   process.exit(0);
 }
 
-const [minutes, incrementSeconds] = args.time.split('+').map(Number);
+// "5+3" is 5 minutes plus 3 seconds a move; "15s+0" starts at 15 seconds.
+const [base = '', increment = ''] = args.time.split('+');
+const initialSeconds = base.endsWith('s')
+  ? Number(base.slice(0, -1))
+  : Math.round(Number(base) * 60);
+const incrementSeconds = Number(increment);
 const moveDelayMs = Number(args.delay);
 if (args.color && !['w', 'b'].includes(args.color)) {
   console.error('--color must be "w" or "b"');
   process.exit(1);
 }
-if (Number.isNaN(minutes) || Number.isNaN(incrementSeconds)) {
-  console.error('--time must look like "5+0"');
+if (
+  !Number.isInteger(initialSeconds) ||
+  initialSeconds < 1 ||
+  !Number.isInteger(incrementSeconds)
+) {
+  console.error('--time must look like "5+0" or "15s+0"');
   process.exit(1);
 }
 
@@ -240,7 +250,7 @@ async function main() {
             token,
             body: {
               opponentUsername: args.friend,
-              minutes,
+              initialSeconds,
               incrementSeconds,
               rated: !args.casual,
             },
@@ -256,7 +266,7 @@ async function main() {
     const mode = args.guest || args.casual ? 'casual' : 'rated';
     log(`connected to ${SERVER_URL}, seeking ${args.time} ${mode}`);
     socket.emit('matchmaking:seek', {
-      minutes,
+      initialSeconds,
       incrementSeconds,
       rated: !args.guest && !args.casual,
     });

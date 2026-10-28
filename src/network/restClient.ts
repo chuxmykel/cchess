@@ -123,7 +123,7 @@ export type GameHistoryResult = 'win' | 'loss' | 'draw' | null;
 export type GameSummary = {
   id: string;
   gameType: GameType;
-  minutes: number;
+  initialSeconds: number;
   incrementSeconds: number;
   rated: boolean;
   status: 'active' | 'completed' | 'aborted';
@@ -460,7 +460,7 @@ export type Challenge = {
   id: string;
   challenger: ChallengeUser;
   opponent: ChallengeUser;
-  minutes: number;
+  initialSeconds: number;
   incrementSeconds: number;
   gameType: GameType;
   rated: boolean;
@@ -477,7 +477,7 @@ export type Challenges = {
 
 export type NewChallenge = {
   opponentUsername: string;
-  minutes: number;
+  initialSeconds: number;
   incrementSeconds: number;
   rated: boolean;
 };

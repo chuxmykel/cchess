@@ -29,7 +29,10 @@ describe('ChallengeSheet', () => {
     await fireEvent.press(screen.getByTestId('send-challenge-button'));
 
     expect(props.onSend).toHaveBeenCalledWith({
-      timeControl: expect.objectContaining({ minutes: 3, incrementSeconds: 2 }),
+      timeControl: expect.objectContaining({
+        initialSeconds: 180,
+        incrementSeconds: 2,
+      }),
       rated: true,
     });
     expect(props.onClose).toHaveBeenCalled();
