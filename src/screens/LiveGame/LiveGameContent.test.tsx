@@ -574,12 +574,29 @@ describe('LiveGameContent', () => {
       const { screen, snapshot, trigger } = await renderContent('w');
       await finishGame(trigger, snapshot);
 
+      expect(screen.getByTestId(WHITE_PLAYER_BAR)).toHaveStyle({
+        opacity: 0.5,
+      });
+
       await fireEvent.press(screen.getByTestId('game-over-dismiss'));
       expect(screen.queryByTestId('game-over-card')).toBeNull();
+      // Not dimmed once the card is put away.
+      expect(screen.getByTestId(WHITE_PLAYER_BAR)).not.toHaveStyle({
+        opacity: 0.5,
+      });
 
       await openGameMenu(screen);
       await chooseMenuAction(screen, 'show-result-action');
       expect(screen.getByTestId('game-over-card')).toBeTruthy();
+    });
+
+    it('goes away when the board around it is tapped', async () => {
+      const { screen, snapshot, trigger } = await renderContent('w');
+      await finishGame(trigger, snapshot);
+
+      await fireEvent.press(screen.getByTestId('game-over-overlay'));
+
+      expect(screen.queryByTestId('game-over-card')).toBeNull();
     });
 
     it('offers a rematch after a game played out, but not an aborted one', async () => {

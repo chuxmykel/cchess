@@ -26,6 +26,9 @@ export interface PlayerBarProps {
   clock: GameClockResult;
   turn: Color;
   isGameOver: boolean;
+  /** Dims the bar - behind the result card. Defaults to once the game is
+   * over. */
+  faded?: boolean;
   firstMoveSecondsLeft?: number | null;
   isOnline?: boolean;
   material?: SideMaterial;
@@ -42,6 +45,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   clock,
   turn,
   isGameOver,
+  faded = isGameOver,
   firstMoveSecondsLeft = null,
   isOnline,
   material,
@@ -58,7 +62,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
 
   return (
     <View
-      style={[styles.container, isGameOver && styles.faded]}
+      style={[styles.container, faded && styles.faded]}
       testID={`player-bar-${color}`}
     >
       <Pressable

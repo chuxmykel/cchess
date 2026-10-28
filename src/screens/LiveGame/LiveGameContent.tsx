@@ -17,6 +17,7 @@ import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
 import ChatSheet from '../../components/ChatSheet';
 import DrawOfferPrompt from '../../components/DrawOfferPrompt';
 import GameOverCard from '../../components/GameOverCard';
+import GameOverOverlay from '../../components/GameOverOverlay';
 import { useGameScreenGestureLock } from '../../hooks/useGameScreenGestureLock';
 import { useGameClock } from '../../hooks/useGameClock';
 import { useFirstMoveCountdown } from '../../hooks/useFirstMoveCountdown';
@@ -219,12 +220,15 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
 
   const topColor: Color = orientation === 'w' ? 'b' : 'w';
   const material = materialImbalance(moveNavigation.viewedFen ?? fen);
+  const showsResult = isGameOver && moveNavigation.isLive && !isResultDismissed;
   const sharedPlayerBarProps: Omit<PlayerBarProps, 'color'> = {
     white: snapshot.white,
     black: snapshot.black,
     clock,
     turn,
     isGameOver,
+    // Dimmed behind the result card, not once it's put away.
+    faded: showsResult,
     firstMoveSecondsLeft,
     onPressPlayer: (player) =>
       navigation.navigate('UserProfile', { username: player.username }),
@@ -287,8 +291,10 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
             width={width}
             orientation={orientation}
           />
-          {isGameOver && moveNavigation.isLive && !isResultDismissed && (
-            <View style={styles.gameOverOverlay} testID="game-over-overlay">
+          {showsResult && (
+            <GameOverOverlay
+              onDismiss={() => setResultDismissedAt(rematch.status)}
+            >
               <GameOverCard
                 result={result}
                 myColor={myColor}
@@ -308,7 +314,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
                 }
                 onDismiss={() => setResultDismissedAt(rematch.status)}
               />
-            </View>
+            </GameOverOverlay>
           )}
         </View>
 
@@ -373,15 +379,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     gap: 12,
-  },
-  gameOverOverlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
   },
 });
