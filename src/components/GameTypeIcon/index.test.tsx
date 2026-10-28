@@ -6,10 +6,10 @@ import { GameType } from '../../domain/types';
 
 describe('GameTypeIcon', () => {
   it.each<[GameType, string]>([
-    ['bullet', 'lightning-bolt'],
+    ['bullet', 'bullet'],
     ['blitz', 'fire'],
-    ['rapid', 'rabbit'],
-    ['classical', 'chess-pawn'],
+    ['rapid', 'clock-fast'],
+    ['classical', 'timer-sand'],
   ])('shows %s as the %s icon, in its game type color', async (type, name) => {
     const screen = await render(<GameTypeIcon type={type} />);
 

@@ -10,10 +10,10 @@ interface GameTypeIconProps {
 const DEFAULT_SIZE = 18;
 
 const GAME_TYPE_ICONS: Record<GameType, IconName> = {
-  bullet: 'lightning-bolt',
+  bullet: 'bullet',
   blitz: 'fire',
-  rapid: 'rabbit',
-  classical: 'chess-pawn',
+  rapid: 'clock-fast',
+  classical: 'timer-sand',
 };
 
 const GameTypeIcon: React.FC<GameTypeIconProps> = ({
