@@ -74,7 +74,9 @@ the opponent while it waits, or before it - either order matches.
 
 `scripts/opponent.js` signs in as the `real_user_bot` account (password
 `password`), seeks, plays a random legal move whenever it's its turn,
-declines draw offers, and exits once the game is over.
+declines draw offers, and exits once the game is over - or after
+`--games N`, offering a rematch between games and accepting the app's
+(if one is declined, or none starts within 15s, it seeks again).
 `npm run opponent -- --help` prints its man page, with every option and
 exit status. Run it in the background (it stays alive for the whole
 game):
@@ -249,7 +251,8 @@ resign or abort from the app (see `examples/resign.yaml` /
     its place once both have moved: `captured-pieces-<color>`, with
     `captured-piece-<color>` per piece and `material-score-<color>`
     ("+N") for the side ahead. `player-name-<color>` opens that player's
-    profile over the game; the header's back chevron (point `38,84`)
+    profile over the game; the header's back chevron (`header-back`, on every screen with the
+    shared header)
     returns to it. Tap it by that exact id - `id: "player-name-.*"` with
     an index matched the wrong element.
   - Earlier positions: `earlier-position` wraps a `static-chessboard`
@@ -268,7 +271,13 @@ resign or abort from the app (see `examples/resign.yaml` /
   - Draw offers: `draw-offer-prompt` with `accept-draw-button` /
     `decline-draw-button`.
   - Game over: `game-over-overlay`, `game-over-card`,
-    `new-opponent-button`.
+    `new-opponent-button`, and for rematches `rematch-button`, then
+    `rematch-status` with `rematch-cancel-button` (our offer) or
+    `rematch-accept-button` / `rematch-decline-button` (theirs).
+    `game-over-dismiss` hides the card to show the final position; ☰ then
+    has `show-result-action` to bring it back, and `new-opponent-action`.
+    A rematch plays in place; `series-points-w` / `series-points-b` show
+    each side's points beside the names.
   - Loading: `live-game-skeleton`.
 
   These come from `src/screens/LiveGame/LiveGameContent.tsx` and the
