@@ -6,6 +6,7 @@ import {
 } from '@react-navigation/native-stack';
 
 import { SocialProvider } from '../../context/SocialContext';
+import { useResumeActiveGame } from '../../hooks/useResumeActiveGame';
 import HomeTabs from '../HomeTabs';
 import LiveGame from '../LiveGame';
 import GameViewer from '../GameViewer';
@@ -36,6 +37,7 @@ const HomeStack: React.FC = () => {
       }),
     [navigation],
   );
+  useResumeActiveGame(openGame);
 
   return (
     <SocialProvider onGameStarted={openGame}>

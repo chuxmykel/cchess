@@ -158,6 +158,19 @@ export async function getMyGames(
   ).data;
 }
 
+/** The game you're in the middle of, if any. */
+export async function getMyActiveGame(
+  accessToken: string,
+): Promise<GameSummary | null> {
+  const games = (
+    await apiClient.get<GameSummary[]>('/games', {
+      ...bearer(accessToken),
+      params: { status: 'active', limit: 1 },
+    })
+  ).data;
+  return games[0] ?? null;
+}
+
 export async function getUserGames(
   username: string,
   page: GamesPage,

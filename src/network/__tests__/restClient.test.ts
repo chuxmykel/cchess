@@ -8,6 +8,7 @@ import {
   getMe,
   isGameBookmarked,
   setGameBookmarked,
+  getMyActiveGame,
   getMyGames,
   isUsernameAvailable,
   refreshSession,
@@ -180,6 +181,24 @@ describe('restClient', () => {
       expect(request.url).toBe('/games');
       expect(request.params).toEqual({ limit: 10 });
       expect(request.headers.Authorization).toBe('Bearer access-123');
+    });
+
+    it("finds the game you're in the middle of", async () => {
+      const transport = stubTransport(respondWith([{ id: 'live-game' }]));
+
+      await expect(getMyActiveGame('access-123')).resolves.toEqual({
+        id: 'live-game',
+      });
+
+      const request = sentRequest(transport);
+      expect(request.url).toBe('/games');
+      expect(request.params).toEqual({ status: 'active', limit: 1 });
+    });
+
+    it('finds no game when none is in progress', async () => {
+      stubTransport(respondWith([]));
+
+      await expect(getMyActiveGame('access-123')).resolves.toBeNull();
     });
 
     it('searches for players by name', async () => {
