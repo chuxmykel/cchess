@@ -282,7 +282,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `SectionHeader`'s action is optional), and `Home`-screen-specific pieces
   (`HomeHeader`, `RecentGamesList`, whose rows open the game viewer).
   `GameOverCard` names the winner instead of "You won" for a game you
-  didn't play, and can be dismissed. A player's profile offers Watch game
+  didn't play - and offers "Play 5+0" (the game's time control) rather
+  than "New opponent", as does the viewer's ☰ - and can be dismissed. A player's profile offers Watch game
   and Challenge to anyone, friend or not - Watch game is a `disabled`
   `ActionList` row while they aren't in a game - and Message only to
   friends. Its `RatingsList` rows - and your own on the Profile tab -
