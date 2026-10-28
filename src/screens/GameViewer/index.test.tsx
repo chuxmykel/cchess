@@ -127,6 +127,17 @@ describe('GameViewer', () => {
     expect(screen.queryByTestId('game-over-card')).toBeNull();
   });
 
+  it("opens a player's profile from their name", async () => {
+    const snapshot = finishedGame();
+    const { screen, navigation } = await renderScreen(snapshot);
+
+    await fireEvent.press(screen.getByTestId('player-name-b'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('UserProfile', {
+      username: snapshot.black.username,
+    });
+  });
+
   it('steps back through the moves, with the clocks and material of each', async () => {
     const { screen } = await renderScreen(finishedGame());
     const whiteBar = () => within(screen.getByTestId('player-bar-w'));

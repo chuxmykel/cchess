@@ -40,6 +40,7 @@ interface GameViewerContentProps {
   chat?: ViewerChat;
   onBack: () => void;
   onNewOpponent: (timeControl: TimeControl) => void;
+  onOpenPlayer: (username: string) => void;
   onError: (message: string) => void;
 }
 
@@ -58,6 +59,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   chat,
   onBack,
   onNewOpponent,
+  onOpenPlayer,
   onError,
 }) => {
   const { orientation, flip } = useBoardOrientation(myColor ?? 'w');
@@ -115,6 +117,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
     clock,
     turn: snapshot.turn,
     isGameOver,
+    onPressPlayer: (player) => onOpenPlayer(player.username),
   };
 
   return (

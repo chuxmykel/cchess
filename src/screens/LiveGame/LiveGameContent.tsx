@@ -32,7 +32,7 @@ import EarlierPositionOverlay from './EarlierPositionOverlay';
 
 export type LiveGameContentNavigation = Pick<
   NativeStackNavigationProp<HomeStackParamList, 'LiveGame'>,
-  'setOptions' | 'popToTop'
+  'setOptions' | 'popToTop' | 'navigate'
 >;
 
 interface LiveGameContentProps {
@@ -192,6 +192,8 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     turn,
     isGameOver,
     firstMoveSecondsLeft,
+    onPressPlayer: (player) =>
+      navigation.navigate('UserProfile', { username: player.username }),
   };
 
   return (

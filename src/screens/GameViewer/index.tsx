@@ -72,6 +72,8 @@ const GameViewer: React.FC<GameViewerProps> = ({ navigation, route }) => {
       snapshot,
       onBack: navigation.goBack,
       onNewOpponent: findNewOpponent,
+      onOpenPlayer: (username: string) =>
+        navigation.navigate('UserProfile', { username }),
       onError: (message: string) => toast.show(message),
     };
     if (myColor && session.isReady) {

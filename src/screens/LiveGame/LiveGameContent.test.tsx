@@ -57,6 +57,7 @@ describe('LiveGameContent', () => {
     const navigation: LiveGameContentNavigation = {
       setOptions: jest.fn(),
       popToTop: jest.fn(),
+      navigate: jest.fn(),
     };
     const onNewOpponent = jest.fn();
     const screen = await render(
@@ -160,6 +161,16 @@ describe('LiveGameContent', () => {
 
     expect(screen.getByTestId('material-score-w')).toHaveTextContent('+1');
     expect(screen.queryByTestId('captured-pieces-b')).toBeNull();
+  });
+
+  it("opens a player's profile from their name", async () => {
+    const { screen, navigation } = await renderContent('w');
+
+    await fireEvent.press(screen.getByTestId('player-name-b'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('UserProfile', {
+      username: 'black',
+    });
   });
 
   it("shows only the opponent's presence, dimmed once they drop", async () => {
