@@ -146,8 +146,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
     and the first-move deadline, and replaying the opponent's moves
     idempotently via a fen comparison against the echo of our own - and
     owning the opponent's presence (`useOpponentPresence`) and the game's
-    chat (`useGameChat`: history, new messages, the unread count while
-    closed) and rematches (`useRematch`: offering one, answering the
+    chat (`useGameChat`: history, new messages, and the unread count -
+    from how far the server says you've read, every draw note counting
+    until seen, yours too - marking it read there with `game:chatRead`
+    while open) and rematches (`useRematch`: offering one, answering the
     opponent's, and handing over the new game when the server starts it,
     which `LiveGame` then plays in place), `useGameClock` (client-side ticking
     between authoritative server clock updates; paused until both sides
@@ -227,14 +229,22 @@ network/       pure networking infra (REST/socket clients, event types), same st
   consuming hooks/context the same way: in-game UI (`GameHeader`,
   `MoveList`, `GameToolbar` (with the chat button's unread badge),
   `BottomBar`, `GameClock`, `GameOverCard`, `GameResultIcon`,
-  `GameTypeIcon`, `PlayerBar` (name, rating, clock, the opponent's
-  online dot, the first-move countdown and `CapturedPieces`; tapping the
-  name opens that player's profile, and Back returns to the game; in a
-  rematch series, each side's points beside the name),
-  `ChatSheet` (80% of the screen above the keyboard, keeping the newest
+  `GameTypeIcon`, `PlayerBar` (a square avatar - the opponent's online
+  badge on its corner, and in a rematch series that side's points, "1.5",
+  in a band across its bottom, the initials lifted clear of it - then the name, rating, clock, and under
+  the name the first-move countdown or `CapturedPieces`, a line that keeps
+  its height empty or not, so the bar never changes size; tapping the
+  avatar or name opens that player's profile, and Back returns to the
+  game; dimmed only while the result card shows),
+  `ChatSheet` (the server's notes of draws offered, declined and
+  accepted - chat messages of their own `kind` - as faint lines among the
+  messages, naming who; 80%
+  of the screen above the keyboard, keeping the newest
   messages in view; read-only once a game's chat has closed), `RatingDiff` (a
   green/red/grey "+12"/"−12"/"±0", on the game-over card and in Recent
-  Games), `PromotionMenu`, `DrawOfferPrompt`,
+  Games), `PromotionMenu`, `DrawOfferPrompt` (the opponent's draw offer, to accept or
+  decline; offering one waits, like resigning, until both sides have
+  moved - the server refuses either before that),
   `SeekCard` (the waiting card: time control, rating range, lobby stats),
   `LiveGameSkeleton`, `ConnectionStrengthIndicator`), shared
   primitives used across screens (`Button`, `Avatar`, `BottomSheet` -
@@ -299,9 +309,11 @@ network/       pure networking infra (REST/socket clients, event types), same st
   (`HomeHeader`, `RecentGamesList`, whose rows open the game viewer).
   `GameOverCard` names the winner instead of "You won" for a game you
   didn't play - and offers "Play 5+0" (the game's time control) rather
-  than "New opponent", as does the viewer's ☰ - and can be dismissed. In
-  `LiveGame` it also offers a rematch: Rematch, then "Rematch offered"
-  (✕ to cancel), "<name> wants a rematch" (✕ / ✓) or "Rematch
+  than "New opponent", as does the viewer's ☰ - and can be dismissed,
+  with its ✕ or a tap on the board around it (`GameOverOverlay`) - every
+  popup closes on a tap outside it. In
+  `LiveGame` it also offers a rematch: Rematch, then "Rematch sent"
+  (✕ to cancel), "Rematch offered" with ✕ / ✓ for theirs or "Rematch
   declined". Dismissed there, it comes back from ☰ "Show result" (☰ also
   has "New opponent" once the game is over), or by itself when the rematch
   status changes, so an offer is never hidden. A player's profile offers Watch game
