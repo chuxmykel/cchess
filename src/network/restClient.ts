@@ -325,15 +325,17 @@ export type UserSearchResult = {
 };
 
 /** Registered players whose name contains the search, closest first. */
+/** Players matching the search, closest first; `offset` skips that many,
+ * for the next page. */
 export async function searchUsers(
   search: string,
   accessToken: string,
-  limit = 10,
+  page: { limit: number; offset: number } = { limit: 20, offset: 0 },
 ): Promise<UserSearchResult[]> {
   return (
     await apiClient.get<UserSearchResult[]>('/users', {
       ...bearer(accessToken),
-      params: { search, limit },
+      params: { search, ...page },
     })
   ).data;
 }

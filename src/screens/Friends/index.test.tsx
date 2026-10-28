@@ -108,19 +108,33 @@ describe('Friends', () => {
     );
   });
 
-  it('finds a player and opens their profile', async () => {
+  it('shows the matches in place of the friends, opening one', async () => {
     (useUserSearch as jest.Mock).mockImplementation((query: string) =>
-      query ? { status: 'done', results: [MAGNUS] } : { status: 'idle' },
+      query
+        ? {
+            status: 'done',
+            results: [MAGNUS],
+            hasMore: false,
+            isLoadingMore: false,
+            loadMore: jest.fn(),
+          }
+        : { status: 'idle' },
     );
     const { screen, navigation } = await renderScreen();
+    expect(screen.queryByTestId('user-search-results')).toBeNull();
 
     await fireEvent.changeText(screen.getByTestId('user-search-input'), 'mag');
+    expect(screen.queryByTestId('tab-online')).toBeNull();
     await fireEvent.press(screen.getByTestId('user-search-result-magnus'));
 
-    expect(useUserSearch).toHaveBeenLastCalledWith('');
     expect(navigation.navigate).toHaveBeenCalledWith('UserProfile', {
       username: 'magnus',
     });
+    // Still there for Back to return to.
+    expect(screen.getByTestId('user-search-result-magnus')).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId('user-search-clear'));
+    expect(screen.getByTestId('tab-online')).toBeTruthy();
   });
 
   it('answers and cancels friend requests', async () => {

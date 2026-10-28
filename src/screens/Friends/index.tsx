@@ -9,6 +9,7 @@ import FriendRow from '../../components/FriendRow';
 import SegmentedTabs from '../../components/SegmentedTabs';
 import Toast from '../../components/Toast';
 import UserSearchField from '../../components/UserSearchField';
+import UserSearchResults from '../../components/UserSearchResults';
 import { useSocialContext } from '../../context/SocialContext';
 import { useFriendActions } from '../../hooks/useFriendActions';
 import { useToast } from '../../hooks/useToast';
@@ -146,53 +147,65 @@ const Friends: React.FC<FriendsProps> = ({ navigation, route }) => {
         <UserSearchField
           query={searchQuery}
           onChangeQuery={setSearchQuery}
-          search={userSearch}
           autoFocus={route.params?.focusSearch}
+        />
+      </View>
+      {/* While searching, the matches take the place of the friends - kept
+          when you open one, so Back returns to them. */}
+      {userSearch.status !== 'idle' ? (
+        <UserSearchResults
+          query={searchQuery}
+          search={userSearch}
           onSelect={(user) =>
             navigation.navigate('UserProfile', { username: user.username })
           }
         />
-      </View>
-      <SegmentedTabs<FriendsTab>
-        tabs={[
-          { key: 'online', label: `${onlineFriends.length} online` },
-          { key: 'all', label: counted(friends.length, 'friend') },
-          { key: 'requests', label: counted(requestCount, 'request') },
-        ]}
-        selected={tab}
-        onSelect={setTab}
-      />
-      {tab === 'requests' ? (
-        renderRequests()
       ) : (
-        <FlatList
-          data={shownFriends}
-          keyExtractor={(friend) => friend.id}
-          renderItem={renderFriend}
-          ListEmptyComponent={
-            tab === 'online' ? (
-              <EmptyState
-                illustration="friends"
-                title={
-                  friends.length === 0 ? 'Add some friends' : "Nobody's online"
-                }
-                message={
-                  friends.length === 0
-                    ? 'Friends who are online will show up on this tab. Search for players above to add some.'
-                    : 'Friends who are online right now will show up here.'
-                }
-                testID="online-empty"
-              />
-            ) : (
-              <EmptyState
-                illustration="friends"
-                title="No friends yet"
-                message="Your friends will show up here once you connect. Search for players above to add some."
-                testID="all-friends-empty"
-              />
-            )
-          }
-        />
+        <>
+          <SegmentedTabs<FriendsTab>
+            tabs={[
+              { key: 'online', label: `${onlineFriends.length} online` },
+              { key: 'all', label: counted(friends.length, 'friend') },
+              { key: 'requests', label: counted(requestCount, 'request') },
+            ]}
+            selected={tab}
+            onSelect={setTab}
+          />
+          {tab === 'requests' ? (
+            renderRequests()
+          ) : (
+            <FlatList
+              data={shownFriends}
+              keyExtractor={(friend) => friend.id}
+              renderItem={renderFriend}
+              ListEmptyComponent={
+                tab === 'online' ? (
+                  <EmptyState
+                    illustration="friends"
+                    title={
+                      friends.length === 0
+                        ? 'Add some friends'
+                        : "Nobody's online"
+                    }
+                    message={
+                      friends.length === 0
+                        ? 'Friends who are online will show up on this tab. Search for players above to add some.'
+                        : 'Friends who are online right now will show up here.'
+                    }
+                    testID="online-empty"
+                  />
+                ) : (
+                  <EmptyState
+                    illustration="friends"
+                    title="No friends yet"
+                    message="Your friends will show up here once you connect. Search for players above to add some."
+                    testID="all-friends-empty"
+                  />
+                )
+              }
+            />
+          )}
+        </>
       )}
       <ChallengeSheet
         opponentName={friendActions.challengeTarget?.displayName ?? null}
@@ -214,7 +227,6 @@ const styles = StyleSheet.create({
   },
   search: {
     padding: 16,
-    zIndex: 1,
   },
   requests: {
     gap: 8,

@@ -205,11 +205,11 @@ describe('restClient', () => {
     it('searches for players by name', async () => {
       const transport = stubTransport(respondWith([]));
 
-      await searchUsers('mag', 'access-123');
+      await searchUsers('mag', 'access-123', { limit: 20, offset: 40 });
 
       const request = sentRequest(transport);
       expect(request.url).toBe('/users');
-      expect(request.params).toEqual({ search: 'mag', limit: 10 });
+      expect(request.params).toEqual({ search: 'mag', limit: 20, offset: 40 });
       expect(request.headers.Authorization).toBe('Bearer access-123');
     });
 
