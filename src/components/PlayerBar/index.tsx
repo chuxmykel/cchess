@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { Pressable, View, Text, StyleSheet } from 'react-native';
 import { Color } from 'chess.js';
 
 import { GameUserSummary } from '../../network/socketEvents';
@@ -22,6 +22,8 @@ export interface PlayerBarProps {
   firstMoveSecondsLeft?: number | null;
   isOnline?: boolean;
   material?: SideMaterial;
+  /** Makes the player's name open their profile. */
+  onPressPlayer?: (player: GameUserSummary) => void;
 }
 
 const PlayerBar: React.FC<PlayerBarProps> = ({
@@ -34,6 +36,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   firstMoveSecondsLeft = null,
   isOnline,
   material,
+  onPressPlayer,
 }) => {
   const isWhite = color === 'w';
   const player = isWhite ? white : black;
@@ -46,7 +49,14 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
       testID={`player-bar-${color}`}
     >
       <View style={styles.details}>
-        <View style={styles.identity}>
+        <Pressable
+          style={styles.identity}
+          onPress={onPressPlayer ? () => onPressPlayer(player) : undefined}
+          disabled={!onPressPlayer}
+          accessibilityRole={onPressPlayer ? 'button' : undefined}
+          accessibilityHint={onPressPlayer ? 'Opens their profile' : undefined}
+          testID={`player-name-${color}`}
+        >
           {isOnline !== undefined && (
             <View
               style={[styles.presence, !isOnline && styles.offline]}
@@ -62,7 +72,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
               {formatRating(player.rating, player.provisional)}
             </Text>
           )}
-        </View>
+        </Pressable>
         {showsFirstMoveCountdown && (
           <Text
             style={[

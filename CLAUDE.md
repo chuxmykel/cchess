@@ -93,7 +93,7 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `ApiError`s carrying the server's own message - auth: guest, sign in,
   register, refresh, logout; plus `/users/me`, game history (yours or a
   player's, a page at a time), a single game, PGN, bookmarks, player
-  search, profiles and activity, friends and friend requests, challenges, and direct messages),
+  search, profiles, activity and rating stats, friends and friend requests, challenges, and direct messages),
   `accessToken.ts` (reads a JWT access token's expiry),
   `socketClient.ts` (the one `AppSocket` singleton - `connectSocket`/
   `disconnectSocket`/`getSocket`, plus `updateSocketToken` so later
@@ -126,6 +126,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
     socket kicked by the server for a stale token is refreshed and
     reconnected once),
     `useRecentGames` (the player's finished games, from `GET /games`),
+    `useResumeActiveGame` (once per account the app signs in as, asks for
+    a game still in progress and reopens it - after the app restarts
+    mid-game, say; `HomeStack` opens it in `LiveGame`),
     `useUsernameAvailability` (whether a sign-up username is free, asked
     of `GET /users/:username` once typing pauses and the name fits the
     server's rules),
@@ -170,10 +173,17 @@ network/       pure networking infra (REST/socket clients, event types), same st
     marked read while open, sending and clearing), and `useUserSearch`
     (players matching what's typed in Friends' search, asked of
     `GET /users?search=` once typing pauses and at least two letters are
-    in).
+    in), and `useRatingStats` (a player's rating history and results in one
+    category over a period, keeping the last period's shown while the next
+    loads).
   - Small reusable UI-state hooks with no game-domain knowledge at all:
     `usePopoverMenu`, `useToast`/`useToastBubbleAnimation`,
-    `useBottomSheet`, `useCaretRotation`, `useGameScreenGestureLock`,
+    `useBottomSheet`, `useKeyboardHeight` (how much of the screen the
+    keyboard covers, as an `Animated.Value` moving in step with it rather
+    than state - a re-render can reset a natively driven animation on the
+    same view, like a sheet's slide; and a `KeyboardAvoidingView` can't
+    move an absolutely positioned sheet),
+    `useCaretRotation`, `useGameScreenGestureLock`,
     `useSwipeBackUntilGameLoads` (keeps a game screen's swipe-back gesture
     available until its game has loaded), `useRunAfterDismiss` (holds a
     menu/sheet action until its modal has finished closing - on iOS,
@@ -215,13 +225,20 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `MoveList`, `GameToolbar` (with the chat button's unread badge),
   `BottomBar`, `GameClock`, `GameOverCard`, `GameResultIcon`,
   `GameTypeIcon`, `PlayerBar` (name, rating, clock, the opponent's
-  online dot, the first-move countdown and `CapturedPieces`), `ChatSheet`
-  (read-only once a game's chat has closed), `RatingDiff` (a
+  online dot, the first-move countdown and `CapturedPieces`; tapping the
+  name opens that player's profile, and Back returns to the game),
+  `ChatSheet` (80% of the screen above the keyboard, keeping the newest
+  messages in view; read-only once a game's chat has closed), `RatingDiff` (a
   green/red/grey "+12"/"−12"/"±0", on the game-over card and in Recent
   Games), `PromotionMenu`, `DrawOfferPrompt`,
   `SeekCard` (the waiting card: time control, rating range, lobby stats),
   `LiveGameSkeleton`, `ConnectionStrengthIndicator`), shared
-  primitives used across screens (`Button`, `Avatar`, `BottomSheet`,
+  primitives used across screens (`Button`, `Avatar`, `BottomSheet` -
+  fits its content, or with `heightRatio` takes that share of the screen
+  above the keyboard for content that fills it, running on behind the
+  keyboard while it's up so its rounded corners show the sheet, not a gap;
+  closing it closes the keyboard too, and opening it
+  re-reads where the keyboard is -
   `ActionSheet`, `Placeholder`, `Popover`/`PopoverMenu`, `SectionHeader`,
   `Toast`, `TimeControlSelector`, `GameSettings` (New Game's "Game
   Settings" cog, opening a sheet with a Rated switch (a guest pressing
@@ -247,7 +264,17 @@ network/       pure networking infra (REST/socket clients, event types), same st
   search, with matching players in a dropdown that open their profile,
   where they can be added; Home's "Find friends" opens Friends with it
   focused), `ChallengeSheet`, `ActivityList`,
-  `MessageList`), more shared primitives (`ActionList`, `SegmentedTabs`,
+  `MessageList`), rating stats UI (`RatingChart` - the rating as a line
+  over the period, drawn with `victory-native` on
+  `@shopify/react-native-skia` (held at victory-native 42: 43 needs a
+  newer Skia than Expo SDK 58 bundles), whose press gesture shows the
+  rating at the point touched; `utils/ratingChart.ts` shapes its data -
+  `RatingChange`, a green ▲ or red ▼ with the points gained or lost, in
+  italics (skewed, since `fontStyle` can't slant the icon font's arrow),
+  `RatingCategoryPicker`, the stats header's title, a dropdown that
+  switches category,
+  `RatingHighLowCard` and `CategoryStatsCard`, whose best win and worst
+  loss open the game), more shared primitives (`ActionList`, `SegmentedTabs`,
   `EmptyState` - what every server-backed list shows when it has
   nothing yet: an SVG illustration from its `illustrations.tsx`, drawn
   with `react-native-svg`, a title, a line on what will show up there,
@@ -255,19 +282,27 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `SectionHeader`'s action is optional), and `Home`-screen-specific pieces
   (`HomeHeader`, `RecentGamesList`, whose rows open the game viewer).
   `GameOverCard` names the winner instead of "You won" for a game you
-  didn't play, and can be dismissed. A player's profile offers Watch game
+  didn't play - and offers "Play 5+0" (the game's time control) rather
+  than "New opponent", as does the viewer's ☰ - and can be dismissed. A player's profile offers Watch game
   and Challenge to anyone, friend or not - Watch game is a `disabled`
   `ActionList` row while they aren't in a game - and Message only to
-  friends.
+  friends. Its `RatingsList` rows - and your own on the Profile tab -
+  open `RatingStats` for that category:
+  the rating with what it gained or lost over the period, a 1W/1M/3M/1Y/All
+  `SegmentedTabs`, the chart, and the two cards.
 
 - **Navigation** (React Navigation, nested stacks/tabs):
-  `App.tsx` (root native-stack) -> `HomeStack` (`HomeTabs`, `LiveGame`,
-  `GameViewer`, `SignIn`, `CreateAccount`) ->
+  `App.tsx` (root native-stack, inside a `GestureHandlerRootView` for
+  the chart's gestures) -> `HomeStack` (`HomeTabs`, `LiveGame`,
+  `GameViewer`, `UserProfile`, `Conversation`, `GamesList`,
+  `RatingStats`, `SignIn`, `CreateAccount`) ->
   `HomeTabs` (bottom tabs: `HomeTabStack`, `Profile`) -> `HomeTabStack`
-  (native-stack: `Home`, `NewGame`, `Friends`, `UserProfile`,
-  `Conversation`, `GamesList`). Route params are typed in each navigator's
-  `types.ts`; a tab-stack screen's `HomeTabStackScreenProps` can also open
-  the screens over the tabs. Home's friend cards open a friend's
+  (native-stack: `Home`, `NewGame`, `Friends`). Route params are typed in
+  each navigator's `types.ts`; a tab-stack screen's
+  `HomeTabStackScreenProps` can also open the screens over the tabs.
+  Profiles, conversations, game lists and rating stats sit over the tabs
+  so any screen - a tab, or a game - can open them, and Back returns
+  there. Home's friend cards open a friend's
   `UserProfile`; Message opens their `Conversation`; Challenge sends one
   from a sheet, and the friend accepts it from Home, which opens `LiveGame`
   for both. A recent game opens `GameViewer` (any finished game, or a
@@ -294,7 +329,7 @@ network/       pure networking infra (REST/socket clients, event types), same st
   the app's accent and muted colors
   (`colors.ts`, a start on a fuller theme), account rules mirrored from
   the server (`account.ts`) and the chat and direct message limits
-  (`chat.ts`), user-facing error-message fallbacks (`errorMessages.ts`),
+  (`chat.ts`), the rating stats periods (`ratingPeriods.ts`), user-facing error-message fallbacks (`errorMessages.ts`),
   etc.
 
 - **`src/utils/`** - RN `Animated` helpers (`animation.ts`: castling
@@ -303,7 +338,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `formatRatingRange`, "1320–2020", `highestRating`, `formatScore`,
   "2½ - 3½", and `formatTimePlayed`) and presence (`presence.ts`:
   "Playing right now"/"Online"/"Active 5 minutes ago", and the order
-  friends are listed in), independent of the chess domain. Dates are formatted with `date-fns` rather than helpers
+  friends are listed in) and the rating chart's data (`ratingChart.ts`:
+  the points, the last rating held to the period's end, and a rating
+  range rounded to tens with its ticks), independent of the chess domain. Dates are formatted with `date-fns` rather than helpers
   here.
 
 - **`src/testUtils/`** - Jest/RNTL helpers: simulated PanResponder gestures
@@ -315,7 +352,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   (`authSession.ts`), `makeAccessToken` for a JWT that expires when a test
   needs (`accessToken.ts`), a `GameSummary` builder (`gameSummary.ts`),
   friend/request/challenge/profile/message builders and `makeSocial` for
-  mocking `useSocialContext` (`social.ts`), a safe-area
+  mocking `useSocialContext` (`social.ts`), `makeRatingStats`
+  (`ratingStats.ts`), `captureKeyboardListeners` to show and hide the
+  keyboard (`keyboard.ts`), a safe-area
   wrapper for components that read insets (`safeArea.tsx`),
   `waitForSheetToClose` (`modal.ts`), and shared mock modules for
   `jest.mock` factories (`ConnectionStrengthIndicatorStub.tsx`,
@@ -326,7 +365,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `Text`s keeping their props (icon fonts can't load under Jest) - so
   tests assert which icon shows by its `name` prop, via a `testID`. It
   renders the slider as a plain `View` keeping its props too, so tests
-  fire `valueChange` on it directly.
+  fire `valueChange` on it directly, and victory-native's
+  `CartesianChart` the same way (testID `cartesian-chart`), so tests check
+  what a chart was given to plot - Skia can't draw under Jest.
 
 ## Testing
 

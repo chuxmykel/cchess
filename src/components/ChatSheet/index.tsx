@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import {
-  KeyboardAvoidingView,
   Pressable,
   ScrollView,
   type ScrollViewInstance,
@@ -17,7 +16,7 @@ import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { MAX_CHAT_MESSAGE_LENGTH } from '../../constants/chat';
 import { ChatMessage } from '../../network/socketEvents';
 
-const MESSAGES_HEIGHT = 260;
+const SHEET_HEIGHT_RATIO = 0.8;
 
 interface ChatSheetProps {
   visible: boolean;
@@ -48,8 +47,12 @@ const ChatSheet: React.FC<ChatSheetProps> = ({
   }
 
   return (
-    <BottomSheet visible={visible} onClose={onClose}>
-      <KeyboardAvoidingView behavior="padding" testID="chat-sheet">
+    <BottomSheet
+      visible={visible}
+      onClose={onClose}
+      heightRatio={SHEET_HEIGHT_RATIO}
+    >
+      <View style={styles.container} testID="chat-sheet">
         <Text style={styles.title}>Chat</Text>
         <ScrollView
           ref={messagesRef}
@@ -58,6 +61,10 @@ const ChatSheet: React.FC<ChatSheetProps> = ({
           onContentSizeChange={() =>
             messagesRef.current?.scrollToEnd({ animated: true })
           }
+          // The list shrinks when the keyboard comes up - keep the newest
+          // messages in view above it.
+          onLayout={() => messagesRef.current?.scrollToEnd({ animated: false })}
+          keyboardShouldPersistTaps="handled"
         >
           {messages.length === 0 ? (
             <EmptyState
@@ -122,7 +129,7 @@ const ChatSheet: React.FC<ChatSheetProps> = ({
             </Pressable>
           </View>
         )}
-      </KeyboardAvoidingView>
+      </View>
     </BottomSheet>
   );
 };
@@ -136,8 +143,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 12,
   },
+  container: {
+    flex: 1,
+  },
   messages: {
-    height: MESSAGES_HEIGHT,
+    flex: 1,
   },
   messagesContent: {
     gap: 6,

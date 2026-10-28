@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -38,6 +39,14 @@ const LiveGame: React.FC<LiveGameProps> = ({ navigation, route }) => {
         (rating) => rating.category === session.seek.timeControl.type,
       )?.rating ?? null)
     : null;
+
+  // The seek card's rating range is drawn around the account's rating, which
+  // a game just played may have changed - "New opponent" seeks again here.
+  const isSignedIn = user !== null;
+  const { reloadUser } = authSession;
+  useEffect(() => {
+    if (isSeeking && isSignedIn) reloadUser().catch(() => {});
+  }, [isSeeking, isSignedIn, reloadUser]);
 
   const { isConnecting } = useMatchmaking(isSeeking ? session.seek : null, {
     onMatched: startGame,

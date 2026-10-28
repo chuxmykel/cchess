@@ -15,7 +15,7 @@ export function clocksAtPly(
       blackMs: snapshot.blackTimeRemainingMs,
     };
   }
-  const startingMs = snapshot.minutes * 60_000;
+  const startingMs = snapshot.initialSeconds * 1000;
   const clocks = { whiteMs: startingMs, blackMs: startingMs };
   for (const move of snapshot.moves.slice(0, ply)) {
     if (move.color === 'w') clocks.whiteMs = move.clockAfterMs;

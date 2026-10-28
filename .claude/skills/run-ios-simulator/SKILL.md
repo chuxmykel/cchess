@@ -74,8 +74,10 @@ the opponent while it waits, or before it - either order matches.
 
 `scripts/opponent.js` signs in as the `real_user_bot` account (password
 `password`), seeks, plays a random legal move whenever it's its turn,
-declines draw offers, and exits once the game is over. Run it in the
-background (it stays alive for the whole game):
+declines draw offers, and exits once the game is over.
+`npm run opponent -- --help` prints its man page, with every option and
+exit status. Run it in the background (it stays alive for the whole
+game):
 
 ```bash
 nohup npm run opponent --silent -- --color w > /tmp/opponent.log 2>&1 &
@@ -187,6 +189,16 @@ resign or abort from the app (see `examples/resign.yaml` /
   friends `profile-message` and `profile-remove-friend`, otherwise
   `profile-add-friend` / `profile-cancel-request` /
   `profile-accept-request`, `activity-list`, `profile-games-see-all`.
+  Its `rating-<category>` rows open the rating stats.
+- **Rating stats**: `rating-stats-screen`, `rating-stats-rating`,
+  `rating-stats-change` (the ▲/▼ points for the period), the period tabs
+  `tab-1w` / `tab-1m` / `tab-3m` / `tab-1y` / `tab-all`, `rating-chart`
+  or `rating-chart-empty`, `rating-highest` / `rating-lowest`,
+  `category-stats` with `stats-games`, `stats-wins`, `stats-draws`,
+  `stats-losses`, `stats-time-played`, `stats-best-win` /
+  `stats-worst-loss` (open the game), `stats-win-streak`,
+  `stats-losing-streak`. The header title is `rating-category-picker`,
+  opening `rating-category-<category>` options.
 - **Conversation**: `conversation-screen`, `conversation-presence`,
   `message-list`, `message-<id>`, `load-older-messages`,
   `message-input`, `send-message-button`, and
@@ -202,7 +214,8 @@ resign or abort from the app (see `examples/resign.yaml` /
   `all-friends-empty`, `requests-empty`, `games-empty`,
   `activity-empty`, `profile-games-empty`, `messages-empty`,
   `chat-empty`.
-- **Profile**: `profile-screen`, `rating-<category>`, `sign-out-button`;
+- **Profile**: `profile-screen`, `rating-<category>` (opens your rating
+  stats), `sign-out-button`;
   guests get the same `sign-in-prompt`.
 - **Sign in / Create account**: `sign-in-screen` / `create-account-screen`,
   inputs `username-or-email-input`, `username-input`, `email-input`,
@@ -235,7 +248,10 @@ resign or abort from the app (see `examples/resign.yaml` /
     first move", on the side to move until both sides have moved). In
     its place once both have moved: `captured-pieces-<color>`, with
     `captured-piece-<color>` per piece and `material-score-<color>`
-    ("+N") for the side ahead.
+    ("+N") for the side ahead. `player-name-<color>` opens that player's
+    profile over the game; the header's back chevron (point `38,84`)
+    returns to it. Tap it by that exact id - `id: "player-name-.*"` with
+    an index matched the wrong element.
   - Earlier positions: `earlier-position` wraps a `static-chessboard`
     drawn over the live board while browsing. It stays mounted but hidden
     (and out of the accessibility tree) while live, so `piece-<square>`
@@ -338,6 +354,19 @@ see each file's header for how to start it):
 - `watch-friend.yaml` - watches the friend's game from their card.
 
 ## Gotchas
+
+- **The software keyboard only shows with DeviceHub's hardware keyboard
+  disconnected.** With it connected, a focused input takes Maestro's
+  `inputText` but no keyboard appears, so nothing that moves with the
+  keyboard (the chat sheet) can be checked. It's a DeviceHub setting the
+  user toggles - its preferences are sandboxed, so `defaults write` from
+  here can't change it. Ask for it when a check needs the keyboard.
+
+- **Relaunching mid-game goes straight back into the game.** The app
+  asks the server for a game in progress once it's signed in, and opens
+  it in `LiveGame` - so a `stopApp` + `openLink` lands on `game-toolbar`,
+  not Home. Let the game end first (or wait for it to be aborted) to
+  get back to Home.
 
 - **Each side has 30 seconds for its first move, or the game is
   aborted.** Every `maestro test` run spends several seconds starting

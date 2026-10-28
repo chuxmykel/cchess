@@ -123,7 +123,7 @@ export type GameHistoryResult = 'win' | 'loss' | 'draw' | null;
 export type GameSummary = {
   id: string;
   gameType: GameType;
-  minutes: number;
+  initialSeconds: number;
   incrementSeconds: number;
   rated: boolean;
   status: 'active' | 'completed' | 'aborted';
@@ -156,6 +156,19 @@ export async function getMyGames(
       params: { limit, before },
     })
   ).data;
+}
+
+/** The game you're in the middle of, if any. */
+export async function getMyActiveGame(
+  accessToken: string,
+): Promise<GameSummary | null> {
+  const games = (
+    await apiClient.get<GameSummary[]>('/games', {
+      ...bearer(accessToken),
+      params: { status: 'active', limit: 1 },
+    })
+  ).data;
+  return games[0] ?? null;
 }
 
 export async function getUserGames(
@@ -268,6 +281,41 @@ export type ActivityDay = Score & {
   ratingDiff: number | null;
 };
 
+export const RATING_PERIODS = ['1w', '1m', '3m', '1y', 'all'] as const;
+export type RatingPeriod = (typeof RATING_PERIODS)[number];
+
+export type RatingPoint = { at: string; rating: number };
+
+export type NotableGame = {
+  gameId: string;
+  opponentUsername: string;
+  opponentDisplayName: string;
+  /** The opponent's rating when the game started. */
+  opponentRating: number;
+  endedAt: string;
+};
+
+/** One category's rating and results over a period. */
+export type RatingStats = Score & {
+  period: RatingPeriod;
+  /** The rating right now. */
+  rating: UserRating;
+  /** The rating going into the period's first rated game, then after each
+   * rated game, oldest first. */
+  history: RatingPoint[];
+  highest: RatingPoint | null;
+  lowest: RatingPoint | null;
+  /** Points gained over the period, negative when lost. */
+  ratingChange: number | null;
+  /** Finished games, rated and casual. */
+  games: number;
+  timePlayedMs: number;
+  bestWin: NotableGame | null;
+  worstLoss: NotableGame | null;
+  longestWinStreak: number;
+  longestLosingStreak: number;
+};
+
 export type UserSearchResult = {
   id: string;
   username: string;
@@ -306,6 +354,20 @@ export async function getUserActivity(
     await apiClient.get<ActivityDay[]>(
       `${userPath(username)}/activity`,
       bearer(accessToken),
+    )
+  ).data;
+}
+
+export async function getRatingStats(
+  username: string,
+  category: GameType,
+  period: RatingPeriod,
+  accessToken: string,
+): Promise<RatingStats> {
+  return (
+    await apiClient.get<RatingStats>(
+      `${userPath(username)}/ratings/${category}`,
+      { ...bearer(accessToken), params: { period } },
     )
   ).data;
 }
@@ -398,7 +460,7 @@ export type Challenge = {
   id: string;
   challenger: ChallengeUser;
   opponent: ChallengeUser;
-  minutes: number;
+  initialSeconds: number;
   incrementSeconds: number;
   gameType: GameType;
   rated: boolean;
@@ -415,7 +477,7 @@ export type Challenges = {
 
 export type NewChallenge = {
   opponentUsername: string;
-  minutes: number;
+  initialSeconds: number;
   incrementSeconds: number;
   rated: boolean;
 };

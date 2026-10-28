@@ -26,7 +26,7 @@ export function makeGameSnapshot(
       rating: null,
       provisional: false,
     },
-    minutes: 5,
+    initialSeconds: 300,
     incrementSeconds: 0,
     gameType: 'blitz',
     rated: false,

@@ -123,10 +123,11 @@ src/
 │
 ├── screens/
 │   ├── Home/, HomeStack/,            App.tsx -> HomeStack (HomeTabs, LiveGame,
-│   │   HomeTabs/, HomeTabStack/,     GameViewer, SignIn, CreateAccount) -> HomeTabs
-│   │   Profile/                      (bottom tabs: HomeTabStack, Profile) ->
-│   │                                 HomeTabStack (Home, NewGame, Friends,
-│   │                                 UserProfile, Conversation, GamesList)
+│   │   HomeTabs/, HomeTabStack/,     GameViewer, UserProfile, Conversation,
+│   │   Profile/                      GamesList, RatingStats, SignIn,
+│   │                                 CreateAccount) -> HomeTabs (bottom tabs:
+│   │                                 HomeTabStack, Profile) -> HomeTabStack
+│   │                                 (Home, NewGame, Friends)
 │   │
 │   ├── NewGame/                      Time control and game settings; opens LiveGame
 │   │
@@ -137,7 +138,8 @@ src/
 │   │                                 in progress
 │   │
 │   └── Friends/, UserProfile/,       Friends and requests, a player's profile, a
-│       Conversation/, GamesList/     conversation, and a full game history
+│       Conversation/, GamesList/,    conversation, a full game history, and a
+│       RatingStats/                  player's rating and results in a category
 │
 ├── constants/                        Board size, piece image lookups, square list, board
 │                                     themes, time controls, error-message fallbacks

@@ -45,3 +45,39 @@ jest.mock('@react-native-community/slider', () => {
   const SliderStub = (props) => React.createElement(View, props);
   return { __esModule: true, default: SliderStub };
 });
+
+// Skia draws on a native canvas Jest doesn't have. Charts render their
+// CartesianChart as a plain View keeping its props, so tests check what
+// it was given to plot, and skip what's drawn inside it.
+jest.mock('@shopify/react-native-skia', () => ({
+  Circle: () => null,
+  LinearGradient: () => null,
+  matchFont: () => ({}),
+  vec: (x, y) => ({ x, y }),
+}));
+jest.mock('victory-native', () => {
+  const { View } = jest.requireActual('react-native');
+  const React = jest.requireActual('react');
+  const sharedValue = (value) => ({ value });
+  return {
+    CartesianChart: ({ children: _children, ...props }) =>
+      React.createElement(View, { testID: 'cartesian-chart', ...props }),
+    Area: () => null,
+    Line: () => null,
+    useChartPressState: (initial) => ({
+      state: {
+        isActive: sharedValue(false),
+        matchedIndex: sharedValue(-1),
+        x: { value: sharedValue(initial.x), position: sharedValue(0) },
+        y: Object.fromEntries(
+          Object.keys(initial.y).map((key) => [
+            key,
+            { value: sharedValue(0), position: sharedValue(0) },
+          ]),
+        ),
+        yIndex: sharedValue(0),
+      },
+      isActive: false,
+    }),
+  };
+});

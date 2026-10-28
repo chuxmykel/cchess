@@ -49,7 +49,7 @@ export function makeChallenge(overrides: Partial<Challenge> = {}): Challenge {
       displayName: 'Me',
       avatarColor: '#3b82f6',
     },
-    minutes: 5,
+    initialSeconds: 300,
     incrementSeconds: 0,
     gameType: 'blitz',
     rated: true,

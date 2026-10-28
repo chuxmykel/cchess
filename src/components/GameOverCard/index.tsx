@@ -19,6 +19,8 @@ interface GameOverCardProps {
   myRating: number | null;
   myRatingDiff: number | null;
   onNewOpponent: () => void;
+  /** What the new-game button says - "New opponent" unless given. */
+  newGameLabel?: string;
   /** Shows a close button that hides the card. */
   onDismiss?: () => void;
 }
@@ -83,6 +85,7 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
   myRating,
   myRatingDiff,
   onNewOpponent,
+  newGameLabel = 'New opponent',
   onDismiss,
 }) => {
   const myResult = myColor === null ? null : toMyResult(result, myColor);
@@ -128,7 +131,7 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
         </View>
       )}
       <Button
-        label="New opponent"
+        label={newGameLabel}
         onPress={onNewOpponent}
         variant="primary"
         style={styles.newOpponentButton}

@@ -1,51 +1,97 @@
 #!/usr/bin/env node
-// A scripted opponent for driving LiveGame against a local cchess-be,
-// since reaching a real game through matchmaking needs a second player.
-// Signs in as the real_user_bot account (or a fresh guest with --guest),
-// seeks a game, and plays a random legal move whenever it's its turn. Draw
-// offers are declined automatically.
-//
-// real_user_bot seeks a rated game unless --casual is passed, and a guest
-// always seeks a casual one. Seeks only pair when both are rated or both
-// casual, so match the mode chosen on the app's New Game screen: a rated
-// seek from a signed-in app, or --casual/--guest for a casual one (guests
-// on the app can only play casual). The bot accepts any opponent rating.
-// The app can't be signed in as real_user_bot itself - that would put the
-// same account on both sides.
-//
-// Usage (Node 22, see .nvmrc):
-//   npm run opponent                     # seek 5+0, take either color
-//   npm run opponent -- --guest          # play as a new guest instead
-//   npm run opponent -- --casual         # seek a casual game
-//   npm run opponent -- --chat           # say "Good luck!" and answer chat
-//   npm run opponent -- --idle           # never move, so the game is
-//                                        # aborted for no first move
-//   npm run opponent -- --color w        # only accept white (bot is white,
-//                                        # so the app plays black)
-//   npm run opponent -- --time 3+2 --delay 300
-//   npm run opponent -- --friend glicko_65163
-//                                        # befriend that account instead of
-//                                        # seeking: accept its friend
-//                                        # request (or send one), answer its
-//                                        # messages, accept its challenges
-//                                        # and play them, until stopped
-//   npm run opponent -- --friend glicko_65163 --challenge
-//                                        # ...and challenge it at --time
-//
-// Colors are assigned at random by the server, so --color can't request
-// one - instead, if the bot is matched with the other color it aborts the
-// game straight away and exits with code 2. Start a fresh seek from the
-// app and run this again until it lands the color you want.
-//
-// Exit codes (friend mode keeps running instead): 0 once the game is over, 1 on a connection/auth/matchmaking
-// error (including real_user_bot not existing on this server), 2 if
-// --color was given and the bot got the other color.
-//
-// The server URL comes from EXPO_PUBLIC_SERVER_URL, as for the app itself
-// (src/network/env.ts), defaulting to http://localhost:3000.
+// A scripted opponent for driving LiveGame against a local cchess-be.
+// Run with --help (or -h) for usage, options and exit codes.
 const { parseArgs } = require('node:util');
 const { io } = require('socket.io-client');
 const { Chess } = require('chess.js');
+
+const HELP = `OPPONENT(1)                    cchess scripts                   OPPONENT(1)
+
+NAME
+       opponent - a scripted chess opponent for driving cchess's LiveGame
+
+SYNOPSIS
+       npm run opponent -- [--guest | --casual] [--color w|b] [--time M+I]
+                           [--delay MS] [--chat] [--idle]
+       npm run opponent -- --friend USERNAME [--challenge] [--time M+I]
+       npm run opponent -- -h | --help
+
+DESCRIPTION
+       Reaching a real game through matchmaking needs a second player. This
+       script is that player: it signs in to a local cchess-be as the
+       real_user_bot account (or a fresh guest), seeks a game, and plays a
+       random legal move whenever it's its turn. Draw offers are declined.
+
+       real_user_bot seeks a rated game unless --casual is given; a guest
+       always seeks a casual one. Seeks only pair when both are rated or
+       both casual, so match the choice made on the app's New Game screen.
+       Any opponent rating is accepted. The app can't be signed in as
+       real_user_bot itself - that would put one account on both sides.
+
+       Requires Node 22 (see .nvmrc).
+
+OPTIONS
+       --time M+I
+              Seek (or challenge at) M minutes plus I seconds a move; write
+              Ns+I for a start of N seconds instead, e.g. 15s+0. It must
+              match the app's time control. Default: 5+0.
+
+       --delay MS
+              Milliseconds to wait before each move. Default: 800.
+
+       --color w|b
+              The color the bot must get. The server assigns colors at
+              random, so this can't request one: if the bot is matched with
+              the other color it aborts the game and exits with status 2.
+              --color w makes the app play black.
+
+       --guest
+              Play as a new guest instead of real_user_bot (always casual).
+
+       --casual
+              Seek a casual game instead of a rated one.
+
+       --chat Say "Good luck!" when the game starts, and answer chat.
+
+       --idle Never move, so the game is aborted for want of a first move.
+
+       --friend USERNAME
+              Befriend USERNAME instead of seeking: accept its friend request
+              (or send one), answer its messages, and accept and play its
+              challenges, until stopped.
+
+       --challenge
+              With --friend, also challenge USERNAME at --time.
+
+       -h, --help
+              Show this help and exit.
+
+EXIT STATUS
+       Friend mode keeps running until stopped. Otherwise:
+
+       0      The game is over.
+       1      A connection, sign-in or matchmaking error, including
+              real_user_bot not existing on this server.
+       2      --color was given and the bot got the other color.
+
+ENVIRONMENT
+       EXPO_PUBLIC_SERVER_URL
+              The server to play on, as for the app itself
+              (src/network/env.ts). Default: http://localhost:3000.
+
+EXAMPLES
+       Seek 5+0 and take either color:
+              npm run opponent
+
+       Make the app play black, retrying from a fresh seek until it lands:
+              npm run opponent -- --color w
+
+       A quick casual 3+2 opponent:
+              npm run opponent -- --casual --time 3+2 --delay 300
+
+       Act as glicko_65163's friend, and challenge it:
+              npm run opponent -- --friend glicko_65163 --challenge
+`;
 
 const SERVER_URL =
   process.env.EXPO_PUBLIC_SERVER_URL ?? 'http://localhost:3000';
@@ -62,17 +108,32 @@ const { values: args } = parseArgs({
     idle: { type: 'boolean', default: false },
     friend: { type: 'string' },
     challenge: { type: 'boolean', default: false },
+    help: { type: 'boolean', short: 'h', default: false },
   },
 });
 
-const [minutes, incrementSeconds] = args.time.split('+').map(Number);
+if (args.help) {
+  console.log(HELP);
+  process.exit(0);
+}
+
+// "5+3" is 5 minutes plus 3 seconds a move; "15s+0" starts at 15 seconds.
+const [base = '', increment = ''] = args.time.split('+');
+const initialSeconds = base.endsWith('s')
+  ? Number(base.slice(0, -1))
+  : Math.round(Number(base) * 60);
+const incrementSeconds = Number(increment);
 const moveDelayMs = Number(args.delay);
 if (args.color && !['w', 'b'].includes(args.color)) {
   console.error('--color must be "w" or "b"');
   process.exit(1);
 }
-if (Number.isNaN(minutes) || Number.isNaN(incrementSeconds)) {
-  console.error('--time must look like "5+0"');
+if (
+  !Number.isInteger(initialSeconds) ||
+  initialSeconds < 1 ||
+  !Number.isInteger(incrementSeconds)
+) {
+  console.error('--time must look like "5+0" or "15s+0"');
   process.exit(1);
 }
 
@@ -189,7 +250,7 @@ async function main() {
             token,
             body: {
               opponentUsername: args.friend,
-              minutes,
+              initialSeconds,
               incrementSeconds,
               rated: !args.casual,
             },
@@ -205,7 +266,7 @@ async function main() {
     const mode = args.guest || args.casual ? 'casual' : 'rated';
     log(`connected to ${SERVER_URL}, seeking ${args.time} ${mode}`);
     socket.emit('matchmaking:seek', {
-      minutes,
+      initialSeconds,
       incrementSeconds,
       rated: !args.guest && !args.casual,
     });

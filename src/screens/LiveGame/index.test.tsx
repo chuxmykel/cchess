@@ -209,7 +209,7 @@ describe('LiveGame', () => {
     const screen = await screenPromise;
 
     expect(socket.emit).toHaveBeenCalledWith('matchmaking:seek', {
-      minutes: DEFAULT_TIME_CONTROL.minutes,
+      initialSeconds: DEFAULT_TIME_CONTROL.initialSeconds,
       incrementSeconds: DEFAULT_TIME_CONTROL.incrementSeconds,
       rated: true,
       ratingRange: { below: 200, above: 500 },
@@ -218,6 +218,25 @@ describe('LiveGame', () => {
       screen.getByText(`${DEFAULT_TIME_CONTROL.label} • Rated`),
     ).toBeTruthy();
     expect(screen.getByText('1450–2150')).toBeTruthy();
+  });
+
+  it('refreshes your rating for the rating range each time it seeks', async () => {
+    const { screenPromise } = renderScreen(
+      { seek: RATED_SEEK },
+      SIGNED_IN_USER,
+    );
+    await screenPromise;
+
+    const session = (useAuthSession as jest.Mock).mock.results[0].value;
+    expect(session.reloadUser).toHaveBeenCalledTimes(1);
+  });
+
+  it("doesn't refresh a guest's rating, since guests have none", async () => {
+    const { screenPromise } = renderScreen({ seek: RATED_SEEK });
+    await screenPromise;
+
+    const session = (useAuthSession as jest.Mock).mock.results[0].value;
+    expect(session.reloadUser).not.toHaveBeenCalled();
   });
 
   it('shows the lobby stats the server sends while seeking', async () => {

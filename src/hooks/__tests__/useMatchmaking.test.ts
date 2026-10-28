@@ -57,7 +57,7 @@ describe('useMatchmaking', () => {
 
     expect(result.current.isConnecting).toBe(false);
     expect(socket.emit).toHaveBeenCalledWith('matchmaking:seek', {
-      minutes: DEFAULT_TIME_CONTROL.minutes,
+      initialSeconds: DEFAULT_TIME_CONTROL.initialSeconds,
       incrementSeconds: DEFAULT_TIME_CONTROL.incrementSeconds,
       rated: true,
       ratingRange: { below: 200, above: 300 },

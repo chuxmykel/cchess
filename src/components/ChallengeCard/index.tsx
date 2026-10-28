@@ -26,7 +26,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = (props) => {
   const other =
     direction === 'incoming' ? challenge.challenger : challenge.opponent;
   const timeControl = findTimeControl(
-    challenge.minutes,
+    challenge.initialSeconds,
     challenge.incrementSeconds,
     challenge.gameType,
   );

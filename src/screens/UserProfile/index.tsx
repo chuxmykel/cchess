@@ -22,12 +22,12 @@ import { useUserProfile } from '../../hooks/useUserProfile';
 import { getUserGames, GamesPage, UserProfile } from '../../network/restClient';
 import { presenceLabel } from '../../utils/presence';
 import { formatScore, formatTimePlayed } from '../../utils/rating';
-import { HomeTabStackScreenProps } from '../HomeTabStack/types';
+import { HomeStackScreenProps } from '../HomeStack/types';
 
 const RECENT_GAMES_SHOWN = 5;
 
 type UserProfileProps = Pick<
-  HomeTabStackScreenProps<'UserProfile'>,
+  HomeStackScreenProps<'UserProfile'>,
   'navigation' | 'route'
 >;
 
@@ -204,7 +204,16 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
 
         {profile.ratings.length > 0 && (
           <View style={styles.section}>
-            <RatingsList ratings={profile.ratings} />
+            <RatingsList
+              ratings={profile.ratings}
+              onSelect={(category) =>
+                navigation.navigate('RatingStats', {
+                  username: profile.username,
+                  displayName: profile.displayName,
+                  category,
+                })
+              }
+            />
           </View>
         )}
 

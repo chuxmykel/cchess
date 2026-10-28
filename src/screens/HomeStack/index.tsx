@@ -6,16 +6,22 @@ import {
 } from '@react-navigation/native-stack';
 
 import { SocialProvider } from '../../context/SocialContext';
+import { useResumeActiveGame } from '../../hooks/useResumeActiveGame';
 import HomeTabs from '../HomeTabs';
 import LiveGame from '../LiveGame';
 import GameViewer from '../GameViewer';
+import UserProfile from '../UserProfile';
+import Conversation from '../Conversation';
+import GamesList from '../GamesList';
+import RatingStats from '../RatingStats';
+import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import SignIn from '../SignIn';
 import CreateAccount from '../CreateAccount';
 import { HomeStackParamList, RootStackParamList } from './types';
 
 const { Navigator, Screen } = createNativeStackNavigator<HomeStackParamList>();
 
-const ACCOUNT_SCREEN_OPTIONS = {
+const WITH_HEADER = {
   headerShown: true,
   headerBackButtonDisplayMode: 'minimal',
 } as const;
@@ -31,6 +37,7 @@ const HomeStack: React.FC = () => {
       }),
     [navigation],
   );
+  useResumeActiveGame(openGame);
 
   return (
     <SocialProvider onGameStarted={openGame}>
@@ -49,14 +56,36 @@ const HomeStack: React.FC = () => {
         />
         <Screen name="GameViewer" component={GameViewer} />
         <Screen
+          name="UserProfile"
+          component={UserProfile}
+          options={({ route }) => ({
+            ...WITH_HEADER,
+            title: route.params.username,
+          })}
+        />
+        <Screen
+          name="Conversation"
+          component={Conversation}
+          options={WITH_HEADER}
+        />
+        <Screen name="GamesList" component={GamesList} options={WITH_HEADER} />
+        <Screen
+          name="RatingStats"
+          component={RatingStats}
+          options={({ route }) => ({
+            ...WITH_HEADER,
+            title: `${GAME_TYPE_LABELS[route.params.category]} rating`,
+          })}
+        />
+        <Screen
           name="SignIn"
           component={SignIn}
-          options={{ ...ACCOUNT_SCREEN_OPTIONS, title: 'Sign in' }}
+          options={{ ...WITH_HEADER, title: 'Sign in' }}
         />
         <Screen
           name="CreateAccount"
           component={CreateAccount}
-          options={{ ...ACCOUNT_SCREEN_OPTIONS, title: 'Create account' }}
+          options={{ ...WITH_HEADER, title: 'Create account' }}
         />
       </Navigator>
     </SocialProvider>

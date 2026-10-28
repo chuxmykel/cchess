@@ -79,6 +79,18 @@ describe('UserProfile', () => {
     expect(screen.getByTestId('profile-watch')).toBeDisabled();
   });
 
+  it("opens a player's stats in a category", async () => {
+    const { screen, navigation } = await renderScreen(makeUserProfile());
+
+    await fireEvent.press(screen.getByTestId('rating-blitz'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('RatingStats', {
+      username: 'judit',
+      displayName: 'Judit Polgar',
+      category: 'blitz',
+    });
+  });
+
   it('messages a friend', async () => {
     const profile = makeUserProfile();
     const { screen, navigation } = await renderScreen(profile);

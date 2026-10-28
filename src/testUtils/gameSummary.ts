@@ -6,7 +6,7 @@ export function makeGameSummary(
   return {
     id: 'game-1',
     gameType: 'blitz',
-    minutes: 5,
+    initialSeconds: 300,
     incrementSeconds: 0,
     rated: false,
     status: 'completed',

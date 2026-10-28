@@ -9,7 +9,7 @@ export type RatingRange = {
 };
 
 export type SeekPayload = {
-  minutes: number;
+  initialSeconds: number;
   incrementSeconds: number;
   rated: boolean;
   ratingRange: RatingRange;
@@ -41,7 +41,7 @@ export type GameSnapshot = {
   id: string;
   white: GameUserSummary;
   black: GameUserSummary;
-  minutes: number;
+  initialSeconds: number;
   incrementSeconds: number;
   gameType: GameType;
   rated: boolean;

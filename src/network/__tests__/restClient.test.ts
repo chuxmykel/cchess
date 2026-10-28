@@ -8,11 +8,13 @@ import {
   getMe,
   isGameBookmarked,
   setGameBookmarked,
+  getMyActiveGame,
   getMyGames,
   isUsernameAvailable,
   refreshSession,
   register,
   revokeRefreshToken,
+  getRatingStats,
   searchUsers,
   signIn,
 } from '../restClient';
@@ -181,6 +183,24 @@ describe('restClient', () => {
       expect(request.headers.Authorization).toBe('Bearer access-123');
     });
 
+    it("finds the game you're in the middle of", async () => {
+      const transport = stubTransport(respondWith([{ id: 'live-game' }]));
+
+      await expect(getMyActiveGame('access-123')).resolves.toEqual({
+        id: 'live-game',
+      });
+
+      const request = sentRequest(transport);
+      expect(request.url).toBe('/games');
+      expect(request.params).toEqual({ status: 'active', limit: 1 });
+    });
+
+    it('finds no game when none is in progress', async () => {
+      stubTransport(respondWith([]));
+
+      await expect(getMyActiveGame('access-123')).resolves.toBeNull();
+    });
+
     it('searches for players by name', async () => {
       const transport = stubTransport(respondWith([]));
 
@@ -189,6 +209,17 @@ describe('restClient', () => {
       const request = sentRequest(transport);
       expect(request.url).toBe('/users');
       expect(request.params).toEqual({ search: 'mag', limit: 10 });
+      expect(request.headers.Authorization).toBe('Bearer access-123');
+    });
+
+    it("fetches a player's stats in one category over a period", async () => {
+      const transport = stubTransport(respondWith({}));
+
+      await getRatingStats('judit polgar', 'blitz', '3m', 'access-123');
+
+      const request = sentRequest(transport);
+      expect(request.url).toBe('/users/judit%20polgar/ratings/blitz');
+      expect(request.params).toEqual({ period: '3m' });
       expect(request.headers.Authorization).toBe('Bearer access-123');
     });
 

@@ -32,7 +32,7 @@ export function useMatchmaking(
     }
 
     socket.emit('matchmaking:seek', {
-      minutes: seek.timeControl.minutes,
+      initialSeconds: seek.timeControl.initialSeconds,
       incrementSeconds: seek.timeControl.incrementSeconds,
       rated: seek.rated,
       ratingRange: seek.ratingRange,

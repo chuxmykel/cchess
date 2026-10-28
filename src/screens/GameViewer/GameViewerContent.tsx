@@ -40,6 +40,7 @@ interface GameViewerContentProps {
   chat?: ViewerChat;
   onBack: () => void;
   onNewOpponent: (timeControl: TimeControl) => void;
+  onOpenPlayer: (username: string) => void;
   onError: (message: string) => void;
 }
 
@@ -58,6 +59,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   chat,
   onBack,
   onNewOpponent,
+  onOpenPlayer,
   onError,
 }) => {
   const { orientation, flip } = useBoardOrientation(myColor ?? 'w');
@@ -82,7 +84,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
       ? liveClock
       : clocksAtPly(snapshot, moveNavigation.currentPly);
   const timeControl = findTimeControl(
-    snapshot.minutes,
+    snapshot.initialSeconds,
     snapshot.incrementSeconds,
     snapshot.gameType,
   );
@@ -100,10 +102,14 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
         ? snapshot.blackRatingDiff
         : null;
 
+  // Someone who only watched didn't just play an opponent - offer them a
+  // game of their own at the same time control instead.
+  const newGameLabel =
+    myColor === null ? `Play ${timeControl.label}` : 'New opponent';
   const menuActions: ActionSheetAction[] = [
     { label: 'Flip board', onPress: flip, testID: 'flip-board-action' },
     {
-      label: 'New opponent',
+      label: newGameLabel,
       onPress: () => onNewOpponent(timeControl),
       testID: 'new-opponent-action',
     },
@@ -115,6 +121,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
     clock,
     turn: snapshot.turn,
     isGameOver,
+    onPressPlayer: (player) => onOpenPlayer(player.username),
   };
 
   return (
@@ -168,6 +175,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
                 myRating={myPlayer?.rating ?? null}
                 myRatingDiff={myRatingDiff}
                 onNewOpponent={() => onNewOpponent(timeControl)}
+                newGameLabel={newGameLabel}
                 onDismiss={() => setIsResultDismissed(true)}
               />
             </View>
