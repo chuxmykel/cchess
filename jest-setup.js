@@ -52,6 +52,7 @@ jest.mock('@react-native-community/slider', () => {
 jest.mock('@shopify/react-native-skia', () => ({
   Circle: () => null,
   LinearGradient: () => null,
+  Line: () => null,
   matchFont: () => ({}),
   vec: (x, y) => ({ x, y }),
 }));
