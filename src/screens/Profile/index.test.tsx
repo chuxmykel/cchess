@@ -88,6 +88,21 @@ describe('Profile', () => {
       expect(screen.queryByTestId('sign-in-prompt')).toBeNull();
     });
 
+    it('opens their stats in a category', async () => {
+      const { screenPromise, navigation } = renderScreen(
+        makeAuthSession({ user: MAGNUS }),
+      );
+      const screen = await screenPromise;
+
+      await fireEvent.press(screen.getByTestId('rating-blitz'));
+
+      expect(navigation.navigate).toHaveBeenCalledWith('RatingStats', {
+        username: 'magnus',
+        displayName: 'Magnus Carlsen',
+        category: 'blitz',
+      });
+    });
+
     it('reloads the user for up-to-date ratings', async () => {
       const { screenPromise, session } = renderScreen(
         makeAuthSession({ user: MAGNUS }),

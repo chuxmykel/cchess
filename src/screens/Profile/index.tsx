@@ -17,10 +17,14 @@ import { SIGN_OUT_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { AUTH_SESSION_STATUS } from '../../hooks/useAuthSessionLifecycle';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
+import { HomeStackParamList } from '../HomeStack/types';
 
 interface ProfileProps {
   navigation: {
-    navigate: (route: 'SignIn' | 'CreateAccount') => void;
+    navigate: {
+      (route: 'SignIn' | 'CreateAccount'): void;
+      (route: 'RatingStats', params: HomeStackParamList['RatingStats']): void;
+    };
   };
 }
 
@@ -76,7 +80,16 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
       ) : (
         <>
           <Text style={styles.sectionTitle}>Ratings</Text>
-          <RatingsList ratings={user.ratings} />
+          <RatingsList
+            ratings={user.ratings}
+            onSelect={(category) =>
+              navigation.navigate('RatingStats', {
+                username: user.username,
+                displayName: user.displayName,
+                category,
+              })
+            }
+          />
           <View style={styles.signOut}>
             {signOutAttempt.errorMessage && (
               <Text style={styles.error}>{signOutAttempt.errorMessage}</Text>

@@ -12,6 +12,8 @@ import GameViewer from '../GameViewer';
 import UserProfile from '../UserProfile';
 import Conversation from '../Conversation';
 import GamesList from '../GamesList';
+import RatingStats from '../RatingStats';
+import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import SignIn from '../SignIn';
 import CreateAccount from '../CreateAccount';
 import { HomeStackParamList, RootStackParamList } from './types';
@@ -65,6 +67,14 @@ const HomeStack: React.FC = () => {
           options={WITH_HEADER}
         />
         <Screen name="GamesList" component={GamesList} options={WITH_HEADER} />
+        <Screen
+          name="RatingStats"
+          component={RatingStats}
+          options={({ route }) => ({
+            ...WITH_HEADER,
+            title: `${GAME_TYPE_LABELS[route.params.category]} rating`,
+          })}
+        />
         <Screen
           name="SignIn"
           component={SignIn}

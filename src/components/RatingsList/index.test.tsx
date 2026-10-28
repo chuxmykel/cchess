@@ -1,4 +1,4 @@
-import { render, within } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
 
 import RatingsList from '.';
 
@@ -80,5 +80,44 @@ describe('RatingsList', () => {
     expect(
       within(screen.getByTestId('rating-blitz')).getByText('1662?'),
     ).toBeTruthy();
+  });
+
+  it("opens a rated category's stats", async () => {
+    const onSelect = jest.fn();
+    const screen = await render(
+      <RatingsList
+        ratings={[
+          {
+            category: 'blitz',
+            rating: 1516,
+            gamesPlayed: 3,
+            provisional: false,
+          },
+        ]}
+        onSelect={onSelect}
+      />,
+    );
+
+    await fireEvent.press(screen.getByTestId('rating-blitz'));
+
+    expect(onSelect).toHaveBeenCalledWith('blitz');
+    expect(screen.getByTestId('rating-bullet')).toBeDisabled();
+  });
+
+  it('leaves the rows alone without a way to open them', async () => {
+    const screen = await render(
+      <RatingsList
+        ratings={[
+          {
+            category: 'blitz',
+            rating: 1516,
+            gamesPlayed: 3,
+            provisional: false,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('rating-blitz')).toBeDisabled();
   });
 });

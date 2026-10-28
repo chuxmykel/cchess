@@ -204,7 +204,16 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
 
         {profile.ratings.length > 0 && (
           <View style={styles.section}>
-            <RatingsList ratings={profile.ratings} />
+            <RatingsList
+              ratings={profile.ratings}
+              onSelect={(category) =>
+                navigation.navigate('RatingStats', {
+                  username: profile.username,
+                  displayName: profile.displayName,
+                  category,
+                })
+              }
+            />
           </View>
         )}
 
