@@ -3,14 +3,21 @@ import { Color } from 'chess.js';
 
 import { GameUserSummary, SeriesScore } from '../../network/socketEvents';
 import { GameClockResult } from '../../hooks/useGameClock';
+import Avatar from '../Avatar';
 import GameClock from '../GameClock';
 import CapturedPieces from '../CapturedPieces';
 import { SideMaterial } from '../../domain/material';
-import { formatPoints, formatRating } from '../../utils/rating';
+import { formatRating } from '../../utils/rating';
 import { ACCENT_COLOR } from '../../constants/colors';
 
-export const PLAYER_BAR_HEIGHT = 38;
+export const PLAYER_BAR_HEIGHT = 40;
 const FIRST_MOVE_WARNING_SECONDS = 10;
+const AVATAR_SIZE = 36;
+const SERIES_BAND_HEIGHT = 13;
+// The name and the line under it - the first-move countdown or captured
+// pieces - each keep their height, shown or not.
+const NAME_LINE_HEIGHT = 20;
+const SUBLINE_HEIGHT = 16;
 
 export interface PlayerBarProps {
   color: Color;
@@ -43,6 +50,9 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
 }) => {
   const isWhite = color === 'w';
   const player = isWhite ? white : black;
+  // Decimal, so it reads at a glance in the avatar's small segment: "1.5".
+  const seriesPoints = series && String(series[isWhite ? 'white' : 'black']);
+  const openProfile = onPressPlayer ? () => onPressPlayer(player) : undefined;
   const showsFirstMoveCountdown =
     !isGameOver && turn === color && firstMoveSecondsLeft !== null;
 
@@ -51,22 +61,52 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
       style={[styles.container, isGameOver && styles.faded]}
       testID={`player-bar-${color}`}
     >
+      <Pressable
+        style={styles.avatarSlot}
+        onPress={openProfile}
+        disabled={!onPressPlayer}
+        // The name beside it is the accessible way to their profile.
+        accessible={false}
+        testID={`player-avatar-${color}`}
+      >
+        <View style={styles.avatar}>
+          <Avatar
+            name={player.displayName}
+            color={player.avatarColor}
+            size={AVATAR_SIZE}
+            square
+            // Lifted clear of the series band while it shows.
+            raiseInitials={seriesPoints !== null ? SERIES_BAND_HEIGHT / 2 : 0}
+          />
+          {seriesPoints !== null && (
+            <View style={styles.seriesSegment}>
+              <Text
+                style={styles.seriesPoints}
+                accessibilityLabel={`Series score ${seriesPoints}`}
+                testID={`series-points-${color}`}
+              >
+                {seriesPoints}
+              </Text>
+            </View>
+          )}
+        </View>
+        {isOnline !== undefined && (
+          <View
+            style={[styles.presence, !isOnline && styles.offline]}
+            accessibilityLabel={isOnline ? 'Online' : 'Offline'}
+            testID={`presence-${color}`}
+          />
+        )}
+      </Pressable>
       <View style={styles.details}>
         <Pressable
           style={styles.identity}
-          onPress={onPressPlayer ? () => onPressPlayer(player) : undefined}
+          onPress={openProfile}
           disabled={!onPressPlayer}
           accessibilityRole={onPressPlayer ? 'button' : undefined}
           accessibilityHint={onPressPlayer ? 'Opens their profile' : undefined}
           testID={`player-name-${color}`}
         >
-          {isOnline !== undefined && (
-            <View
-              style={[styles.presence, !isOnline && styles.offline]}
-              accessibilityLabel={isOnline ? 'Online' : 'Offline'}
-              testID={`presence-${color}`}
-            />
-          )}
           <Text style={styles.name} numberOfLines={1}>
             {player.displayName}
           </Text>
@@ -75,31 +115,27 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
               {formatRating(player.rating, player.provisional)}
             </Text>
           )}
-          {series && (
+        </Pressable>
+        {/* Always there, empty or not, so nothing moves when the
+            countdown or the first capture shows up. */}
+        <View style={styles.subline} testID={`player-subline-${color}`}>
+          {showsFirstMoveCountdown && (
             <Text
-              style={styles.seriesPoints}
-              accessibilityLabel={`Series score ${formatPoints(series[isWhite ? 'white' : 'black'])}`}
-              testID={`series-points-${color}`}
+              style={[
+                styles.firstMoveCountdown,
+                firstMoveSecondsLeft <= FIRST_MOVE_WARNING_SECONDS &&
+                  styles.firstMoveWarning,
+              ]}
+              numberOfLines={1}
+              testID={`first-move-countdown-${color}`}
             >
-              {formatPoints(series[isWhite ? 'white' : 'black'])}
+              {`${firstMoveSecondsLeft} seconds to play the first move`}
             </Text>
           )}
-        </Pressable>
-        {showsFirstMoveCountdown && (
-          <Text
-            style={[
-              styles.firstMoveCountdown,
-              firstMoveSecondsLeft <= FIRST_MOVE_WARNING_SECONDS &&
-                styles.firstMoveWarning,
-            ]}
-            testID={`first-move-countdown-${color}`}
-          >
-            {`${firstMoveSecondsLeft} seconds to play the first move`}
-          </Text>
-        )}
-        {!showsFirstMoveCountdown && material && (
-          <CapturedPieces color={color} material={material} />
-        )}
+          {!showsFirstMoveCountdown && material && (
+            <CapturedPieces color={color} material={material} />
+          )}
+        </View>
       </View>
       <GameClock
         label={isWhite ? 'White' : 'Black'}
@@ -115,7 +151,7 @@ export default PlayerBar;
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    minHeight: PLAYER_BAR_HEIGHT,
+    height: PLAYER_BAR_HEIGHT,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -124,25 +160,55 @@ const styles = StyleSheet.create({
   faded: {
     opacity: 0.5,
   },
+  avatarSlot: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    marginRight: 10,
+  },
+  avatar: {
+    overflow: 'hidden',
+    borderRadius: AVATAR_SIZE * 0.15,
+  },
+  // A band across the bottom of the avatar.
+  seriesSegment: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: SERIES_BAND_HEIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
   details: {
+    flex: 1,
     flexShrink: 1,
     marginRight: 12,
   },
   identity: {
+    height: NAME_LINE_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
+  subline: {
+    height: SUBLINE_HEIGHT,
+    justifyContent: 'center',
+  },
+  // A badge on the avatar's top right corner.
   presence: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    position: 'absolute',
+    top: -3,
+    right: -3,
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: 'white',
     backgroundColor: ACCENT_COLOR,
   },
   offline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: '#bbb',
+    backgroundColor: '#bbb',
   },
   firstMoveCountdown: {
     fontSize: 12,
@@ -162,15 +228,8 @@ const styles = StyleSheet.create({
     color: '#888',
   },
   seriesPoints: {
-    minWidth: 22,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    overflow: 'hidden',
-    borderRadius: 4,
-    textAlign: 'center',
-    fontSize: 13,
+    fontSize: 9,
     fontWeight: '700',
     color: 'white',
-    backgroundColor: ACCENT_COLOR,
   },
 });

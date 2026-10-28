@@ -37,4 +37,24 @@ describe('Avatar', () => {
 
     expect(screen.getByTestId('avatar-guest-icon')).toBeTruthy();
   });
+
+  it('rounds into a circle, or just its corners when square', async () => {
+    const circle = await render(<Avatar name="Ada" size={40} />);
+    expect(circle.getByTestId('avatar-placeholder')).toHaveStyle({
+      borderRadius: 20,
+    });
+
+    const square = await render(<Avatar name="Ada" size={40} square />);
+    expect(square.getByTestId('avatar-placeholder')).toHaveStyle({
+      borderRadius: 6,
+    });
+  });
+
+  it('lifts the initials when asked', async () => {
+    const screen = await render(<Avatar name="Ada" raiseInitials={6} />);
+
+    expect(screen.getByText('A')).toHaveStyle({
+      transform: [{ translateY: -6 }],
+    });
+  });
 });
