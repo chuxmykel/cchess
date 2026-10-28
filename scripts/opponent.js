@@ -12,8 +12,9 @@ NAME
 
 SYNOPSIS
        npm run opponent -- [--guest | --casual] [--color w|b] [--time M+I]
-                           [--delay MS] [--chat] [--idle]
+                           [--games N] [--delay MS] [--chat] [--idle]
        npm run opponent -- --friend USERNAME [--challenge] [--time M+I]
+                           [--games N]
        npm run opponent -- -h | --help
 
 DESCRIPTION
@@ -21,6 +22,12 @@ DESCRIPTION
        script is that player: it signs in to a local cchess-be as the
        real_user_bot account (or a fresh guest), seeks a game, and plays a
        random legal move whenever it's its turn. Draw offers are declined.
+
+       It plays one game and exits, or --games N of them. Between games it
+       offers a rematch and accepts one offered to it, so the series score
+       shows beside both names; if a rematch is declined, or none starts
+       within 15 seconds, it seeks (or challenges) again instead. An
+       aborted game doesn't count, and isn't rematched.
 
        real_user_bot seeks a rated game unless --casual is given; a guest
        always seeks a casual one. Seeks only pair when both are rated or
@@ -36,14 +43,20 @@ OPTIONS
               Ns+I for a start of N seconds instead, e.g. 15s+0. It must
               match the app's time control. Default: 5+0.
 
+       --games N
+              Play N games, then exit. Default: 1 - except in friend mode
+              without --challenge, which plays the friend's challenges until
+              stopped unless --games is given.
+
        --delay MS
               Milliseconds to wait before each move. Default: 800.
 
        --color w|b
-              The color the bot must get. The server assigns colors at
-              random, so this can't request one: if the bot is matched with
-              the other color it aborts the game and exits with status 2.
-              --color w makes the app play black.
+              The color the bot must get in its first game. The server
+              assigns colors at random, so this can't request one: if the
+              bot is matched with the other color it aborts the game and
+              exits with status 2. --color w makes the app play black.
+              Rematches swap colors, as usual.
 
        --guest
               Play as a new guest instead of real_user_bot (always casual).
@@ -58,18 +71,20 @@ OPTIONS
        --friend USERNAME
               Befriend USERNAME instead of seeking: accept its friend request
               (or send one), answer its messages, and accept and play its
-              challenges, until stopped.
+              challenges.
 
        --challenge
-              With --friend, also challenge USERNAME at --time.
+              With --friend, also challenge USERNAME at --time, and exit
+              once its games are played.
 
        -h, --help
               Show this help and exit.
 
 EXIT STATUS
-       Friend mode keeps running until stopped. Otherwise:
+       Friend mode without --challenge or --games keeps running until
+       stopped. Otherwise:
 
-       0      The game is over.
+       0      Its games are over.
        1      A connection, sign-in or matchmaking error, including
               real_user_bot not existing on this server.
        2      --color was given and the bot got the other color.
@@ -88,6 +103,9 @@ EXAMPLES
 
        A quick casual 3+2 opponent:
               npm run opponent -- --casual --time 3+2 --delay 300
+
+       Play a best-of-three against the app, rematching between games:
+              npm run opponent -- --games 3
 
        Act as glicko_65163's friend, and challenge it:
               npm run opponent -- --friend glicko_65163 --challenge
@@ -108,6 +126,7 @@ const { values: args } = parseArgs({
     idle: { type: 'boolean', default: false },
     friend: { type: 'string' },
     challenge: { type: 'boolean', default: false },
+    games: { type: 'string' },
     help: { type: 'boolean', short: 'h', default: false },
   },
 });
@@ -124,6 +143,20 @@ const initialSeconds = base.endsWith('s')
   : Math.round(Number(base) * 60);
 const incrementSeconds = Number(increment);
 const moveDelayMs = Number(args.delay);
+// Friend mode just answering challenges is a long-running helper; anything
+// that starts its own games plays one unless told otherwise.
+const gamesToPlay =
+  args.games !== undefined
+    ? Number(args.games)
+    : args.friend && !args.challenge
+      ? Infinity
+      : 1;
+if (!(gamesToPlay >= 1) || (args.games && !Number.isInteger(gamesToPlay))) {
+  console.error('--games must be a whole number, 1 or more');
+  process.exit(1);
+}
+// How long to wait for a rematch to start before looking for a new game.
+const REMATCH_WAIT_MS = 15_000;
 if (args.color && !['w', 'b'].includes(args.color)) {
   console.error('--color must be "w" or "b"');
   process.exit(1);
@@ -215,6 +248,11 @@ async function main() {
 
   let gameId = null;
   let myColor = null;
+  let gamesPlayed = 0;
+  // The game just finished, while a rematch of it might still start.
+  let finishedGameId = null;
+  let rematchTimer = null;
+  let exiting = false;
 
   function exit(code) {
     socket.disconnect();
@@ -240,36 +278,58 @@ async function main() {
   const token = session.accessToken;
   const friendMode = Boolean(args.friend);
 
-  socket.on('connect', () => {
-    if (friendMode) {
-      log(`connected to ${SERVER_URL} as a friend of ${args.friend}`);
-      befriend(token)
-        .then(async () => {
-          if (!args.challenge) return;
-          await request('POST', '/challenges', {
-            token,
-            body: {
-              opponentUsername: args.friend,
-              initialSeconds,
-              incrementSeconds,
-              rated: !args.casual,
-            },
-          });
-          log(`challenged ${args.friend} to ${args.time}`);
-        })
-        .catch((error) => {
-          console.error('[opponent]', error.message);
-          exit(1);
-        });
-      return;
-    }
+  function seek() {
     const mode = args.guest || args.casual ? 'casual' : 'rated';
-    log(`connected to ${SERVER_URL}, seeking ${args.time} ${mode}`);
+    log(`seeking ${args.time} ${mode}`);
     socket.emit('matchmaking:seek', {
       initialSeconds,
       incrementSeconds,
       rated: !args.guest && !args.casual,
     });
+  }
+
+  async function challengeFriend() {
+    await request('POST', '/challenges', {
+      token,
+      body: {
+        opponentUsername: args.friend,
+        initialSeconds,
+        incrementSeconds,
+        rated: !args.casual,
+      },
+    });
+    log(`challenged ${args.friend} to ${args.time}`);
+  }
+
+  function fail(error) {
+    console.error('[opponent]', error.message);
+    exit(1);
+  }
+
+  // After a game, when no rematch is coming: start the next game the way
+  // the first one started.
+  function lookForNextGame() {
+    clearTimeout(rematchTimer);
+    finishedGameId = null;
+    if (!friendMode) {
+      seek();
+    } else if (args.challenge) {
+      challengeFriend().catch(fail);
+    } else {
+      log(`waiting for a challenge from ${args.friend}`);
+    }
+  }
+
+  socket.on('connect', () => {
+    if (friendMode) {
+      log(`connected to ${SERVER_URL} as a friend of ${args.friend}`);
+      befriend(token)
+        .then(() => (args.challenge ? challengeFriend() : undefined))
+        .catch(fail);
+      return;
+    }
+    log(`connected to ${SERVER_URL}`);
+    seek();
   });
 
   socket.on('connect_error', (error) => {
@@ -284,15 +344,32 @@ async function main() {
     console.error('[opponent] matchmaking:error', message);
     exit(1);
   });
-  socket.on('game:error', ({ message }) => log('game:error', message));
+  socket.on('game:error', (payload) => {
+    log('game:error', payload.message);
+    // A rematch that can't start (the opponent is in another game, say).
+    if (finishedGameId && payload.gameId === finishedGameId) {
+      lookForNextGame();
+    }
+  });
 
   socket.on('game:created', (snapshot) => {
+    clearTimeout(rematchTimer);
+    finishedGameId = null;
+    // A rematch accepted late can start after the bot has gone back to
+    // seeking - drop that seek, so it isn't matched into a second game.
+    if (!friendMode) socket.emit('matchmaking:cancel');
     gameId = snapshot.id;
     myColor = snapshot.white.id === myUserId ? 'w' : 'b';
-    log('matched in game', gameId, 'as', myColor === 'w' ? 'white' : 'black');
+    log(
+      snapshot.rematchOfId ? 'rematch in game' : 'matched in game',
+      gameId,
+      'as',
+      myColor === 'w' ? 'white' : 'black',
+    );
 
-    if (args.color && args.color !== myColor) {
+    if (args.color && args.color !== myColor && gamesPlayed === 0) {
       log('wrong color, aborting - start a new seek and retry');
+      exiting = true;
       socket.emit('game:abort', { gameId });
       // Give the abort a moment to reach the server before disconnecting.
       setTimeout(() => exit(2), 500);
@@ -327,12 +404,43 @@ async function main() {
 
   socket.on('game:over', (snapshot) => {
     if (snapshot.id !== gameId) return;
-    log('game over:', snapshot.result, snapshot.resultReason);
-    if (friendMode) {
-      gameId = null;
+    gameId = null;
+    if (snapshot.status === 'aborted') {
+      // Not a game played, and not one to rematch.
+      log('game aborted');
+      if (!exiting) lookForNextGame();
       return;
     }
-    exit(0);
+    gamesPlayed += 1;
+    const score = snapshot.series
+      ? ` - series ${snapshot.series.white}-${snapshot.series.black} (white-black)`
+      : '';
+    log('game over:', snapshot.result, snapshot.resultReason + score);
+    if (gamesPlayed >= gamesToPlay) {
+      log(`played ${gamesPlayed} ${gamesPlayed === 1 ? 'game' : 'games'}`);
+      exit(0);
+      return;
+    }
+    finishedGameId = snapshot.id;
+    log('offering a rematch');
+    socket.emit('game:rematchOffer', { gameId: finishedGameId });
+    rematchTimer = setTimeout(lookForNextGame, REMATCH_WAIT_MS);
+  });
+
+  function mySide() {
+    return myColor === 'w' ? 'white' : 'black';
+  }
+
+  socket.on('game:rematchOffered', ({ gameId: offeredFor, by }) => {
+    if (offeredFor !== finishedGameId || by === mySide()) return;
+    log('accepting the rematch');
+    socket.emit('game:rematchOffer', { gameId: finishedGameId });
+  });
+
+  socket.on('game:rematchDeclined', ({ gameId: declinedFor, by }) => {
+    if (declinedFor !== finishedGameId || by === mySide()) return;
+    log('rematch declined');
+    lookForNextGame();
   });
 
   socket.on('friend:requestReceived', (pending) => {
