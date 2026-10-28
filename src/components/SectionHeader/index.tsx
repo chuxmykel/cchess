@@ -1,9 +1,12 @@
 import { View, Text, StyleSheet } from 'react-native';
 
 import Button from '../Button';
+import { MUTED_COLOR } from '../../constants/colors';
 
 interface SectionHeaderProps {
   title: string;
+  /** How many there are, shown beside the title. */
+  count?: number;
   actionLabel?: string;
   onActionPress?: () => void;
   testID?: string;
@@ -11,13 +14,22 @@ interface SectionHeaderProps {
 
 const SectionHeader: React.FC<SectionHeaderProps> = ({
   title,
+  count,
   actionLabel,
   onActionPress,
   testID,
 }) => {
   return (
     <View style={styles.row}>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title}>
+        {title}
+        {count !== undefined && (
+          <Text style={styles.count} testID={testID && `${testID}-count`}>
+            {'  '}
+            {count}
+          </Text>
+        )}
+      </Text>
       {actionLabel && onActionPress && (
         <Button
           label={actionLabel}
@@ -44,5 +56,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: '600',
+  },
+  count: {
+    fontWeight: '400',
+    color: MUTED_COLOR,
   },
 });

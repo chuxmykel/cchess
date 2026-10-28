@@ -17,6 +17,8 @@ export type HomeStackParamList = {
   GameViewer: { gameId: string };
   UserProfile: { username: string };
   Conversation: ConversationPartner;
+  /** Everyone a player is friends with. */
+  UserFriends: { username: string; displayName: string };
   /** Someone's games; your own without a username. */
   GamesList: { username?: string; displayName?: string };
   /** A player's rating history and results in one category. */

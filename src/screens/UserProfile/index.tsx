@@ -23,6 +23,7 @@ import Button from '../../components/Button';
 import ChallengeSheet from '../../components/ChallengeSheet';
 import EmptyState from '../../components/EmptyState';
 import Placeholder from '../../components/Placeholder';
+import ProfileFriends from '../../components/ProfileFriends';
 import RatingsList from '../../components/RatingsList';
 import GameRow from '../../components/RecentGamesList/GameRow';
 import SectionHeader from '../../components/SectionHeader';
@@ -32,6 +33,7 @@ import { useSocialContext } from '../../context/SocialContext';
 import { useFriendActions } from '../../hooks/useFriendActions';
 import { usePagedGames } from '../../hooks/usePagedGames';
 import { useToast } from '../../hooks/useToast';
+import { useUserFriends } from '../../hooks/useUserFriends';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { getUserGames, GamesPage, UserProfile } from '../../network/restClient';
 import { presenceLabel } from '../../utils/presence';
@@ -53,7 +55,13 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
   const { username } = route.params;
   const social = useSocialContext();
   const toast = useToast();
-  const { state, reload } = useUserProfile(username);
+  const { state, reload: reloadProfile } = useUserProfile(username);
+  const { state: friendsState, reload: reloadFriends } =
+    useUserFriends(username);
+  const reload = useCallback(() => {
+    reloadProfile();
+    reloadFriends();
+  }, [reloadProfile, reloadFriends]);
   const friendActions = useFriendActions(navigation, (friend) =>
     toast.show(`Challenge sent to ${friend.displayName}`),
   );
@@ -279,6 +287,29 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
             <ActionList items={actions} />
           </View>
         )}
+
+        <View style={styles.section}>
+          <ProfileFriends
+            count={profile.friendsCount}
+            friends={
+              friendsState.status === 'ready' ? friendsState.friends : null
+            }
+            emptyMessage={
+              isSelf
+                ? 'Your friends will show up here.'
+                : `${profile.displayName}'s friends will show up here.`
+            }
+            onSelect={(friend) =>
+              navigation.push('UserProfile', { username: friend.username })
+            }
+            onViewAll={() =>
+              navigation.navigate('UserFriends', {
+                username: profile.username,
+                displayName: profile.displayName,
+              })
+            }
+          />
+        </View>
 
         <View style={styles.section}>
           <SectionHeader title="Activity" />

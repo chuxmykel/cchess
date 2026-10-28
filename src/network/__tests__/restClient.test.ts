@@ -15,6 +15,7 @@ import {
   register,
   revokeRefreshToken,
   getRatingStats,
+  getUserFriends,
   searchUsers,
   signIn,
 } from '../restClient';
@@ -220,6 +221,16 @@ describe('restClient', () => {
       const request = sentRequest(transport);
       expect(request.url).toBe('/users/judit%20polgar/ratings/blitz');
       expect(request.params).toEqual({ period: '3m' });
+      expect(request.headers.Authorization).toBe('Bearer access-123');
+    });
+
+    it("fetches a player's friends", async () => {
+      const transport = stubTransport(respondWith([]));
+
+      await getUserFriends('judit polgar', 'access-123');
+
+      const request = sentRequest(transport);
+      expect(request.url).toBe('/users/judit%20polgar/friends');
       expect(request.headers.Authorization).toBe('Bearer access-123');
     });
 

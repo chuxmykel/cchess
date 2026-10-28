@@ -267,6 +267,7 @@ export type UserProfile = {
   playingGameId: string | null;
   gamesPlayed: number;
   timePlayedMs: number;
+  friendsCount: number;
   friendship: { status: FriendshipStatus; requestId: string | null };
   /** Your results against them; null on your own profile. */
   score: Score | null;
@@ -346,6 +347,19 @@ export async function getUserProfile(
   ).data;
 }
 
+/** A player's friends, the most recently added first. */
+export async function getUserFriends(
+  username: string,
+  accessToken: string,
+): Promise<UserFriend[]> {
+  return (
+    await apiClient.get<UserFriend[]>(
+      `${userPath(username)}/friends`,
+      bearer(accessToken),
+    )
+  ).data;
+}
+
 export async function getUserActivity(
   username: string,
   accessToken: string,
@@ -381,6 +395,12 @@ export type Friend = {
   online: boolean;
   playingGameId: string | null;
   ratings: UserRating[];
+};
+
+/** Someone's friend, as their profile lists them. */
+export type UserFriend = Friend & {
+  /** When they became friends. */
+  friendsSince: string;
 };
 
 export type FriendRequest = {

@@ -7,6 +7,7 @@ import { useAuthSession } from '../../context/AuthSessionContext';
 import { useSocialContext } from '../../context/SocialContext';
 import {
   getUserActivity,
+  getUserFriends,
   getUserGames,
   getUserProfile,
   UserProfile as Profile,
@@ -17,6 +18,7 @@ import { withSafeArea } from '../../testUtils/safeArea';
 import {
   makeFriend,
   makeSocial,
+  makeUserFriend,
   makeUserProfile,
 } from '../../testUtils/social';
 
@@ -31,6 +33,7 @@ jest.mock('../../network/restClient', () => ({
   getUserProfile: jest.fn(),
   getUserActivity: jest.fn(),
   getUserGames: jest.fn(),
+  getUserFriends: jest.fn(),
 }));
 
 describe('UserProfile', () => {
@@ -38,6 +41,7 @@ describe('UserProfile', () => {
     profile: Profile,
     social = makeSocial(),
     games = [makeGameSummary({ id: 'their-game' })],
+    friends = [makeUserFriend({ id: 'their-friend', username: 'zsuzsa' })],
   ) {
     (useAuthSession as jest.Mock).mockReturnValue(
       makeAuthSession({ user: { isGuest: false } }),
@@ -46,8 +50,10 @@ describe('UserProfile', () => {
     (getUserProfile as jest.Mock).mockResolvedValue(profile);
     (getUserActivity as jest.Mock).mockResolvedValue([]);
     (getUserGames as jest.Mock).mockResolvedValue(games);
+    (getUserFriends as jest.Mock).mockResolvedValue(friends);
     const navigation = {
       navigate: jest.fn(),
+      push: jest.fn(),
       setOptions: jest.fn(),
     };
     const screen = await render(
@@ -167,6 +173,7 @@ describe('UserProfile', () => {
 
     expect(social.sendFriendRequest).toHaveBeenCalledWith(profile.username);
     expect(getUserProfile).toHaveBeenCalledTimes(2);
+    expect(getUserFriends).toHaveBeenCalledTimes(2);
   });
 
   it("challenges someone I'm not friends with", async () => {
@@ -252,6 +259,39 @@ describe('UserProfile', () => {
 
     expect(screen.getByTestId('profile-games-empty')).toHaveTextContent(
       /Your recent games will show up here/,
+    );
+  });
+
+  it('shows their friends and how many, opening one or them all', async () => {
+    const { screen, navigation } = await renderScreen(
+      makeUserProfile({ friendsCount: 1 }),
+    );
+
+    expect(getUserFriends).toHaveBeenCalledWith('judit', 'access-token');
+    expect(
+      screen.getByTestId('profile-friends-view-all-count'),
+    ).toHaveTextContent('1', { exact: false });
+    await fireEvent.press(screen.getByTestId('profile-friend-their-friend'));
+    expect(navigation.push).toHaveBeenCalledWith('UserProfile', {
+      username: 'zsuzsa',
+    });
+    await fireEvent.press(screen.getByTestId('profile-friends-view-all'));
+    expect(navigation.navigate).toHaveBeenCalledWith('UserFriends', {
+      username: 'judit',
+      displayName: 'Judit Polgar',
+    });
+  });
+
+  it('says their friends will show up once they have some', async () => {
+    const { screen } = await renderScreen(
+      makeUserProfile(),
+      makeSocial(),
+      [],
+      [],
+    );
+
+    expect(screen.getByTestId('profile-friends-empty')).toHaveTextContent(
+      /Judit Polgar's friends will show up here/,
     );
   });
 
