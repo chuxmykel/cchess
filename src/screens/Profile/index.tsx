@@ -18,13 +18,14 @@ import { useAuthSession } from '../../context/AuthSessionContext';
 import { AUTH_SESSION_STATUS } from '../../hooks/useAuthSessionLifecycle';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { HomeStackParamList } from '../HomeStack/types';
+import MyFriends, { MyFriendsNavigation } from './MyFriends';
 
 interface ProfileProps {
   navigation: {
     navigate: {
       (route: 'SignIn' | 'CreateAccount'): void;
       (route: 'RatingStats', params: HomeStackParamList['RatingStats']): void;
-    };
+    } & MyFriendsNavigation['navigate'];
   };
 }
 
@@ -89,6 +90,11 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
                 category,
               })
             }
+          />
+          <MyFriends
+            username={user.username}
+            displayName={user.displayName}
+            navigation={navigation}
           />
           <View style={styles.signOut}>
             {signOutAttempt.errorMessage && (

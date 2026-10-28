@@ -15,6 +15,7 @@ import { useToast } from '../../hooks/useToast';
 import { useUserSearch } from '../../hooks/useUserSearch';
 import { Friend } from '../../network/restClient';
 import { byPresence } from '../../utils/presence';
+import { HomeStackScreenProps } from '../HomeStack/types';
 import { HomeTabStackScreenProps } from '../HomeTabStack/types';
 
 type FriendsTab = 'online' | 'all' | 'requests';
@@ -23,10 +24,17 @@ function counted(count: number, noun: string): string {
   return `${count} ${count === 1 ? noun : `${noun}s`}`;
 }
 
-type FriendsProps = Pick<
-  HomeTabStackScreenProps<'Friends'>,
-  'navigation' | 'route'
->;
+// In the Home tab's stack, or over the tabs as FindFriends - opened from a
+// profile, so Back returns there. Either way it opens screens over the tabs.
+type FriendsProps = {
+  navigation: Pick<
+    HomeStackScreenProps<'FindFriends'>['navigation'],
+    'navigate'
+  >;
+  route:
+    | HomeTabStackScreenProps<'Friends'>['route']
+    | HomeStackScreenProps<'FindFriends'>['route'];
+};
 
 const Friends: React.FC<FriendsProps> = ({ navigation, route }) => {
   const social = useSocialContext();

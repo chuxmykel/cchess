@@ -16,6 +16,7 @@ describe('ProfileFriends', () => {
       emptyMessage: 'Their friends will show up here.',
       onSelect: jest.fn(),
       onViewAll: jest.fn(),
+      onAddFriends: jest.fn(),
       ...overrides,
     };
     return { props, screenPromise: render(<ProfileFriends {...props} />) };
@@ -59,6 +60,22 @@ describe('ProfileFriends', () => {
     expect(props.onViewAll).toHaveBeenCalled();
   });
 
+  it('ends with a tile to add friends', async () => {
+    const { props, screenPromise } = renderSection();
+    const screen = await screenPromise;
+
+    await fireEvent.press(screen.getByTestId('profile-add-friends'));
+
+    expect(props.onAddFriends).toHaveBeenCalled();
+  });
+
+  it('offers no way to add friends without somewhere to do it', async () => {
+    const { screenPromise } = renderSection({ onAddFriends: undefined });
+    const screen = await screenPromise;
+
+    expect(screen.queryByTestId('profile-add-friends')).toBeNull();
+  });
+
   it('says so when there are none, without View All', async () => {
     const { screenPromise } = renderSection({ count: 0, friends: [] });
     const screen = await screenPromise;
@@ -66,6 +83,7 @@ describe('ProfileFriends', () => {
     expect(screen.getByTestId('profile-friends-empty')).toBeTruthy();
     expect(screen.getByText('Their friends will show up here.')).toBeTruthy();
     expect(screen.queryByTestId('profile-friends-view-all')).toBeNull();
+    expect(screen.getByTestId('profile-add-friends')).toBeTruthy();
   });
 
   it('holds their places while loading', async () => {

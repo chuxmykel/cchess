@@ -14,6 +14,7 @@ import UserProfile from '../UserProfile';
 import Conversation from '../Conversation';
 import GamesList from '../GamesList';
 import UserFriends from '../UserFriends';
+import Friends from '../Friends';
 import RatingStats from '../RatingStats';
 import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import SignIn from '../SignIn';
@@ -66,6 +67,14 @@ const HomeStack: React.FC = () => {
           name="Conversation"
           component={Conversation}
           options={({ navigation }) => plainHeaderOptions(navigation)}
+        />
+        <Screen
+          name="FindFriends"
+          component={Friends}
+          options={({ navigation }) => ({
+            ...plainHeaderOptions(navigation),
+            title: 'Friends',
+          })}
         />
         <Screen
           name="UserFriends"

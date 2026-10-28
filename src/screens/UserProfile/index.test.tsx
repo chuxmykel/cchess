@@ -282,6 +282,25 @@ describe('UserProfile', () => {
     });
   });
 
+  it('offers to add friends from my own profile, opening Friends', async () => {
+    const { screen, navigation } = await renderScreen(
+      makeUserProfile({ friendship: { status: 'self', requestId: null } }),
+    );
+
+    await fireEvent.press(screen.getByTestId('profile-add-friends'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('FindFriends', {
+      focusSearch: true,
+    });
+  });
+
+  it("offers no way to add friends on someone else's profile", async () => {
+    const { screen } = await renderScreen(makeUserProfile());
+
+    expect(screen.getByTestId('profile-friend-their-friend')).toBeTruthy();
+    expect(screen.queryByTestId('profile-add-friends')).toBeNull();
+  });
+
   it('says their friends will show up once they have some', async () => {
     const { screen } = await renderScreen(
       makeUserProfile(),

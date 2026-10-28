@@ -308,6 +308,12 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
                 displayName: profile.displayName,
               })
             }
+            onAddFriends={
+              isSelf
+                ? () =>
+                    navigation.navigate('FindFriends', { focusSearch: true })
+                : undefined
+            }
           />
         </View>
 
