@@ -25,7 +25,7 @@ import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useMoveNavigation } from '../../hooks/useMoveNavigation';
 import { useGameShare } from '../../hooks/useGameShare';
 import { useGameBookmark } from '../../hooks/useGameBookmark';
-import { materialImbalance } from '../../domain/material';
+import { capturedMaterial } from '../../domain/material';
 import { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
 import { useOnlineChessGameContext } from '../../context/LiveGame/OnlineChessGameContext';
@@ -220,7 +220,11 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   const myRatingDiff = myColor === 'w' ? whiteRatingDiff : blackRatingDiff;
 
   const topColor: Color = orientation === 'w' ? 'b' : 'w';
-  const material = materialImbalance(moveNavigation.viewedFen ?? fen);
+  // Every capture up to the position on the board, live or looked back on.
+  const material = capturedMaterial(
+    moveNavigation.viewedFen ?? fen,
+    moves.slice(0, moveNavigation.currentPly),
+  );
   const showsResult = isGameOver && moveNavigation.isLive && !isResultDismissed;
   const sharedPlayerBarProps: Omit<PlayerBarProps, 'color'> = {
     white: snapshot.white,

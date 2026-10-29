@@ -172,6 +172,27 @@ describe('LiveGameContent', () => {
     expect(screen.queryByTestId('captured-pieces-b')).toBeNull();
   });
 
+  it('shows every piece each side has captured, trades included', async () => {
+    // 1. e4 d5 2. exd5 Qxd5: a pawn each.
+    const afterTrade =
+      'rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3';
+    const { screen } = await renderContent('w', {
+      fen: afterTrade,
+      moves: [
+        moveSummary(1, 'e2', 'e4', AFTER_E4),
+        moveSummary(2, 'd7', 'd5', AFTER_E4),
+        { ...moveSummary(3, 'e4', 'd5', AFTER_E4), captured: 'p' },
+        { ...moveSummary(4, 'd8', 'd5', afterTrade), captured: 'p' },
+      ],
+    });
+
+    expect(screen.getAllByTestId('captured-piece-w')).toHaveLength(1);
+    expect(screen.getAllByTestId('captured-piece-b')).toHaveLength(1);
+    // Level material, so no score.
+    expect(screen.queryByTestId('material-score-w')).toBeNull();
+    expect(screen.queryByTestId('material-score-b')).toBeNull();
+  });
+
   it("opens a player's profile from their name", async () => {
     const { screen, navigation } = await renderContent('w');
 
