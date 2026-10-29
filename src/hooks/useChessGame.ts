@@ -2,13 +2,21 @@ import { useCallback, useReducer, useRef } from 'react';
 import { Color, PieceSymbol, Square } from 'chess.js';
 
 import { ChessEngine } from '../domain/ChessEngine';
-import { AppliedMove, DomainPiece, MoveResult } from '../domain/types';
+import {
+  AppliedMove,
+  DomainPiece,
+  LegalTargets,
+  MoveResult,
+} from '../domain/types';
 
 type PendingPromotion = { from: Square; to: Square };
 
 type ChessGameState = {
   pieces: DomainPiece[];
   turn: Color;
+  // Where each of the side to move's pieces can go - every legal move at
+  // once, so a dropped piece can be judged where it lands, on the UI thread.
+  legalTargets: LegalTargets;
   selectedSquare: Square | null;
   legalMoveSquares: Square[];
   isGameOver: boolean;
@@ -26,6 +34,7 @@ type Action =
       type: 'POSITION_RESET';
       pieces: DomainPiece[];
       turn: Color;
+      legalTargets: LegalTargets;
       isGameOver: boolean;
     }
   | {
@@ -33,6 +42,7 @@ type Action =
       move: AppliedMove;
       pieces: DomainPiece[];
       turn: Color;
+      legalTargets: LegalTargets;
       isGameOver: boolean;
     };
 
@@ -62,6 +72,7 @@ function reducer(state: ChessGameState, action: Action): ChessGameState {
         ...state,
         pieces: action.pieces,
         turn: action.turn,
+        legalTargets: action.legalTargets,
         isGameOver: action.isGameOver,
         selectedSquare: null,
         legalMoveSquares: [],
@@ -74,6 +85,7 @@ function reducer(state: ChessGameState, action: Action): ChessGameState {
         ...state,
         pieces: action.pieces,
         turn: action.turn,
+        legalTargets: action.legalTargets,
         selectedSquare: null,
         legalMoveSquares: [],
         isGameOver: action.isGameOver,
@@ -89,6 +101,7 @@ function initState(engine: ChessEngine): ChessGameState {
   return {
     pieces: engine.getBoardSnapshot(),
     turn: engine.getTurn(),
+    legalTargets: engine.getLegalTargets(),
     selectedSquare: null,
     legalMoveSquares: [],
     isGameOver: engine.isGameOver(),
@@ -140,6 +153,7 @@ export function useChessGame(fen?: string) {
         move: result.move,
         pieces: engine.getBoardSnapshot(),
         turn: engine.getTurn(),
+        legalTargets: engine.getLegalTargets(),
         isGameOver: engine.isGameOver(),
       });
     },
@@ -221,6 +235,7 @@ export function useChessGame(fen?: string) {
         type: 'POSITION_RESET',
         pieces: engine.getBoardSnapshot(),
         turn: engine.getTurn(),
+        legalTargets: engine.getLegalTargets(),
         isGameOver: engine.isGameOver(),
       });
     },
@@ -245,6 +260,7 @@ export function useChessGame(fen?: string) {
     // eslint-disable-next-line react-hooks/refs
     fen: engine.getFen(),
     turn: state.turn,
+    legalTargets: state.legalTargets,
     isGameOver: state.isGameOver,
     selectedSquare: state.selectedSquare,
     legalMoveSquares: state.legalMoveSquares,

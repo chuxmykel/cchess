@@ -20,6 +20,7 @@ function makeFakeGame(
     pieces: [],
     fen: makeGameSnapshot().fen,
     turn: 'w',
+    legalTargets: {},
     isGameOver: false,
     selectedSquare: null,
     legalMoveSquares: [],

@@ -60,3 +60,6 @@ export const PROMOTION_PIECE_TYPES: readonly PieceSymbol[] = [
 export type GameType = 'bullet' | 'blitz' | 'rapid' | 'classical';
 
 export type GameResult = 'win' | 'loss' | 'draw';
+
+// Where each of the side to move's pieces can go, by the square it's on.
+export type LegalTargets = Partial<Record<Square, Square[]>>;

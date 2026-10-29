@@ -34,6 +34,21 @@ describe('ChessEngine', () => {
     expect(squares.sort()).toEqual(['e3', 'e4']);
   });
 
+  it("reports every legal target of the side to move, by the piece's square", () => {
+    const engine = new ChessEngine('4k3/8/8/8/8/8/8/R3K3 b - - 0 1');
+
+    const targets = engine.getLegalTargets();
+
+    expect(Object.keys(targets)).toEqual(['e8']);
+    expect(targets.e8.sort()).toEqual(['d7', 'd8', 'e7', 'f7', 'f8']);
+  });
+
+  it('names a promotion square once, not once per piece it could become', () => {
+    const engine = new ChessEngine('8/4P3/8/2k5/8/4K3/8/8 w - - 0 1');
+
+    expect(engine.getLegalTargets().e7).toEqual(['e8']);
+  });
+
   it('rejects an illegal move without mutating the board', () => {
     const engine = new ChessEngine();
 
