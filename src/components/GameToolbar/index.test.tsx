@@ -1,6 +1,7 @@
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 
 import GameToolbar from '.';
+import { REPEAT_INTERVAL_MS } from '../../hooks/usePressAndHoldRepeat';
 
 describe('GameToolbar', () => {
   function renderToolbar(
@@ -37,6 +38,30 @@ describe('GameToolbar', () => {
     expect(props.onPreviousMove).toHaveBeenCalledTimes(1);
     expect(props.onNextMove).toHaveBeenCalledTimes(1);
   });
+
+  it.each([
+    ['previous-move-button', 'onPreviousMove'],
+    ['next-move-button', 'onNextMove'],
+  ] as const)(
+    'keeps stepping through the moves while %s is held',
+    async (testID, handler) => {
+      jest.useFakeTimers();
+      try {
+        const { props, screenPromise } = renderToolbar();
+        const screen = await screenPromise;
+        const button = screen.getByTestId(testID);
+
+        await fireEvent(button, 'longPress');
+        await act(() => jest.advanceTimersByTime(2 * REPEAT_INTERVAL_MS));
+        await fireEvent(button, 'pressOut');
+        await act(() => jest.advanceTimersByTime(2 * REPEAT_INTERVAL_MS));
+
+        expect(props[handler]).toHaveBeenCalledTimes(3);
+      } finally {
+        jest.useRealTimers();
+      }
+    },
+  );
 
   it('disables resign while it is not offered', async () => {
     const { props, screenPromise } = renderToolbar({ canResign: false });

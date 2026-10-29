@@ -1,6 +1,7 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 
 import Icon, { IconName } from '../Icon';
+import { usePressAndHoldRepeat } from '../../hooks/usePressAndHoldRepeat';
 
 const ICON_SIZE = 28;
 const ENABLED_COLOR = '#333';
@@ -27,6 +28,8 @@ interface ToolbarButtonProps {
   onPress: () => void;
   disabled?: boolean;
   badgeCount?: number;
+  // Held down, it presses again and again, until let go.
+  repeatsWhileHeld?: boolean;
   testID: string;
 }
 
@@ -36,32 +39,36 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
   onPress,
   disabled = false,
   badgeCount = 0,
+  repeatsWhileHeld = false,
   testID,
-}) => (
-  <Pressable
-    style={styles.button}
-    onPress={onPress}
-    disabled={disabled}
-    hitSlop={8}
-    accessibilityRole="button"
-    accessibilityLabel={label}
-    accessibilityState={{ disabled }}
-    testID={testID}
-  >
-    <Icon
-      name={icon}
-      size={ICON_SIZE}
-      color={disabled ? DISABLED_COLOR : ENABLED_COLOR}
-    />
-    {badgeCount > 0 && (
-      <View style={styles.badge} testID={`${testID}-badge`}>
-        <Text style={styles.badgeText}>
-          {badgeCount > MAX_BADGE_COUNT ? `${MAX_BADGE_COUNT}+` : badgeCount}
-        </Text>
-      </View>
-    )}
-  </Pressable>
-);
+}) => {
+  const repeating = usePressAndHoldRepeat(onPress, !disabled);
+  return (
+    <Pressable
+      style={styles.button}
+      {...(repeatsWhileHeld ? repeating : { onPress })}
+      disabled={disabled}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      testID={testID}
+    >
+      <Icon
+        name={icon}
+        size={ICON_SIZE}
+        color={disabled ? DISABLED_COLOR : ENABLED_COLOR}
+      />
+      {badgeCount > 0 && (
+        <View style={styles.badge} testID={`${testID}-badge`}>
+          <Text style={styles.badgeText}>
+            {badgeCount > MAX_BADGE_COUNT ? `${MAX_BADGE_COUNT}+` : badgeCount}
+          </Text>
+        </View>
+      )}
+    </Pressable>
+  );
+};
 
 const GameToolbar: React.FC<GameToolbarProps> = ({
   onOpenMenu,
@@ -104,6 +111,7 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
       label="Previous move"
       onPress={onPreviousMove}
       disabled={!canGoToPreviousMove}
+      repeatsWhileHeld
       testID="previous-move-button"
     />
     <ToolbarButton
@@ -111,6 +119,7 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
       label="Next move"
       onPress={onNextMove}
       disabled={!canGoToNextMove}
+      repeatsWhileHeld
       testID="next-move-button"
     />
   </View>
