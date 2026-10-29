@@ -14,6 +14,7 @@ import { makeGameSnapshot } from '../../testUtils/gameSnapshot';
 import { findTimeControl } from '../../constants/timeControls';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { waitForSheetToClose } from '../../testUtils/modal';
+import { animatedStyleOf } from '../../testUtils/animatedValue';
 
 jest.mock('../../components/ConnectionStrengthIndicator', () =>
   jest.requireActual('../../testUtils/ConnectionStrengthIndicatorStub'),
@@ -86,8 +87,8 @@ describe('LiveGameContent', () => {
     return screen.getAllByTestId(/^player-bar-/).map((bar) => bar.props.testID);
   }
 
-  function translateYOf(element: { props: Record<string, any> }) {
-    return element.props.style.transform[1].translateY;
+  function translateYOf(element: { props: Record<string, unknown> }) {
+    return animatedStyleOf(element).transform[1].translateY;
   }
 
   async function openGameMenu(screen: Screen) {

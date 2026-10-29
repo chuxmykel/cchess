@@ -1,29 +1,62 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { Animated } from 'react-native';
+import {
+  makeMutable,
+  SharedValue,
+  withSpring,
+  WithSpringConfig,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { Color, PieceSymbol, Square } from 'chess.js';
 
-import { AppliedMove, DomainPiece } from '../domain/types';
+import { AppliedMove, DomainPiece, Position } from '../domain/types';
 import { getXYFromSquare } from '../domain/boardCoordinates';
 import { generatePieceId } from '../utils/animation';
-import { MOVE_SPRING, REST_THRESHOLDS } from '../constants/animations';
+import { MOVE_SPRING } from '../constants/animations';
 
 type SpriteId = `${Color}${PieceSymbol}`;
 
-// The RN-aware view of a piece: a stable identity plus the Animated objects
-// that drive its on-screen position/opacity. Mirrors a DomainPiece 1:1 -
-// plus, for a moment after a capture, the piece just taken (see `captured`).
+// The RN-aware view of a piece: a stable identity plus the shared values
+// that place it on screen - written on the UI thread by springs and drags
+// alike. Mirrors a DomainPiece 1:1 - plus, for a moment after a capture, the
+// piece just taken (see `captured`).
 export type AnimatedPieceView = {
   id: string;
   spriteId: SpriteId;
   square: Square;
-  animatedPosition: Animated.ValueXY;
-  opacity: Animated.Value;
+  // The top-left corner of the piece.
+  x: SharedValue<number>;
+  y: SharedValue<number>;
   // A piece just taken, still drawn on its square until the piece taking it
   // lands there, so it's seen being taken rather than vanishing first.
   captured?: boolean;
 };
 
 type PendingAnimation = { pieceEntry: AnimatedPieceView; toSquare: Square };
+
+/** Springs a piece to `to` on the UI thread; `onLanded` (on the JS thread)
+ * once it's there, or once a drag or a newer spring takes it over. */
+export function springPieceTo(
+  piece: Pick<AnimatedPieceView, 'x' | 'y'>,
+  to: Position,
+  config: WithSpringConfig,
+  onLanded?: () => void,
+) {
+  // Each axis is its own spring, and one that doesn't travel ends at once -
+  // so the landing waits for both.
+  let settling = 2;
+  const settle = () => {
+    settling -= 1;
+    if (settling === 0) onLanded?.();
+  };
+  const onAxisDone = onLanded
+    ? () => {
+        'worklet';
+        scheduleOnRN(settle);
+      }
+    : undefined;
+  piece.x.set(withSpring(to.x, config, onAxisDone));
+  piece.y.set(withSpring(to.y, config, onAxisDone));
+}
 
 export function usePieceAnimations(
   pieces: DomainPiece[],
@@ -70,14 +103,13 @@ export function usePieceAnimations(
   const [, setLandings] = useState(0);
 
   function createEntry(piece: DomainPiece): AnimatedPieceView {
+    const position = getXYFromSquare(piece.square, pieceWidth, orientation);
     return {
       id: generatePieceId(piece.color, piece.type, piece.square),
       square: piece.square,
       spriteId: `${piece.color}${piece.type}`,
-      animatedPosition: new Animated.ValueXY(
-        getXYFromSquare(piece.square, pieceWidth, orientation),
-      ),
-      opacity: new Animated.Value(1),
+      x: makeMutable(position.x),
+      y: makeMutable(position.y),
     };
   }
 
@@ -130,7 +162,7 @@ export function usePieceAnimations(
   }
 
   // Matches the bookkeeping to `pieces` as they stand: a piece already on
-  // its square keeps its entry (and Animated values), anything else gets a
+  // its square keeps its entry (and shared values), anything else gets a
   // fresh one placed straight there.
   function placeAll() {
     const idBySquare = new Map<Square, string>();
@@ -167,8 +199,7 @@ export function usePieceAnimations(
   }
 
   // A layout effect, so the move is already under way in the first frame
-  // that shows its new position - a plain effect would paint a frame of the
-  // piece still where it was dropped, then start.
+  // that shows its new position.
   useLayoutEffect(() => {
     const animations = pendingAnimations.current;
     pendingAnimations.current = [];
@@ -176,25 +207,26 @@ export function usePieceAnimations(
 
     const move = moveCount.current;
     let travelling = animations.length;
+    // Landed (or cut short by a drag or a newer move): the piece it took
+    // goes now - unless a newer move has its own captured piece showing.
+    const onLanded = () => {
+      travelling -= 1;
+      if (
+        travelling === 0 &&
+        move === moveCount.current &&
+        capturedViews.current.length > 0
+      ) {
+        capturedViews.current = [];
+        setLandings((count) => count + 1);
+      }
+    };
     animations.forEach(({ pieceEntry, toSquare }) => {
-      Animated.spring(pieceEntry.animatedPosition, {
-        toValue: getXYFromSquare(toSquare, pieceWidth, orientation),
-        ...MOVE_SPRING,
-        ...REST_THRESHOLDS,
-        useNativeDriver: true,
-      }).start(() => {
-        travelling -= 1;
-        // Landed (or cut short by a drag or a newer move): the piece it took
-        // goes now - unless a newer move has its own captured piece showing.
-        if (
-          travelling === 0 &&
-          move === moveCount.current &&
-          capturedViews.current.length > 0
-        ) {
-          capturedViews.current = [];
-          setLandings((count) => count + 1);
-        }
-      });
+      springPieceTo(
+        pieceEntry,
+        getXYFromSquare(toSquare, pieceWidth, orientation),
+        MOVE_SPRING,
+        onLanded,
+      );
     });
   }, [lastMove, pieceWidth, orientation]);
 
@@ -211,16 +243,15 @@ export function usePieceAnimations(
     const pawn = pieceId && entryById.current.get(pieceId);
     // Already gone from `from`: the promotion was played.
     if (!pawn) return;
-    Animated.spring(pawn.animatedPosition, {
-      toValue: getXYFromSquare(
+    springPieceTo(
+      pawn,
+      getXYFromSquare(
         pendingPromotion ? promotion.to : promotion.from,
         pieceWidth,
         orientation,
       ),
-      ...MOVE_SPRING,
-      ...REST_THRESHOLDS,
-      useNativeDriver: true,
-    }).start();
+      MOVE_SPRING,
+    );
   }, [pendingPromotion, pieceWidth, orientation]);
 
   // Flipping the board moves every piece to its mirrored square at once.
@@ -232,9 +263,13 @@ export function usePieceAnimations(
     prevOrientation.current = orientation;
     [...entryById.current.values(), ...capturedViews.current].forEach(
       (pieceEntry) => {
-        pieceEntry.animatedPosition.setValue(
-          getXYFromSquare(pieceEntry.square, pieceWidth, orientation),
+        const position = getXYFromSquare(
+          pieceEntry.square,
+          pieceWidth,
+          orientation,
         );
+        pieceEntry.x.set(position.x);
+        pieceEntry.y.set(position.y);
       },
     );
   }, [orientation, pieceWidth]);

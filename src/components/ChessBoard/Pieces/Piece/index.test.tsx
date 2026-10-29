@@ -1,59 +1,76 @@
 import { render } from '@testing-library/react-native';
-import { Animated } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { makeMutable } from 'react-native-reanimated';
 
 import Piece from '.';
-import { TAP_MOVEMENT_THRESHOLD } from '../../../../constants';
-import {
-  simulatePanResponderDrag,
-  simulatePanResponderTap,
-} from '../../../../testUtils/panResponderGesture';
-import { getAnimatedValue } from '../../../../testUtils/animatedValue';
+import { LegalTargets } from '../../../../domain/types';
 import { getXYFromSquare } from '../../../../domain/boardCoordinates';
+import { DRAG_SCALE } from '../../../../constants/animations';
+import {
+  dragPiece,
+  holdDrag,
+  settleAnimations,
+  tapPiece,
+  touchPiece,
+} from '../../../../testUtils/pieceGestures';
+import { animatedStyleOf } from '../../../../testUtils/animatedValue';
 
 describe('Piece', () => {
   const width = 50;
-  const position = getXYFromSquare('e2', width);
+  const home = getXYFromSquare('e2', width);
+
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
 
   async function renderPiece(
     overrides: Partial<{
       disabled: boolean;
-      onTap: jest.Mock;
-      onDragRelease: jest.Mock;
-      onDragStart: jest.Mock;
-      onDrag: jest.Mock;
+      captured: boolean;
+      legalTargets: LegalTargets;
     }> = {},
   ) {
-    const onTap = overrides.onTap ?? jest.fn();
-    const onDragRelease = overrides.onDragRelease ?? jest.fn();
-    const onDragStart = overrides.onDragStart ?? jest.fn();
-    const onDrag = overrides.onDrag ?? jest.fn();
-    const animatedPosition = new Animated.ValueXY(position);
+    const onTap = jest.fn();
+    const onDragRelease = jest.fn();
+    const onDragStart = jest.fn();
+    const x = makeMutable(home.x);
+    const y = makeMutable(home.y);
+    const dragGuide = {
+      x: makeMutable(0),
+      y: makeMutable(0),
+      opacity: makeMutable(0),
+    };
+    const captured = overrides.captured ?? false;
     const screen = await render(
-      <Piece
-        width={width}
-        position={position}
-        orientation="w"
-        animatedPosition={animatedPosition}
-        id="wp"
-        disabled={overrides.disabled ?? false}
-        captured={false}
-        opacity={new Animated.Value(1)}
-        onTap={onTap}
-        onDragRelease={onDragRelease}
-        onDragStart={onDragStart}
-        onDrag={onDrag}
-        showDragGuide={jest.fn()}
-        hideDragGuide={jest.fn()}
-      />,
+      <GestureHandlerRootView>
+        <Piece
+          id="wp"
+          square="e2"
+          width={width}
+          orientation="w"
+          x={x}
+          y={y}
+          disabled={overrides.disabled ?? false}
+          captured={captured}
+          legalTargets={makeMutable(
+            overrides.legalTargets ?? { e2: ['e3', 'e4'] },
+          )}
+          dragGuide={dragGuide}
+          onTap={onTap}
+          onDragRelease={onDragRelease}
+          onDragStart={onDragStart}
+        />
+      </GestureHandlerRootView>,
     );
-    const piece = screen.getByTestId('piece-e2');
+    const testID = captured ? 'taken-piece-e2' : 'piece-e2';
     return {
-      piece,
+      piece: screen.getByTestId(testID),
+      testID,
+      x,
+      y,
+      dragGuide,
       onTap,
       onDragRelease,
       onDragStart,
-      onDrag,
-      animatedPosition,
     };
   }
 
@@ -61,93 +78,154 @@ describe('Piece', () => {
     expect(Piece).toBeDefined();
   });
 
-  it("should call onDragRelease with the piece's from/to squares when dragged past the tap threshold", async () => {
-    const tapThreshold = 50;
-    const { piece, onDragRelease } = await renderPiece();
+  it('is drawn where its shared values place it', async () => {
+    const { piece } = await renderPiece();
 
-    // Drag up by 2 squares (width 50 * 2 = 100px) - well past the threshold.
-    await simulatePanResponderDrag(piece, 0, -(tapThreshold * 2));
+    expect(animatedStyleOf(piece)).toMatchObject({
+      transform: [{ translateX: home.x }, { translateY: home.y }, { scale: 1 }],
+    });
+  });
+
+  it("reports the piece's from/to squares when dragged and dropped", async () => {
+    const { testID, onDragRelease } = await renderPiece();
+
+    // Up two squares.
+    await dragPiece(testID, 0, -100);
 
     expect(onDragRelease).toHaveBeenCalledWith('e2', 'e4');
   });
 
-  it('should not call onTap on touch-down for a gesture that turns into a drag', async () => {
-    const { piece, onTap } = await renderPiece();
+  it('reports onDragStart on touch-down', async () => {
+    const { testID, onDragStart, onTap } = await renderPiece();
 
-    await simulatePanResponderDrag(piece, 0, -100);
+    await touchPiece(testID);
 
+    expect(onDragStart).toHaveBeenCalledWith('e2');
     expect(onTap).not.toHaveBeenCalled();
   });
 
-  it('should call onDragStart on touch-down, instead of onTap', async () => {
-    const { piece, onDragStart } = await renderPiece();
+  it("doesn't report onDragStart for a disabled (opponent's) piece", async () => {
+    const { testID, onDragStart } = await renderPiece({ disabled: true });
 
-    await simulatePanResponderDrag(piece, 0, -100);
-
-    expect(onDragStart).toHaveBeenCalledWith('e2');
-  });
-
-  it("should not call onDragStart on touch-down for a disabled (opponent's) piece", async () => {
-    const { piece, onDragStart } = await renderPiece({ disabled: true });
-
-    await simulatePanResponderDrag(piece, 0, -100);
+    await dragPiece(testID, 0, -100);
 
     expect(onDragStart).not.toHaveBeenCalled();
   });
 
-  it('should call onTap instead of onDragRelease when movement stays under the tap threshold', async () => {
-    const { piece, onDragRelease, onTap } = await renderPiece();
+  it('reports a tap, and no drop, for a touch that never became a drag', async () => {
+    const { testID, onDragRelease, onTap } = await renderPiece();
 
-    await simulatePanResponderTap(piece);
+    await tapPiece(testID);
 
     expect(onTap).toHaveBeenCalledWith('e2');
     expect(onDragRelease).not.toHaveBeenCalled();
   });
 
-  it("should still report a tap on a disabled (opponent's) piece, so it can be used as a move's target", async () => {
-    const { piece, onTap, onDragRelease } = await renderPiece({
+  it("still reports a tap on a disabled (opponent's) piece, so it can be a move's target", async () => {
+    const { testID, onTap } = await renderPiece({ disabled: true });
+
+    await tapPiece(testID);
+
+    expect(onTap).toHaveBeenCalledWith('e2');
+  });
+
+  it("still reports a drag's outcome for a disabled (opponent's) piece - legality is the caller's call", async () => {
+    const { testID, onDragRelease, x, y } = await renderPiece({
       disabled: true,
     });
 
-    await simulatePanResponderTap(piece);
-
-    expect(onTap).toHaveBeenCalledWith('e2');
-    expect(onDragRelease).not.toHaveBeenCalled();
-  });
-
-  it("should not report onTap or onDrag on touch-down for a disabled (opponent's) piece", async () => {
-    const { piece, onTap, onDrag } = await renderPiece({ disabled: true });
-
-    await simulatePanResponderDrag(piece, 0, -100);
-
-    expect(onTap).not.toHaveBeenCalled();
-    expect(onDrag).not.toHaveBeenCalled();
-  });
-
-  it("should still report a real drag's outcome on release even for a disabled (opponent's) piece - legality is the caller's call", async () => {
-    const { piece, onDragRelease } = await renderPiece({ disabled: true });
-
-    await simulatePanResponderDrag(piece, 0, -100);
+    await dragPiece(testID, 0, -100);
 
     expect(onDragRelease).toHaveBeenCalledWith('e2', 'e4');
+    // But it never moved.
+    expect({ x: x.get(), y: y.get() }).toEqual(home);
   });
 
-  it('movement right at the threshold boundary counts as a drag, not a tap', async () => {
-    const { piece, onDragRelease, onTap } = await renderPiece();
+  it('follows the finger, half a square above it, over the other pieces', async () => {
+    const { piece, testID } = await renderPiece();
 
-    await simulatePanResponderDrag(piece, TAP_MOVEMENT_THRESHOLD, 0);
+    await holdDrag(testID, 30, -80);
 
-    expect(onDragRelease).toHaveBeenCalled();
-    expect(onTap).not.toHaveBeenCalled();
+    expect(animatedStyleOf(piece)).toMatchObject({
+      transform: [
+        { translateX: home.x + 30 },
+        { translateY: home.y - 80 - width / 2 },
+        { scale: expect.any(Number) },
+      ],
+      zIndex: 100,
+    });
   });
 
-  it('should snap the piece back to its own square when incidental jitter during a tap stays under the threshold', async () => {
-    const { piece, animatedPosition, onTap } = await renderPiece();
+  it('grows to its dragging size while held', async () => {
+    const { piece, testID } = await renderPiece();
 
-    await simulatePanResponderDrag(piece, 5, -5);
+    await holdDrag(testID, 0, -80);
+    await settleAnimations();
 
-    expect(onTap).toHaveBeenCalledWith('e2');
-    expect(getAnimatedValue(animatedPosition.x)).toBe(position.x);
-    expect(getAnimatedValue(animatedPosition.y)).toBe(position.y);
+    expect(animatedStyleOf(piece).transform[2]).toEqual({
+      scale: DRAG_SCALE,
+    });
+  });
+
+  it('marks the square under the finger with the drag guide while dragging', async () => {
+    const { testID, dragGuide } = await renderPiece();
+
+    // Over e4, a little off its corner.
+    await holdDrag(testID, 10, -90);
+
+    expect(dragGuide.opacity.get()).toBe(1);
+    expect({ x: dragGuide.x.get(), y: dragGuide.y.get() }).toEqual(
+      getXYFromSquare('e4', width),
+    );
+  });
+
+  it('hides the drag guide off the board, and on release', async () => {
+    const { testID, dragGuide } = await renderPiece();
+
+    await holdDrag(testID, 400, 0);
+    expect(dragGuide.opacity.get()).toBe(0);
+
+    await dragPiece(testID, 0, -100);
+    expect(dragGuide.opacity.get()).toBe(0);
+  });
+
+  it('lands on the square it was dropped on when that is a legal move', async () => {
+    const { piece, testID } = await renderPiece();
+
+    await dragPiece(testID, 10, -90);
+
+    const e4 = getXYFromSquare('e4', width);
+    expect(animatedStyleOf(piece)).toMatchObject({
+      transform: [{ translateX: e4.x }, { translateY: e4.y }, { scale: 1 }],
+      zIndex: 0,
+    });
+  });
+
+  it('goes back home when dropped where it has no legal move', async () => {
+    const { piece, testID } = await renderPiece();
+
+    // e5 - three squares up.
+    await dragPiece(testID, 0, -150);
+
+    expect(animatedStyleOf(piece)).toMatchObject({
+      transform: [{ translateX: home.x }, { translateY: home.y }, { scale: 1 }],
+      zIndex: 0,
+    });
+  });
+
+  it('goes back home when dropped off the board', async () => {
+    const { piece, testID } = await renderPiece();
+
+    await dragPiece(testID, 400, 0);
+
+    expect(animatedStyleOf(piece)).toMatchObject({
+      transform: [{ translateX: home.x }, { translateY: home.y }, { scale: 1 }],
+    });
+  });
+
+  it('takes no touches at all once taken', async () => {
+    const { piece } = await renderPiece({ captured: true });
+
+    expect(piece.props.pointerEvents).toBe('none');
   });
 });

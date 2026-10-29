@@ -1,4 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Color } from 'chess.js';
 
 import Chessboard from '.';
@@ -10,14 +11,16 @@ import {
 import { getXYFromSquare } from '../../domain/boardCoordinates';
 import { NUMBER_OF_ROWS } from '../../constants';
 import {
-  simulatePanResponderDrag,
-  simulatePanResponderGrant,
-  simulatePanResponderTap,
-} from '../../testUtils/panResponderGesture';
-import { settleSpringsInstantly } from '../../testUtils/springs';
+  dragPiece,
+  settleAnimations,
+  tapPiece,
+  touchPiece,
+} from '../../testUtils/pieceGestures';
+import { animatedStyleOf } from '../../testUtils/animatedValue';
 
 describe('Chessboard', () => {
-  afterEach(() => jest.restoreAllMocks());
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
 
   const width = 400;
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
@@ -58,14 +61,16 @@ describe('Chessboard', () => {
 
   function chessBoardTree(fen?: string, orientation?: Color) {
     return (
-      <ChessGameProvider fen={fen}>
-        <Chessboard
-          colors={{ dark: 'black', light: 'white' }}
-          width={width}
-          orientation={orientation}
-        />
-        <PromotionMenuForTest />
-      </ChessGameProvider>
+      <GestureHandlerRootView>
+        <ChessGameProvider fen={fen}>
+          <Chessboard
+            colors={{ dark: 'black', light: 'white' }}
+            width={width}
+            orientation={orientation}
+          />
+          <PromotionMenuForTest />
+        </ChessGameProvider>
+      </GestureHandlerRootView>
     );
   }
 
@@ -73,8 +78,8 @@ describe('Chessboard', () => {
     return render(chessBoardTree(fen, orientation));
   }
 
-  function translateOf(element: { props: Record<string, any> }) {
-    const [{ translateX }, { translateY }] = element.props.style.transform;
+  function translateOf(element: { props: Record<string, unknown> }) {
+    const [{ translateX }, { translateY }] = animatedStyleOf(element).transform;
     return { x: translateX, y: translateY };
   }
 
@@ -91,7 +96,7 @@ describe('Chessboard', () => {
   it('should not render the drag-and-drop guide visibly before any gesture', async () => {
     const screen = await renderChessBoard();
 
-    expect(screen.getByTestId('drag-guide').props.style.opacity).toBe(0);
+    expect(animatedStyleOf(screen.getByTestId('drag-guide')).opacity).toBe(0);
   });
 
   describe('tap to move', () => {
@@ -182,11 +187,7 @@ describe('Chessboard', () => {
           const screen = await renderChessBoard(undefined, orientation);
           const { dx, dy } = dragDeltaBetween('e2', 'e4', orientation);
 
-          await simulatePanResponderDrag(
-            screen.getByTestId('piece-e2'),
-            dx,
-            dy,
-          );
+          await dragPiece('piece-e2', dx, dy);
 
           expect(screen.queryByTestId('piece-e2')).toBeNull();
           expect(screen.getByTestId('piece-e4')).toBeTruthy();
@@ -196,11 +197,7 @@ describe('Chessboard', () => {
           const screen = await renderChessBoard(undefined, orientation); // white to move
           const { dx, dy } = dragDeltaBetween('e7', 'e5', orientation);
 
-          await simulatePanResponderDrag(
-            screen.getByTestId('piece-e7'),
-            dx,
-            dy,
-          );
+          await dragPiece('piece-e7', dx, dy);
 
           expect(screen.getByTestId('piece-e7')).toBeTruthy();
           expect(screen.queryByTestId('piece-e5')).toBeNull();
@@ -209,14 +206,13 @@ describe('Chessboard', () => {
         it('should select the square (not move) when a piece is tapped through the drag responder without real movement', async () => {
           const screen = await renderChessBoard(undefined, orientation);
 
-          await simulatePanResponderTap(screen.getByTestId('piece-e2'));
+          await tapPiece('piece-e2');
           await fireEvent.press(screen.getByTestId('square-e4'));
 
           expect(screen.getByTestId('piece-e4')).toBeTruthy();
         });
 
         it('should snap a piece back to its square when dragged off the board entirely', async () => {
-          settleSpringsInstantly();
           const screen = await renderChessBoard(undefined, orientation);
 
           // Drag the g1 knight far off the board's right edge - off the board
@@ -226,11 +222,7 @@ describe('Chessboard', () => {
           // left stranded wherever the gesture ended, even though the piece
           // is still legitimately on g1.
 
-          await simulatePanResponderDrag(
-            screen.getByTestId('piece-g1'),
-            2 * width,
-            0,
-          );
+          await dragPiece('piece-g1', 2 * width, 0);
 
           expect(translateOf(screen.getByTestId('piece-g1'))).toEqual(
             getXYFromSquare('g1', PIECE_WIDTH, orientation),
@@ -240,7 +232,7 @@ describe('Chessboard', () => {
         it('should show the correct legal-move indicators as soon as a piece is touched', async () => {
           const screen = await renderChessBoard(undefined, orientation);
 
-          await simulatePanResponderGrant(screen.getByTestId('piece-e2'));
+          await touchPiece('piece-e2');
 
           expect(screen.getByTestId('valid-move-e3').props.style.opacity).toBe(
             1,
@@ -256,14 +248,13 @@ describe('Chessboard', () => {
         it("should show the drag guide at the touched piece's own square, not a stale position, on touch-down", async () => {
           const screen = await renderChessBoard(undefined, orientation);
 
-          await simulatePanResponderGrant(screen.getByTestId('piece-e2'));
+          await touchPiece('piece-e2');
 
           const guide = screen.getByTestId('drag-guide');
-          expect(guide.props.style.opacity).toBe(1);
-          const [{ translateX }, { translateY }] = guide.props.style.transform;
-          const e2Position = getXYFromSquare('e2', PIECE_WIDTH, orientation);
-          expect(translateX).toBe(e2Position.x);
-          expect(translateY).toBe(e2Position.y);
+          expect(animatedStyleOf(guide).opacity).toBe(1);
+          expect(translateOf(guide)).toEqual(
+            getXYFromSquare('e2', PIECE_WIDTH, orientation),
+          );
         });
       },
     );
@@ -279,11 +270,7 @@ describe('Chessboard', () => {
           await fireEvent.press(screen.getByTestId('square-e2'));
 
           const { dx, dy } = dragDeltaBetween('c1', 'c2', orientation);
-          await simulatePanResponderDrag(
-            screen.getByTestId('piece-c1'),
-            dx,
-            dy,
-          );
+          await dragPiece('piece-c1', dx, dy);
 
           // Tapping an empty square now, with nothing actually selected anymore,
           // must be a no-op - NOT silently move the e2 pawn there.
@@ -299,11 +286,7 @@ describe('Chessboard', () => {
           await fireEvent.press(screen.getByTestId('square-e2'));
 
           const { dx, dy } = dragDeltaBetween('c1', 'c2', orientation);
-          await simulatePanResponderDrag(
-            screen.getByTestId('piece-c1'),
-            dx,
-            dy,
-          );
+          await dragPiece('piece-c1', dx, dy);
 
           // A fresh, deliberate tap-to-move sequence afterward should work normally.
           await fireEvent.press(screen.getByTestId('square-d2'));
@@ -473,6 +456,8 @@ describe('Chessboard', () => {
           );
 
           await screen.rerender(chessBoardTree(undefined, orientation));
+          // Drawn from the new positions from the next frame.
+          await settleAnimations(16);
 
           expect(translateOf(screen.getByTestId('piece-e2'))).toEqual(
             getXYFromSquare('e2', PIECE_WIDTH, orientation),

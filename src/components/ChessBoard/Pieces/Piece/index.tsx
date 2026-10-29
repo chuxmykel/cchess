@@ -1,59 +1,58 @@
 import { memo } from 'react';
-import { StyleSheet, Animated } from 'react-native';
+import { Image, StyleSheet } from 'react-native';
+import { GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  SharedValue,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
 import { Color, Square } from 'chess.js';
 
 import { PIECES } from '../../../../constants';
-import { Position } from '../../../../domain/types';
-import { getSquareFromXY } from '../../../../domain/boardCoordinates';
+import { DragGuide } from '../../../../hooks/useDragGuide';
+import { LegalTargets } from '../../../../domain/types';
 import { usePieceGesture } from '../../../../hooks/usePieceGesture';
 
 interface PieceProps {
-  width: number;
-  position: Position;
-  orientation: Color;
-  animatedPosition: Animated.ValueXY;
   id: string;
+  square: Square;
+  width: number;
+  orientation: Color;
+  x: SharedValue<number>;
+  y: SharedValue<number>;
   disabled: boolean;
   // Just taken, and only still shown until the piece taking it lands.
   captured: boolean;
-  opacity: Animated.Value;
+  legalTargets: SharedValue<LegalTargets>;
+  dragGuide: DragGuide;
   onTap: (square: Square) => void;
   onDragRelease: (from: Square, to: Square) => void;
   onDragStart: (square: Square) => void;
-  onDrag: (currentPosition: Position) => void;
-  showDragGuide: () => void;
-  hideDragGuide: () => void;
 }
 
 const Piece: React.FC<PieceProps> = (props) => {
-  const { width, position, orientation, animatedPosition, id, opacity } = props;
-  const square = getSquareFromXY(position, width, orientation);
-  const { panHandlers, scale, zIndex } = usePieceGesture(props, square);
+  const { id, square, width, x, y, captured } = props;
+  const testID = captured ? `taken-piece-${square}` : `piece-${square}`;
+  const { gesture, scale, zIndex } = usePieceGesture({ ...props, testID });
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: x.get() },
+      { translateY: y.get() },
+      { scale: scale.get() },
+    ] as const,
+    zIndex: zIndex.get(),
+  }));
 
   return (
-    <Animated.View
-      style={{
-        ...styles.container,
-        transform: [
-          { translateX: animatedPosition.x },
-          { translateY: animatedPosition.y },
-          { scale: scale },
-        ],
-        zIndex,
-        opacity,
-      }}
-      testID={props.captured ? `taken-piece-${square}` : `piece-${square}`}
-      pointerEvents={props.captured ? 'none' : 'auto'}
-      {...panHandlers}
-    >
-      <Animated.Image
-        source={PIECES[id]}
-        style={{
-          width: width,
-          height: width,
-        }}
-      />
-    </Animated.View>
+    <GestureDetector gesture={gesture}>
+      <Animated.View
+        style={[styles.container, animatedStyle]}
+        testID={testID}
+        pointerEvents={captured ? 'none' : 'auto'}
+      >
+        <Image source={PIECES[id]} style={{ width, height: width }} />
+      </Animated.View>
+    </GestureDetector>
   );
 };
 
@@ -63,31 +62,8 @@ const styles = StyleSheet.create({
   },
 });
 
-// `position` is a plain `{x, y}` object rebuilt fresh on every Chessboard
-// render (even when its values haven't changed), so the default shallow
-// comparator would never consider two renders equal - compare its fields by
-// value instead. Everything else compares correctly by reference, including
-// the callback props, which Chessboard keeps stable via useCallback so this
-// memoization skips re-rendering unrelated pieces: selecting one square
-// shouldn't re-render all the others.
-function arePropsEqual(prev: PieceProps, next: PieceProps): boolean {
-  return (
-    prev.id === next.id &&
-    prev.disabled === next.disabled &&
-    prev.captured === next.captured &&
-    prev.width === next.width &&
-    prev.position.x === next.position.x &&
-    prev.position.y === next.position.y &&
-    prev.orientation === next.orientation &&
-    prev.animatedPosition === next.animatedPosition &&
-    prev.opacity === next.opacity &&
-    prev.onTap === next.onTap &&
-    prev.onDragRelease === next.onDragRelease &&
-    prev.onDragStart === next.onDragStart &&
-    prev.onDrag === next.onDrag &&
-    prev.showDragGuide === next.showDragGuide &&
-    prev.hideDragGuide === next.hideDragGuide
-  );
-}
-
-export default memo(Piece, arePropsEqual);
+// Every prop compares correctly by reference - the shared values are stable
+// for a piece's whole life, and Chessboard keeps its callbacks stable via
+// useCallback - so this memoization skips re-rendering unrelated pieces:
+// selecting one square shouldn't re-render all the others.
+export default memo(Piece);

@@ -1,52 +1,18 @@
-import { useCallback, useRef } from 'react';
-import { Animated } from 'react-native';
-
-import { Position } from '../domain/types';
-import { getSquareFromXY } from '../domain/boardCoordinates';
-import { SQUARES } from '../constants';
+import { SharedValue, useSharedValue } from 'react-native-reanimated';
 
 export type DragGuide = {
-  position: Animated.ValueXY;
-  opacity: Animated.Value;
-  show: () => void;
-  hide: () => void;
-  updatePosition: (currentPieceAnimatedPosition: Position) => void;
+  // The top-left corner of the square under the dragged piece.
+  x: SharedValue<number>;
+  y: SharedValue<number>;
+  opacity: SharedValue<number>;
 };
 
-// Owns the drag-and-drop guide's Animated state: where it sits and whether
-// it's visible, plus the handlers that drive both as a piece is dragged.
-export function useDragGuide(pieceWidth: number): DragGuide {
-  // `position`/`opacity` are created once via useRef and never
-  // reassigned - reading `.current` here is the standard "lazy-init a
-  // stable Animated value" idiom, not a bug. react-hooks/refs is a
-  // React-Compiler-readiness rule; nothing in this project runs the
-  // compiler today, so revisit this if that ever changes.
-  /* eslint-disable react-hooks/refs */
-  const position = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-
-  const show = useCallback(() => {
-    opacity.setValue(1);
-  }, [opacity]);
-
-  const hide = useCallback(() => {
-    opacity.setValue(0);
-  }, [opacity]);
-
-  const updatePosition = useCallback(
-    (currentPieceAnimatedPosition: Position) => {
-      const square = getSquareFromXY(currentPieceAnimatedPosition, pieceWidth);
-      if (!SQUARES.includes(square)) {
-        hide();
-        return;
-      }
-
-      position.setValue(currentPieceAnimatedPosition);
-      show();
-    },
-    [pieceWidth, position, hide, show],
-  );
-
-  return { position, opacity, show, hide, updatePosition };
-  /* eslint-enable react-hooks/refs */
+// The drag-and-drop guide's state: the square it marks and whether it shows.
+// Shared values, not state - a drag moves it on the UI thread every frame
+// (see usePieceGesture), with no trip through JS.
+export function useDragGuide(): DragGuide {
+  const x = useSharedValue(0);
+  const y = useSharedValue(0);
+  const opacity = useSharedValue(0);
+  return { x, y, opacity };
 }

@@ -1,189 +1,197 @@
-import { useRef } from 'react';
-import { Animated, PanResponder, PanResponderGestureState } from 'react-native';
+import { useCallback, useLayoutEffect, useRef } from 'react';
+import {
+  ComposedGesture,
+  useExclusiveGestures,
+  usePanGesture,
+  useTapGesture,
+} from 'react-native-gesture-handler';
+import {
+  SharedValue,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { Color, Square } from 'chess.js';
 
-import { Position } from '../domain/types';
-import { getSquareFromXY } from '../domain/boardCoordinates';
-import { getNewPositionFromGesture } from '../utils/animation';
+import {
+  getSquareFromXY,
+  getXYFromSquare,
+  isOnBoard,
+} from '../domain/boardCoordinates';
+import { LegalTargets } from '../domain/types';
 import { TAP_MOVEMENT_THRESHOLD } from '../constants';
 import {
   DRAG_SCALE,
-  REST_THRESHOLDS,
+  DRAGGED_Z_INDEX,
+  MOVE_SPRING,
   SCALE_SPRING,
+  SNAP_BACK_SPRING,
 } from '../constants/animations';
+import { DragGuide } from './useDragGuide';
 
 export type PieceGestureInput = {
+  square: Square;
   width: number;
-  position: Position;
   orientation: Color;
-  animatedPosition: Animated.ValueXY;
+  // The piece's on-screen position, which a drag moves.
+  x: SharedValue<number>;
+  y: SharedValue<number>;
+  // Can't be picked up - an opponent's piece, or any piece once the game is
+  // over. A tap still reports, so it can be a move's target.
   disabled: boolean;
+  // A piece just taken: no gestures at all.
+  captured?: boolean;
+  legalTargets: SharedValue<LegalTargets>;
+  dragGuide: DragGuide;
   onTap: (square: Square) => void;
-  onDragRelease: (from: Square, to: Square) => void;
   onDragStart: (square: Square) => void;
-  onDrag: (currentPosition: Position) => void;
-  showDragGuide: () => void;
-  hideDragGuide: () => void;
+  onDragRelease: (from: Square, to: Square) => void;
+  testID?: string;
 };
 
 export type PieceGesture = {
-  panHandlers: ReturnType<typeof PanResponder.create>['panHandlers'];
-  scale: Animated.Value;
-  zIndex: Animated.Value;
+  gesture: ComposedGesture;
+  scale: SharedValue<number>;
+  zIndex: SharedValue<number>;
 };
 
-// Where the piece sprite should sit while being actively dragged: the
-// finger's live position, offset upward by half the piece width so the
-// dragged piece stays visible above the finger rather than hidden under it.
-function getDraggedPosition(
-  position: Position,
-  gestureState: PanResponderGestureState,
-  width: number,
-): Position {
-  const pieceImageOffsetFromActualGestureResponderPosition = width * 0.5;
-  return {
-    x: position.x + gestureState.dx,
-    y:
-      position.y +
-      gestureState.dy -
-      pieceImageOffsetFromActualGestureResponderPosition,
-  };
-}
+type Report = 'onTap' | 'onDragStart' | 'onDragRelease';
 
-// Interprets a piece's raw touch gesture - tap vs. drag, where it's being
-// dragged to, and whether it was released on a real square - and reports
-// the outcome through the given callbacks, while driving the zoom/scale
-// feedback shown during a drag. Owns no game-rules knowledge: legality is
-// entirely the caller's call via onTap/onDragRelease.
-export function usePieceGesture(
-  props: PieceGestureInput,
-  square: Square,
-): PieceGesture {
-  // Everything below reads/writes `.current` synchronously during render:
-  // `scale`/`zIndex` are lazy-inited once and never reassigned;
-  // `latestPropsRef` is deliberately overwritten every render so the
-  // PanResponder's handlers (created once, see below) always see fresh
-  // props without needing to be recreated mid-gesture; `panResponderRef`
-  // follows React's own documented lazy-ref-init pattern
-  // (https://react.dev/reference/react/useRef#avoiding-recreating-the-ref-contents).
-  // react-hooks/refs is a React-Compiler-readiness rule, not a
-  // correctness bug under React's current (non-compiled) runtime -
-  // revisit this if this project ever turns the compiler on.
-  /* eslint-disable react-hooks/refs */
-  const scale = useRef(new Animated.Value(1)).current;
-  const zIndex = useRef(new Animated.Value(0)).current;
-  // Whether this touch has turned into a drag and lifted the piece.
-  const lifted = useRef(false);
+// What the gesture needs to know about the piece as it stands, read on the
+// UI thread when the touch happens rather than captured when it was set up.
+type PieceState = {
+  square: Square;
+  width: number;
+  orientation: Color;
+  disabled: boolean;
+};
 
-  function springScaleTo(
-    toValue: number,
-    onDone?: (result: { finished: boolean }) => void,
-  ) {
-    Animated.spring(scale, {
-      toValue,
-      ...SCALE_SPRING,
-      ...REST_THRESHOLDS,
-      useNativeDriver: true,
-    }).start(onDone);
-  }
+// Interprets a piece's touches - tap vs. drag, where it's dragged to - on the
+// UI thread: the piece follows the finger, the drag guide marks the square
+// under it, and on release the piece springs straight to the square it was
+// dropped on when that's a legal move (or home when it isn't), before JS has
+// heard about the drop at all. JS gets the outcome through the callbacks and
+// stays the judge of the move - a drop it refuses is sent home from there.
+export function usePieceGesture(props: PieceGestureInput): PieceGesture {
+  const { x, y, legalTargets, dragGuide, captured = false, testID } = props;
+  const scale = useSharedValue(1);
+  const zIndex = useSharedValue(0);
 
-  // Once per drag, as it starts - not on every move event after.
-  function lift() {
-    if (lifted.current) return;
-    lifted.current = true;
-    zIndex.setValue(100);
-    springScaleTo(DRAG_SCALE);
-    latestPropsRef.current.showDragGuide();
-  }
+  const piece = useSharedValue<PieceState>({
+    square: props.square,
+    width: props.width,
+    orientation: props.orientation,
+    disabled: props.disabled,
+  });
+  const { square, width, orientation, disabled } = props;
+  useLayoutEffect(() => {
+    piece.set({ square, width, orientation, disabled });
+  }, [piece, square, width, orientation, disabled]);
 
-  // The piece shrinks back as it's set down, staying above the rest until
-  // it has - by then a piece sent home has all but got there. A piece that
-  // moved is drawn over the rest anyway (see usePieceAnimations).
-  function setDown() {
-    if (!lifted.current) return;
-    lifted.current = false;
-    springScaleTo(1, ({ finished }) => {
-      // Lifted again before it was down.
-      if (finished) zIndex.setValue(0);
-    });
-  }
+  // The callbacks as they are now, for the gesture to call from the UI thread
+  // through one function that never changes.
+  const latestProps = useRef(props);
+  useLayoutEffect(() => {
+    latestProps.current = props;
+  });
+  const report = useCallback((event: Report, from: Square, to?: Square) => {
+    const callbacks = latestProps.current;
+    if (event === 'onDragRelease') callbacks.onDragRelease(from, to);
+    else callbacks[event](from);
+  }, []);
 
-  // The PanResponder below is created exactly once (see the useRef it's
-  // wrapped in) rather than directly in the render body, so a re-render
-  // during an active touch can never reallocate it and invalidate the
-  // gesture it's already resolving. Its handlers read every current value
-  // through latestPropsRef instead of closing over props directly, so they
-  // stay fresh across renders without the PanResponder itself needing to be
-  // recreated.
-  const latestPropsRef = useRef({ ...props, square });
-  latestPropsRef.current = { ...props, square };
+  const pan = usePanGesture({
+    testID: testID && `${testID}-pan`,
+    enabled: !captured,
+    minDistance: TAP_MOVEMENT_THRESHOLD,
+    onBegin: () => {
+      'worklet';
+      const { square, width, orientation, disabled } = piece.get();
+      if (disabled) return;
+      // The guide marks the piece's own square from touch-down.
+      const home = getXYFromSquare(square, width, orientation);
+      dragGuide.x.set(home.x);
+      dragGuide.y.set(home.y);
+      dragGuide.opacity.set(1);
+      scheduleOnRN(report, 'onDragStart', square);
+    },
+    onActivate: () => {
+      'worklet';
+      if (piece.get().disabled) return;
+      zIndex.set(DRAGGED_Z_INDEX);
+      scale.set(withSpring(DRAG_SCALE, SCALE_SPRING));
+    },
+    onUpdate: (event) => {
+      'worklet';
+      const { square, width, orientation, disabled } = piece.get();
+      // Opponent pieces get no drag affordance at all - they're tap-only.
+      if (disabled) return;
+      const home = getXYFromSquare(square, width, orientation);
+      const dragged = {
+        x: home.x + event.translationX,
+        y: home.y + event.translationY,
+      };
+      // Drawn half a square above the finger, so it isn't hidden under it.
+      x.set(dragged.x);
+      y.set(dragged.y - width * 0.5);
+      const centre = { x: dragged.x + width / 2, y: dragged.y + width / 2 };
+      if (isOnBoard(centre, width)) {
+        dragGuide.x.set(Math.floor(centre.x / width) * width);
+        dragGuide.y.set(Math.floor(centre.y / width) * width);
+        dragGuide.opacity.set(1);
+      } else {
+        dragGuide.opacity.set(0);
+      }
+    },
+    onDeactivate: (event) => {
+      'worklet';
+      const { square, width, orientation, disabled } = piece.get();
+      dragGuide.opacity.set(0);
+      const home = getXYFromSquare(square, width, orientation);
+      const centre = {
+        x: home.x + event.translationX + width / 2,
+        y: home.y + event.translationY + width / 2,
+      };
+      const to = getSquareFromXY(centre, width, orientation);
+      const isMove =
+        !event.canceled &&
+        isOnBoard(centre, width) &&
+        (legalTargets.get()[square] ?? []).includes(to);
 
-  const panResponderRef = useRef<ReturnType<typeof PanResponder.create> | null>(
-    null,
-  );
-  if (!panResponderRef.current) {
-    panResponderRef.current = PanResponder.create({
-      // Claim the responder on touch-down (not just on movement) so a plain
-      // tap-and-release with no drag still reaches onPanResponderRelease.
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        const { disabled, position, square, onDrag, onDragStart } =
-          latestPropsRef.current;
-        if (disabled) return;
-
-        onDrag(position);
-        onDragStart(square);
-      },
-      onPanResponderMove: (_, gestureState) => {
-        const { disabled, position, width, animatedPosition, onDrag } =
-          latestPropsRef.current;
-        // Opponent pieces get no drag affordance at all - they're tap-only (see release below).
-        if (disabled) return;
-        lift();
-        animatedPosition.setValue(
-          getDraggedPosition(position, gestureState, width),
+      if (!disabled) {
+        // Set down: it shrinks back, staying above the rest until it has.
+        scale.set(
+          withSpring(1, SCALE_SPRING, (finished) => {
+            'worklet';
+            // Not if it was lifted again before it was down.
+            if (finished) zIndex.set(0);
+          }),
         );
-        const newPosition = getNewPositionFromGesture(
-          position,
-          gestureState,
-          width,
-        );
-        onDrag(newPosition);
-      },
-      onPanResponderRelease: (_, gestureState: PanResponderGestureState) => {
-        const {
-          position,
-          width,
-          orientation,
-          animatedPosition,
-          square,
-          onTap,
-          onDragRelease,
-        } = latestPropsRef.current;
-        latestPropsRef.current.hideDragGuide();
-        setDown();
+        const target = isMove ? getXYFromSquare(to, width, orientation) : home;
+        const spring = isMove ? MOVE_SPRING : SNAP_BACK_SPRING;
+        x.set(withSpring(target.x, spring));
+        y.set(withSpring(target.y, spring));
+      }
+      if (!event.canceled) scheduleOnRN(report, 'onDragRelease', square, to);
+    },
+    onFinalize: () => {
+      'worklet';
+      // A touch that ended as a tap never moved the guide off the piece.
+      dragGuide.opacity.set(0);
+    },
+  });
 
-        const isTap =
-          Math.abs(gestureState.dx) < TAP_MOVEMENT_THRESHOLD &&
-          Math.abs(gestureState.dy) < TAP_MOVEMENT_THRESHOLD;
-        if (isTap) {
-          animatedPosition.setValue(position);
-          onTap(square);
-          return;
-        }
+  const tap = useTapGesture({
+    testID: testID && `${testID}-tap`,
+    enabled: !captured,
+    onActivate: () => {
+      'worklet';
+      scheduleOnRN(report, 'onTap', piece.get().square);
+    },
+  });
 
-        const newPosition = getNewPositionFromGesture(
-          position,
-          gestureState,
-          width,
-        );
-        const newSquare = getSquareFromXY(newPosition, width, orientation);
-        onDragRelease(square, newSquare);
-      },
-    });
-  }
+  // A drag wins; a touch that never moves far enough to be one is a tap.
+  const gesture = useExclusiveGestures(pan, tap);
 
-  return { panHandlers: panResponderRef.current.panHandlers, scale, zIndex };
-  /* eslint-enable react-hooks/refs */
+  return { gesture, scale, zIndex };
 }

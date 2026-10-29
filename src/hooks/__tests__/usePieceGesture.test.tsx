@@ -1,221 +1,108 @@
-import { act, render } from '@testing-library/react-native';
-import { Animated } from 'react-native';
+import { render } from '@testing-library/react-native';
+import {
+  GestureDetector,
+  GestureHandlerRootView,
+} from 'react-native-gesture-handler';
+import Animated, { makeMutable } from 'react-native-reanimated';
 import { Square } from 'chess.js';
 
 import { usePieceGesture, PieceGestureInput } from '../usePieceGesture';
-import { TAP_MOVEMENT_THRESHOLD } from '../../constants';
-import { DRAG_SCALE } from '../../constants/animations';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
 import {
-  simulatePanResponderDrag,
-  simulatePanResponderGrant,
-  simulatePanResponderGrantAndMove,
-  simulatePanResponderTap,
-} from '../../testUtils/panResponderGesture';
-import { getAnimatedValue } from '../../testUtils/animatedValue';
-import { holdSprings, settleSpringsInstantly } from '../../testUtils/springs';
+  dragPiece,
+  holdDrag,
+  settleAnimations,
+  tapPiece,
+} from '../../testUtils/pieceGestures';
 
-// A minimal host component so the hook's panHandlers can be driven through
-// the same fireEvent-based gesture simulation used elsewhere - renderHook
-// alone has no host node to attach a PanResponder to.
-function GestureHarness(props: PieceGestureInput & { square: Square }) {
-  const { square, ...gestureProps } = props;
-  const { panHandlers, scale, zIndex } = usePieceGesture(gestureProps, square);
+// Most of what this hook does shows on a piece and is tested through Piece
+// itself; this covers the rest.
+type HarnessProps = Omit<PieceGestureInput, 'x' | 'y' | 'dragGuide'> & {
+  onScaleAndZIndex?: (read: () => { scale: number; zIndex: number }) => void;
+};
 
+function GestureHarness({ onScaleAndZIndex, ...props }: HarnessProps) {
+  const position = getXYFromSquare(props.square, props.width);
+  const { gesture, scale, zIndex } = usePieceGesture({
+    ...props,
+    x: makeMutable(position.x),
+    y: makeMutable(position.y),
+    dragGuide: {
+      x: makeMutable(0),
+      y: makeMutable(0),
+      opacity: makeMutable(0),
+    },
+  });
+  onScaleAndZIndex?.(() => ({ scale: scale.get(), zIndex: zIndex.get() }));
   return (
-    <Animated.View
-      testID="gesture-target"
-      style={{ transform: [{ scale }], zIndex }}
-      {...panHandlers}
-    />
+    <GestureDetector gesture={gesture}>
+      <Animated.View testID="gesture-target" />
+    </GestureDetector>
   );
 }
 
 describe('usePieceGesture', () => {
-  afterEach(() => jest.restoreAllMocks());
-
   const width = 50;
-  const position = getXYFromSquare('e2', width);
 
-  async function renderGesture(
-    overrides: Partial<{
-      disabled: boolean;
-      onTap: jest.Mock;
-      onDragRelease: jest.Mock;
-      onDragStart: jest.Mock;
-      onDrag: jest.Mock;
-      showDragGuide: jest.Mock;
-      hideDragGuide: jest.Mock;
-    }> = {},
-  ) {
-    const onTap = overrides.onTap ?? jest.fn();
-    const onDragRelease = overrides.onDragRelease ?? jest.fn();
-    const onDragStart = overrides.onDragStart ?? jest.fn();
-    const onDrag = overrides.onDrag ?? jest.fn();
-    const showDragGuide = overrides.showDragGuide ?? jest.fn();
-    const hideDragGuide = overrides.hideDragGuide ?? jest.fn();
-    const animatedPosition = new Animated.ValueXY(position);
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
 
-    const screen = await render(
-      <GestureHarness
-        square="e2"
-        width={width}
-        position={position}
-        orientation="w"
-        animatedPosition={animatedPosition}
-        disabled={overrides.disabled ?? false}
-        onTap={onTap}
-        onDragRelease={onDragRelease}
-        onDragStart={onDragStart}
-        onDrag={onDrag}
-        showDragGuide={showDragGuide}
-        hideDragGuide={hideDragGuide}
-      />,
+  function harness(square: Square, overrides: Partial<HarnessProps> = {}) {
+    return (
+      <GestureHandlerRootView>
+        <GestureHarness
+          square={square}
+          width={width}
+          orientation="w"
+          disabled={false}
+          legalTargets={makeMutable({ e2: ['e3', 'e4'] as Square[] })}
+          onTap={jest.fn()}
+          onDragStart={jest.fn()}
+          onDragRelease={jest.fn()}
+          testID="piece"
+          {...overrides}
+        />
+      </GestureHandlerRootView>
     );
-    const target = screen.getByTestId('gesture-target');
-    return {
-      target,
-      animatedPosition,
-      onTap,
-      onDragRelease,
-      onDragStart,
-      onDrag,
-      showDragGuide,
-      hideDragGuide,
-    };
   }
 
-  it('should exist', () => {
-    expect(usePieceGesture).toBeDefined();
-  });
-
-  it("reports onDragRelease with the piece's from/to squares when dragged past the tap threshold", async () => {
-    const { target, onDragRelease } = await renderGesture();
-
-    // Drag up by 2 squares (width 50 * 2 = 100px) - well past the threshold.
-    await simulatePanResponderDrag(target, 0, -100);
-
-    expect(onDragRelease).toHaveBeenCalledWith('e2', 'e4');
-  });
-
-  it('does not report onTap on touch-down for a gesture that turns into a drag', async () => {
-    const { target, onTap } = await renderGesture();
-
-    await simulatePanResponderDrag(target, 0, -100);
-
-    expect(onTap).not.toHaveBeenCalled();
-  });
-
-  it('reports onDragStart on touch-down, instead of onTap', async () => {
-    const { target, onDragStart } = await renderGesture();
-
-    await simulatePanResponderGrant(target);
-
-    expect(onDragStart).toHaveBeenCalledWith('e2');
-  });
-
-  it("does not report onDragStart on touch-down for a disabled (opponent's) piece", async () => {
-    const { target, onDragStart } = await renderGesture({ disabled: true });
-
-    await simulatePanResponderGrant(target);
-
-    expect(onDragStart).not.toHaveBeenCalled();
-  });
-
-  it('reports onTap instead of onDragRelease when movement stays under the tap threshold', async () => {
-    const { target, onDragRelease, onTap } = await renderGesture();
-
-    // Nonzero movement, but still under TAP_MOVEMENT_THRESHOLD (10).
-    await simulatePanResponderDrag(target, 5, -5);
-
-    expect(onTap).toHaveBeenCalledWith('e2');
-    expect(onDragRelease).not.toHaveBeenCalled();
-  });
-
-  it("still reports a tap on a disabled (opponent's) piece, so it can be used as a move's target", async () => {
-    const { target, onTap, onDragRelease } = await renderGesture({
-      disabled: true,
-    });
-
-    await simulatePanResponderTap(target);
-
-    expect(onTap).toHaveBeenCalledWith('e2');
-    expect(onDragRelease).not.toHaveBeenCalled();
-  });
-
-  it("still reports a real drag's outcome on release even for a disabled (opponent's) piece - legality is the caller's call", async () => {
-    const { target, onDragRelease } = await renderGesture({ disabled: true });
-
-    await simulatePanResponderDrag(target, 0, -100);
-
-    expect(onDragRelease).toHaveBeenCalledWith('e2', 'e4');
-  });
-
-  it('movement right at the threshold boundary counts as a drag, not a tap', async () => {
-    const { target, onDragRelease, onTap } = await renderGesture();
-
-    // TAP_MOVEMENT_THRESHOLD itself is excluded by the hook's strict "<" check.
-    await simulatePanResponderDrag(target, TAP_MOVEMENT_THRESHOLD, 0);
-
-    expect(onDragRelease).toHaveBeenCalled();
-    expect(onTap).not.toHaveBeenCalled();
-  });
-
-  it('snaps the piece back to its own square when incidental jitter during a tap stays under the threshold', async () => {
-    const { target, animatedPosition, onTap } = await renderGesture();
-
-    await simulatePanResponderDrag(target, 5, -5);
-
-    expect(onTap).toHaveBeenCalledWith('e2');
-    expect(getAnimatedValue(animatedPosition.x)).toBe(position.x);
-    expect(getAnimatedValue(animatedPosition.y)).toBe(position.y);
-  });
-
-  it('shows the drag guide during a drag and hides it on release', async () => {
-    const { target, showDragGuide, hideDragGuide } = await renderGesture();
-
-    await simulatePanResponderDrag(target, 0, -100);
-
-    expect(showDragGuide).toHaveBeenCalled();
-    expect(hideDragGuide).toHaveBeenCalled();
-  });
-
-  it('hides the drag guide on release even for a plain tap', async () => {
-    const { target, hideDragGuide } = await renderGesture();
-
-    await simulatePanResponderTap(target);
-
-    expect(hideDragGuide).toHaveBeenCalled();
-  });
-
-  it('lifts the piece above the others and grows it while actively dragging', async () => {
-    settleSpringsInstantly();
-    const { target } = await renderGesture();
-
-    await simulatePanResponderGrantAndMove(target, 0, -100);
-
-    expect(target.props.style.zIndex).toBe(100);
-    expect(target.props.style.transform[0].scale).toBe(DRAG_SCALE);
-  });
-
-  it('sets the piece back down once the drag is released', async () => {
-    settleSpringsInstantly();
-    const { target } = await renderGesture();
-
-    await simulatePanResponderDrag(target, 0, -100);
-
-    expect(target.props.style.transform[0].scale).toBe(1);
-    expect(target.props.style.zIndex).toBe(0);
-  });
-
   it('keeps the piece above the others until it has been set down', async () => {
-    const { land } = holdSprings();
-    const { target } = await renderGesture();
+    let read: () => { scale: number; zIndex: number };
+    await render(
+      harness('e2', { onScaleAndZIndex: (reader) => (read = reader) }),
+    );
 
-    await simulatePanResponderDrag(target, 0, -100);
-    expect(target.props.style.zIndex).toBe(100);
+    await holdDrag('piece', 0, -100);
+    expect(read().zIndex).toBe(100);
 
-    await act(() => land());
-    expect(target.props.style.zIndex).toBe(0);
+    await dragPiece('piece', 0, -100);
+    expect(read()).toEqual({ scale: 1, zIndex: 0 });
+  });
+
+  it('reports the square the piece is on now, after it has moved', async () => {
+    const onTap = jest.fn();
+    const onDragRelease = jest.fn();
+    const screen = await render(harness('e2', { onTap, onDragRelease }));
+
+    await screen.rerender(harness('e4', { onTap, onDragRelease }));
+    await settleAnimations(16);
+    await tapPiece('piece');
+    await dragPiece('piece', 0, -50);
+
+    expect(onTap).toHaveBeenCalledWith('e4');
+    expect(onDragRelease).toHaveBeenCalledWith('e4', 'e5');
+  });
+
+  it('calls the callbacks it was last given', async () => {
+    const first = jest.fn();
+    const latest = jest.fn();
+    const screen = await render(harness('e2', { onTap: first }));
+
+    await screen.rerender(harness('e2', { onTap: latest }));
+    await settleAnimations(16);
+    await tapPiece('piece');
+
+    expect(first).not.toHaveBeenCalled();
+    expect(latest).toHaveBeenCalledWith('e2');
   });
 });

@@ -1,20 +1,28 @@
-import { View, Animated, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+
+import { DragGuide } from '../../../hooks/useDragGuide';
 
 interface PieceDragAndDropGuideProps {
   boardWidth: number;
   squareWidth: number;
-  position: Animated.ValueXY;
-  opacity: Animated.Value;
+  guide: DragGuide;
 }
 
 const PieceDragAndDropGuide: React.FC<PieceDragAndDropGuideProps> = ({
   boardWidth,
   squareWidth,
-  position,
-  opacity,
+  guide,
 }) => {
   const dragGuideDiameter = squareWidth * 2.5;
   const offsetToCenter = -(dragGuideDiameter / 3.5);
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: guide.opacity.get(),
+    transform: [
+      { translateX: guide.x.get() },
+      { translateY: guide.y.get() },
+    ] as const,
+  }));
   return (
     <View
       style={{ position: 'absolute', width: boardWidth, height: boardWidth }}
@@ -22,16 +30,17 @@ const PieceDragAndDropGuide: React.FC<PieceDragAndDropGuideProps> = ({
     >
       <Animated.View
         testID="drag-guide"
-        style={{
-          ...styles.container,
-          height: dragGuideDiameter,
-          width: dragGuideDiameter,
-          borderRadius: dragGuideDiameter / 2,
-          top: offsetToCenter,
-          left: offsetToCenter,
-          opacity,
-          transform: [{ translateX: position.x }, { translateY: position.y }],
-        }}
+        style={[
+          styles.container,
+          {
+            height: dragGuideDiameter,
+            width: dragGuideDiameter,
+            borderRadius: dragGuideDiameter / 2,
+            top: offsetToCenter,
+            left: offsetToCenter,
+          },
+          animatedStyle,
+        ]}
       />
     </View>
   );

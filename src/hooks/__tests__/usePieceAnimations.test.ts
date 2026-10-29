@@ -1,14 +1,23 @@
-import { act, renderHook } from '@testing-library/react-native';
+import { renderHook } from '@testing-library/react-native';
 import { Square } from 'chess.js';
 
-import { usePieceAnimations } from '../usePieceAnimations';
+import { AnimatedPieceView, usePieceAnimations } from '../usePieceAnimations';
 import { AppliedMove, DomainPiece } from '../../domain/types';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
-import { getAnimatedXY } from '../../testUtils/animatedValue';
-import { holdSprings } from '../../testUtils/springs';
+import { settleAnimations } from '../../testUtils/pieceGestures';
 
 describe('usePieceAnimations', () => {
-  afterEach(() => jest.restoreAllMocks());
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  function positionOf(view: AnimatedPieceView) {
+    return { x: view.x.get(), y: view.y.get() };
+  }
+
+  function isOn(view: AnimatedPieceView, square: Square) {
+    const target = getXYFromSquare(square, pieceWidth);
+    return view.x.get() === target.x && view.y.get() === target.y;
+  }
 
   const pieceWidth = 50;
   const twoPieces: DomainPiece[] = [
@@ -63,12 +72,12 @@ describe('usePieceAnimations', () => {
     await rerender({ pieces: [...twoPieces] });
 
     // The array wrapper may be new (previous test), but each piece's own
-    // AnimatedPieceView - and crucially its Animated.Value objects - must be
+    // AnimatedPieceView - and crucially its shared values - must be
     // the exact same object, or animations would silently stop working.
     expect(result.current[0]).toBe(firstPieceView);
   });
 
-  it('moves every piece to its mirrored position when the orientation flips, keeping the same Animated values', async () => {
+  it('moves every piece to its mirrored position when the orientation flips, keeping the same shared values', async () => {
     const { result, rerender } = await renderHook(
       (props: { orientation: 'w' | 'b' }) =>
         usePieceAnimations(twoPieces, null, pieceWidth, props.orientation),
@@ -79,10 +88,8 @@ describe('usePieceAnimations', () => {
     await rerender({ orientation: 'b' });
 
     expect(result.current[0]).toBe(e2View);
-    expect(getAnimatedXY(e2View.animatedPosition)).toEqual(
-      getXYFromSquare('e2', pieceWidth, 'b'),
-    );
-    expect(getAnimatedXY(result.current[1].animatedPosition)).toEqual(
+    expect(positionOf(e2View)).toEqual(getXYFromSquare('e2', pieceWidth, 'b'));
+    expect(positionOf(result.current[1])).toEqual(
       getXYFromSquare('e7', pieceWidth, 'b'),
     );
   });
@@ -114,7 +121,7 @@ describe('usePieceAnimations', () => {
     await rerender({ pieces: [...twoPieces], lastMove: null });
 
     expect(result.current.map((view) => view.square)).toEqual(['e2', 'e7']);
-    expect(getAnimatedXY(result.current[0].animatedPosition)).toEqual(
+    expect(positionOf(result.current[0])).toEqual(
       getXYFromSquare('e2', pieceWidth),
     );
     expect(result.current[1]).toBe(e7View);
@@ -149,7 +156,6 @@ describe('usePieceAnimations', () => {
     };
 
     async function renderCapture() {
-      const springs = holdSprings();
       const hook = await renderHook(
         (props: { pieces: DomainPiece[]; lastMove: AppliedMove | null }) =>
           usePieceAnimations(props.pieces, props.lastMove, pieceWidth),
@@ -158,7 +164,7 @@ describe('usePieceAnimations', () => {
       const takenView = hook.result.current[3];
       const moverView = hook.result.current[1];
       await hook.rerender({ pieces: after, lastMove: exd5 });
-      return { ...hook, springs, takenView, moverView };
+      return { ...hook, takenView, moverView };
     }
 
     it('still shows the piece taken while the piece taking it is on its way', async () => {
@@ -176,22 +182,24 @@ describe('usePieceAnimations', () => {
       expect(result.current[result.current.length - 1]).toBe(moverView);
     });
 
-    it('springs the piece taking it to its new square', async () => {
-      const { springs, moverView } = await renderCapture();
+    it('springs the piece taking it to its new square, rather than jumping', async () => {
+      const { moverView } = await renderCapture();
+      const e4 = getXYFromSquare('e4', pieceWidth);
+      const d5 = getXYFromSquare('d5', pieceWidth);
 
-      expect(springs.spy).toHaveBeenCalledWith(
-        moverView.animatedPosition,
-        expect.objectContaining({
-          toValue: getXYFromSquare('d5', pieceWidth),
-          useNativeDriver: true,
-        }),
-      );
+      await settleAnimations(50);
+      const midway = positionOf(moverView);
+      expect(midway.x).toBeLessThan(e4.x);
+      expect(midway.x).toBeGreaterThan(d5.x);
+
+      await settleAnimations();
+      expect(positionOf(moverView)).toEqual(d5);
     });
 
     it('removes the piece taken once the piece taking it lands', async () => {
-      const { result, springs, moverView } = await renderCapture();
+      const { result, moverView } = await renderCapture();
 
-      await act(() => springs.land());
+      await settleAnimations();
 
       expect(result.current.some((view) => view.captured)).toBe(false);
       expect(result.current.map((view) => view.square)).toEqual([
@@ -200,15 +208,13 @@ describe('usePieceAnimations', () => {
         'e8',
         'd5',
       ]);
-      expect(getAnimatedXY(moverView.animatedPosition)).toEqual(
-        getXYFromSquare('d5', pieceWidth),
-      );
+      expect(positionOf(moverView)).toEqual(getXYFromSquare('d5', pieceWidth));
     });
 
     it("doesn't let an earlier move's landing remove a later capture's piece", async () => {
-      const { result, rerender, springs, moverView } = await renderCapture();
-      const landExd5 = springs.takeInFlight();
-      // ...cxd5, before exd5 has landed.
+      const { result, rerender, moverView } = await renderCapture();
+      // ...cxd5, while exd5 is still on its way.
+      await settleAnimations(100);
       await rerender({
         pieces: [
           { square: 'e1', type: 'k', color: 'w' },
@@ -217,14 +223,26 @@ describe('usePieceAnimations', () => {
         ],
         lastMove: { ...exd5, from: 'c6', color: 'b' },
       });
+      const recapturer = result.current.find(
+        (view) => view.square === 'd5' && !view.captured,
+      );
 
-      await act(() => landExd5());
+      // The moment exd5 has landed and ...cxd5 hasn't, exd5's pawn - now
+      // the one taken - is still there.
+      let sawBetween = false;
+      for (let elapsed = 0; elapsed < 2000 && !sawBetween; elapsed += 16) {
+        await settleAnimations(16);
+        const exd5Landed = isOn(moverView, 'd5');
+        const cxd5Landed = isOn(recapturer, 'd5');
+        if (exd5Landed && !cxd5Landed) {
+          sawBetween = true;
+          const taken = result.current.filter((view) => view.captured);
+          expect(taken.map((view) => view.id)).toEqual([moverView.id]);
+        }
+      }
+      expect(sawBetween).toBe(true);
 
-      const taken = result.current.filter((view) => view.captured);
-      expect(taken.map((view) => view.id)).toEqual([moverView.id]);
-
-      await act(() => springs.land());
-
+      await settleAnimations();
       expect(result.current.some((view) => view.captured)).toBe(false);
     });
   });
@@ -238,7 +256,6 @@ describe('usePieceAnimations', () => {
     const promotion = { from: 'e7' as Square, to: 'e8' as Square };
 
     async function renderPromotion() {
-      const springs = holdSprings();
       const hook = await renderHook(
         (props: { pendingPromotion: typeof promotion | null }) =>
           usePieceAnimations(
@@ -252,30 +269,26 @@ describe('usePieceAnimations', () => {
       );
       const pawn = hook.result.current[1];
       await hook.rerender({ pendingPromotion: promotion });
-      return { ...hook, springs, pawn };
+      return { ...hook, pawn };
     }
 
     it('stands on the square it promotes on, over the other pieces', async () => {
-      const { result, springs, pawn } = await renderPromotion();
+      const { result, pawn } = await renderPromotion();
 
-      await act(() => springs.land());
+      await settleAnimations();
 
-      expect(getAnimatedXY(pawn.animatedPosition)).toEqual(
-        getXYFromSquare('e8', pieceWidth),
-      );
+      expect(positionOf(pawn)).toEqual(getXYFromSquare('e8', pieceWidth));
       expect(result.current[result.current.length - 1]).toBe(pawn);
     });
 
     it('goes back to its square when the promotion is called off', async () => {
-      const { rerender, springs, pawn } = await renderPromotion();
-      await act(() => springs.land());
+      const { rerender, pawn } = await renderPromotion();
+      await settleAnimations();
 
       await rerender({ pendingPromotion: null });
-      await act(() => springs.land());
+      await settleAnimations();
 
-      expect(getAnimatedXY(pawn.animatedPosition)).toEqual(
-        getXYFromSquare('e7', pieceWidth),
-      );
+      expect(positionOf(pawn)).toEqual(getXYFromSquare('e7', pieceWidth));
     });
   });
 });

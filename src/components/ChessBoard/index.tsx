@@ -1,12 +1,15 @@
-import { useCallback } from 'react';
-import { Animated, View } from 'react-native';
+import { useCallback, useLayoutEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useSharedValue } from 'react-native-reanimated';
 import { Color, Square } from 'chess.js';
 
 import { NUMBER_OF_ROWS } from '../../constants';
-import { REST_THRESHOLDS, SNAP_BACK_SPRING } from '../../constants/animations';
-import { Position } from '../../domain/types';
+import { SNAP_BACK_SPRING } from '../../constants/animations';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
-import { usePieceAnimations } from '../../hooks/usePieceAnimations';
+import {
+  springPieceTo,
+  usePieceAnimations,
+} from '../../hooks/usePieceAnimations';
 import { useDragGuide } from '../../hooks/useDragGuide';
 import { useValidMoveIndicators } from '../../hooks/useValidMoveIndicators';
 import { useChessGameContext } from '../../context/ChessGameContext';
@@ -36,6 +39,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
     isGameOver,
     legalMoveSquares,
     lastMove,
+    legalTargets,
     pendingPromotion,
     isOwnPieceAt,
     getLegalMoveSquares,
@@ -50,8 +54,12 @@ const Chessboard: React.FC<ChessboardProps> = ({
     orientation,
     pendingPromotion,
   );
-  const dragGuide = useDragGuide(PIECE_WIDTH);
-  const { updatePosition } = dragGuide;
+  const dragGuide = useDragGuide();
+  // For a drop to be judged where it lands, on the UI thread.
+  const legalTargetsOnUI = useSharedValue(legalTargets);
+  useLayoutEffect(() => {
+    legalTargetsOnUI.set(legalTargets);
+  }, [legalTargetsOnUI, legalTargets]);
   const validMoveIndicators = useValidMoveIndicators(
     legalMoveSquares,
     getLegalMoveSquares,
@@ -71,28 +79,26 @@ const Chessboard: React.FC<ChessboardProps> = ({
         (piece) => piece.square === from,
       );
       const result = attemptMove(from, to);
-      // Not a move: the piece slides home from where it was dropped.
+      // Not a move after all: the drop already sent the piece home if it
+      // looked illegal there, but this is the final word.
       if (result.status === 'illegal' && draggedPiece) {
-        Animated.spring(draggedPiece.animatedPosition, {
-          toValue: getXYFromSquare(from, PIECE_WIDTH, orientation),
-          ...SNAP_BACK_SPRING,
-          ...REST_THRESHOLDS,
-          useNativeDriver: true,
-        }).start();
+        springPieceTo(
+          draggedPiece,
+          getXYFromSquare(from, PIECE_WIDTH, orientation),
+          SNAP_BACK_SPRING,
+        );
       }
     },
     [animatedPieces, attemptMove, PIECE_WIDTH, orientation],
   );
 
-  const handleDrag = useCallback(
-    (position: Position) => {
-      updatePosition(position);
-    },
-    [updatePosition],
-  );
-
   return (
-    <View style={{ width, height: width }} testID="chessboard">
+    // Its own root for the pieces' gestures, so the board works wherever it's
+    // rendered, as Gesture Handler suggests for a component that uses them.
+    <GestureHandlerRootView
+      style={{ width, height: width }}
+      testID="chessboard"
+    >
       <BoardSurface
         colors={colors}
         orientation={orientation}
@@ -102,8 +108,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
       <PieceDragAndDropGuide
         boardWidth={width}
         squareWidth={PIECE_WIDTH}
-        position={dragGuide.position}
-        opacity={dragGuide.opacity}
+        guide={dragGuide}
       />
 
       <ValidMoveIndicators
@@ -118,14 +123,13 @@ const Chessboard: React.FC<ChessboardProps> = ({
         orientation={orientation}
         isOwnPieceAt={isOwnPieceAt}
         locked={isGameOver}
+        legalTargets={legalTargetsOnUI}
+        dragGuide={dragGuide}
         onTap={handleSquareTap}
         onDragStart={handleDragStart}
         onDragRelease={handleDragRelease}
-        onDrag={handleDrag}
-        showDragGuide={dragGuide.show}
-        hideDragGuide={dragGuide.hide}
       />
-    </View>
+    </GestureHandlerRootView>
   );
 };
 
