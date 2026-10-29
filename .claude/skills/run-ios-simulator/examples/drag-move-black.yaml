@@ -15,8 +15,8 @@ appId: host.exp.Exponent
       id: "piece-a7"
     timeout: 10000
 - swipe:
-    start: "175,590" # piece-e7 center (black-side view)
-    end: "175,490"   # square-e5 center (black-side view)
+    start: "175,587" # piece-e7 center (black-side view)
+    end: "175,486"   # square-e5 center (black-side view)
     duration: 600
 - assertVisible:
     id: "piece-e5"
