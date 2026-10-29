@@ -14,6 +14,7 @@ import Chessboard from '../../components/ChessBoard';
 import MoveList from '../../components/MoveList';
 import PromotionMenu from '../../components/PromotionMenu';
 import PlayerBar, { PlayerBarProps } from '../../components/PlayerBar';
+import GameBoardArea from '../../components/GameBoardArea';
 import GameHeader from '../../components/GameHeader';
 import GameToolbar from '../../components/GameToolbar';
 import BottomBar from '../../components/BottomBar';
@@ -276,7 +277,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         onSelectPly={moveNavigation.goTo}
       />
 
-      <View style={styles.board} testID="game-board-area">
+      <GameBoardArea testID="game-board-area">
         <PlayerBar
           color={topColor}
           isOnline={topColor === myColor ? undefined : isOpponentOnline}
@@ -342,7 +343,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
           material={material[orientation]}
           {...sharedPlayerBarProps}
         />
-      </View>
+      </GameBoardArea>
 
       {!isGameOver && drawOffer === 'received' && (
         <DrawOfferPrompt
@@ -392,10 +393,5 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     width: '100%',
-  },
-  board: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 12,
   },
 });

@@ -13,6 +13,7 @@ import GameOverOverlay from '../../components/GameOverOverlay';
 import GameToolbar from '../../components/GameToolbar';
 import MoveList from '../../components/MoveList';
 import PlayerBar, { PlayerBarProps } from '../../components/PlayerBar';
+import GameBoardArea from '../../components/GameBoardArea';
 import { BOARD_THEMES } from '../../constants/boardThemes';
 import {
   animatesMoves,
@@ -181,7 +182,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
         onSelectPly={moveNavigation.goTo}
       />
 
-      <View style={styles.board}>
+      <GameBoardArea>
         <PlayerBar
           color={topColor}
           material={material[topColor]}
@@ -216,7 +217,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
           material={material[orientation]}
           {...sharedPlayerBarProps}
         />
-      </View>
+      </GameBoardArea>
 
       <BottomBar>
         <GameToolbar
@@ -260,10 +261,5 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     width: '100%',
-  },
-  board: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 12,
   },
 });

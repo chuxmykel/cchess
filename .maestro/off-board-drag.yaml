@@ -5,7 +5,7 @@ tags:
 # Point coordinates are device-specific - see drag-and-drop.yaml.
 - runFlow: common/to-board.yaml
 - swipe:
-    start: "326,613" # piece-g1 (knight) center
+    start: "326,637" # piece-g1 (knight) center
     end: "326,770"   # well below the board
     duration: 600
 - assertVisible:

@@ -2,6 +2,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 
 import BoardSurface from '../../components/ChessBoard/BoardSurface';
 import BottomBar from '../../components/BottomBar';
+import GameBoardArea, { PlayerBarSpace } from '../../components/GameBoardArea';
 import GameHeader from '../../components/GameHeader';
 import { MOVE_LIST_HEIGHT } from '../../components/MoveList';
 import SeekCard from '../../components/SeekCard';
@@ -34,7 +35,8 @@ const SeekingContent: React.FC<SeekingContentProps> = ({
     <GameHeader timeControl={seek.timeControl} rated={isRated} />
     <View style={styles.moveListSpace} />
 
-    <View style={styles.boardArea}>
+    <GameBoardArea>
+      <PlayerBarSpace />
       <View style={{ width, height: width }}>
         <BoardSurface colors={BOARD_THEMES.test} />
         <View style={styles.cardOverlay} pointerEvents="box-none">
@@ -50,7 +52,8 @@ const SeekingContent: React.FC<SeekingContentProps> = ({
           />
         </View>
       </View>
-    </View>
+      <PlayerBarSpace />
+    </GameBoardArea>
 
     <BottomBar>
       <Pressable
@@ -77,10 +80,6 @@ const styles = StyleSheet.create({
   },
   moveListSpace: {
     height: MOVE_LIST_HEIGHT,
-  },
-  boardArea: {
-    flex: 1,
-    justifyContent: 'center',
   },
   cardOverlay: {
     position: 'absolute',

@@ -87,7 +87,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    minHeight: 44,
+    // Room enough to carry the move list down toward the board, rather
+    // than leave a gap above the player bar.
+    minHeight: 64,
   },
   side: {
     width: 44,

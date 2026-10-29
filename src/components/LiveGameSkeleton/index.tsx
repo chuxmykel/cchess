@@ -4,6 +4,7 @@ import BoardSurface from '../ChessBoard/BoardSurface';
 import BottomBar from '../BottomBar';
 import GameHeader from '../GameHeader';
 import Placeholder from '../Placeholder';
+import GameBoardArea from '../GameBoardArea';
 import { MOVE_LIST_HEIGHT } from '../MoveList';
 import { PLAYER_BAR_HEIGHT } from '../PlayerBar';
 import { BOARD_THEMES } from '../../constants/boardThemes';
@@ -30,13 +31,13 @@ const LiveGameSkeleton: React.FC<LiveGameSkeletonProps> = ({
   <View style={styles.screen} testID="live-game-skeleton">
     <GameHeader timeControl={timeControl} rated={rated} />
     <View style={styles.moveListSpace} />
-    <View style={styles.boardArea}>
+    <GameBoardArea>
       <PlayerBarPlaceholder />
       <View style={{ width, height: width }}>
         <BoardSurface colors={BOARD_THEMES.test} />
       </View>
       <PlayerBarPlaceholder />
-    </View>
+    </GameBoardArea>
     <BottomBar />
   </View>
 );
@@ -50,11 +51,6 @@ const styles = StyleSheet.create({
   },
   moveListSpace: {
     height: MOVE_LIST_HEIGHT,
-  },
-  boardArea: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 12,
   },
   playerBar: {
     minHeight: PLAYER_BAR_HEIGHT,
