@@ -127,6 +127,63 @@ describe('useChessGame', () => {
     expect(result.current.turn).toBe('b');
   });
 
+  it('puts the pawn back when a promotion is cancelled', async () => {
+    const { result } = await renderHook(() =>
+      useChessGame('8/4P3/8/2k5/8/4K3/8/8 w - - 0 1'),
+    );
+    await act(() => {
+      result.current.attemptMove('e7', 'e8');
+    });
+
+    await act(() => {
+      result.current.cancelPromotion();
+    });
+
+    expect(result.current.pendingPromotion).toBeNull();
+    expect(result.current.pieces).toEqual(
+      expect.arrayContaining([{ square: 'e7', type: 'p', color: 'w' }]),
+    );
+    expect(result.current.turn).toBe('w');
+  });
+
+  it('resets to a position without a move, clearing the selection', async () => {
+    const start = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    const { result } = await renderHook(() => useChessGame(start));
+    await act(() => {
+      result.current.attemptMove('e2', 'e4');
+    });
+    await act(() => {
+      result.current.handleSquareTap('e7');
+    });
+
+    await act(() => {
+      result.current.resetTo(start);
+    });
+
+    expect(result.current.fen).toBe(start);
+    expect(result.current.turn).toBe('w');
+    expect(result.current.lastMove).toBeNull();
+    expect(result.current.selectedSquare).toBeNull();
+    expect(result.current.pieces).toEqual(
+      expect.arrayContaining([{ square: 'e2', type: 'p', color: 'w' }]),
+    );
+  });
+
+  it('applies a promotion decided with the move, without asking', async () => {
+    const { result } = await renderHook(() =>
+      useChessGame('8/4P3/8/2k5/8/4K3/8/8 w - - 0 1'),
+    );
+
+    await act(() => {
+      result.current.attemptMove('e7', 'e8', 'n');
+    });
+
+    expect(result.current.pendingPromotion).toBeNull();
+    expect(result.current.pieces).toEqual(
+      expect.arrayContaining([{ square: 'e8', type: 'n', color: 'w' }]),
+    );
+  });
+
   it('reports game over once checkmate is delivered', async () => {
     const { result } = await renderHook(() => useChessGame());
 

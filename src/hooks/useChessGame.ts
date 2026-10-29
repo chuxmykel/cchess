@@ -21,6 +21,13 @@ type Action =
   | { type: 'DESELECT' }
   | { type: 'MOVE_REJECTED' }
   | { type: 'PROMOTION_PENDING'; from: Square; to: Square }
+  | { type: 'PROMOTION_CANCELLED' }
+  | {
+      type: 'POSITION_RESET';
+      pieces: DomainPiece[];
+      turn: Color;
+      isGameOver: boolean;
+    }
   | {
       type: 'MOVE_APPLIED';
       move: AppliedMove;
@@ -47,6 +54,20 @@ function reducer(state: ChessGameState, action: Action): ChessGameState {
         pendingPromotion: { from: action.from, to: action.to },
         selectedSquare: null,
         legalMoveSquares: [],
+      };
+    case 'PROMOTION_CANCELLED':
+      return { ...state, pendingPromotion: null };
+    case 'POSITION_RESET':
+      return {
+        ...state,
+        pieces: action.pieces,
+        turn: action.turn,
+        isGameOver: action.isGameOver,
+        selectedSquare: null,
+        legalMoveSquares: [],
+        pendingPromotion: null,
+        // No move took it here, so there's none to animate or send.
+        lastMove: null,
       };
     case 'MOVE_APPLIED':
       return {
@@ -125,9 +146,12 @@ export function useChessGame(fen?: string) {
     [engine],
   );
 
+  /** A move by tap or drag - or, with `promotion`, one already decided,
+   * like the opponent's from the server, applied in one go rather than
+   * asking for the piece. */
   const attemptMove = useCallback(
-    (from: Square, to: Square): MoveResult => {
-      const result = engine.attemptMove(from, to);
+    (from: Square, to: Square, promotion?: PieceSymbol): MoveResult => {
+      const result = engine.attemptMove(from, to, promotion);
       applyResult(result);
       return result;
     },
@@ -183,6 +207,26 @@ export function useChessGame(fen?: string) {
     [isOwnPieceAt, selectSquare, attemptMove],
   );
 
+  /** Puts the pawn back: no promotion after all. */
+  const cancelPromotion = useCallback(() => {
+    dispatch({ type: 'PROMOTION_CANCELLED' });
+  }, []);
+
+  /** Puts the board in another position, without a move - one the server
+   * refused goes back this way. */
+  const resetTo = useCallback(
+    (fen: string) => {
+      engine.load(fen);
+      dispatch({
+        type: 'POSITION_RESET',
+        pieces: engine.getBoardSnapshot(),
+        turn: engine.getTurn(),
+        isGameOver: engine.isGameOver(),
+      });
+    },
+    [engine],
+  );
+
   const promoteTo = useCallback(
     (piece: PieceSymbol) => {
       const { pendingPromotion } = stateRef.current;
@@ -211,6 +255,8 @@ export function useChessGame(fen?: string) {
     handleSquareTap,
     attemptMove,
     promoteTo,
+    cancelPromotion,
+    resetTo,
   };
 }
 

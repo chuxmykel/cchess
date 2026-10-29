@@ -15,7 +15,7 @@ import MoveList from '../../components/MoveList';
 import PlayerBar, { PlayerBarProps } from '../../components/PlayerBar';
 import { BOARD_THEMES } from '../../constants/boardThemes';
 import { findTimeControl, TimeControl } from '../../constants/timeControls';
-import { materialImbalance } from '../../domain/material';
+import { capturedMaterial } from '../../domain/material';
 import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useGameBookmark } from '../../hooks/useGameBookmark';
 import { useGameClock } from '../../hooks/useGameClock';
@@ -90,7 +90,10 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
     snapshot.gameType,
   );
   const viewedFen = moveNavigation.viewedFen ?? snapshot.fen;
-  const material = materialImbalance(viewedFen);
+  const material = capturedMaterial(
+    viewedFen,
+    snapshot.moves.slice(0, moveNavigation.currentPly),
+  );
   const topColor: Color = orientation === 'w' ? 'b' : 'w';
   const showsResult = isGameOver && moveNavigation.isLive && !isResultDismissed;
 

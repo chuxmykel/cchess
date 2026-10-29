@@ -12,7 +12,8 @@ const PIECE_VALUES: Record<Exclude<PieceSymbol, 'k'>, number> = {
 const PIECE_ORDER = Object.keys(PIECE_VALUES) as Exclude<PieceSymbol, 'k'>[];
 
 export type SideMaterial = {
-  /** Pieces this side has more of than the other, most valuable first. */
+  /** Pieces shown for this side - from capturedMaterial, every piece it
+   * has captured, least valuable first. */
   pieces: PieceSymbol[];
   /** How far ahead this side is in material; 0 unless it's ahead. */
   score: number;
@@ -51,4 +52,33 @@ export function materialImbalance(fen: string): MaterialImbalance {
   if (whiteLead > 0) imbalance.w.score = whiteLead;
   if (whiteLead < 0) imbalance.b.score = -whiteLead;
   return imbalance;
+}
+
+/** A move, as far as captures go: who moved, and what they took. */
+export type CaptureRecord = { color: Color; captured: PieceSymbol | null };
+
+// Least valuable first: pawns, then knights and bishops, rooks, queens.
+const byValueAscending = (a: PieceSymbol, b: PieceSymbol) =>
+  PIECE_ORDER.indexOf(b as Exclude<PieceSymbol, 'k'>) -
+  PIECE_ORDER.indexOf(a as Exclude<PieceSymbol, 'k'>);
+
+/**
+ * Every piece each side has captured in these moves, least valuable first,
+ * with the score - how far ahead in material - for the side ahead in the
+ * position. The score is the difference in what each side has taken,
+ * plus what promotions have added, since it's counted on the board.
+ */
+export function capturedMaterial(
+  fen: string,
+  moves: readonly CaptureRecord[],
+): MaterialImbalance {
+  const { w, b } = materialImbalance(fen);
+  const captured: Record<Color, PieceSymbol[]> = { w: [], b: [] };
+  for (const move of moves) {
+    if (move.captured) captured[move.color].push(move.captured);
+  }
+  return {
+    w: { pieces: captured.w.sort(byValueAscending), score: w.score },
+    b: { pieces: captured.b.sort(byValueAscending), score: b.score },
+  };
 }

@@ -51,6 +51,25 @@ describe('useOnlineChessGame', () => {
     );
   });
 
+  it('lets the board pick up only my pieces, on my turn', async () => {
+    const { socket } = createFakeSocket();
+    const snapshot = makeGameSnapshot();
+    const asBlack = await renderHook(() =>
+      useOnlineChessGame(socket, GAME_ID, 'b', snapshot),
+    );
+
+    // White to move: neither white's pieces (the side to move, but not
+    // mine) nor mine, out of turn.
+    expect(asBlack.result.current.isOwnPieceAt('e2')).toBe(false);
+    expect(asBlack.result.current.isOwnPieceAt('e7')).toBe(false);
+
+    const asWhite = await renderHook(() =>
+      useOnlineChessGame(socket, GAME_ID, 'w', snapshot),
+    );
+    expect(asWhite.result.current.isOwnPieceAt('e2')).toBe(true);
+    expect(asWhite.result.current.isOwnPieceAt('e7')).toBe(false);
+  });
+
   it('does not re-apply the echo of its own submitted move', async () => {
     const { socket, trigger } = createFakeSocket();
     const snapshot = makeGameSnapshot();

@@ -9,6 +9,7 @@ import Toast from '../../components/Toast';
 import { useToast } from '../../hooks/useToast';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { DEFAULT_RATING_RANGE, Seek } from '../../constants/seek';
+import { ColorChoice } from '../../network/socketEvents';
 import {
   TimeControl,
   DEFAULT_TIME_CONTROL,
@@ -26,13 +27,14 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
     useState<TimeControl>(DEFAULT_TIME_CONTROL);
   const [chosenRated, setChosenRated] = useState(true);
   const [ratingRange, setRatingRange] = useState(DEFAULT_RATING_RANGE);
+  const [color, setColor] = useState<ColorChoice>('random');
   const toast = useToast();
   const authSession = useAuthSession();
   const isGuest = !authSession.isReady || authSession.user.isGuest;
   const rated = !isGuest && chosenRated;
 
   function startNewGame() {
-    const seek: Seek = { timeControl, rated, ratingRange };
+    const seek: Seek = { timeControl, rated, ratingRange, color };
     navigation.navigate('LiveGame', { seek });
   }
 
@@ -58,6 +60,8 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
         <GameSettings
           rated={rated}
           ratingRange={ratingRange}
+          color={color}
+          onChangeColor={setColor}
           canPlayRated={!isGuest}
           onChangeRated={setChosenRated}
           onChangeRatingRange={setRatingRange}

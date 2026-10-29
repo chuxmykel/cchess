@@ -1,4 +1,4 @@
-import { materialImbalance } from '../material';
+import { capturedMaterial, materialImbalance } from '../material';
 
 const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -37,6 +37,60 @@ describe('materialImbalance', () => {
     expect(materialImbalance(fen)).toEqual({
       w: { pieces: ['q'], score: 3 },
       b: { pieces: ['r', 'p'], score: 0 },
+    });
+  });
+});
+
+describe('capturedMaterial', () => {
+  it('shows every piece each side has taken, not just the difference', () => {
+    // White took a knight and a pawn; black took a knight. Level material
+    // but a pawn, so white leads by 1.
+    const fen = 'r1bqkbnr/ppp1pppp/8/8/8/8/PPPPPPPP/R1BQKBNR w KQkq - 0 1';
+    const moves = [
+      { color: 'w' as const, captured: 'p' as const },
+      { color: 'b' as const, captured: 'n' as const },
+      { color: 'w' as const, captured: null },
+      { color: 'w' as const, captured: 'n' as const },
+    ];
+
+    expect(capturedMaterial(fen, moves)).toEqual({
+      w: { pieces: ['p', 'n'], score: 1 },
+      b: { pieces: ['n'], score: 0 },
+    });
+  });
+
+  it('puts the score on whoever is ahead, promotions included', () => {
+    // Black took a rook, but white promoted a pawn to a queen: white is
+    // ahead (9 - 1 for the pawn, less the rook) though it took nothing.
+    const fen = 'rnbqkbnr/pppppppp/8/8/8/8/1PPPPPPP/QNBQKBNR w Kkq - 0 1';
+    const moves = [{ color: 'b' as const, captured: 'r' as const }];
+
+    expect(capturedMaterial(fen, moves)).toEqual({
+      w: { pieces: [], score: 3 },
+      b: { pieces: ['r'], score: 0 },
+    });
+  });
+
+  it('lists them least valuable first', () => {
+    const moves = (['q', 'p', 'r', 'n', 'p', 'b'] as const).map((captured) => ({
+      color: 'w' as const,
+      captured,
+    }));
+
+    expect(capturedMaterial(START, moves).w.pieces).toEqual([
+      'p',
+      'p',
+      'n',
+      'b',
+      'r',
+      'q',
+    ]);
+  });
+
+  it('shows nothing before any capture', () => {
+    expect(capturedMaterial(START, [])).toEqual({
+      w: { pieces: [], score: 0 },
+      b: { pieces: [], score: 0 },
     });
   });
 });

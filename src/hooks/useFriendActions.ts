@@ -43,7 +43,7 @@ export function useFriendActions(
   ) => void;
 
   const sendChallenge = useCallback(
-    async ({ timeControl, rated }: ChallengeOptions) => {
+    async ({ timeControl, rated, color }: ChallengeOptions) => {
       if (!challengeTarget) {
         return;
       }
@@ -52,6 +52,7 @@ export function useFriendActions(
         initialSeconds: timeControl.initialSeconds,
         incrementSeconds: timeControl.incrementSeconds,
         rated,
+        color,
       });
       onChallengeSent?.(challengeTarget);
     },

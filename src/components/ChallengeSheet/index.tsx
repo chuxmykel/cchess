@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
 import BottomSheet from '../BottomSheet';
 import Button from '../Button';
+import ColorChoicePicker from '../ColorChoicePicker';
 import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import {
   DEFAULT_TIME_CONTROL,
@@ -12,8 +13,13 @@ import {
 } from '../../constants/timeControls';
 import { CHALLENGE_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
+import { ColorChoice } from '../../network/socketEvents';
 
-export type ChallengeOptions = { timeControl: TimeControl; rated: boolean };
+export type ChallengeOptions = {
+  timeControl: TimeControl;
+  rated: boolean;
+  color: ColorChoice;
+};
 
 interface ChallengeSheetProps {
   /** Who is being challenged; the sheet is hidden while null. */
@@ -31,8 +37,9 @@ const ChallengeSheet: React.FC<ChallengeSheetProps> = ({
 }) => {
   const [timeControl, setTimeControl] = useState(DEFAULT_TIME_CONTROL);
   const [rated, setRated] = useState(canPlayRated);
+  const [color, setColor] = useState<ColorChoice>('random');
   const sending = useAsyncAction(
-    () => onSend({ timeControl, rated: rated && canPlayRated }),
+    () => onSend({ timeControl, rated: rated && canPlayRated, color }),
     CHALLENGE_FAILED_MESSAGE,
   );
 
@@ -77,6 +84,10 @@ const ChallengeSheet: React.FC<ChallengeSheetProps> = ({
             </View>
           </View>
         ))}
+        <View style={styles.group}>
+          <Text style={styles.groupLabel}>Play as</Text>
+          <ColorChoicePicker selected={color} onSelect={setColor} />
+        </View>
         {canPlayRated && (
           <View style={styles.switchRow}>
             <Text style={styles.switchLabel}>Rated</Text>

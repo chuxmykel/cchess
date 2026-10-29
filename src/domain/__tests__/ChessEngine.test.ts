@@ -16,6 +16,16 @@ describe('ChessEngine', () => {
     expect(engine.getTurn()).toBe('w');
   });
 
+  it('loads another position', () => {
+    const engine = new ChessEngine();
+    engine.attemptMove('e2', 'e4');
+
+    engine.load('4k3/8/8/8/8/8/8/R3K3 b - - 0 1');
+
+    expect(engine.getBoardSnapshot()).toHaveLength(3);
+    expect(engine.getTurn()).toBe('b');
+  });
+
   it('reports legal destination squares for a piece', () => {
     const engine = new ChessEngine();
 

@@ -213,6 +213,7 @@ describe('LiveGame', () => {
       incrementSeconds: DEFAULT_TIME_CONTROL.incrementSeconds,
       rated: true,
       ratingRange: { below: 200, above: 500 },
+      color: 'random',
     });
     expect(
       screen.getByText(`${DEFAULT_TIME_CONTROL.label} • Rated`),

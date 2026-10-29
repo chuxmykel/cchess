@@ -82,8 +82,11 @@ network/       pure networking infra (REST/socket clients, event types), same st
     without re-deriving it from the engine.
   - `boardCoordinates.ts` - square <-> pixel math.
   - `castlingSquares.ts` - castling rook from/to squares.
-  - `material.ts` - `materialImbalance(fen)`: the pieces each side is up
-    and by how much, as shown beside the players' names.
+  - `material.ts` - `capturedMaterial(fen, moves)`: every piece each side
+    has captured, from the moves, least valuable first, and the score - how far ahead in
+    material, counted on the board so promotions count - for the side
+    ahead, as shown under the players' names (`materialImbalance(fen)`
+    is that board count).
 
 - **`src/network/`** - a second framework-agnostic layer, mirroring
   `domain/`'s pure-infra style but for talking to `cchess-be` (the
@@ -110,7 +113,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   - The local chess state machine: `useChessGame.ts` (a reducer owning
     one `ChessEngine` instance plus selection/turn/promotion UI state -
     `handleSquareTap` encodes the select-then-move tap interaction,
-    drag-and-drop calls `attemptMove` directly) plus the hooks that
+    drag-and-drop calls `attemptMove` directly, and a move already decided -
+    the opponent's, from the server - passes its promotion piece to
+    `attemptMove` rather than asking) plus the hooks that
     bridge its state to `Animated.Value`s for tweening/gesture handling
     (`usePieceAnimations`, `useDragGuide`, `useValidMoveIndicators`,
     `usePieceGesture`) - none of these know chess rules themselves.
@@ -141,10 +146,13 @@ network/       pure networking infra (REST/socket clients, event types), same st
     `useGameSnapshot` (the `game:join` fetch that seeds a game once
     matched, joining again after a reconnect so the server stops counting
     the player as gone), `useOnlineChessGame` (drives an
-    in-progress game on top of `useChessGame`, delegating server-push
+    in-progress game on top of `useChessGame` - only your own pieces, on
+    your turn, can be picked up or show their moves - delegating server-push
     handling to `useGameServerEvents` - status/result/clocks/draw offers
     and the first-move deadline, and replaying the opponent's moves
-    idempotently via a fen comparison against the echo of our own - and
+    idempotently via a fen comparison against the echo of our own, and
+    taking a move of ours the server refuses (its `game:error` names
+    `game:move`) back to the last position it confirmed - and
     owning the opponent's presence (`useOpponentPresence`) and the game's
     chat (`useGameChat`: history, new messages, and the unread count -
     from how far the server says you've read, every draw note counting
@@ -242,7 +250,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   of the screen above the keyboard, keeping the newest
   messages in view; read-only once a game's chat has closed), `RatingDiff` (a
   green/red/grey "+12"/"−12"/"±0", on the game-over card and in Recent
-  Games), `PromotionMenu`, `DrawOfferPrompt` (the opponent's draw offer, to accept or
+  Games), `PromotionMenu` (the
+  pieces a pawn can become, on light tiles in a card over the faded
+  board; a tap around it puts the pawn back), `DrawOfferPrompt` (the opponent's draw offer, to accept or
   decline; offering one waits, like resigning, until both sides have
   moved - the server refuses either before that),
   `SeekCard` (the waiting card: time control, rating range, lobby stats),
@@ -255,7 +265,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
   re-reads where the keyboard is -
   `ActionSheet`, `Placeholder`, `Popover`/`PopoverMenu`, `SectionHeader`,
   `Toast`, `TimeControlSelector`, `GameSettings` (New Game's "Game
-  Settings" cog, opening a sheet with a Rated switch (a guest pressing
+  Settings" cog, opening a sheet with "Play as" - White, Random or Black,
+  a `ColorChoicePicker` the challenge sheet shares - a Rated switch (a guest pressing
   it gets a toast to sign in, rendered inside the sheet's modal through
   its `overlay` slot) and a
   `RatingRangeSelector` - two sliders, `@react-native-community/slider`,

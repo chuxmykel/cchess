@@ -36,6 +36,7 @@ export function useMatchmaking(
       incrementSeconds: seek.timeControl.incrementSeconds,
       rated: seek.rated,
       ratingRange: seek.ratingRange,
+      color: seek.color ?? 'random',
     });
 
     function handleGameCreated(payload: GameSnapshot) {

@@ -35,11 +35,12 @@ describe('NewGame', () => {
         timeControl: DEFAULT_TIME_CONTROL,
         rated: true,
         ratingRange: DEFAULT_RATING_RANGE,
+        color: 'random',
       },
     });
   });
 
-  it('seeks with the chosen mode and range', async () => {
+  it('seeks with the chosen mode, range and color', async () => {
     const { screenPromise, navigation } = renderScreen({ isGuest: false });
     const screen = await screenPromise;
 
@@ -51,6 +52,7 @@ describe('NewGame', () => {
       'valueChange',
       400,
     );
+    await fireEvent.press(screen.getByTestId('color-black'));
     await fireEvent.press(screen.getByTestId('game-settings-done'));
     await waitForSheetToClose();
 
@@ -61,6 +63,7 @@ describe('NewGame', () => {
         timeControl: DEFAULT_TIME_CONTROL,
         rated: false,
         ratingRange: { ...DEFAULT_RATING_RANGE, below: 400 },
+        color: 'black',
       },
     });
   });

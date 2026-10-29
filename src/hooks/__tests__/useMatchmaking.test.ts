@@ -61,7 +61,22 @@ describe('useMatchmaking', () => {
       incrementSeconds: DEFAULT_TIME_CONTROL.incrementSeconds,
       rated: true,
       ratingRange: { below: 200, above: 300 },
+      color: 'random',
     });
+  });
+
+  it('seeks the color asked for', async () => {
+    const { socket } = createFakeSocket();
+    mockReadyAuthSession(socket);
+
+    await renderHook(() =>
+      useMatchmaking({ ...RATED_SEEK, color: 'white' }, createCallbacks()),
+    );
+
+    expect(socket.emit).toHaveBeenCalledWith(
+      'matchmaking:seek',
+      expect.objectContaining({ color: 'white' }),
+    );
   });
 
   it("doesn't seek without a seek", async () => {
