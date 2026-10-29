@@ -12,12 +12,15 @@ describe('GameSettings', () => {
     canPlayRated = true,
     onChangeRated = jest.fn(),
     onChangeRatingRange = jest.fn(),
+    onChangeColor = jest.fn(),
   } = {}) {
     return render(
       withSafeArea(
         <GameSettings
           rated={rated}
           ratingRange={RANGE}
+          color="random"
+          onChangeColor={onChangeColor}
           canPlayRated={canPlayRated}
           onChangeRated={onChangeRated}
           onChangeRatingRange={onChangeRatingRange}

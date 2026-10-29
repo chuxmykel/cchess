@@ -34,6 +34,7 @@ describe('ChallengeSheet', () => {
         incrementSeconds: 2,
       }),
       rated: true,
+      color: 'random',
     });
     expect(props.onClose).toHaveBeenCalled();
   });
@@ -79,5 +80,17 @@ describe('ChallengeSheet', () => {
       'You can only challenge friends',
     );
     expect(props.onClose).not.toHaveBeenCalled();
+  });
+
+  it('sends the color chosen', async () => {
+    const { props, screenPromise } = renderSheet();
+    const screen = await screenPromise;
+
+    await fireEvent.press(screen.getByTestId('color-white'));
+    await fireEvent.press(screen.getByTestId('send-challenge-button'));
+
+    expect(props.onSend).toHaveBeenCalledWith(
+      expect.objectContaining({ color: 'white' }),
+    );
   });
 });

@@ -53,11 +53,11 @@ OPTIONS
               Milliseconds to wait before each move. Default: 800.
 
        --color w|b
-              The color the bot must get in its first game. The server
-              assigns colors at random, so this can't request one: if the
-              bot is matched with the other color it aborts the game and
-              exits with status 2. --color w makes the app play black.
-              Rematches swap colors, as usual.
+              The color the bot asks for when it seeks or challenges - the
+              server pairs it only with a seek that wants the other color
+              (or doesn't mind), and gives it that color. --color w makes
+              the app play black. Rematches swap colors, as usual, and a
+              challenge from the app plays the colors the app chose.
 
        --guest
               Play as a new guest instead of real_user_bot (always casual).
@@ -88,7 +88,6 @@ EXIT STATUS
        0      Its games are over.
        1      A connection, sign-in or matchmaking error, including
               real_user_bot not existing on this server.
-       2      --color was given and the bot got the other color.
 
 ENVIRONMENT
        EXPO_PUBLIC_SERVER_URL
@@ -99,7 +98,7 @@ EXAMPLES
        Seek 5+0 and take either color:
               npm run opponent
 
-       Make the app play black, retrying from a fresh seek until it lands:
+       Make the app play black:
               npm run opponent -- --color w
 
        A quick casual 3+2 opponent:
@@ -280,13 +279,18 @@ async function main() {
   const token = session.accessToken;
   const friendMode = Boolean(args.friend);
 
+  // The color --color asks for, as the server names it; random without.
+  const wantedColor =
+    args.color === 'w' ? 'white' : args.color === 'b' ? 'black' : 'random';
+
   function seek() {
     const mode = args.guest || args.casual ? 'casual' : 'rated';
-    log(`seeking ${args.time} ${mode}`);
+    log(`seeking ${args.time} ${mode}, ${wantedColor}`);
     socket.emit('matchmaking:seek', {
       initialSeconds,
       incrementSeconds,
       rated: !args.guest && !args.casual,
+      color: wantedColor,
     });
   }
 
@@ -298,9 +302,10 @@ async function main() {
         initialSeconds,
         incrementSeconds,
         rated: !args.casual,
+        color: wantedColor,
       },
     });
-    log(`challenged ${args.friend} to ${args.time}`);
+    log(`challenged ${args.friend} to ${args.time}, ${wantedColor}`);
   }
 
   function fail(error) {
@@ -368,15 +373,6 @@ async function main() {
       'as',
       myColor === 'w' ? 'white' : 'black',
     );
-
-    if (args.color && args.color !== myColor && gamesPlayed === 0) {
-      log('wrong color, aborting - start a new seek and retry');
-      exiting = true;
-      socket.emit('game:abort', { gameId });
-      // Give the abort a moment to reach the server before disconnecting.
-      setTimeout(() => exit(2), 500);
-      return;
-    }
 
     socket.emit('game:join', { gameId });
     if (args.chat) {

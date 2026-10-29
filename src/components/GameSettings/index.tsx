@@ -4,17 +4,20 @@ import { View, Text, Pressable, Switch, StyleSheet } from 'react-native';
 import BottomSheet from '../BottomSheet';
 import Button from '../Button';
 import Icon from '../Icon';
+import ColorChoicePicker from '../ColorChoicePicker';
 import RatingRangeSelector from '../RatingRangeSelector';
 import Toast from '../Toast';
 import { useToast } from '../../hooks/useToast';
 import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
-import { RatingRange } from '../../network/socketEvents';
+import { ColorChoice, RatingRange } from '../../network/socketEvents';
 
 const SIGN_IN_TO_PLAY_RATED = 'Sign in to play rated games.';
 
 interface GameSettingsProps {
   rated: boolean;
   ratingRange: RatingRange;
+  color: ColorChoice;
+  onChangeColor: (color: ColorChoice) => void;
   canPlayRated: boolean;
   onChangeRated: (rated: boolean) => void;
   onChangeRatingRange: (range: RatingRange) => void;
@@ -23,6 +26,8 @@ interface GameSettingsProps {
 const GameSettings: React.FC<GameSettingsProps> = ({
   rated,
   ratingRange,
+  color,
+  onChangeColor,
   canPlayRated,
   onChangeRated,
   onChangeRatingRange,
@@ -57,6 +62,10 @@ const GameSettings: React.FC<GameSettingsProps> = ({
         overlay={<Toast toasts={toast.toasts} />}
       >
         <Text style={styles.title}>Game Settings</Text>
+
+        <Text style={[styles.sectionLabel, styles.firstSection]}>Play as</Text>
+        <ColorChoicePicker selected={color} onSelect={onChangeColor} />
+        <View style={styles.sectionGap} />
 
         <View style={styles.switchRow}>
           <Text style={styles.switchLabel}>Rated</Text>
@@ -132,6 +141,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: 24,
     marginBottom: 12,
+  },
+  firstSection: {
+    marginTop: 0,
+  },
+  sectionGap: {
+    height: 20,
   },
   hint: {
     marginTop: 8,

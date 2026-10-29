@@ -8,11 +8,16 @@ export type RatingRange = {
   above: number | null;
 };
 
+/** The color to play in a seek or challenge - random when you don't
+ * mind. */
+export type ColorChoice = 'white' | 'black' | 'random';
+
 export type SeekPayload = {
   initialSeconds: number;
   incrementSeconds: number;
   rated: boolean;
   ratingRange: RatingRange;
+  color: ColorChoice;
 };
 
 export type GameUserSummary = {

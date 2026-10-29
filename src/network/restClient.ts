@@ -2,7 +2,7 @@ import { AxiosError, create } from 'axios';
 
 import { GameType } from '../domain/types';
 import { SERVER_URL } from './env';
-import type { GameSnapshot } from './socketEvents';
+import type { ColorChoice, GameSnapshot } from './socketEvents';
 
 export class ApiError extends Error {
   status: number;
@@ -502,6 +502,8 @@ export type NewChallenge = {
   initialSeconds: number;
   incrementSeconds: number;
   rated: boolean;
+  /** The color the challenger plays; random when left out. */
+  color?: ColorChoice;
 };
 
 export async function getChallenges(accessToken: string): Promise<Challenges> {

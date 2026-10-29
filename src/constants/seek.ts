@@ -1,10 +1,12 @@
-import { RatingRange } from '../network/socketEvents';
+import { ColorChoice, RatingRange } from '../network/socketEvents';
 import { TimeControl } from './timeControls';
 
 export type Seek = {
   timeControl: TimeControl;
   rated: boolean;
   ratingRange: RatingRange;
+  /** The color to play; random when left out. */
+  color?: ColorChoice;
 };
 
 export const RATING_RANGE_STEP = 50;
