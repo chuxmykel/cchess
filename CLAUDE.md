@@ -222,6 +222,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
     same view, like a sheet's slide; and a `KeyboardAvoidingView` can't
     move an absolutely positioned sheet),
     `useCaretRotation`, `useGameScreenGestureLock`,
+    `usePressAndHoldRepeat` (a button's handlers for an action that
+    repeats while held - a tap once, then every 100ms after a 400ms hold,
+    until let go or disabled - as the toolbar's ‹ › step through moves),
     `useSwipeBackUntilGameLoads` (keeps a game screen's swipe-back gesture
     available until its game has loaded), `useRunAfterDismiss` (holds a
     menu/sheet action until its modal has finished closing - on iOS,
