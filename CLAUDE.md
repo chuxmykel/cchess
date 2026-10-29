@@ -122,13 +122,17 @@ network/       pure networking infra (REST/socket clients, event types), same st
     legal move of the side to move, for judging a drop) plus the hooks that
     bridge its state to the screen, none of which know chess rules
     themselves: `usePieceAnimations` (each piece's position as Reanimated
-    shared values, moved by critically damped springs from
-    `constants/animations.ts`; the piece a move takes stays drawn under the
+    shared values, always from white's side - `Chessboard` turns the whole
+    pieces layer round for black, with each piece's image turned back
+    upright, so a flip is drawn in the same frame as the squares - moved
+    by 50ms ease-out tweens from `constants/animations.ts`; the piece a
+    move takes stays drawn under the
     one taking it until that lands, the pieces just moved are drawn over
     the rest, and a pawn waiting on the promotion menu stands on its
     promotion square), `usePieceGesture` (a piece's Gesture Handler pan
     and tap, run on the UI thread: the piece follows the finger, and a
-    drop lands straight on its square when `legalTargets` has it, or goes
+    drop - judged where the piece was last drawn, not where a quick flick
+    lifts - lands straight on its square when `legalTargets` has it, or goes
     home, before JS hears of it - JS still judges the move),
     `useDragGuide` (the guide's shared values, which the drag moves) and
     `useValidMoveIndicators` (`Animated.Value` opacities).
@@ -214,7 +218,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
     available until its game has loaded), `useRunAfterDismiss` (holds a
     menu/sheet action until its modal has finished closing - on iOS,
     presenting the share sheet or an Alert while a modal is still
-    animating away silently does nothing), and `useAsyncAction` (runs a
+    animating away silently does nothing; an `ActionSheet` action marked
+    `immediate`, like Flip board, presents nothing and runs at once), and
+    `useAsyncAction` (runs a
     server request for a form or button: in-flight state, no double
     submits, and the server's message or a fallback on failure).
 
@@ -392,7 +398,7 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `LiveGame` covers the tabs and locks swipe-back while playing.
 
 - **`src/constants/`** - board size, piece image lookups
-  (`PIECES['wk' | 'bq' | ...]`), the board's springs and drag scale
+  (`PIECES['wk' | 'bq' | ...]`), the board's animation timings and drag scale
   (`animations.ts`), castling squares, time controls, board
   themes (`boardThemes.ts`), seeks (`seek.ts`: the `Seek` that New Game
   hands to LiveGame, and the rating range's default, step and limit),
@@ -416,11 +422,13 @@ network/       pure networking infra (REST/socket clients, event types), same st
 
 - **`src/testUtils/`** - Jest/RNTL helpers: a board piece's gestures,
   fired through Gesture Handler's jest utils - touch, held drag, drag and
-  drop, tap - and `settleAnimations` to let springs and the callbacks
+  drop, a flick that lifts past where it was drawn, tap - and `settleAnimations` to let animations and the callbacks
   they schedule finish on fake timers (`pieceGestures.ts`), simulated
   PanResponder gestures for the bottom sheet (`panResponderGesture.ts`),
   `Animated.Value` read helpers and `animatedStyleOf` for a Reanimated
-  view's drawn style (`animatedValue.ts`), a text-based
+  view's drawn style (`animatedValue.ts`), `piecePositionOnScreen` - where
+  a board piece is drawn, the pieces layer's turn for black included
+  (`boardPosition.ts`), a text-based
   board visualizer for debugging board state in test failures, a fake
   `AppSocket` for hooks that talk to the server (`fakeSocket.ts`), a
   `GameSnapshot` fixture builder (`gameSnapshot.ts`), `makeAuthSession`/
@@ -464,7 +472,8 @@ Two deliberately separate layers - don't let one re-do the other's job:
   by firing Gesture Handler's gestures from Jest - `jest.config.js` loads
   its `jestSetup` - see `src/components/ChessBoard/index.spec.tsx` and
   `testUtils/pieceGestures.ts`. Those tests use fake timers: the gestures'
-  worklets reach JS through `scheduleOnRN`, and pieces move by springs.
+  worklets reach JS through `scheduleOnRN`, and pieces move by timed
+  animations.
 - "Does this actually work on a real device" questions belong in a Maestro
   flow under `.maestro/`, not a Jest test.
 
