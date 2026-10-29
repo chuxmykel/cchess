@@ -1,4 +1,4 @@
-import { memo, useCallback, useLayoutEffect } from 'react';
+import { memo, useCallback, useLayoutEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSharedValue } from 'react-native-reanimated';
@@ -66,31 +66,50 @@ const Chessboard: React.FC<ChessboardProps> = ({
   );
   const { showFor } = validMoveIndicators;
 
-  const handleDragStart = useCallback(
-    (square: Square) => {
-      showFor(square);
-    },
-    [showFor],
-  );
+  // What the pieces' callbacks call, as it is now. The callbacks themselves
+  // never change: a game hands over new functions every time it renders -
+  // on every server push - and a piece given a new callback re-renders, and
+  // re-rendering a piece makes Gesture Handler set its gestures up again,
+  // cancelling a drag that's under way.
+  const latest = useRef({
+    attemptMove,
+    handleSquareTap,
+    showFor,
+    animatedPieces,
+    PIECE_WIDTH,
+  });
+  useLayoutEffect(() => {
+    latest.current = {
+      attemptMove,
+      handleSquareTap,
+      showFor,
+      animatedPieces,
+      PIECE_WIDTH,
+    };
+  });
 
-  const handleDragRelease = useCallback(
-    (from: Square, to: Square) => {
-      const draggedPiece = animatedPieces.find(
-        (piece) => piece.square === from,
+  const handleTap = useCallback((square: Square) => {
+    latest.current.handleSquareTap(square);
+  }, []);
+
+  const handleDragStart = useCallback((square: Square) => {
+    latest.current.showFor(square);
+  }, []);
+
+  const handleDragRelease = useCallback((from: Square, to: Square) => {
+    const { attemptMove, animatedPieces, PIECE_WIDTH } = latest.current;
+    const draggedPiece = animatedPieces.find((piece) => piece.square === from);
+    const result = attemptMove(from, to);
+    // Not a move after all: the drop already sent the piece home if it
+    // looked illegal there, but this is the final word.
+    if (result.status === 'illegal' && draggedPiece) {
+      animatePieceTo(
+        draggedPiece,
+        getXYFromSquare(from, PIECE_WIDTH),
+        SNAP_BACK_TIMING,
       );
-      const result = attemptMove(from, to);
-      // Not a move after all: the drop already sent the piece home if it
-      // looked illegal there, but this is the final word.
-      if (result.status === 'illegal' && draggedPiece) {
-        animatePieceTo(
-          draggedPiece,
-          getXYFromSquare(from, PIECE_WIDTH),
-          SNAP_BACK_TIMING,
-        );
-      }
-    },
-    [animatedPieces, attemptMove, PIECE_WIDTH],
-  );
+    }
+  }, []);
 
   return (
     // Its own root for the pieces' gestures, so the board works wherever it's
@@ -102,7 +121,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
       <BoardSurface
         colors={colors}
         orientation={orientation}
-        onSquarePress={handleSquareTap}
+        onSquarePress={handleTap}
       />
 
       <PieceDragAndDropGuide
@@ -133,7 +152,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
           locked={isGameOver}
           legalTargets={legalTargetsOnUI}
           dragGuide={dragGuide}
-          onTap={handleSquareTap}
+          onTap={handleTap}
           onDragStart={handleDragStart}
           onDragRelease={handleDragRelease}
         />

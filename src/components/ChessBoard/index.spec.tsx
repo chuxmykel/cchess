@@ -1,13 +1,15 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Color } from 'chess.js';
+import { Color, Square } from 'chess.js';
 
 import Chessboard from '.';
 import PromotionMenu from '../PromotionMenu';
 import {
+  ChessGameContext,
   ChessGameProvider,
   useChessGameContext,
 } from '../../context/ChessGameContext';
+import { useChessGame } from '../../hooks/useChessGame';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
 import { NUMBER_OF_ROWS } from '../../constants';
 import { dragPiece, tapPiece, touchPiece } from '../../testUtils/pieceGestures';
@@ -113,6 +115,35 @@ describe('Chessboard', () => {
     jest.mocked(usePieceGesture).mockClear();
 
     await screen.rerender(chessBoardTree());
+
+    expect(usePieceGesture).not.toHaveBeenCalled();
+  });
+
+  it("doesn't re-render a piece when the game hands it new functions, as an online game does on every server push - it would cancel a drag", async () => {
+    // A game whose functions are new every time it renders.
+    function FreshFunctionsGame() {
+      const game = useChessGame();
+      const value = {
+        ...game,
+        attemptMove: (from: Square, to: Square) => game.attemptMove(from, to),
+        handleSquareTap: (square: Square) => game.handleSquareTap(square),
+        isOwnPieceAt: (square: Square) => game.isOwnPieceAt(square),
+      };
+      return (
+        <GestureHandlerRootView>
+          <ChessGameContext.Provider value={value}>
+            <Chessboard
+              colors={{ dark: 'black', light: 'white' }}
+              width={width}
+            />
+          </ChessGameContext.Provider>
+        </GestureHandlerRootView>
+      );
+    }
+    const screen = await render(<FreshFunctionsGame />);
+    jest.mocked(usePieceGesture).mockClear();
+
+    await screen.rerender(<FreshFunctionsGame />);
 
     expect(usePieceGesture).not.toHaveBeenCalled();
   });
