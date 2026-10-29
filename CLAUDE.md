@@ -193,7 +193,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
     `useConnectionLatency`/`useConnectionStrengthIndicator` (the ack-ping
     round-trip sample and its bars/label derivation), `useMoveNavigation`
     (stepping back/forward through a game's moves to view earlier
-    positions, snapping back to live on a new move), `useGameShare`
+    positions, snapping back to live on a new move, and the move that led
+    to the position shown, for the board to mark), `useGameShare`
     (fetches a game's PGN and opens the native share sheet), and
     `useGameBookmark` (whether you've bookmarked the game, toggled
     optimistically), and `useGameViewer` (one game to look through, fetched
@@ -260,7 +261,11 @@ network/       pure networking infra (REST/socket clients, event types), same st
 - **`src/components/ChessBoard/`** - composes the board from
   `ChessGameContext` + the hooks above; everything under it
   (`BoardSurface`, `Pieces/Piece`, `Row`, `Square`,
-  `PieceDragAndDropGuide`, `ValidMoveIndicators`) is purely presentational
+  `PieceDragAndDropGuide`, `ValidMoveIndicators`, `LastMoveHighlight` -
+  the last move's two squares tinted, as on lichess - for a castle, the
+  king's and rook's starting squares (`domain/lastMoveSquares.ts`): the move the game
+  just made, or the last one the server has on record while it has made
+  none, on a game resumed or a move refused) is purely presentational
   and renders only what it's given as props/context. The board hands its
   pieces callbacks that never change, though a game's own functions are new
   on every render: re-rendering a piece makes Gesture Handler set its
@@ -270,7 +275,7 @@ network/       pure networking infra (REST/socket clients, event types), same st
   its pieces the same pieces from one position to the next
   (`domain/matchPieces.ts`), so stepping through a game moves them -
   sliding, unless it's bullet - rather than drawing new images, which
-  flickered. In `LiveGame` it's drawn over the live board while stepping
+  flickered - marking the move that led to it. In `LiveGame` it's drawn over the live board while stepping
   back (`EarlierPositionOverlay`), staying up when stepping onto the live
   position until that last move has slid there.
 
