@@ -7,6 +7,11 @@ export interface ActionSheetAction {
   label: string;
   onPress: () => void;
   destructive?: boolean;
+  // Runs as soon as it's chosen, while the sheet closes, instead of once the
+  // sheet is gone - for an action that presents nothing of its own, like
+  // flipping the board. Only a share sheet or an Alert needs the wait: on
+  // iOS one presented while a modal is still going away doesn't show.
+  immediate?: boolean;
   testID?: string;
 }
 
@@ -25,7 +30,8 @@ const ActionSheet: React.FC<ActionSheetProps> = ({
 
   function chooseAction(action: ActionSheetAction) {
     onClose();
-    runAfterDismiss(action.onPress);
+    if (action.immediate) action.onPress();
+    else runAfterDismiss(action.onPress);
   }
 
   return (

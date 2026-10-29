@@ -72,6 +72,7 @@ function gameMenuActions({
   const flipBoard: ActionSheetAction = {
     label: 'Flip board',
     onPress: flip,
+    immediate: true,
     testID: 'flip-board-action',
   };
   if (isGameOver) {

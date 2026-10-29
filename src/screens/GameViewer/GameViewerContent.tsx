@@ -111,7 +111,12 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   const newGameLabel =
     myColor === null ? `Play ${timeControl.label}` : 'New opponent';
   const menuActions: ActionSheetAction[] = [
-    { label: 'Flip board', onPress: flip, testID: 'flip-board-action' },
+    {
+      label: 'Flip board',
+      onPress: flip,
+      immediate: true,
+      testID: 'flip-board-action',
+    },
     {
       label: newGameLabel,
       onPress: () => onNewOpponent(timeControl),
