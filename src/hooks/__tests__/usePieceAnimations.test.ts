@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react-native';
 
 import { usePieceAnimations } from '../usePieceAnimations';
-import { DomainPiece } from '../../domain/types';
+import { AppliedMove, DomainPiece } from '../../domain/types';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
 import { getAnimatedXY } from '../../testUtils/animatedValue';
 
@@ -81,5 +81,38 @@ describe('usePieceAnimations', () => {
     expect(getAnimatedXY(result.current[1].animatedPosition)).toEqual(
       getXYFromSquare('e7', pieceWidth, 'b'),
     );
+  });
+  it('puts pieces straight on their squares for a position reached without a move', async () => {
+    const e2e4: AppliedMove = {
+      from: 'e2',
+      to: 'e4',
+      piece: 'p',
+      color: 'w',
+      isCapture: false,
+      isEnPassant: false,
+      isKingSideCastle: false,
+      isQueenSideCastle: false,
+      isPromotion: false,
+    };
+    const afterE4: DomainPiece[] = [
+      { square: 'e4', type: 'p', color: 'w' },
+      { square: 'e7', type: 'p', color: 'b' },
+    ];
+    const { result, rerender } = await renderHook(
+      (props: { pieces: DomainPiece[]; lastMove: AppliedMove | null }) =>
+        usePieceAnimations(props.pieces, props.lastMove, pieceWidth),
+      { initialProps: { pieces: twoPieces, lastMove: null } },
+    );
+    const e7View = result.current[1];
+    await rerender({ pieces: afterE4, lastMove: e2e4 });
+
+    // The move taken back: the old position, with no move to animate.
+    await rerender({ pieces: [...twoPieces], lastMove: null });
+
+    expect(result.current.map((view) => view.square)).toEqual(['e2', 'e7']);
+    expect(getAnimatedXY(result.current[0].animatedPosition)).toEqual(
+      getXYFromSquare('e2', pieceWidth),
+    );
+    expect(result.current[1]).toBe(e7View);
   });
 });

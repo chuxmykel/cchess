@@ -105,6 +105,8 @@ export type MatchmakingErrorPayload = {
 
 export type GameErrorPayload = {
   gameId: string;
+  /** What was refused, e.g. 'game:move'. */
+  event: string;
   message: string;
 };
 

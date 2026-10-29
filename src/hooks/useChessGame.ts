@@ -23,6 +23,12 @@ type Action =
   | { type: 'PROMOTION_PENDING'; from: Square; to: Square }
   | { type: 'PROMOTION_CANCELLED' }
   | {
+      type: 'POSITION_RESET';
+      pieces: DomainPiece[];
+      turn: Color;
+      isGameOver: boolean;
+    }
+  | {
       type: 'MOVE_APPLIED';
       move: AppliedMove;
       pieces: DomainPiece[];
@@ -51,6 +57,18 @@ function reducer(state: ChessGameState, action: Action): ChessGameState {
       };
     case 'PROMOTION_CANCELLED':
       return { ...state, pendingPromotion: null };
+    case 'POSITION_RESET':
+      return {
+        ...state,
+        pieces: action.pieces,
+        turn: action.turn,
+        isGameOver: action.isGameOver,
+        selectedSquare: null,
+        legalMoveSquares: [],
+        pendingPromotion: null,
+        // No move took it here, so there's none to animate or send.
+        lastMove: null,
+      };
     case 'MOVE_APPLIED':
       return {
         ...state,
@@ -194,6 +212,21 @@ export function useChessGame(fen?: string) {
     dispatch({ type: 'PROMOTION_CANCELLED' });
   }, []);
 
+  /** Puts the board in another position, without a move - one the server
+   * refused goes back this way. */
+  const resetTo = useCallback(
+    (fen: string) => {
+      engine.load(fen);
+      dispatch({
+        type: 'POSITION_RESET',
+        pieces: engine.getBoardSnapshot(),
+        turn: engine.getTurn(),
+        isGameOver: engine.isGameOver(),
+      });
+    },
+    [engine],
+  );
+
   const promoteTo = useCallback(
     (piece: PieceSymbol) => {
       const { pendingPromotion } = stateRef.current;
@@ -223,6 +256,7 @@ export function useChessGame(fen?: string) {
     attemptMove,
     promoteTo,
     cancelPromotion,
+    resetTo,
   };
 }
 

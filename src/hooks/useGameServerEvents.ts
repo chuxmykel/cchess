@@ -44,7 +44,8 @@ export type GameServerEventsResult = {
 // actually replayed when it doesn't already match ours - true for the
 // opponent's moves, false for the echo of our own (confirmed live that the
 // server pushes our own submitted move back to us) - which is what makes
-// this idempotent without tracking ply numbers separately.
+// this idempotent without tracking ply numbers separately. A move of ours
+// the server refuses is taken back, to the last position it confirmed.
 function withMoveAdded(
   moves: GameMoveSummary[],
   move: GameMoveSummary,
@@ -86,6 +87,9 @@ export function useGameServerEvents(
   useLayoutEffect(() => {
     gameRef.current = game;
   });
+  // The position as the server last confirmed it; ours runs a move ahead
+  // while one of our moves awaits its echo.
+  const confirmedFenRef = useRef(snapshot.fen);
 
   useEffect(() => {
     function handleMove(payload: GameMovePushPayload) {
@@ -100,6 +104,7 @@ export function useGameServerEvents(
       setMoves((previous) => withMoveAdded(previous, payload.move));
       // Any move lapses a draw offer, as it does on the server.
       setDrawOfferedBy(null);
+      confirmedFenRef.current = payload.fen;
       if (payload.fen === gameRef.current.fen) {
         return; // the echo of a move we already applied optimistically
       }
@@ -144,9 +149,16 @@ export function useGameServerEvents(
     }
 
     function handleError(payload: GameErrorPayload) {
-      if (payload.gameId === gameId) {
-        onError?.(payload.message);
+      if (payload.gameId !== gameId) {
+        return;
       }
+      if (
+        payload.event === 'game:move' &&
+        gameRef.current.fen !== confirmedFenRef.current
+      ) {
+        gameRef.current.resetTo(confirmedFenRef.current);
+      }
+      onError?.(payload.message);
     }
 
     socket.on('game:move', handleMove);

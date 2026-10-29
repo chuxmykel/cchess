@@ -95,6 +95,12 @@ export class ChessEngine {
     this.game = fen ? new Chess(fen) : new Chess();
   }
 
+  /** Sets the board to another position, as when the server refuses a
+   * move already shown and the board goes back to where it was. */
+  load(fen: string): void {
+    this.game = new Chess(fen);
+  }
+
   getBoardSnapshot(): DomainPiece[] {
     const pieces: DomainPiece[] = [];
     this.game.board().forEach((row) => {

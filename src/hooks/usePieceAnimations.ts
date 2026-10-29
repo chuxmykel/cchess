@@ -118,16 +118,37 @@ export function usePieceAnimations(
     return animations;
   }
 
+  // Matches the bookkeeping to `pieces` as they stand: a piece already on
+  // its square keeps its entry (and Animated values), anything else gets a
+  // fresh one placed straight there.
+  function placeAll() {
+    const idBySquare = new Map<Square, string>();
+    const entries = new Map<string, PieceEntry>();
+    pieces.forEach((piece) => {
+      const pieceId = pieceIdBySquare.current.get(piece.square);
+      const existing = pieceId && entryById.current.get(pieceId);
+      const pieceEntry =
+        existing && existing.spriteId === `${piece.color}${piece.type}`
+          ? existing
+          : createEntry(piece);
+      idBySquare.set(piece.square, pieceEntry.id);
+      entries.set(pieceEntry.id, pieceEntry);
+    });
+    pieceIdBySquare.current = idBySquare;
+    entryById.current = entries;
+  }
+
   if (!initialized.current) {
     initialized.current = true;
-    pieces.forEach((piece) => {
-      const pieceEntry = createEntry(piece);
-      pieceIdBySquare.current.set(piece.square, pieceEntry.id);
-      entryById.current.set(pieceEntry.id, pieceEntry);
-    });
+    placeAll();
   } else if (lastMove && lastMove !== processedMove.current) {
     processedMove.current = lastMove;
     pendingAnimations.current = applyMove(lastMove);
+  } else if (pieces !== prevPieces.current) {
+    // A new position with no move to get there - a refused move taken
+    // back - so the pieces are put straight on their squares.
+    processedMove.current = lastMove;
+    placeAll();
   }
 
   useEffect(() => {

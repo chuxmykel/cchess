@@ -34,6 +34,7 @@ function makeFakeGame(
     }),
     promoteTo: jest.fn(),
     cancelPromotion: jest.fn(),
+    resetTo: jest.fn(),
     ...overrides,
   };
 }
@@ -387,10 +388,111 @@ describe('useGameServerEvents', () => {
     );
 
     await act(() => {
-      trigger('game:error', { gameId: GAME_ID, message: 'Illegal move' });
+      trigger('game:error', {
+        gameId: GAME_ID,
+        event: 'game:move',
+        message: 'Illegal move',
+      });
     });
 
     expect(onError).toHaveBeenCalledWith('Illegal move');
+  });
+
+  describe('a move the server refuses', () => {
+    const START = makeGameSnapshot().fen;
+    const AFTER_E4 =
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+
+    async function renderRealGame(onError = jest.fn()) {
+      const { socket, trigger } = createFakeSocket();
+      const snapshot = makeGameSnapshot();
+      const rendered = await renderHook(() => {
+        const game = useChessGame(snapshot.fen);
+        useGameServerEvents(socket, GAME_ID, snapshot, game, onError);
+        return game;
+      });
+      return { ...rendered, trigger };
+    }
+
+    it('goes back to the last position the server confirmed', async () => {
+      const onError = jest.fn();
+      const { result, trigger } = await renderRealGame(onError);
+      await act(() => {
+        result.current.attemptMove('e2', 'e4');
+      });
+      expect(result.current.fen).toBe(AFTER_E4);
+
+      await act(() => {
+        trigger('game:error', {
+          gameId: GAME_ID,
+          event: 'game:move',
+          message: 'Game is not active',
+        });
+      });
+
+      expect(result.current.fen).toBe(START);
+      expect(result.current.turn).toBe('w');
+      expect(result.current.lastMove).toBeNull();
+      expect(
+        result.current.pieces.find((piece) => piece.square === 'e2'),
+      ).toMatchObject({ type: 'p', color: 'w' });
+      expect(onError).toHaveBeenCalledWith('Game is not active');
+    });
+
+    it('keeps a move the server has confirmed', async () => {
+      const { result, trigger } = await renderRealGame();
+      await act(() => {
+        result.current.attemptMove('e2', 'e4');
+      });
+      await act(() => {
+        trigger('game:move', {
+          gameId: GAME_ID,
+          move: {
+            ply: 1,
+            from: 'e2',
+            to: 'e4',
+            piece: 'p',
+            color: 'w',
+            san: 'e4',
+            captured: null,
+            promotion: null,
+            fenAfter: AFTER_E4,
+            clockAfterMs: 299000,
+          },
+          fen: AFTER_E4,
+          turn: 'b',
+          whiteTimeRemainingMs: 299000,
+          blackTimeRemainingMs: 300000,
+        });
+      });
+
+      await act(() => {
+        trigger('game:error', {
+          gameId: GAME_ID,
+          event: 'game:move',
+          message: 'Not your turn',
+        });
+      });
+
+      expect(result.current.fen).toBe(AFTER_E4);
+    });
+
+    it('leaves my move alone when something else is refused', async () => {
+      const { result, trigger } = await renderRealGame();
+      await act(() => {
+        result.current.attemptMove('e2', 'e4');
+      });
+
+      await act(() => {
+        trigger('game:error', {
+          gameId: GAME_ID,
+          event: 'game:drawOffer',
+          message: 'Both players must move first',
+        });
+      });
+
+      expect(result.current.fen).toBe(AFTER_E4);
+    });
   });
 
   describe('move history', () => {
