@@ -20,6 +20,9 @@ jest.mock('../../network/restClient', () => ({
 jest.mock('../../components/ConnectionStrengthIndicator', () =>
   jest.requireActual('../../testUtils/ConnectionStrengthIndicatorStub'),
 );
+jest.mock('../../hooks/useGameClock', () =>
+  jest.requireActual('../../testUtils/gameClockStandingStill'),
+);
 jest.mock('../../hooks/useGameShare', () => ({
   useGameShare: () => jest.fn(),
 }));

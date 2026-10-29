@@ -19,6 +19,9 @@ import { piecePositionOnScreen } from '../../testUtils/boardPosition';
 jest.mock('../../components/ConnectionStrengthIndicator', () =>
   jest.requireActual('../../testUtils/ConnectionStrengthIndicatorStub'),
 );
+jest.mock('../../hooks/useGameClock', () =>
+  jest.requireActual('../../testUtils/gameClockStandingStill'),
+);
 
 const mockShareGame = jest.fn();
 jest.mock('../../hooks/useGameShare', () => ({
@@ -384,7 +387,7 @@ describe('LiveGameContent', () => {
 
     it('offers a draw once both sides have moved', async () => {
       const { screen, socket, snapshot, trigger } = await renderContent('w');
-      await playFirstMoves(trigger, snapshot.id);
+      await act(() => playFirstMoves(trigger, snapshot.id));
 
       await openGameMenu(screen);
       await chooseMenuAction(screen, 'offer-draw-action');

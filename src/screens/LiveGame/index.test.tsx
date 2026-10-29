@@ -20,6 +20,9 @@ jest.mock('../../hooks/useGameBookmark', () => ({
 jest.mock('../../components/ConnectionStrengthIndicator', () =>
   jest.requireActual('../../testUtils/ConnectionStrengthIndicatorStub'),
 );
+jest.mock('../../hooks/useGameClock', () =>
+  jest.requireActual('../../testUtils/gameClockStandingStill'),
+);
 
 const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
 const APP_PLAYER_ID = makeGameSnapshot().white.id;
