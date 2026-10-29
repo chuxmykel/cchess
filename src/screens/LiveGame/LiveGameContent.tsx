@@ -124,6 +124,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     turn,
     pendingPromotion,
     promoteTo,
+    cancelPromotion,
     isGameOver,
     gameStatus,
     myColor,
@@ -283,6 +284,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
               boardWidth={width}
               pieceWidth={PIECE_WIDTH}
               handlePromotion={promoteTo}
+              onCancel={cancelPromotion}
             />
           )}
           <EarlierPositionOverlay

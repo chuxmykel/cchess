@@ -33,6 +33,7 @@ function makeFakeGame(
       move: { from: 'e7', to: 'e5', piece: 'p', color: 'b' },
     }),
     promoteTo: jest.fn(),
+    cancelPromotion: jest.fn(),
     ...overrides,
   };
 }

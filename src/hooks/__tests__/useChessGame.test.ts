@@ -127,6 +127,25 @@ describe('useChessGame', () => {
     expect(result.current.turn).toBe('b');
   });
 
+  it('puts the pawn back when a promotion is cancelled', async () => {
+    const { result } = await renderHook(() =>
+      useChessGame('8/4P3/8/2k5/8/4K3/8/8 w - - 0 1'),
+    );
+    await act(() => {
+      result.current.attemptMove('e7', 'e8');
+    });
+
+    await act(() => {
+      result.current.cancelPromotion();
+    });
+
+    expect(result.current.pendingPromotion).toBeNull();
+    expect(result.current.pieces).toEqual(
+      expect.arrayContaining([{ square: 'e7', type: 'p', color: 'w' }]),
+    );
+    expect(result.current.turn).toBe('w');
+  });
+
   it('applies a promotion decided with the move, without asking', async () => {
     const { result } = await renderHook(() =>
       useChessGame('8/4P3/8/2k5/8/4K3/8/8 w - - 0 1'),

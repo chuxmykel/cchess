@@ -21,6 +21,7 @@ type Action =
   | { type: 'DESELECT' }
   | { type: 'MOVE_REJECTED' }
   | { type: 'PROMOTION_PENDING'; from: Square; to: Square }
+  | { type: 'PROMOTION_CANCELLED' }
   | {
       type: 'MOVE_APPLIED';
       move: AppliedMove;
@@ -48,6 +49,8 @@ function reducer(state: ChessGameState, action: Action): ChessGameState {
         selectedSquare: null,
         legalMoveSquares: [],
       };
+    case 'PROMOTION_CANCELLED':
+      return { ...state, pendingPromotion: null };
     case 'MOVE_APPLIED':
       return {
         ...state,
@@ -186,6 +189,11 @@ export function useChessGame(fen?: string) {
     [isOwnPieceAt, selectSquare, attemptMove],
   );
 
+  /** Puts the pawn back: no promotion after all. */
+  const cancelPromotion = useCallback(() => {
+    dispatch({ type: 'PROMOTION_CANCELLED' });
+  }, []);
+
   const promoteTo = useCallback(
     (piece: PieceSymbol) => {
       const { pendingPromotion } = stateRef.current;
@@ -214,6 +222,7 @@ export function useChessGame(fen?: string) {
     handleSquareTap,
     attemptMove,
     promoteTo,
+    cancelPromotion,
   };
 }
 
