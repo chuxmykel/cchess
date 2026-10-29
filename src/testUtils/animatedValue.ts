@@ -1,4 +1,5 @@
 import type { Animated } from 'react-native';
+import { getAnimatedStyle } from 'react-native-reanimated';
 
 import type { Position } from '../domain/types';
 
@@ -14,4 +15,17 @@ export function getAnimatedValue(value: Animated.Value): number {
 // are themselves Animated.Values, so this just reads each one.
 export function getAnimatedXY(value: Animated.ValueXY): Position {
   return { x: getAnimatedValue(value.x), y: getAnimatedValue(value.y) };
+}
+
+// A Reanimated view's style as last drawn, its animated part included.
+// Reanimated's types describe its web getAnimatedStyle here (no argument, no
+// result), not the native one Jest actually runs, which takes the element.
+export function animatedStyleOf(element: {
+  props: Record<string, unknown>;
+}): Record<string, any> {
+  return (
+    getAnimatedStyle as unknown as (component: {
+      props: Record<string, unknown>;
+    }) => Record<string, any>
+  )(element);
 }

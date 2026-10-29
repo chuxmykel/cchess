@@ -71,8 +71,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
 ```
 
 - **`src/domain/`** - framework-agnostic chess logic.
-  - `ChessEngine.ts` - a facade over chess.js: `attemptMove`, legal moves,
-    turn/check/game-over status. Returns a `MoveResult` discriminated union
+  - `ChessEngine.ts` - a facade over chess.js: `attemptMove`, legal moves
+    (one piece's, or `getLegalTargets` - every move of the side to move, by
+    the square it starts from), turn/check/game-over status. Returns a `MoveResult` discriminated union
     (`"illegal"` | `"needs-promotion-choice"` | `"ok"`) rather than throwing,
     so callers don't need try/catch to handle illegal moves or pending
     promotions.
@@ -80,7 +81,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
     etc. `AppliedMove` carries everything the UI needs to animate a move
     (capture square, castling rook from/to, en passant/promotion flags)
     without re-deriving it from the engine.
-  - `boardCoordinates.ts` - square <-> pixel math.
+  - `boardCoordinates.ts` - square <-> pixel math, and `isOnBoard`; each
+    function is also a worklet (a `'worklet'` string directive, no import),
+    so a drag can work out squares on the UI thread.
   - `castlingSquares.ts` - castling rook from/to squares.
   - `material.ts` - `capturedMaterial(fen, moves)`: every piece each side
     has captured, from the moves, least valuable first, and the score - how far ahead in
@@ -115,10 +118,34 @@ network/       pure networking infra (REST/socket clients, event types), same st
     `handleSquareTap` encodes the select-then-move tap interaction,
     drag-and-drop calls `attemptMove` directly, and a move already decided -
     the opponent's, from the server - passes its promotion piece to
-    `attemptMove` rather than asking) plus the hooks that
-    bridge its state to `Animated.Value`s for tweening/gesture handling
-    (`usePieceAnimations`, `useDragGuide`, `useValidMoveIndicators`,
-    `usePieceGesture`) - none of these know chess rules themselves.
+    `attemptMove` rather than asking; it also keeps `legalTargets`, every
+    legal move of the side to move, for judging a drop) plus the hooks that
+    bridge its state to the screen, none of which know chess rules
+    themselves: `usePieceAnimations` (each piece's position as Reanimated
+    shared values, always from white's side - `Chessboard` turns the whole
+    pieces layer round for black, with each piece's image turned back
+    upright, so a flip is drawn in the same frame as the squares - moved
+    by 50ms ease-out tweens from `constants/animations.ts` - or put there
+    at once in bullet, `animatesMoves(gameType)` in `timeControls.ts`,
+    anything under 3+0; the piece a
+    move takes stays drawn under the
+    one taking it until that lands, the pieces just moved are drawn over
+    the rest, and a pawn waiting on the promotion menu stands on its
+    promotion square), `usePieceGesture` (a piece's Gesture Handler pan
+    and tap, run on the UI thread, as on lichess: the piece is lifted at
+    once, twice its size, a square above the finger, its own square marked
+    while it's held, and a drop counts for the
+    square under the finger - where it last moved, not where a quick flick
+    lifts, or, when that's no move, the square next to it where it was
+    just before it lifted, as a finger slides leaving the glass - landing straight on it when
+    `legalTargets` has it - set down at once, the piece it
+    takes disappearing with it - or going straight home, before JS hears of
+    it - JS still judges the move),
+    `useDragGuide` (the guide's shared values - a circle two squares
+    across on the drop's square, which the drag moves, and the held piece's
+    own square - and the piece a drop has taken, hidden until the game
+    moves on) and
+    `useValidMoveIndicators` (`Animated.Value` opacities).
   - Online-play orchestration, each wrapping the `network/` layer:
     `useAuthSessionLifecycle` (backs `AuthSessionContext`: on launch
     resumes the stored account via `/auth/refresh`, falling back to a new
@@ -166,7 +193,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
     `useConnectionLatency`/`useConnectionStrengthIndicator` (the ack-ping
     round-trip sample and its bars/label derivation), `useMoveNavigation`
     (stepping back/forward through a game's moves to view earlier
-    positions, snapping back to live on a new move), `useGameShare`
+    positions, snapping back to live on a new move, and the move that led
+    to the position shown, for the board to mark), `useGameShare`
     (fetches a game's PGN and opens the native share sheet), and
     `useGameBookmark` (whether you've bookmarked the game, toggled
     optimistically), and `useGameViewer` (one game to look through, fetched
@@ -197,11 +225,16 @@ network/       pure networking infra (REST/socket clients, event types), same st
     same view, like a sheet's slide; and a `KeyboardAvoidingView` can't
     move an absolutely positioned sheet),
     `useCaretRotation`, `useGameScreenGestureLock`,
+    `usePressAndHoldRepeat` (a button's handlers for an action that
+    repeats while held - a tap once, then every 100ms after a 400ms hold,
+    until let go or disabled - as the toolbar's ‹ › step through moves),
     `useSwipeBackUntilGameLoads` (keeps a game screen's swipe-back gesture
     available until its game has loaded), `useRunAfterDismiss` (holds a
     menu/sheet action until its modal has finished closing - on iOS,
     presenting the share sheet or an Alert while a modal is still
-    animating away silently does nothing), and `useAsyncAction` (runs a
+    animating away silently does nothing; an `ActionSheet` action marked
+    `immediate`, like Flip board, presents nothing and runs at once), and
+    `useAsyncAction` (runs a
     server request for a form or button: in-flight state, no double
     submits, and the server's message or a fallback on failure).
 
@@ -228,10 +261,23 @@ network/       pure networking infra (REST/socket clients, event types), same st
 - **`src/components/ChessBoard/`** - composes the board from
   `ChessGameContext` + the hooks above; everything under it
   (`BoardSurface`, `Pieces/Piece`, `Row`, `Square`,
-  `PieceDragAndDropGuide`, `ValidMoveIndicators`) is purely presentational
-  and renders only what it's given as props/context. `StaticBoard` is a
-  separate read-only board drawn straight from a FEN (no game state,
-  animation or gestures), used for viewing earlier positions.
+  `PieceDragAndDropGuide`, `ValidMoveIndicators`, `LastMoveHighlight` -
+  the last move's two squares tinted, as on lichess - for a castle, the
+  king's and rook's starting squares (`domain/lastMoveSquares.ts`): the move the game
+  just made, or the last one the server has on record while it has made
+  none, on a game resumed or a move refused) is purely presentational
+  and renders only what it's given as props/context. The board hands its
+  pieces callbacks that never change, though a game's own functions are new
+  on every render: re-rendering a piece makes Gesture Handler set its
+  gestures up again, which cancels a drag under way. `StaticBoard` is a
+  separate read-only board drawn straight from a FEN (no game state or
+  gestures), used for viewing earlier positions: `usePositionPieces` keeps
+  its pieces the same pieces from one position to the next
+  (`domain/matchPieces.ts`), so stepping through a game moves them -
+  sliding, unless it's bullet - rather than drawing new images, which
+  flickered - marking the move that led to it. In `LiveGame` it's drawn over the live board while stepping
+  back (`EarlierPositionOverlay`), staying up when stepping onto the live
+  position until that last move has slid there.
 
 - **`src/components/`** (everything else) - also purely presentational,
   consuming hooks/context the same way: in-game UI (`GameHeader`,
@@ -337,7 +383,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
 
 - **Navigation** (React Navigation, nested stacks/tabs):
   `App.tsx` (root native-stack, inside a `GestureHandlerRootView` for
-  the chart's gestures) -> `HomeStack` (`HomeTabs`, `LiveGame`,
+  the chart's gestures - the board brings its own, so it works wherever
+  it's rendered, tests included) -> `HomeStack` (`HomeTabs`, `LiveGame`,
   `GameViewer`, `UserProfile`, `Conversation`, `GamesList`,
   `RatingStats`, `UserFriends`, `FindFriends`, `SignIn`, `CreateAccount`) ->
   `HomeTabs` (bottom tabs: `HomeTabStack`, `Profile`) -> `HomeTabStack`
@@ -378,7 +425,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `LiveGame` covers the tabs and locks swipe-back while playing.
 
 - **`src/constants/`** - board size, piece image lookups
-  (`PIECES['wk' | 'bq' | ...]`), castling squares, time controls, board
+  (`PIECES['wk' | 'bq' | ...]`), the board's animation timings and drag scale
+  (`animations.ts`), castling squares, time controls, board
   themes (`boardThemes.ts`), seeks (`seek.ts`: the `Seek` that New Game
   hands to LiveGame, and the rating range's default, step and limit),
   the app's accent and muted colors
@@ -388,7 +436,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
   etc.
 
 - **`src/utils/`** - RN `Animated` helpers (`animation.ts`: castling
-  animation, piece ids), color helpers (`color.ts`) and rating formatting
+  animation, piece ids), `dragLog.ts` (`logDrag`: with
+  `EXPO_PUBLIC_DEBUG_DRAG=1`, a line in the Metro terminal for every drop -
+  how the board judged it, and what the game made of it), color helpers
+  (`color.ts`) and rating formatting
   (`rating.ts`: `formatRating` - "1520", or "1520?" while provisional -
   `formatRatingRange`, "1320–2020", `highestRating`, `formatScore`,
   "2½ - 3½", and `formatTimePlayed`) and presence (`presence.ts`:
@@ -399,8 +450,15 @@ network/       pure networking infra (REST/socket clients, event types), same st
   nearest a tap - victory-native picks the rating axis and its ticks), independent of the chess domain. Dates are formatted with `date-fns` rather than helpers
   here.
 
-- **`src/testUtils/`** - Jest/RNTL helpers: simulated PanResponder gestures
-  (`panResponderGesture.ts`), `Animated.Value` read helpers, a text-based
+- **`src/testUtils/`** - Jest/RNTL helpers: a board piece's gestures,
+  fired through Gesture Handler's jest utils - touch, held drag, drag and
+  drop, a flick that lifts past where it was drawn, tap - and `settleAnimations` to let animations and the callbacks
+  they schedule finish on fake timers (`pieceGestures.ts`), simulated
+  PanResponder gestures for the bottom sheet (`panResponderGesture.ts`),
+  `Animated.Value` read helpers and `animatedStyleOf` for a Reanimated
+  view's drawn style (`animatedValue.ts`), `piecePositionOnScreen` - where
+  a board piece is drawn, the pieces layer's turn for black included
+  (`boardPosition.ts`), a text-based
   board visualizer for debugging board state in test failures, a fake
   `AppSocket` for hooks that talk to the server (`fakeSocket.ts`), a
   `GameSnapshot` fixture builder (`gameSnapshot.ts`), `makeAuthSession`/
@@ -441,8 +499,11 @@ Two deliberately separate layers - don't let one re-do the other's job:
   socket client, token storage) is tested the same no-rendering way, in
   `src/network/__tests__/`.
 - The gesture layer (tap/drag -> the right move being attempted) is tested
-  by simulating React Native's PanResponder protocol via RNTL - see
-  `src/components/ChessBoard/index.spec.tsx` and `testUtils/panResponderGesture.ts`.
+  by firing Gesture Handler's gestures from Jest - `jest.config.js` loads
+  its `jestSetup` - see `src/components/ChessBoard/index.spec.tsx` and
+  `testUtils/pieceGestures.ts`. Those tests use fake timers: the gestures'
+  worklets reach JS through `scheduleOnRN`, and pieces move by timed
+  animations.
 - "Does this actually work on a real device" questions belong in a Maestro
   flow under `.maestro/`, not a Jest test.
 
@@ -453,9 +514,12 @@ Two deliberately separate layers - don't let one re-do the other's job:
   `useChessGame.ts` and the online-play hooks). Raw server communication
   belongs in `src/network/`, not inlined into a hook. Keep
   `components/ChessBoard/` purely presentational when adding to it.
-- Animated-value bookkeeping is kept in its own hooks
-  (`usePieceAnimations`/`useDragGuide`/`useValidMoveIndicators`), separate
-  from game-state logic.
+- Animated-value and shared-value bookkeeping is kept in its own hooks
+  (`usePieceAnimations`/`usePieceGesture`/`useDragGuide`/
+  `useValidMoveIndicators`), separate from game-state logic. Shared values
+  are read and written with `.get()`/`.set()`, not `.value`, which the
+  React-Compiler-readiness lint (`react-hooks/immutability`) refuses on a
+  hook's arguments.
 - This is an Expo managed-workflow project - no native `ios`/`android`
   directories are checked in. `expo prebuild` would generate them on demand
   if a bare workflow is ever needed.

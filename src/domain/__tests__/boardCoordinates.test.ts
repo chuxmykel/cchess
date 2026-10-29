@@ -1,4 +1,8 @@
-import { getSquareFromXY, getXYFromSquare } from '../boardCoordinates';
+import {
+  getSquareFromXY,
+  getXYFromSquare,
+  isOnBoard,
+} from '../boardCoordinates';
 
 describe('boardCoordinates', () => {
   const width = 50;
@@ -50,6 +54,22 @@ describe('boardCoordinates', () => {
     it('maps off-board positions to invalid squares', () => {
       expect(getSquareFromXY({ x: -width, y: 0 }, width, 'b')).toBe('i1');
       expect(getSquareFromXY({ x: 0, y: -width }, width, 'b')).toBe('h0');
+    });
+  });
+
+  describe('isOnBoard', () => {
+    it('is true anywhere on the board, edges included', () => {
+      expect(isOnBoard({ x: 0, y: 0 }, width)).toBe(true);
+      expect(isOnBoard({ x: 8 * width - 1, y: 8 * width - 1 }, width)).toBe(
+        true,
+      );
+    });
+
+    it('is false past any edge', () => {
+      expect(isOnBoard({ x: -1, y: 0 }, width)).toBe(false);
+      expect(isOnBoard({ x: 0, y: -1 }, width)).toBe(false);
+      expect(isOnBoard({ x: 8 * width, y: 0 }, width)).toBe(false);
+      expect(isOnBoard({ x: 0, y: 8 * width }, width)).toBe(false);
     });
   });
 });

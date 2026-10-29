@@ -174,7 +174,9 @@ anything, and keeps everything under `components/` purely presentational.
 - A running `cchess-be` instance (the Socket.IO/NestJS backend) for guest
   auth, matchmaking, and live games to actually work - the app falls back
   to `http://localhost:3000` if `EXPO_PUBLIC_SERVER_URL` isn't set (see
-  `.env.example`).
+  `.env.example`). Setting `EXPO_PUBLIC_DEBUG_DRAG=1` there logs every
+  drag-and-drop to the Metro terminal - how the board judged the drop, and
+  what the game made of it - for chasing drops that go astray on a device.
 
 ### Install
 

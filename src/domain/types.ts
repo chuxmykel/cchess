@@ -12,6 +12,12 @@ export type DomainPiece = {
   color: Color;
 };
 
+// The two squares a move joins - all a board needs to mark the last move.
+export type MoveSquares = {
+  from: Square;
+  to: Square;
+};
+
 // The basic identity of a move, shared by both a legal move as reported by
 // the engine (DomainMove) and one that's actually been applied
 // (AppliedMove): which piece, from where, to where, and - if relevant -
@@ -60,3 +66,6 @@ export const PROMOTION_PIECE_TYPES: readonly PieceSymbol[] = [
 export type GameType = 'bullet' | 'blitz' | 'rapid' | 'classical';
 
 export type GameResult = 'win' | 'loss' | 'draw';
+
+// Where each of the side to move's pieces can go, by the square it's on.
+export type LegalTargets = Partial<Record<Square, Square[]>>;

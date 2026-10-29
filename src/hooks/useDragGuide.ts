@@ -1,52 +1,41 @@
-import { useCallback, useRef } from 'react';
-import { Animated } from 'react-native';
+import { useMemo } from 'react';
+import { SharedValue, useSharedValue } from 'react-native-reanimated';
+import { Color, Square } from 'chess.js';
 
-import { Position } from '../domain/types';
-import { getSquareFromXY } from '../domain/boardCoordinates';
-import { SQUARES } from '../constants';
-
-export type DragGuide = {
-  position: Animated.ValueXY;
-  opacity: Animated.Value;
-  show: () => void;
-  hide: () => void;
-  updatePosition: (currentPieceAnimatedPosition: Position) => void;
+// A drop that takes a piece: the move, and the piece it takes - hidden from
+// the moment of the drop, rather than showing under the one taking it until
+// JS has made the move.
+export type TakenByDrop = {
+  from: Square;
+  to: Square;
+  color: Color;
 };
 
-// Owns the drag-and-drop guide's Animated state: where it sits and whether
-// it's visible, plus the handlers that drive both as a piece is dragged.
-export function useDragGuide(pieceWidth: number): DragGuide {
-  // `position`/`opacity` are created once via useRef and never
-  // reassigned - reading `.current` here is the standard "lazy-init a
-  // stable Animated value" idiom, not a bug. react-hooks/refs is a
-  // React-Compiler-readiness rule; nothing in this project runs the
-  // compiler today, so revisit this if that ever changes.
-  /* eslint-disable react-hooks/refs */
-  const position = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+export type DragGuide = {
+  // The top-left corner of the square under the finger.
+  x: SharedValue<number>;
+  y: SharedValue<number>;
+  opacity: SharedValue<number>;
+  // The top-left corner of the dragged piece's own square, marked while it's
+  // held; null when nothing is.
+  origin: SharedValue<{ x: number; y: number } | null>;
+  taken: SharedValue<TakenByDrop | null>;
+};
 
-  const show = useCallback(() => {
-    opacity.setValue(1);
-  }, [opacity]);
-
-  const hide = useCallback(() => {
-    opacity.setValue(0);
-  }, [opacity]);
-
-  const updatePosition = useCallback(
-    (currentPieceAnimatedPosition: Position) => {
-      const square = getSquareFromXY(currentPieceAnimatedPosition, pieceWidth);
-      if (!SQUARES.includes(square)) {
-        hide();
-        return;
-      }
-
-      position.setValue(currentPieceAnimatedPosition);
-      show();
-    },
-    [pieceWidth, position, hide, show],
+// The drag-and-drop guide's state: the square it marks and whether it shows,
+// the square the dragged piece came from, and the piece a drop has just
+// taken. Shared values, not state - a drag
+// moves it on the UI thread every frame (see usePieceGesture), with no trip
+// through JS. The same object every render, since every piece is given it: a
+// new one would re-render them all.
+export function useDragGuide(): DragGuide {
+  const x = useSharedValue(0);
+  const y = useSharedValue(0);
+  const opacity = useSharedValue(0);
+  const origin = useSharedValue<{ x: number; y: number } | null>(null);
+  const taken = useSharedValue<TakenByDrop | null>(null);
+  return useMemo(
+    () => ({ x, y, opacity, origin, taken }),
+    [x, y, opacity, origin, taken],
   );
-
-  return { position, opacity, show, hide, updatePosition };
-  /* eslint-enable react-hooks/refs */
 }

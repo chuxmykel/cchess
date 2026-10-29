@@ -5,7 +5,11 @@ import { Color } from 'chess.js';
 
 import { NUMBER_OF_ROWS } from '../../constants';
 import { BOARD_THEMES } from '../../constants/boardThemes';
-import { findTimeControl, TimeControl } from '../../constants/timeControls';
+import {
+  animatesMoves,
+  findTimeControl,
+  TimeControl,
+} from '../../constants/timeControls';
 import Chessboard from '../../components/ChessBoard';
 import MoveList from '../../components/MoveList';
 import PromotionMenu from '../../components/PromotionMenu';
@@ -72,6 +76,7 @@ function gameMenuActions({
   const flipBoard: ActionSheetAction = {
     label: 'Flip board',
     onPress: flip,
+    immediate: true,
     testID: 'flip-board-action',
   };
   if (isGameOver) {
@@ -281,6 +286,8 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
             colors={BOARD_THEMES.test}
             width={width}
             orientation={orientation}
+            animate={animatesMoves(snapshot.gameType)}
+            lastPlayedMove={moves.at(-1) ?? null}
           />
           {pendingPromotion && moveNavigation.isLive && (
             <PromotionMenu
@@ -296,6 +303,8 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
             visible={!moveNavigation.isLive}
             width={width}
             orientation={orientation}
+            lastMove={moveNavigation.lastMove}
+            animate={animatesMoves(snapshot.gameType)}
           />
           {showsResult && (
             <GameOverOverlay

@@ -27,6 +27,13 @@ export const GAME_TYPE_COLORS: Record<GameType, string> = {
   classical: '#3A3A3A',
 };
 
+// Whether a game's board slides its pieces to their squares: not in bullet
+// - anything under 3+0 - where there's no time to watch them go; there they
+// move at once. Stepping back through a game follows its time control too.
+export function animatesMoves(type: GameType): boolean {
+  return type !== 'bullet';
+}
+
 // The "0+1" preset displays as a literal 0, lichess-style, but a real
 // 0-second start would flag at once - so it carries a 5-second one.
 const ZERO_PLUS_ONE_INITIAL_SECONDS = 5;

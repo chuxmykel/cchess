@@ -14,7 +14,11 @@ import GameToolbar from '../../components/GameToolbar';
 import MoveList from '../../components/MoveList';
 import PlayerBar, { PlayerBarProps } from '../../components/PlayerBar';
 import { BOARD_THEMES } from '../../constants/boardThemes';
-import { findTimeControl, TimeControl } from '../../constants/timeControls';
+import {
+  animatesMoves,
+  findTimeControl,
+  TimeControl,
+} from '../../constants/timeControls';
 import { capturedMaterial } from '../../domain/material';
 import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useGameBookmark } from '../../hooks/useGameBookmark';
@@ -111,7 +115,12 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   const newGameLabel =
     myColor === null ? `Play ${timeControl.label}` : 'New opponent';
   const menuActions: ActionSheetAction[] = [
-    { label: 'Flip board', onPress: flip, testID: 'flip-board-action' },
+    {
+      label: 'Flip board',
+      onPress: flip,
+      immediate: true,
+      testID: 'flip-board-action',
+    },
     {
       label: newGameLabel,
       onPress: () => onNewOpponent(timeControl),
@@ -172,6 +181,8 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
             colors={BOARD_THEMES.test}
             width={width}
             orientation={orientation}
+            lastMove={moveNavigation.lastMove}
+            animate={animatesMoves(snapshot.gameType)}
           />
           {showsResult && (
             <GameOverOverlay onDismiss={() => setIsResultDismissed(true)}>

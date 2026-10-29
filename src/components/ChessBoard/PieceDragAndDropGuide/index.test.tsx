@@ -1,55 +1,74 @@
 import { render } from '@testing-library/react-native';
-import { Animated } from 'react-native';
+import { makeMutable } from 'react-native-reanimated';
 
 import PieceDragAndDropGuide from '.';
-import { getAnimatedValue } from '../../../testUtils/animatedValue';
+import { DragGuide } from '../../../hooks/useDragGuide';
+import { animatedStyleOf } from '../../../testUtils/animatedValue';
 
 describe('PieceDragAndDropGuide', () => {
   const boardWidth = 400;
   const squareWidth = 50;
 
-  async function renderGuide(
-    overrides: Partial<{
-      position: Animated.ValueXY;
-      opacity: Animated.Value;
-    }> = {},
-  ) {
-    const position =
-      overrides.position ?? new Animated.ValueXY({ x: 123, y: 45 });
-    const opacity = overrides.opacity ?? new Animated.Value(0.7);
+  async function renderGuide(origin: { x: number; y: number } | null = null) {
+    const guide: DragGuide = {
+      x: makeMutable(123),
+      y: makeMutable(45),
+      opacity: makeMutable(0.7),
+      origin: makeMutable<{ x: number; y: number } | null>(origin),
+      taken: makeMutable(null),
+    };
     const screen = await render(
       <PieceDragAndDropGuide
         boardWidth={boardWidth}
         squareWidth={squareWidth}
-        position={position}
-        opacity={opacity}
+        guide={guide}
       />,
     );
-    return { guide: screen.getByTestId('drag-guide'), position, opacity };
+    return {
+      element: screen.getByTestId('drag-guide'),
+      origin: screen.getByTestId('drag-origin'),
+      guide,
+    };
   }
 
   it('should exist', () => {
     expect(PieceDragAndDropGuide).toBeDefined();
   });
 
-  it('sizes the guide relative to a square, centered on the piece', async () => {
-    const { guide } = await renderGuide();
+  it('sizes the guide two squares across, centered on its square', async () => {
+    const { element } = await renderGuide();
 
-    const diameter = squareWidth * 2.5;
-    expect(guide.props.style.width).toBe(diameter);
-    expect(guide.props.style.height).toBe(diameter);
-    expect(guide.props.style.borderRadius).toBe(diameter / 2);
-    expect(guide.props.style.top).toBe(-(diameter / 3.5));
-    expect(guide.props.style.left).toBe(-(diameter / 3.5));
+    expect(element).toHaveStyle({
+      width: 2 * squareWidth,
+      height: 2 * squareWidth,
+      borderRadius: squareWidth,
+      top: -squareWidth / 2,
+      left: -squareWidth / 2,
+    });
   });
 
-  it('wires opacity and position to the given Animated values', async () => {
-    const { guide, position, opacity } = await renderGuide();
+  it('marks the square a held piece came from', async () => {
+    const { origin } = await renderGuide({ x: 150, y: 300 });
 
-    expect(guide.props.style.opacity).toBe(getAnimatedValue(opacity));
-    expect(guide.props.style.transform).toEqual([
-      { translateX: getAnimatedValue(position.x) },
-      { translateY: getAnimatedValue(position.y) },
-    ]);
+    expect(origin).toHaveStyle({ width: squareWidth, height: squareWidth });
+    expect(animatedStyleOf(origin)).toMatchObject({
+      opacity: 1,
+      transform: [{ translateX: 150 }, { translateY: 300 }],
+    });
+  });
+
+  it('marks no square when nothing is held', async () => {
+    const { origin } = await renderGuide();
+
+    expect(animatedStyleOf(origin).opacity).toBe(0);
+  });
+
+  it('draws the guide where its shared values say, as see-through as they say', async () => {
+    const { element } = await renderGuide();
+
+    expect(animatedStyleOf(element)).toMatchObject({
+      opacity: 0.7,
+      transform: [{ translateX: 123 }, { translateY: 45 }],
+    });
   });
 });

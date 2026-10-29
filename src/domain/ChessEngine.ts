@@ -1,6 +1,12 @@
 import { Chess, Color, Move, PieceSymbol, Square } from 'chess.js';
 
-import { AppliedMove, DomainMove, DomainPiece, MoveResult } from './types';
+import {
+  AppliedMove,
+  DomainMove,
+  DomainPiece,
+  LegalTargets,
+  MoveResult,
+} from './types';
 import {
   BLACK_KING_SIDE_ROOK_CASTLED_SQUARE,
   BLACK_KING_SIDE_ROOK_INITIAL_SQUARE,
@@ -123,6 +129,18 @@ export class ChessEngine {
 
   getLegalMoveSquares(square: Square): Square[] {
     return this.getLegalMoves(square).map((move) => move.to);
+  }
+
+  /** Every square the side to move can go to, by the square it starts on -
+   * every legal move at once, so a drop can be judged without asking. */
+  getLegalTargets(): LegalTargets {
+    const targets: LegalTargets = {};
+    this.game.moves({ verbose: true }).forEach((move) => {
+      const squares = (targets[move.from] ??= []);
+      // A promotion is four moves to one square.
+      if (!squares.includes(move.to)) squares.push(move.to);
+    });
+    return targets;
   }
 
   attemptMove(

@@ -63,6 +63,35 @@ describe('ActionSheet', () => {
     expect(onFlip).toHaveBeenCalledTimes(1);
   });
 
+  it('runs an immediate action as soon as it is chosen, as the sheet closes', async () => {
+    const onClose = jest.fn();
+    const onFlip = jest.fn();
+    const screen = await render(
+      withSafeArea(
+        <ActionSheetWithParentState
+          onClose={onClose}
+          actions={[
+            {
+              label: 'Flip board',
+              onPress: onFlip,
+              immediate: true,
+              testID: 'flip-action',
+            },
+          ]}
+        />,
+      ),
+    );
+
+    await fireEvent.press(screen.getByTestId('flip-action'));
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onFlip).toHaveBeenCalledTimes(1);
+
+    await waitForSheetToClose();
+
+    expect(onFlip).toHaveBeenCalledTimes(1);
+  });
+
   it('only closes the sheet on Cancel', async () => {
     const onClose = jest.fn();
     const onFlip = jest.fn();
