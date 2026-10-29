@@ -103,16 +103,13 @@ export function useGameServerEvents(
       if (payload.fen === gameRef.current.fen) {
         return; // the echo of a move we already applied optimistically
       }
-      const moveResult = gameRef.current.attemptMove(
+      // The promotion piece goes in with the move: asking for it would
+      // show this player the promotion menu for the opponent's pawn.
+      gameRef.current.attemptMove(
         payload.move.from,
         payload.move.to,
+        payload.move.promotion ?? undefined,
       );
-      if (
-        moveResult.status === 'needs-promotion-choice' &&
-        payload.move.promotion
-      ) {
-        gameRef.current.promoteTo(payload.move.promotion);
-      }
     }
 
     function handleOver(payload: GameSnapshot) {

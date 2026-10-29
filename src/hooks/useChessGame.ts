@@ -125,9 +125,12 @@ export function useChessGame(fen?: string) {
     [engine],
   );
 
+  /** A move by tap or drag - or, with `promotion`, one already decided,
+   * like the opponent's from the server, applied in one go rather than
+   * asking for the piece. */
   const attemptMove = useCallback(
-    (from: Square, to: Square): MoveResult => {
-      const result = engine.attemptMove(from, to);
+    (from: Square, to: Square, promotion?: PieceSymbol): MoveResult => {
+      const result = engine.attemptMove(from, to, promotion);
       applyResult(result);
       return result;
     },
