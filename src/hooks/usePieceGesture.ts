@@ -28,6 +28,7 @@ import {
   DRAG_SCALE,
   DRAGGED_Z_INDEX,
 } from '../constants/animations';
+import { DRAG_LOG_ENABLED, logDrag } from '../utils/dragLog';
 import { DragGuide } from './useDragGuide';
 
 export type PieceGestureInput = {
@@ -350,6 +351,12 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
           x.set(target.x);
           y.set(target.y);
           if (!isMove) zIndex.set(0);
+        }
+        if (DRAG_LOG_ENABLED) {
+          scheduleOnRN(
+            logDrag,
+            `board ${square}->${to} canceled=${event.canceled} isMove=${isMove} liftedOn=${liftedOn}`,
+          );
         }
         if (!event.canceled) scheduleOnRN(report, 'onDragRelease', square, to);
       },

@@ -8,6 +8,7 @@ import { NUMBER_OF_ROWS } from '../../constants';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
 import { usePieceAnimations } from '../../hooks/usePieceAnimations';
 import { useDragGuide } from '../../hooks/useDragGuide';
+import { logDrag } from '../../utils/dragLog';
 import { useValidMoveIndicators } from '../../hooks/useValidMoveIndicators';
 import { useChessGameContext } from '../../context/ChessGameContext';
 
@@ -109,6 +110,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
         (piece) => piece.square === from,
       );
       const result = attemptMove(from, to);
+      logDrag(`game ${from}->${to} ${result.status}`);
       // Not made yet - or not a move at all: whatever the drop took is back.
       if (result.status !== 'ok') taken.set(null);
       // Not a move after all: the drop already sent the piece home if it
