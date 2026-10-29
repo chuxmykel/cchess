@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Button from '../../components/Button';
 import GameSettings from '../../components/GameSettings';
@@ -22,7 +21,6 @@ interface NewGameProps {
 }
 
 const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
-  const insets = useSafeAreaInsets();
   const [timeControl, setTimeControl] =
     useState<TimeControl>(DEFAULT_TIME_CONTROL);
   const [chosenRated, setChosenRated] = useState(true);
@@ -52,7 +50,7 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.content, { paddingTop: insets.top + 24 }]}>
+      <View style={styles.content}>
         <Text style={styles.title}>New Game</Text>
 
         <Text style={styles.sectionLabel}>Time Control</Text>
@@ -109,6 +107,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    // Under the header, which keeps clear of the status bar itself.
+    paddingTop: 8,
     paddingHorizontal: 20,
   },
   title: {
