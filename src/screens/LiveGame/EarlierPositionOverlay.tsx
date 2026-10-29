@@ -4,12 +4,15 @@ import { Color } from 'chess.js';
 
 import StaticBoard from '../../components/ChessBoard/StaticBoard';
 import { BOARD_THEMES } from '../../constants/boardThemes';
+import { MoveSquares } from '../../domain/types';
 
 interface EarlierPositionOverlayProps {
   fen: string;
   visible: boolean;
   width: number;
   orientation: Color;
+  /** The move that led to the position, marked on the board. */
+  lastMove: MoveSquares | null;
   /** Slide the pieces from one position to the next. */
   animate?: boolean;
 }
@@ -23,6 +26,7 @@ const EarlierPositionOverlay: React.FC<EarlierPositionOverlayProps> = ({
   visible,
   width,
   orientation,
+  lastMove,
   animate = false,
 }) => {
   const [shown, setShown] = useState({ visible, fen, lingering: false });
@@ -49,6 +53,7 @@ const EarlierPositionOverlay: React.FC<EarlierPositionOverlayProps> = ({
         colors={BOARD_THEMES.test}
         width={width}
         orientation={orientation}
+        lastMove={lastMove}
         animate={animate}
         onSettled={() =>
           setShown((now) =>

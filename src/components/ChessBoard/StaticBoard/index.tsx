@@ -8,7 +8,9 @@ import {
   PositionPieceView,
   usePositionPieces,
 } from '../../../hooks/usePositionPieces';
+import { MoveSquares } from '../../../domain/types';
 import BoardSurface from '../BoardSurface';
+import LastMoveHighlight from '../LastMoveHighlight';
 
 interface StaticBoardProps {
   fen: string;
@@ -18,6 +20,8 @@ interface StaticBoardProps {
   };
   width: number;
   orientation?: Color;
+  /** The move that led to this position, marked on the board. */
+  lastMove?: MoveSquares | null;
   /** Slide the pieces to a new position, rather than put them there. */
   animate?: boolean;
   /** Once the pieces are all in a new position. */
@@ -65,6 +69,7 @@ const StaticBoard: React.FC<StaticBoardProps> = ({
   colors,
   width,
   orientation = 'w',
+  lastMove = null,
   animate = false,
   onSettled,
 }) => {
@@ -78,6 +83,11 @@ const StaticBoard: React.FC<StaticBoardProps> = ({
       testID="static-chessboard"
     >
       <BoardSurface colors={colors} orientation={orientation} />
+      <LastMoveHighlight
+        move={lastMove}
+        squareWidth={pieceWidth}
+        orientation={orientation}
+      />
       {/* Placed from white's side, and turned round for black, as on the
           live board - so a flip is drawn at once, with nothing moving. */}
       <View

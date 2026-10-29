@@ -18,7 +18,14 @@ describe('EarlierPositionOverlay', () => {
   afterEach(() => jest.useRealTimers());
 
   function overlay(props: { fen: string; visible: boolean; animate: boolean }) {
-    return <EarlierPositionOverlay width={width} orientation="w" {...props} />;
+    return (
+      <EarlierPositionOverlay
+        width={width}
+        orientation="w"
+        lastMove={null}
+        {...props}
+      />
+    );
   }
 
   it('stays up, stepping on to the live position, until its pieces are there', async () => {

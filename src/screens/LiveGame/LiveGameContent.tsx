@@ -287,6 +287,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
             width={width}
             orientation={orientation}
             animate={animatesMoves(snapshot.gameType)}
+            lastPlayedMove={moves.at(-1) ?? null}
           />
           {pendingPromotion && moveNavigation.isLive && (
             <PromotionMenu
@@ -302,6 +303,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
             visible={!moveNavigation.isLive}
             width={width}
             orientation={orientation}
+            lastMove={moveNavigation.lastMove}
             animate={animatesMoves(snapshot.gameType)}
           />
           {showsResult && (

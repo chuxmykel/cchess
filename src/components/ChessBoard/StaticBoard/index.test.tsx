@@ -163,4 +163,24 @@ describe('StaticBoard', () => {
 
     expect(onScreen(screen, 'e1')).toEqual({ x: 3 * PIECE_WIDTH, y: 0 });
   });
+
+  it('marks the move that led to the position', async () => {
+    const screen = await render(
+      <StaticBoard
+        fen={KINGS_AND_E5_PAWN}
+        colors={colors}
+        width={width}
+        lastMove={{ from: 'e4', to: 'e5' }}
+      />,
+    );
+
+    expect(screen.getByTestId('last-move-from')).toHaveStyle({
+      left: 4 * PIECE_WIDTH,
+      top: 4 * PIECE_WIDTH,
+    });
+    expect(screen.getByTestId('last-move-to')).toHaveStyle({
+      left: 4 * PIECE_WIDTH,
+      top: 3 * PIECE_WIDTH,
+    });
+  });
 });

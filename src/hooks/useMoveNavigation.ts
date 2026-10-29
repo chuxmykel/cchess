@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { DEFAULT_POSITION } from 'chess.js';
 
+import { lastMoveSquares } from '../domain/lastMoveSquares';
+import { MoveSquares } from '../domain/types';
 import { GameMoveSummary } from '../network/socketEvents';
 
 export type MoveNavigation = {
   viewedFen: string | null;
   currentPly: number;
+  /** The move that led to the position shown, live or looked back on. */
+  lastMove: MoveSquares | null;
   isLive: boolean;
   canGoBack: boolean;
   canGoForward: boolean;
@@ -22,6 +26,11 @@ type BrowsedPosition = {
 
 function fenAfterPly(moves: GameMoveSummary[], ply: number): string {
   return ply === 0 ? DEFAULT_POSITION : moves[ply - 1].fenAfter;
+}
+
+function lastMoveAt(moves: GameMoveSummary[], ply: number): MoveSquares | null {
+  if (ply === 0) return null;
+  return lastMoveSquares(moves[ply - 1]);
 }
 
 export function useMoveNavigation(moves: GameMoveSummary[]): MoveNavigation {
@@ -46,6 +55,7 @@ export function useMoveNavigation(moves: GameMoveSummary[]): MoveNavigation {
   return {
     viewedFen: browsedPly === null ? null : fenAfterPly(moves, browsedPly),
     currentPly,
+    lastMove: lastMoveAt(moves, currentPly),
     isLive: browsedPly === null,
     canGoBack: currentPly > 0,
     canGoForward: browsedPly !== null,

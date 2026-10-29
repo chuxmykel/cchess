@@ -8,11 +8,13 @@ import { NUMBER_OF_ROWS } from '../../constants';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
 import { usePieceAnimations } from '../../hooks/usePieceAnimations';
 import { useDragGuide } from '../../hooks/useDragGuide';
+import { lastMoveSquares, PlayedMove } from '../../domain/lastMoveSquares';
 import { logDrag } from '../../utils/dragLog';
 import { useValidMoveIndicators } from '../../hooks/useValidMoveIndicators';
 import { useChessGameContext } from '../../context/ChessGameContext';
 
 import BoardSurface from './BoardSurface';
+import LastMoveHighlight from './LastMoveHighlight';
 import Pieces from './Pieces';
 import PieceDragAndDropGuide from './PieceDragAndDropGuide';
 import ValidMoveIndicators from './ValidMoveIndicators';
@@ -28,6 +30,9 @@ interface ChessboardProps {
   // Slide pieces to their squares, rather than put them there at once - a
   // bullet game has no time to watch them go.
   animate?: boolean;
+  // The last move the game has a record of, marked until the board makes
+  // one itself - on a game resumed, say, or put back after a move refused.
+  lastPlayedMove?: PlayedMove | null;
 }
 
 const Chessboard: React.FC<ChessboardProps> = ({
@@ -35,6 +40,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
   width,
   orientation = 'w',
   animate = true,
+  lastPlayedMove = null,
 }) => {
   const {
     pieces,
@@ -56,6 +62,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
     pendingPromotion,
     animate,
   );
+  const markedMove = lastMove ?? lastPlayedMove;
   const dragGuide = useDragGuide();
   // For a drop to be judged where it lands, on the UI thread.
   const legalTargetsOnUI = useSharedValue(legalTargets);
@@ -141,6 +148,12 @@ const Chessboard: React.FC<ChessboardProps> = ({
         colors={colors}
         orientation={orientation}
         onSquarePress={handleTap}
+      />
+
+      <LastMoveHighlight
+        move={markedMove && lastMoveSquares(markedMove)}
+        squareWidth={PIECE_WIDTH}
+        orientation={orientation}
       />
 
       <PieceDragAndDropGuide

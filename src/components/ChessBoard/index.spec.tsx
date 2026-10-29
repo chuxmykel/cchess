@@ -1,5 +1,6 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StyleSheet } from 'react-native';
 import { Color, Square } from 'chess.js';
 
 import Chessboard from '.';
@@ -157,6 +158,82 @@ describe('Chessboard', () => {
     const screen = await renderChessBoard();
 
     expect(animatedStyleOf(screen.getByTestId('drag-guide')).opacity).toBe(0);
+  });
+
+  describe('last move', () => {
+    function squareOf(
+      screen: Awaited<ReturnType<typeof renderChessBoard>>,
+      end: 'from' | 'to',
+    ) {
+      const { left, top } = StyleSheet.flatten(
+        screen.getByTestId(`last-move-${end}`).props.style,
+      );
+      return { x: left, y: top };
+    }
+
+    it('marks no move before one is played', async () => {
+      const screen = await renderChessBoard();
+
+      expect(screen.queryByTestId('last-move-from')).toBeNull();
+    });
+
+    it('marks the move just made', async () => {
+      const screen = await renderChessBoard();
+
+      await fireEvent.press(screen.getByTestId('square-e2'));
+      await fireEvent.press(screen.getByTestId('square-e4'));
+
+      expect(squareOf(screen, 'from')).toEqual(
+        getXYFromSquare('e2', PIECE_WIDTH),
+      );
+      expect(squareOf(screen, 'to')).toEqual(
+        getXYFromSquare('e4', PIECE_WIDTH),
+      );
+    });
+
+    it("marks the game's last move until the board makes one, as on a game resumed", async () => {
+      const screen = await render(
+        <GestureHandlerRootView>
+          <ChessGameProvider fen="rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1">
+            <Chessboard
+              colors={{ dark: 'black', light: 'white' }}
+              width={width}
+              lastPlayedMove={{ from: 'e2', to: 'e4', piece: 'p' }}
+            />
+          </ChessGameProvider>
+        </GestureHandlerRootView>,
+      );
+      expect(squareOf(screen, 'to')).toEqual(
+        getXYFromSquare('e4', PIECE_WIDTH),
+      );
+
+      await fireEvent.press(screen.getByTestId('square-e7'));
+      await fireEvent.press(screen.getByTestId('square-e5'));
+
+      expect(squareOf(screen, 'from')).toEqual(
+        getXYFromSquare('e7', PIECE_WIDTH),
+      );
+    });
+  });
+
+  it("marks the king's and rook's starting squares for a castle", async () => {
+    const screen = await renderChessBoard(
+      'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1',
+    );
+
+    await fireEvent.press(screen.getByTestId('square-e1'));
+    await fireEvent.press(screen.getByTestId('square-c1'));
+
+    const marked = (end: string) =>
+      StyleSheet.flatten(screen.getByTestId(`last-move-${end}`).props.style);
+    expect(marked('from')).toMatchObject({
+      left: getXYFromSquare('e1', PIECE_WIDTH).x,
+      top: getXYFromSquare('e1', PIECE_WIDTH).y,
+    });
+    expect(marked('to')).toMatchObject({
+      left: getXYFromSquare('a1', PIECE_WIDTH).x,
+      top: getXYFromSquare('a1', PIECE_WIDTH).y,
+    });
   });
 
   describe('tap to move', () => {

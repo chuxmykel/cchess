@@ -124,4 +124,31 @@ describe('useMoveNavigation', () => {
     await act(() => result.current.goTo(99));
     expect(result.current.isLive).toBe(true);
   });
+
+  it('gives the move that led to the position shown', async () => {
+    const moves = [
+      move(1, AFTER_E4),
+      { ...move(2, AFTER_E5), from: 'e7' as const, to: 'e5' as const },
+    ];
+    const { result } = await renderHook(() => useMoveNavigation(moves));
+    expect(result.current.lastMove).toEqual({ from: 'e7', to: 'e5' });
+
+    await act(() => result.current.back());
+    expect(result.current.lastMove).toEqual({ from: 'e2', to: 'e4' });
+
+    await act(() => result.current.back());
+    expect(result.current.lastMove).toBeNull();
+  });
+
+  it("gives a castle as the king's and rook's starting squares", async () => {
+    const castle = {
+      ...move(1, AFTER_E4),
+      from: 'e1' as const,
+      to: 'g1' as const,
+      piece: 'k' as const,
+    };
+    const { result } = await renderHook(() => useMoveNavigation([castle]));
+
+    expect(result.current.lastMove).toEqual({ from: 'e1', to: 'h1' });
+  });
 });

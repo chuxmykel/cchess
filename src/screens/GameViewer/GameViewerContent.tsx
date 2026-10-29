@@ -181,6 +181,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
             colors={BOARD_THEMES.test}
             width={width}
             orientation={orientation}
+            lastMove={moveNavigation.lastMove}
             animate={animatesMoves(snapshot.gameType)}
           />
           {showsResult && (
