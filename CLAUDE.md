@@ -125,7 +125,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
     shared values, always from white's side - `Chessboard` turns the whole
     pieces layer round for black, with each piece's image turned back
     upright, so a flip is drawn in the same frame as the squares - moved
-    by 50ms ease-out tweens from `constants/animations.ts`; the piece a
+    by 50ms ease-out tweens from `constants/animations.ts` - or put there
+    at once in bullet, `animatesMoves(gameType)` in `timeControls.ts`,
+    anything under 3+0; the piece a
     move takes stays drawn under the
     one taking it until that lands, the pieces just moved are drawn over
     the rest, and a pawn waiting on the promotion menu stands on its
@@ -263,8 +265,14 @@ network/       pure networking infra (REST/socket clients, event types), same st
   pieces callbacks that never change, though a game's own functions are new
   on every render: re-rendering a piece makes Gesture Handler set its
   gestures up again, which cancels a drag under way. `StaticBoard` is a
-  separate read-only board drawn straight from a FEN (no game state,
-  animation or gestures), used for viewing earlier positions.
+  separate read-only board drawn straight from a FEN (no game state or
+  gestures), used for viewing earlier positions: `usePositionPieces` keeps
+  its pieces the same pieces from one position to the next
+  (`domain/matchPieces.ts`), so stepping through a game moves them -
+  sliding, unless it's bullet - rather than drawing new images, which
+  flickered. In `LiveGame` it's drawn over the live board while stepping
+  back (`EarlierPositionOverlay`), staying up when stepping onto the live
+  position until that last move has slid there.
 
 - **`src/components/`** (everything else) - also purely presentational,
   consuming hooks/context the same way: in-game UI (`GameHeader`,
