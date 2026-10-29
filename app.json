@@ -31,7 +31,8 @@
       "expo-secure-store",
       "expo-font",
       "expo-asset",
-      "@react-native-vector-icons/material-design-icons"
+      "@react-native-vector-icons/material-design-icons",
+      "expo-audio"
     ]
   }
 }

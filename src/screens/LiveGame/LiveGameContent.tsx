@@ -27,6 +27,7 @@ import { useGameClock } from '../../hooks/useGameClock';
 import { useFirstMoveCountdown } from '../../hooks/useFirstMoveCountdown';
 import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useMoveNavigation } from '../../hooks/useMoveNavigation';
+import { useMoveNavigationSounds } from '../../hooks/useGameSounds';
 import { useGameShare } from '../../hooks/useGameShare';
 import { useGameBookmark } from '../../hooks/useGameBookmark';
 import { capturedMaterial } from '../../domain/material';
@@ -155,6 +156,8 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
   const { orientation, flip } = useBoardOrientation(myColor);
   const moveNavigation = useMoveNavigation(moves);
+  // The live board sounds the game's own moves; this, stepping through them.
+  useMoveNavigationSounds(moves, moveNavigation.currentPly, false);
   const shareGame = useGameShare(snapshot.id, onError);
   const { isBookmarked, toggleBookmark } = useGameBookmark(
     snapshot.id,

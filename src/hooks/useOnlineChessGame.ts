@@ -14,6 +14,11 @@ import { useChessGame, UseChessGameResult } from './useChessGame';
 import { GameStatus, useGameServerEvents } from './useGameServerEvents';
 import { useOpponentPresence } from './useOpponentPresence';
 import { useGameChat, UseGameChatResult } from './useGameChat';
+import {
+  useGameOverSound,
+  useGameStartSound,
+  useMoveSounds,
+} from './useGameSounds';
 import { useRematch, UseRematchResult } from './useRematch';
 
 export type { GameStatus };
@@ -102,6 +107,12 @@ export function useOnlineChessGame(
   const canAbort =
     gameStatus === 'active' &&
     pliesPlayedIncludingOurUnconfirmedMove < SERVER_ABORT_PLY_LIMIT;
+
+  useGameStartSound(
+    snapshot.status === 'active' && snapshot.moves.length === 0,
+  );
+  useMoveSounds(game.lastMove);
+  useGameOverSound(gameStatus !== 'active', resultReason);
 
   useEffect(() => {
     if (game.lastMove && game.lastMove.color === myColor) {

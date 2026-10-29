@@ -88,6 +88,7 @@ function toAppliedMove(move: Move): AppliedMove {
     rookTo: castlingRookSquares?.rookTo,
     isPromotion: move.isPromotion(),
     promotionPiece: move.promotion,
+    san: move.san,
   };
 }
 

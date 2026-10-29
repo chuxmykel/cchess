@@ -27,6 +27,10 @@ import { UseGameChatResult } from '../../hooks/useGameChat';
 import { clocksAtPly } from '../../hooks/useGameViewer';
 import { useGameShare } from '../../hooks/useGameShare';
 import { useMoveNavigation } from '../../hooks/useMoveNavigation';
+import {
+  useGameOverSound,
+  useMoveNavigationSounds,
+} from '../../hooks/useGameSounds';
 import { GameSnapshot } from '../../network/socketEvents';
 
 export type ViewerChat = UseGameChatResult & {
@@ -69,6 +73,14 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
 }) => {
   const { orientation, flip } = useBoardOrientation(myColor ?? 'w');
   const moveNavigation = useMoveNavigation(snapshot.moves);
+  // Moves arriving in a game being watched sound too, as they're played.
+  useMoveNavigationSounds(
+    snapshot.moves,
+    moveNavigation.currentPly,
+    snapshot.status === 'active',
+  );
+  // And the end of one, as it happens.
+  useGameOverSound(snapshot.status !== 'active', snapshot.resultReason);
   const shareGame = useGameShare(snapshot.id, onError);
   const { isBookmarked, toggleBookmark } = useGameBookmark(
     snapshot.id,
