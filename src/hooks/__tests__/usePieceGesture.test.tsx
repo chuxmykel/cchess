@@ -1,9 +1,10 @@
-import { render } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 import { Animated } from 'react-native';
 import { Square } from 'chess.js';
 
 import { usePieceGesture, PieceGestureInput } from '../usePieceGesture';
 import { TAP_MOVEMENT_THRESHOLD } from '../../constants';
+import { DRAG_SCALE } from '../../constants/animations';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
 import {
   simulatePanResponderDrag,
@@ -12,6 +13,7 @@ import {
   simulatePanResponderTap,
 } from '../../testUtils/panResponderGesture';
 import { getAnimatedValue } from '../../testUtils/animatedValue';
+import { holdSprings, settleSpringsInstantly } from '../../testUtils/springs';
 
 // A minimal host component so the hook's panHandlers can be driven through
 // the same fireEvent-based gesture simulation used elsewhere - renderHook
@@ -30,6 +32,8 @@ function GestureHarness(props: PieceGestureInput & { square: Square }) {
 }
 
 describe('usePieceGesture', () => {
+  afterEach(() => jest.restoreAllMocks());
+
   const width = 50;
   const position = getXYFromSquare('e2', width);
 
@@ -184,21 +188,34 @@ describe('usePieceGesture', () => {
     expect(hideDragGuide).toHaveBeenCalled();
   });
 
-  it('zooms the piece in while actively dragging', async () => {
+  it('lifts the piece above the others and grows it while actively dragging', async () => {
+    settleSpringsInstantly();
     const { target } = await renderGesture();
 
     await simulatePanResponderGrantAndMove(target, 0, -100);
 
-    expect(target.props.style.transform[0].scale).toBe(1.4);
     expect(target.props.style.zIndex).toBe(100);
+    expect(target.props.style.transform[0].scale).toBe(DRAG_SCALE);
   });
 
-  it('zooms back out once the drag is released', async () => {
+  it('sets the piece back down once the drag is released', async () => {
+    settleSpringsInstantly();
     const { target } = await renderGesture();
 
     await simulatePanResponderDrag(target, 0, -100);
 
     expect(target.props.style.transform[0].scale).toBe(1);
+    expect(target.props.style.zIndex).toBe(0);
+  });
+
+  it('keeps the piece above the others until it has been set down', async () => {
+    const { land } = holdSprings();
+    const { target } = await renderGesture();
+
+    await simulatePanResponderDrag(target, 0, -100);
+    expect(target.props.style.zIndex).toBe(100);
+
+    await act(() => land());
     expect(target.props.style.zIndex).toBe(0);
   });
 });

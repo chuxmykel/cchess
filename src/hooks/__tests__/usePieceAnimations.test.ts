@@ -1,11 +1,15 @@
-import { renderHook } from '@testing-library/react-native';
+import { act, renderHook } from '@testing-library/react-native';
+import { Square } from 'chess.js';
 
 import { usePieceAnimations } from '../usePieceAnimations';
 import { AppliedMove, DomainPiece } from '../../domain/types';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
 import { getAnimatedXY } from '../../testUtils/animatedValue';
+import { holdSprings } from '../../testUtils/springs';
 
 describe('usePieceAnimations', () => {
+  afterEach(() => jest.restoreAllMocks());
+
   const pieceWidth = 50;
   const twoPieces: DomainPiece[] = [
     { square: 'e2', type: 'p', color: 'w' },
@@ -114,5 +118,164 @@ describe('usePieceAnimations', () => {
       getXYFromSquare('e2', pieceWidth),
     );
     expect(result.current[1]).toBe(e7View);
+  });
+
+  describe('a capture', () => {
+    // exd5 (and then ...cxd5), on a board with just the pawns and kings.
+    const before: DomainPiece[] = [
+      { square: 'e1', type: 'k', color: 'w' },
+      { square: 'e4', type: 'p', color: 'w' },
+      { square: 'c6', type: 'p', color: 'b' },
+      { square: 'd5', type: 'p', color: 'b' },
+      { square: 'e8', type: 'k', color: 'b' },
+    ];
+    const after: DomainPiece[] = [
+      { square: 'e1', type: 'k', color: 'w' },
+      { square: 'd5', type: 'p', color: 'w' },
+      { square: 'c6', type: 'p', color: 'b' },
+      { square: 'e8', type: 'k', color: 'b' },
+    ];
+    const exd5: AppliedMove = {
+      from: 'e4',
+      to: 'd5',
+      piece: 'p',
+      color: 'w',
+      isCapture: true,
+      capturedSquare: 'd5',
+      isEnPassant: false,
+      isKingSideCastle: false,
+      isQueenSideCastle: false,
+      isPromotion: false,
+    };
+
+    async function renderCapture() {
+      const springs = holdSprings();
+      const hook = await renderHook(
+        (props: { pieces: DomainPiece[]; lastMove: AppliedMove | null }) =>
+          usePieceAnimations(props.pieces, props.lastMove, pieceWidth),
+        { initialProps: { pieces: before, lastMove: null } },
+      );
+      const takenView = hook.result.current[3];
+      const moverView = hook.result.current[1];
+      await hook.rerender({ pieces: after, lastMove: exd5 });
+      return { ...hook, springs, takenView, moverView };
+    }
+
+    it('still shows the piece taken while the piece taking it is on its way', async () => {
+      const { result, takenView } = await renderCapture();
+
+      const taken = result.current.find((view) => view.captured);
+      expect(taken).toMatchObject({ id: takenView.id, square: 'd5' });
+      // Drawn first - under everything else.
+      expect(result.current[0]).toBe(taken);
+    });
+
+    it('draws the piece taking it last, over everything else', async () => {
+      const { result, moverView } = await renderCapture();
+
+      expect(result.current[result.current.length - 1]).toBe(moverView);
+    });
+
+    it('springs the piece taking it to its new square', async () => {
+      const { springs, moverView } = await renderCapture();
+
+      expect(springs.spy).toHaveBeenCalledWith(
+        moverView.animatedPosition,
+        expect.objectContaining({
+          toValue: getXYFromSquare('d5', pieceWidth),
+          useNativeDriver: true,
+        }),
+      );
+    });
+
+    it('removes the piece taken once the piece taking it lands', async () => {
+      const { result, springs, moverView } = await renderCapture();
+
+      await act(() => springs.land());
+
+      expect(result.current.some((view) => view.captured)).toBe(false);
+      expect(result.current.map((view) => view.square)).toEqual([
+        'e1',
+        'c6',
+        'e8',
+        'd5',
+      ]);
+      expect(getAnimatedXY(moverView.animatedPosition)).toEqual(
+        getXYFromSquare('d5', pieceWidth),
+      );
+    });
+
+    it("doesn't let an earlier move's landing remove a later capture's piece", async () => {
+      const { result, rerender, springs, moverView } = await renderCapture();
+      const landExd5 = springs.takeInFlight();
+      // ...cxd5, before exd5 has landed.
+      await rerender({
+        pieces: [
+          { square: 'e1', type: 'k', color: 'w' },
+          { square: 'd5', type: 'p', color: 'b' },
+          { square: 'e8', type: 'k', color: 'b' },
+        ],
+        lastMove: { ...exd5, from: 'c6', color: 'b' },
+      });
+
+      await act(() => landExd5());
+
+      const taken = result.current.filter((view) => view.captured);
+      expect(taken.map((view) => view.id)).toEqual([moverView.id]);
+
+      await act(() => springs.land());
+
+      expect(result.current.some((view) => view.captured)).toBe(false);
+    });
+  });
+
+  describe('a pawn waiting on the promotion menu', () => {
+    const pieces: DomainPiece[] = [
+      { square: 'e1', type: 'k', color: 'w' },
+      { square: 'e7', type: 'p', color: 'w' },
+      { square: 'a8', type: 'k', color: 'b' },
+    ];
+    const promotion = { from: 'e7' as Square, to: 'e8' as Square };
+
+    async function renderPromotion() {
+      const springs = holdSprings();
+      const hook = await renderHook(
+        (props: { pendingPromotion: typeof promotion | null }) =>
+          usePieceAnimations(
+            pieces,
+            null,
+            pieceWidth,
+            'w',
+            props.pendingPromotion,
+          ),
+        { initialProps: { pendingPromotion: null } },
+      );
+      const pawn = hook.result.current[1];
+      await hook.rerender({ pendingPromotion: promotion });
+      return { ...hook, springs, pawn };
+    }
+
+    it('stands on the square it promotes on, over the other pieces', async () => {
+      const { result, springs, pawn } = await renderPromotion();
+
+      await act(() => springs.land());
+
+      expect(getAnimatedXY(pawn.animatedPosition)).toEqual(
+        getXYFromSquare('e8', pieceWidth),
+      );
+      expect(result.current[result.current.length - 1]).toBe(pawn);
+    });
+
+    it('goes back to its square when the promotion is called off', async () => {
+      const { rerender, springs, pawn } = await renderPromotion();
+      await act(() => springs.land());
+
+      await rerender({ pendingPromotion: null });
+      await act(() => springs.land());
+
+      expect(getAnimatedXY(pawn.animatedPosition)).toEqual(
+        getXYFromSquare('e7', pieceWidth),
+      );
+    });
   });
 });

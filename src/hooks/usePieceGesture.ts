@@ -6,6 +6,11 @@ import { Position } from '../domain/types';
 import { getSquareFromXY } from '../domain/boardCoordinates';
 import { getNewPositionFromGesture } from '../utils/animation';
 import { TAP_MOVEMENT_THRESHOLD } from '../constants';
+import {
+  DRAG_SCALE,
+  REST_THRESHOLDS,
+  SCALE_SPRING,
+} from '../constants/animations';
 
 export type PieceGestureInput = {
   width: number;
@@ -67,15 +72,40 @@ export function usePieceGesture(
   /* eslint-disable react-hooks/refs */
   const scale = useRef(new Animated.Value(1)).current;
   const zIndex = useRef(new Animated.Value(0)).current;
+  // Whether this touch has turned into a drag and lifted the piece.
+  const lifted = useRef(false);
 
-  function zoomIn() {
-    scale.setValue(1.4);
-    zIndex.setValue(100);
+  function springScaleTo(
+    toValue: number,
+    onDone?: (result: { finished: boolean }) => void,
+  ) {
+    Animated.spring(scale, {
+      toValue,
+      ...SCALE_SPRING,
+      ...REST_THRESHOLDS,
+      useNativeDriver: true,
+    }).start(onDone);
   }
 
-  function zoomOut() {
-    scale.setValue(1);
-    zIndex.setValue(0);
+  // Once per drag, as it starts - not on every move event after.
+  function lift() {
+    if (lifted.current) return;
+    lifted.current = true;
+    zIndex.setValue(100);
+    springScaleTo(DRAG_SCALE);
+    latestPropsRef.current.showDragGuide();
+  }
+
+  // The piece shrinks back as it's set down, staying above the rest until
+  // it has - by then a piece sent home has all but got there. A piece that
+  // moved is drawn over the rest anyway (see usePieceAnimations).
+  function setDown() {
+    if (!lifted.current) return;
+    lifted.current = false;
+    springScaleTo(1, ({ finished }) => {
+      // Lifted again before it was down.
+      if (finished) zIndex.setValue(0);
+    });
   }
 
   // The PanResponder below is created exactly once (see the useRef it's
@@ -110,8 +140,7 @@ export function usePieceGesture(
           latestPropsRef.current;
         // Opponent pieces get no drag affordance at all - they're tap-only (see release below).
         if (disabled) return;
-        zoomIn();
-        latestPropsRef.current.showDragGuide();
+        lift();
         animatedPosition.setValue(
           getDraggedPosition(position, gestureState, width),
         );
@@ -133,7 +162,7 @@ export function usePieceGesture(
           onDragRelease,
         } = latestPropsRef.current;
         latestPropsRef.current.hideDragGuide();
-        zoomOut();
+        setDown();
 
         const isTap =
           Math.abs(gestureState.dx) < TAP_MOVEMENT_THRESHOLD &&

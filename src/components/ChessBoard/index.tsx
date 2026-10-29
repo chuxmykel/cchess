@@ -1,8 +1,9 @@
 import { useCallback } from 'react';
-import { View } from 'react-native';
+import { Animated, View } from 'react-native';
 import { Color, Square } from 'chess.js';
 
 import { NUMBER_OF_ROWS } from '../../constants';
+import { REST_THRESHOLDS, SNAP_BACK_SPRING } from '../../constants/animations';
 import { Position } from '../../domain/types';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
 import { usePieceAnimations } from '../../hooks/usePieceAnimations';
@@ -35,6 +36,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
     isGameOver,
     legalMoveSquares,
     lastMove,
+    pendingPromotion,
     isOwnPieceAt,
     getLegalMoveSquares,
     handleSquareTap,
@@ -46,6 +48,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
     lastMove,
     PIECE_WIDTH,
     orientation,
+    pendingPromotion,
   );
   const dragGuide = useDragGuide(PIECE_WIDTH);
   const { updatePosition } = dragGuide;
@@ -68,10 +71,14 @@ const Chessboard: React.FC<ChessboardProps> = ({
         (piece) => piece.square === from,
       );
       const result = attemptMove(from, to);
+      // Not a move: the piece slides home from where it was dropped.
       if (result.status === 'illegal' && draggedPiece) {
-        draggedPiece.animatedPosition.setValue(
-          getXYFromSquare(from, PIECE_WIDTH, orientation),
-        );
+        Animated.spring(draggedPiece.animatedPosition, {
+          toValue: getXYFromSquare(from, PIECE_WIDTH, orientation),
+          ...SNAP_BACK_SPRING,
+          ...REST_THRESHOLDS,
+          useNativeDriver: true,
+        }).start();
       }
     },
     [animatedPieces, attemptMove, PIECE_WIDTH, orientation],

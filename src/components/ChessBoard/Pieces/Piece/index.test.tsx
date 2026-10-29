@@ -36,6 +36,7 @@ describe('Piece', () => {
         animatedPosition={animatedPosition}
         id="wp"
         disabled={overrides.disabled ?? false}
+        captured={false}
         opacity={new Animated.Value(1)}
         onTap={onTap}
         onDragRelease={onDragRelease}

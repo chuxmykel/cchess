@@ -14,8 +14,11 @@ import {
   simulatePanResponderGrant,
   simulatePanResponderTap,
 } from '../../testUtils/panResponderGesture';
+import { settleSpringsInstantly } from '../../testUtils/springs';
 
 describe('Chessboard', () => {
+  afterEach(() => jest.restoreAllMocks());
+
   const width = 400;
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
 
@@ -213,14 +216,15 @@ describe('Chessboard', () => {
         });
 
         it('should snap a piece back to its square when dragged off the board entirely', async () => {
+          settleSpringsInstantly();
           const screen = await renderChessBoard(undefined, orientation);
 
           // Drag the g1 knight far off the board's right edge - off the board
           // from either side, well past any legal target. onPanResponderMove
           // follows the finger live (outside React state), so a rejected drop
-          // must be explicitly snapped back or the sprite is left stranded
-          // wherever the gesture ended, even though the piece is still
-          // legitimately on g1.
+          // must be explicitly sent back (it slides home) or the sprite is
+          // left stranded wherever the gesture ended, even though the piece
+          // is still legitimately on g1.
 
           await simulatePanResponderDrag(
             screen.getByTestId('piece-g1'),
@@ -228,11 +232,9 @@ describe('Chessboard', () => {
             0,
           );
 
-          const piece = screen.getByTestId('piece-g1');
-          const [{ translateX }, { translateY }] = piece.props.style.transform;
-          const homePosition = getXYFromSquare('g1', PIECE_WIDTH, orientation);
-          expect(translateX).toBe(homePosition.x);
-          expect(translateY).toBe(homePosition.y);
+          expect(translateOf(screen.getByTestId('piece-g1'))).toEqual(
+            getXYFromSquare('g1', PIECE_WIDTH, orientation),
+          );
         });
 
         it('should show the correct legal-move indicators as soon as a piece is touched', async () => {

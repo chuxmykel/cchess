@@ -14,6 +14,8 @@ interface PieceProps {
   animatedPosition: Animated.ValueXY;
   id: string;
   disabled: boolean;
+  // Just taken, and only still shown until the piece taking it lands.
+  captured: boolean;
   opacity: Animated.Value;
   onTap: (square: Square) => void;
   onDragRelease: (from: Square, to: Square) => void;
@@ -40,7 +42,8 @@ const Piece: React.FC<PieceProps> = (props) => {
         zIndex,
         opacity,
       }}
-      testID={`piece-${square}`}
+      testID={props.captured ? `taken-piece-${square}` : `piece-${square}`}
+      pointerEvents={props.captured ? 'none' : 'auto'}
       {...panHandlers}
     >
       <Animated.Image
@@ -71,6 +74,7 @@ function arePropsEqual(prev: PieceProps, next: PieceProps): boolean {
   return (
     prev.id === next.id &&
     prev.disabled === next.disabled &&
+    prev.captured === next.captured &&
     prev.width === next.width &&
     prev.position.x === next.position.x &&
     prev.position.y === next.position.y &&

@@ -1,39 +1,36 @@
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Animated } from 'react-native';
 import { Color, PieceSymbol, Square } from 'chess.js';
 
 import { AppliedMove, DomainPiece } from '../domain/types';
 import { getXYFromSquare } from '../domain/boardCoordinates';
 import { generatePieceId } from '../utils/animation';
-
-const ANIMATION_DURATION = 50;
+import { MOVE_SPRING, REST_THRESHOLDS } from '../constants/animations';
 
 type SpriteId = `${Color}${PieceSymbol}`;
 
 // The RN-aware view of a piece: a stable identity plus the Animated objects
-// that drive its on-screen position/opacity. Mirrors a DomainPiece 1:1, but
-// only pieces still on the board ever appear here.
+// that drive its on-screen position/opacity. Mirrors a DomainPiece 1:1 -
+// plus, for a moment after a capture, the piece just taken (see `captured`).
 export type AnimatedPieceView = {
   id: string;
   spriteId: SpriteId;
   square: Square;
   animatedPosition: Animated.ValueXY;
   opacity: Animated.Value;
+  // A piece just taken, still drawn on its square until the piece taking it
+  // lands there, so it's seen being taken rather than vanishing first.
+  captured?: boolean;
 };
 
-type PieceEntry = {
-  id: string;
-  square: Square;
-  spriteId: SpriteId;
-  animatedPosition: Animated.ValueXY;
-  opacity: Animated.Value;
-};
+type PendingAnimation = { pieceEntry: AnimatedPieceView; toSquare: Square };
 
 export function usePieceAnimations(
   pieces: DomainPiece[],
   lastMove: AppliedMove | null,
   pieceWidth: number,
   orientation: Color = 'w',
+  pendingPromotion: { from: Square; to: Square } | null = null,
 ): AnimatedPieceView[] {
   // This hook keeps its piece/animation bookkeeping in mutable refs that
   // are read and written synchronously during render, not inside an
@@ -51,17 +48,28 @@ export function usePieceAnimations(
   // risks regressing piece-move animations for no present benefit.
   /* eslint-disable react-hooks/refs */
   const pieceIdBySquare = useRef(new Map<Square, string>());
-  const entryById = useRef(new Map<string, PieceEntry>());
+  const entryById = useRef(new Map<string, AnimatedPieceView>());
   const initialized = useRef(false);
   const processedMove = useRef<AppliedMove | null>(null);
-  const pendingAnimations = useRef<
-    { pieceEntry: PieceEntry; toSquare: Square }[]
-  >([]);
+  const pendingAnimations = useRef<PendingAnimation[]>([]);
+  // The pieces the last move moved, drawn after (so over) the rest - they
+  // pass over the pieces they cross, and land on top of the one they take.
+  const movedIds = useRef(new Set<string>());
+  // The piece the last move took, drawn until the mover lands.
+  const capturedViews = useRef<AnimatedPieceView[]>([]);
+  // Bumped on every move or new position, so a landing that comes after
+  // a newer move started doesn't clear that move's captured piece.
+  const moveCount = useRef(0);
   const prevPieces = useRef<DomainPiece[] | null>(null);
+  const prevCapturedViews = useRef<AnimatedPieceView[]>([]);
+  const prevOrderedPromotion = useRef(pendingPromotion);
   const prevResult = useRef<AnimatedPieceView[]>([]);
   const prevOrientation = useRef(orientation);
+  const prevPendingPromotion = useRef(pendingPromotion);
+  // Only to re-render once a captured piece is gone.
+  const [, setLandings] = useState(0);
 
-  function createEntry(piece: DomainPiece): PieceEntry {
+  function createEntry(piece: DomainPiece): AnimatedPieceView {
     return {
       id: generatePieceId(piece.color, piece.type, piece.square),
       square: piece.square,
@@ -73,11 +81,7 @@ export function usePieceAnimations(
     };
   }
 
-  function movePiece(
-    from: Square,
-    to: Square,
-    animations: { pieceEntry: PieceEntry; toSquare: Square }[],
-  ) {
+  function movePiece(from: Square, to: Square, animations: PendingAnimation[]) {
     const pieceId = pieceIdBySquare.current.get(from);
     const pieceEntry = pieceId && entryById.current.get(pieceId);
     if (!pieceId || !pieceEntry) return;
@@ -87,25 +91,32 @@ export function usePieceAnimations(
     animations.push({ pieceEntry, toSquare: to });
   }
 
-  function removePiece(square: Square) {
+  function removePiece(square: Square): AnimatedPieceView | undefined {
     const pieceId = pieceIdBySquare.current.get(square);
-    if (!pieceId) return;
+    if (!pieceId) return undefined;
+    const pieceEntry = entryById.current.get(pieceId);
     pieceIdBySquare.current.delete(square);
     entryById.current.delete(pieceId);
+    return pieceEntry;
   }
 
-  function applyMove(
-    move: AppliedMove,
-  ): { pieceEntry: PieceEntry; toSquare: Square }[] {
-    const animations: { pieceEntry: PieceEntry; toSquare: Square }[] = [];
+  function applyMove(move: AppliedMove): PendingAnimation[] {
+    const animations: PendingAnimation[] = [];
+    capturedViews.current = [];
 
     if (move.isCapture && move.capturedSquare) {
-      removePiece(move.capturedSquare);
+      const taken = removePiece(move.capturedSquare);
+      // A new object, not the entry itself, so the piece re-renders as
+      // taken - out of reach of any touch.
+      if (taken) capturedViews.current = [{ ...taken, captured: true }];
     }
     if (move.rookFrom && move.rookTo) {
       movePiece(move.rookFrom, move.rookTo, animations);
     }
     movePiece(move.from, move.to, animations);
+    movedIds.current = new Set(
+      animations.map(({ pieceEntry }) => pieceEntry.id),
+    );
 
     if (move.isPromotion && move.promotionPiece) {
       const pieceId = pieceIdBySquare.current.get(move.to);
@@ -123,7 +134,7 @@ export function usePieceAnimations(
   // fresh one placed straight there.
   function placeAll() {
     const idBySquare = new Map<Square, string>();
-    const entries = new Map<string, PieceEntry>();
+    const entries = new Map<string, AnimatedPieceView>();
     pieces.forEach((piece) => {
       const pieceId = pieceIdBySquare.current.get(piece.square);
       const existing = pieceId && entryById.current.get(pieceId);
@@ -136,6 +147,8 @@ export function usePieceAnimations(
     });
     pieceIdBySquare.current = idBySquare;
     entryById.current = entries;
+    movedIds.current = new Set();
+    capturedViews.current = [];
   }
 
   if (!initialized.current) {
@@ -143,24 +156,72 @@ export function usePieceAnimations(
     placeAll();
   } else if (lastMove && lastMove !== processedMove.current) {
     processedMove.current = lastMove;
+    moveCount.current += 1;
     pendingAnimations.current = applyMove(lastMove);
   } else if (pieces !== prevPieces.current) {
     // A new position with no move to get there - a refused move taken
     // back - so the pieces are put straight on their squares.
     processedMove.current = lastMove;
+    moveCount.current += 1;
     placeAll();
   }
 
-  useEffect(() => {
-    pendingAnimations.current.forEach(({ pieceEntry, toSquare }) => {
-      Animated.timing(pieceEntry.animatedPosition, {
-        toValue: getXYFromSquare(toSquare, pieceWidth, orientation),
-        duration: ANIMATION_DURATION,
-        useNativeDriver: true,
-      }).start();
-    });
+  // A layout effect, so the move is already under way in the first frame
+  // that shows its new position - a plain effect would paint a frame of the
+  // piece still where it was dropped, then start.
+  useLayoutEffect(() => {
+    const animations = pendingAnimations.current;
     pendingAnimations.current = [];
+    if (animations.length === 0) return;
+
+    const move = moveCount.current;
+    let travelling = animations.length;
+    animations.forEach(({ pieceEntry, toSquare }) => {
+      Animated.spring(pieceEntry.animatedPosition, {
+        toValue: getXYFromSquare(toSquare, pieceWidth, orientation),
+        ...MOVE_SPRING,
+        ...REST_THRESHOLDS,
+        useNativeDriver: true,
+      }).start(() => {
+        travelling -= 1;
+        // Landed (or cut short by a drag or a newer move): the piece it took
+        // goes now - unless a newer move has its own captured piece showing.
+        if (
+          travelling === 0 &&
+          move === moveCount.current &&
+          capturedViews.current.length > 0
+        ) {
+          capturedViews.current = [];
+          setLandings((count) => count + 1);
+        }
+      });
+    });
   }, [lastMove, pieceWidth, orientation]);
+
+  // A pawn waiting on the promotion menu stands on the square it's
+  // promoting on - where it was dropped, or where it was tapped to - and
+  // goes back if the promotion is called off. Once it's played, the move
+  // above picks it up from there.
+  useLayoutEffect(() => {
+    const previous = prevPendingPromotion.current;
+    prevPendingPromotion.current = pendingPromotion;
+    const promotion = pendingPromotion ?? previous;
+    if (!promotion) return;
+    const pieceId = pieceIdBySquare.current.get(promotion.from);
+    const pawn = pieceId && entryById.current.get(pieceId);
+    // Already gone from `from`: the promotion was played.
+    if (!pawn) return;
+    Animated.spring(pawn.animatedPosition, {
+      toValue: getXYFromSquare(
+        pendingPromotion ? promotion.to : promotion.from,
+        pieceWidth,
+        orientation,
+      ),
+      ...MOVE_SPRING,
+      ...REST_THRESHOLDS,
+      useNativeDriver: true,
+    }).start();
+  }, [pendingPromotion, pieceWidth, orientation]);
 
   // Flipping the board moves every piece to its mirrored square at once.
   // A layout effect (not a plain one) so the old layout is never painted
@@ -169,16 +230,24 @@ export function usePieceAnimations(
   useLayoutEffect(() => {
     if (prevOrientation.current === orientation) return;
     prevOrientation.current = orientation;
-    entryById.current.forEach((pieceEntry) => {
-      pieceEntry.animatedPosition.setValue(
-        getXYFromSquare(pieceEntry.square, pieceWidth, orientation),
-      );
-    });
+    [...entryById.current.values(), ...capturedViews.current].forEach(
+      (pieceEntry) => {
+        pieceEntry.animatedPosition.setValue(
+          getXYFromSquare(pieceEntry.square, pieceWidth, orientation),
+        );
+      },
+    );
   }, [orientation, pieceWidth]);
 
-  if (pieces !== prevPieces.current) {
+  if (
+    pieces !== prevPieces.current ||
+    capturedViews.current !== prevCapturedViews.current ||
+    pendingPromotion !== prevOrderedPromotion.current
+  ) {
     prevPieces.current = pieces;
-    prevResult.current = pieces.map((piece) => {
+    prevCapturedViews.current = capturedViews.current;
+    prevOrderedPromotion.current = pendingPromotion;
+    const views = pieces.map((piece) => {
       const pieceId = pieceIdBySquare.current.get(piece.square);
       const pieceEntry = pieceId ? entryById.current.get(pieceId) : undefined;
       if (!pieceEntry) {
@@ -192,6 +261,18 @@ export function usePieceAnimations(
       }
       return pieceEntry;
     });
+    // Later is drawn over earlier: the piece just taken under everything,
+    // the pieces just moved - or a pawn standing on its promotion square -
+    // over everything.
+    const onTop = new Set(movedIds.current);
+    if (pendingPromotion) {
+      onTop.add(pieceIdBySquare.current.get(pendingPromotion.from));
+    }
+    prevResult.current = [
+      ...capturedViews.current,
+      ...views.filter((view) => !onTop.has(view.id)),
+      ...views.filter((view) => onTop.has(view.id)),
+    ];
   }
   return prevResult.current;
   /* eslint-enable react-hooks/refs */
