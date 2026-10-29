@@ -66,16 +66,32 @@ describe('usePieceGesture', () => {
     );
   }
 
-  it('keeps the piece above the others until it has been set down', async () => {
+  it('keeps a piece dropped on a move above the others until the move is made', async () => {
+    let read: () => { scale: number; zIndex: number };
+    const onScaleAndZIndex = (reader: typeof read) => (read = reader);
+    const screen = await render(harness('e2', { onScaleAndZIndex }));
+
+    await holdDrag('piece', 0, -100);
+    expect(read().zIndex).toBe(100);
+
+    // Landed on e4, but the game hasn't moved it there yet.
+    await dragPiece('piece', 0, -100);
+    expect(read()).toEqual({ scale: 1, zIndex: 100 });
+
+    await screen.rerender(harness('e4', { onScaleAndZIndex }));
+    await settleAnimations(16);
+    expect(read().zIndex).toBe(0);
+  });
+
+  it('keeps a piece sent home above the others until it is there', async () => {
     let read: () => { scale: number; zIndex: number };
     await render(
       harness('e2', { onScaleAndZIndex: (reader) => (read = reader) }),
     );
 
-    await holdDrag('piece', 0, -100);
-    expect(read().zIndex).toBe(100);
+    // e5: no move.
+    await dragPiece('piece', 0, -150);
 
-    await dragPiece('piece', 0, -100);
     expect(read()).toEqual({ scale: 1, zIndex: 0 });
   });
 

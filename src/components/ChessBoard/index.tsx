@@ -1,13 +1,14 @@
-import { useCallback, useLayoutEffect } from 'react';
+import { memo, useCallback, useLayoutEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSharedValue } from 'react-native-reanimated';
 import { Color, Square } from 'chess.js';
 
 import { NUMBER_OF_ROWS } from '../../constants';
-import { SNAP_BACK_SPRING } from '../../constants/animations';
+import { SNAP_BACK_TIMING } from '../../constants/animations';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
 import {
-  springPieceTo,
+  animatePieceTo,
   usePieceAnimations,
 } from '../../hooks/usePieceAnimations';
 import { useDragGuide } from '../../hooks/useDragGuide';
@@ -51,7 +52,6 @@ const Chessboard: React.FC<ChessboardProps> = ({
     pieces,
     lastMove,
     PIECE_WIDTH,
-    orientation,
     pendingPromotion,
   );
   const dragGuide = useDragGuide();
@@ -82,14 +82,14 @@ const Chessboard: React.FC<ChessboardProps> = ({
       // Not a move after all: the drop already sent the piece home if it
       // looked illegal there, but this is the final word.
       if (result.status === 'illegal' && draggedPiece) {
-        springPieceTo(
+        animatePieceTo(
           draggedPiece,
-          getXYFromSquare(from, PIECE_WIDTH, orientation),
-          SNAP_BACK_SPRING,
+          getXYFromSquare(from, PIECE_WIDTH),
+          SNAP_BACK_TIMING,
         );
       }
     },
-    [animatedPieces, attemptMove, PIECE_WIDTH, orientation],
+    [animatedPieces, attemptMove, PIECE_WIDTH],
   );
 
   return (
@@ -117,20 +117,39 @@ const Chessboard: React.FC<ChessboardProps> = ({
         opacities={validMoveIndicators.opacities}
       />
 
-      <Pieces
-        pieces={animatedPieces}
-        pieceWidth={PIECE_WIDTH}
-        orientation={orientation}
-        isOwnPieceAt={isOwnPieceAt}
-        locked={isGameOver}
-        legalTargets={legalTargetsOnUI}
-        dragGuide={dragGuide}
-        onTap={handleSquareTap}
-        onDragStart={handleDragStart}
-        onDragRelease={handleDragRelease}
-      />
+      {/* The pieces are placed from white's side; for black, the whole layer
+          is turned round - in the same frame as the squares, since it's
+          plain style rather than each piece's position catching up. */}
+      <View
+        pointerEvents="box-none"
+        style={[StyleSheet.absoluteFill, orientation === 'b' && styles.turned]}
+        testID="pieces-layer"
+      >
+        <Pieces
+          pieces={animatedPieces}
+          pieceWidth={PIECE_WIDTH}
+          orientation={orientation}
+          isOwnPieceAt={isOwnPieceAt}
+          locked={isGameOver}
+          legalTargets={legalTargetsOnUI}
+          dragGuide={dragGuide}
+          onTap={handleSquareTap}
+          onDragStart={handleDragStart}
+          onDragRelease={handleDragRelease}
+        />
+      </View>
     </GestureHandlerRootView>
   );
 };
 
-export default Chessboard;
+const styles = StyleSheet.create({
+  turned: {
+    transform: [{ rotate: '180deg' }],
+  },
+});
+
+// A screen around the board can re-render often - a game's clock ticks ten
+// times a second - and the board needn't follow it: every piece's gestures
+// are rebuilt on a render, which keeps the JS thread busy enough to hold up a
+// drop reaching it. It re-renders for its own props and the game's state.
+export default memo(Chessboard);

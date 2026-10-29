@@ -10,13 +10,16 @@ import {
 } from '../../context/ChessGameContext';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
 import { NUMBER_OF_ROWS } from '../../constants';
-import {
-  dragPiece,
-  settleAnimations,
-  tapPiece,
-  touchPiece,
-} from '../../testUtils/pieceGestures';
+import { dragPiece, tapPiece, touchPiece } from '../../testUtils/pieceGestures';
 import { animatedStyleOf } from '../../testUtils/animatedValue';
+import { piecePositionOnScreen } from '../../testUtils/boardPosition';
+import { usePieceGesture } from '../../hooks/usePieceGesture';
+
+// Passed straight through, only so a test can count the pieces' renders.
+jest.mock('../../hooks/usePieceGesture', () => {
+  const actual = jest.requireActual('../../hooks/usePieceGesture');
+  return { ...actual, usePieceGesture: jest.fn(actual.usePieceGesture) };
+});
 
 describe('Chessboard', () => {
   beforeEach(() => jest.useFakeTimers());
@@ -83,6 +86,18 @@ describe('Chessboard', () => {
     return { x: translateX, y: translateY };
   }
 
+  // Where the piece with this testID is drawn on screen.
+  function pieceOnScreen(
+    screen: Awaited<ReturnType<typeof renderChessBoard>>,
+    testID: string,
+  ) {
+    return piecePositionOnScreen(
+      screen.getByTestId(testID),
+      screen.getByTestId('pieces-layer'),
+      PIECE_WIDTH,
+    );
+  }
+
   it('should exist', () => {
     expect(Chessboard).toBeDefined();
   });
@@ -91,6 +106,15 @@ describe('Chessboard', () => {
     const screen = await renderChessBoard();
     const result = screen.getByTestId('chessboard');
     expect(result.props.style.width).toEqual(result.props.style.height);
+  });
+
+  it("doesn't re-render a piece when the screen around it re-renders, as a game's clock does every tick", async () => {
+    const screen = await renderChessBoard();
+    jest.mocked(usePieceGesture).mockClear();
+
+    await screen.rerender(chessBoardTree());
+
+    expect(usePieceGesture).not.toHaveBeenCalled();
   });
 
   it('should not render the drag-and-drop guide visibly before any gesture', async () => {
@@ -224,7 +248,7 @@ describe('Chessboard', () => {
 
           await dragPiece('piece-g1', 2 * width, 0);
 
-          expect(translateOf(screen.getByTestId('piece-g1'))).toEqual(
+          expect(pieceOnScreen(screen, 'piece-g1')).toEqual(
             getXYFromSquare('g1', PIECE_WIDTH, orientation),
           );
         });
@@ -439,10 +463,11 @@ describe('Chessboard', () => {
         it(`renders ${bottomLeft} at the bottom-left and ${topRight} at the top-right`, async () => {
           const screen = await renderChessBoard(undefined, orientation);
 
-          expect(
-            translateOf(screen.getByTestId(`piece-${bottomLeft}`)),
-          ).toEqual({ x: 0, y: 7 * PIECE_WIDTH });
-          expect(translateOf(screen.getByTestId(`piece-${topRight}`))).toEqual({
+          expect(pieceOnScreen(screen, `piece-${bottomLeft}`)).toEqual({
+            x: 0,
+            y: 7 * PIECE_WIDTH,
+          });
+          expect(pieceOnScreen(screen, `piece-${topRight}`)).toEqual({
             x: 7 * PIECE_WIDTH,
             y: 0,
           });
@@ -451,15 +476,14 @@ describe('Chessboard', () => {
         it('repositions every piece when flipped to this perspective', async () => {
           const other = orientation === 'w' ? 'b' : 'w';
           const screen = await renderChessBoard(undefined, other);
-          expect(translateOf(screen.getByTestId('piece-e2'))).toEqual(
+          expect(pieceOnScreen(screen, 'piece-e2')).toEqual(
             getXYFromSquare('e2', PIECE_WIDTH, other),
           );
 
           await screen.rerender(chessBoardTree(undefined, orientation));
-          // Drawn from the new positions from the next frame.
-          await settleAnimations(16);
 
-          expect(translateOf(screen.getByTestId('piece-e2'))).toEqual(
+          // In the same render as the squares - not a frame later.
+          expect(pieceOnScreen(screen, 'piece-e2')).toEqual(
             getXYFromSquare('e2', PIECE_WIDTH, orientation),
           );
         });

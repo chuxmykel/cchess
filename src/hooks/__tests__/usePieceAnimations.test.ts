@@ -77,22 +77,6 @@ describe('usePieceAnimations', () => {
     expect(result.current[0]).toBe(firstPieceView);
   });
 
-  it('moves every piece to its mirrored position when the orientation flips, keeping the same shared values', async () => {
-    const { result, rerender } = await renderHook(
-      (props: { orientation: 'w' | 'b' }) =>
-        usePieceAnimations(twoPieces, null, pieceWidth, props.orientation),
-      { initialProps: { orientation: 'w' as 'w' | 'b' } },
-    );
-    const e2View = result.current[0];
-
-    await rerender({ orientation: 'b' });
-
-    expect(result.current[0]).toBe(e2View);
-    expect(positionOf(e2View)).toEqual(getXYFromSquare('e2', pieceWidth, 'b'));
-    expect(positionOf(result.current[1])).toEqual(
-      getXYFromSquare('e7', pieceWidth, 'b'),
-    );
-  });
   it('puts pieces straight on their squares for a position reached without a move', async () => {
     const e2e4: AppliedMove = {
       from: 'e2',
@@ -182,12 +166,12 @@ describe('usePieceAnimations', () => {
       expect(result.current[result.current.length - 1]).toBe(moverView);
     });
 
-    it('springs the piece taking it to its new square, rather than jumping', async () => {
+    it('moves the piece taking it to its new square, rather than jumping', async () => {
       const { moverView } = await renderCapture();
       const e4 = getXYFromSquare('e4', pieceWidth);
       const d5 = getXYFromSquare('d5', pieceWidth);
 
-      await settleAnimations(50);
+      await settleAnimations(25);
       const midway = positionOf(moverView);
       expect(midway.x).toBeLessThan(e4.x);
       expect(midway.x).toBeGreaterThan(d5.x);
@@ -214,7 +198,7 @@ describe('usePieceAnimations', () => {
     it("doesn't let an earlier move's landing remove a later capture's piece", async () => {
       const { result, rerender, moverView } = await renderCapture();
       // ...cxd5, while exd5 is still on its way.
-      await settleAnimations(100);
+      await settleAnimations(16);
       await rerender({
         pieces: [
           { square: 'e1', type: 'k', color: 'w' },
@@ -258,13 +242,7 @@ describe('usePieceAnimations', () => {
     async function renderPromotion() {
       const hook = await renderHook(
         (props: { pendingPromotion: typeof promotion | null }) =>
-          usePieceAnimations(
-            pieces,
-            null,
-            pieceWidth,
-            'w',
-            props.pendingPromotion,
-          ),
+          usePieceAnimations(pieces, null, pieceWidth, props.pendingPromotion),
         { initialProps: { pendingPromotion: null } },
       );
       const pawn = hook.result.current[1];

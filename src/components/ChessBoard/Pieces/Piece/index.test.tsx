@@ -1,4 +1,5 @@
 import { render } from '@testing-library/react-native';
+import { Color, Square } from 'chess.js';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { makeMutable } from 'react-native-reanimated';
 
@@ -8,6 +9,7 @@ import { getXYFromSquare } from '../../../../domain/boardCoordinates';
 import { DRAG_SCALE } from '../../../../constants/animations';
 import {
   dragPiece,
+  flickPiece,
   holdDrag,
   settleAnimations,
   tapPiece,
@@ -24,6 +26,8 @@ describe('Piece', () => {
 
   async function renderPiece(
     overrides: Partial<{
+      square: Square;
+      orientation: Color;
       disabled: boolean;
       captured: boolean;
       legalTargets: LegalTargets;
@@ -32,8 +36,11 @@ describe('Piece', () => {
     const onTap = jest.fn();
     const onDragRelease = jest.fn();
     const onDragStart = jest.fn();
-    const x = makeMutable(home.x);
-    const y = makeMutable(home.y);
+    const square = overrides.square ?? 'e2';
+    // Placed from white's side, whichever way the board faces.
+    const position = getXYFromSquare(square, width);
+    const x = makeMutable(position.x);
+    const y = makeMutable(position.y);
     const dragGuide = {
       x: makeMutable(0),
       y: makeMutable(0),
@@ -44,9 +51,9 @@ describe('Piece', () => {
       <GestureHandlerRootView>
         <Piece
           id="wp"
-          square="e2"
+          square={square}
           width={width}
-          orientation="w"
+          orientation={overrides.orientation ?? 'w'}
           x={x}
           y={y}
           disabled={overrides.disabled ?? false}
@@ -61,7 +68,7 @@ describe('Piece', () => {
         />
       </GestureHandlerRootView>,
     );
-    const testID = captured ? 'taken-piece-e2' : 'piece-e2';
+    const testID = `${captured ? 'taken-piece' : 'piece'}-${square}`;
     return {
       piece: screen.getByTestId(testID),
       testID,
@@ -197,7 +204,33 @@ describe('Piece', () => {
     const e4 = getXYFromSquare('e4', width);
     expect(animatedStyleOf(piece)).toMatchObject({
       transform: [{ translateX: e4.x }, { translateY: e4.y }, { scale: 1 }],
-      zIndex: 0,
+      // Still over the rest until the game makes the move (see
+      // usePieceGesture).
+      zIndex: 100,
+    });
+  });
+
+  it('drops where the finger is, not where the drag activated from', async () => {
+    const { testID, onDragRelease } = await renderPiece();
+
+    // Up 80 points: the finger ends just inside e4. Measured from where the
+    // drag activated (TAP_MOVEMENT_THRESHOLD in), it would still be over e3.
+    await dragPiece(testID, 0, -80);
+
+    expect(onDragRelease).toHaveBeenCalledWith('e2', 'e4');
+  });
+
+  it('drops where it was last drawn, not where a quick flick lifts', async () => {
+    const { piece, testID, onDragRelease } = await renderPiece();
+
+    // Drawn last with the finger over e4, lifted over e5 - where the pawn
+    // can't go - as the finger carried on.
+    await flickPiece(testID, 0, -80, 0, -130);
+
+    expect(onDragRelease).toHaveBeenCalledWith('e2', 'e4');
+    const e4 = getXYFromSquare('e4', width);
+    expect(animatedStyleOf(piece)).toMatchObject({
+      transform: [{ translateX: e4.x }, { translateY: e4.y }, { scale: 1 }],
     });
   });
 
@@ -227,5 +260,46 @@ describe('Piece', () => {
     const { piece } = await renderPiece({ captured: true });
 
     expect(piece.props.pointerEvents).toBe('none');
+  });
+
+  describe('on a board facing black', () => {
+    // Turned round with the pieces layer (see Chessboard): up the screen is
+    // down the board, from white's side.
+    const blackSide = {
+      square: 'e7' as Square,
+      orientation: 'b' as Color,
+      legalTargets: { e7: ['e6', 'e5'] as Square[] },
+    };
+
+    it('stands its image back upright', async () => {
+      const { piece } = await renderPiece(blackSide);
+
+      expect(piece.children[0]).toHaveStyle({
+        transform: [{ rotate: '180deg' }],
+      });
+    });
+
+    it('follows the finger up the screen, toward rank 1', async () => {
+      const { testID, x, y } = await renderPiece(blackSide);
+
+      // Up the screen by one square, the piece drawn half a square above.
+      await holdDrag(testID, 0, -width);
+
+      const e7 = getXYFromSquare('e7', width);
+      expect({ x: x.get(), y: y.get() }).toEqual({
+        x: e7.x,
+        y: e7.y + width + width / 2,
+      });
+    });
+
+    it("lands on the square it was dropped on, from white's side", async () => {
+      const { testID, x, y, onDragRelease } = await renderPiece(blackSide);
+
+      // Up the screen by two squares: e5.
+      await dragPiece(testID, 0, -2 * width);
+
+      expect(onDragRelease).toHaveBeenCalledWith('e7', 'e5');
+      expect({ x: x.get(), y: y.get() }).toEqual(getXYFromSquare('e5', width));
+    });
   });
 });

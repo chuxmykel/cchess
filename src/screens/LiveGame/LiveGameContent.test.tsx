@@ -14,7 +14,7 @@ import { makeGameSnapshot } from '../../testUtils/gameSnapshot';
 import { findTimeControl } from '../../constants/timeControls';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { waitForSheetToClose } from '../../testUtils/modal';
-import { animatedStyleOf } from '../../testUtils/animatedValue';
+import { piecePositionOnScreen } from '../../testUtils/boardPosition';
 
 jest.mock('../../components/ConnectionStrengthIndicator', () =>
   jest.requireActual('../../testUtils/ConnectionStrengthIndicatorStub'),
@@ -87,8 +87,13 @@ describe('LiveGameContent', () => {
     return screen.getAllByTestId(/^player-bar-/).map((bar) => bar.props.testID);
   }
 
-  function translateYOf(element: { props: Record<string, unknown> }) {
-    return animatedStyleOf(element).transform[1].translateY;
+  // How far down the board the piece with this testID is drawn.
+  function pieceYOnScreen(screen: Screen, testID: string) {
+    return piecePositionOnScreen(
+      screen.getByTestId(testID),
+      screen.getByTestId('pieces-layer'),
+      PIECE_WIDTH,
+    ).y;
   }
 
   async function openGameMenu(screen: Screen) {
@@ -288,7 +293,7 @@ describe('LiveGameContent', () => {
     async (myColor, myKingSquare, expectedBarOrder) => {
       const { screen } = await renderContent(myColor);
 
-      expect(translateYOf(screen.getByTestId(`piece-${myKingSquare}`))).toBe(
+      expect(pieceYOnScreen(screen, `piece-${myKingSquare}`)).toBe(
         BOTTOM_ROW_Y,
       );
       expect(playerBarOrder(screen)).toEqual(expectedBarOrder);
@@ -300,8 +305,8 @@ describe('LiveGameContent', () => {
 
     await flipViaMenu(screen);
 
-    expect(translateYOf(screen.getByTestId('piece-e8'))).toBe(0);
-    expect(translateYOf(screen.getByTestId('piece-e1'))).toBe(BOTTOM_ROW_Y);
+    expect(pieceYOnScreen(screen, 'piece-e8')).toBe(0);
+    expect(pieceYOnScreen(screen, 'piece-e1')).toBe(BOTTOM_ROW_Y);
     expect(playerBarOrder(screen)).toEqual([
       BLACK_PLAYER_BAR,
       WHITE_PLAYER_BAR,
@@ -309,7 +314,7 @@ describe('LiveGameContent', () => {
 
     await flipViaMenu(screen);
 
-    expect(translateYOf(screen.getByTestId('piece-e8'))).toBe(BOTTOM_ROW_Y);
+    expect(pieceYOnScreen(screen, 'piece-e8')).toBe(BOTTOM_ROW_Y);
     expect(playerBarOrder(screen)).toEqual([
       WHITE_PLAYER_BAR,
       BLACK_PLAYER_BAR,
@@ -559,7 +564,7 @@ describe('LiveGameContent', () => {
     expect(screen.queryByTestId('resign-action')).toBeNull();
     await chooseMenuAction(screen, 'flip-board-action');
 
-    expect(translateYOf(screen.getByTestId('piece-e1'))).toBe(0);
+    expect(pieceYOnScreen(screen, 'piece-e1')).toBe(0);
     expect(playerBarOrder(screen)).toEqual([
       WHITE_PLAYER_BAR,
       BLACK_PLAYER_BAR,

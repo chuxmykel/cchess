@@ -2,8 +2,8 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import {
   makeMutable,
   SharedValue,
-  withSpring,
-  WithSpringConfig,
+  withTiming,
+  WithTimingConfig,
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { Color, PieceSymbol, Square } from 'chess.js';
@@ -11,19 +11,24 @@ import { Color, PieceSymbol, Square } from 'chess.js';
 import { AppliedMove, DomainPiece, Position } from '../domain/types';
 import { getXYFromSquare } from '../domain/boardCoordinates';
 import { generatePieceId } from '../utils/animation';
-import { MOVE_SPRING } from '../constants/animations';
+import { MOVE_TIMING } from '../constants/animations';
 
 type SpriteId = `${Color}${PieceSymbol}`;
 
 // The RN-aware view of a piece: a stable identity plus the shared values
-// that place it on screen - written on the UI thread by springs and drags
+// that place it on the board - written on the UI thread by moves and drags
 // alike. Mirrors a DomainPiece 1:1 - plus, for a moment after a capture, the
 // piece just taken (see `captured`).
+//
+// Positions are always from white's side (a1 bottom-left), whichever way the
+// board faces: the board turns the whole pieces layer round for black (see
+// Chessboard), so a flip is drawn in the same frame as the squares, rather
+// than a frame later as every piece's shared values catch up.
 export type AnimatedPieceView = {
   id: string;
   spriteId: SpriteId;
   square: Square;
-  // The top-left corner of the piece.
+  // The top-left corner of the piece, from white's side.
   x: SharedValue<number>;
   y: SharedValue<number>;
   // A piece just taken, still drawn on its square until the piece taking it
@@ -33,16 +38,15 @@ export type AnimatedPieceView = {
 
 type PendingAnimation = { pieceEntry: AnimatedPieceView; toSquare: Square };
 
-/** Springs a piece to `to` on the UI thread; `onLanded` (on the JS thread)
- * once it's there, or once a drag or a newer spring takes it over. */
-export function springPieceTo(
+/** Moves a piece to `to` on the UI thread; `onLanded` (on the JS thread)
+ * once it's there, or once a drag or a newer move takes it over. */
+export function animatePieceTo(
   piece: Pick<AnimatedPieceView, 'x' | 'y'>,
   to: Position,
-  config: WithSpringConfig,
+  config: WithTimingConfig,
   onLanded?: () => void,
 ) {
-  // Each axis is its own spring, and one that doesn't travel ends at once -
-  // so the landing waits for both.
+  // Each axis is animated on its own, so the landing waits for both.
   let settling = 2;
   const settle = () => {
     settling -= 1;
@@ -54,15 +58,14 @@ export function springPieceTo(
         scheduleOnRN(settle);
       }
     : undefined;
-  piece.x.set(withSpring(to.x, config, onAxisDone));
-  piece.y.set(withSpring(to.y, config, onAxisDone));
+  piece.x.set(withTiming(to.x, config, onAxisDone));
+  piece.y.set(withTiming(to.y, config, onAxisDone));
 }
 
 export function usePieceAnimations(
   pieces: DomainPiece[],
   lastMove: AppliedMove | null,
   pieceWidth: number,
-  orientation: Color = 'w',
   pendingPromotion: { from: Square; to: Square } | null = null,
 ): AnimatedPieceView[] {
   // This hook keeps its piece/animation bookkeeping in mutable refs that
@@ -97,13 +100,12 @@ export function usePieceAnimations(
   const prevCapturedViews = useRef<AnimatedPieceView[]>([]);
   const prevOrderedPromotion = useRef(pendingPromotion);
   const prevResult = useRef<AnimatedPieceView[]>([]);
-  const prevOrientation = useRef(orientation);
   const prevPendingPromotion = useRef(pendingPromotion);
   // Only to re-render once a captured piece is gone.
   const [, setLandings] = useState(0);
 
   function createEntry(piece: DomainPiece): AnimatedPieceView {
-    const position = getXYFromSquare(piece.square, pieceWidth, orientation);
+    const position = getXYFromSquare(piece.square, pieceWidth);
     return {
       id: generatePieceId(piece.color, piece.type, piece.square),
       square: piece.square,
@@ -221,14 +223,14 @@ export function usePieceAnimations(
       }
     };
     animations.forEach(({ pieceEntry, toSquare }) => {
-      springPieceTo(
+      animatePieceTo(
         pieceEntry,
-        getXYFromSquare(toSquare, pieceWidth, orientation),
-        MOVE_SPRING,
+        getXYFromSquare(toSquare, pieceWidth),
+        MOVE_TIMING,
         onLanded,
       );
     });
-  }, [lastMove, pieceWidth, orientation]);
+  }, [lastMove, pieceWidth]);
 
   // A pawn waiting on the promotion menu stands on the square it's
   // promoting on - where it was dropped, or where it was tapped to - and
@@ -243,36 +245,15 @@ export function usePieceAnimations(
     const pawn = pieceId && entryById.current.get(pieceId);
     // Already gone from `from`: the promotion was played.
     if (!pawn) return;
-    springPieceTo(
+    animatePieceTo(
       pawn,
       getXYFromSquare(
         pendingPromotion ? promotion.to : promotion.from,
         pieceWidth,
-        orientation,
       ),
-      MOVE_SPRING,
+      MOVE_TIMING,
     );
-  }, [pendingPromotion, pieceWidth, orientation]);
-
-  // Flipping the board moves every piece to its mirrored square at once.
-  // A layout effect (not a plain one) so the old layout is never painted
-  // for a frame after the flip. The square-keyed bookkeeping above is
-  // orientation-independent, so only the on-screen positions change.
-  useLayoutEffect(() => {
-    if (prevOrientation.current === orientation) return;
-    prevOrientation.current = orientation;
-    [...entryById.current.values(), ...capturedViews.current].forEach(
-      (pieceEntry) => {
-        const position = getXYFromSquare(
-          pieceEntry.square,
-          pieceWidth,
-          orientation,
-        );
-        pieceEntry.x.set(position.x);
-        pieceEntry.y.set(position.y);
-      },
-    );
-  }, [orientation, pieceWidth]);
+  }, [pendingPromotion, pieceWidth]);
 
   if (
     pieces !== prevPieces.current ||

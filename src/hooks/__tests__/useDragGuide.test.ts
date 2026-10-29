@@ -11,14 +11,12 @@ describe('useDragGuide', () => {
     expect(result.current.y.get()).toBe(0);
   });
 
-  it('keeps the same shared values across re-renders', async () => {
+  it('returns the same guide across re-renders - every piece is given it', async () => {
     const { result, rerender } = await renderHook(() => useDragGuide());
     const first = result.current;
 
     await rerender({});
 
-    expect(result.current.x).toBe(first.x);
-    expect(result.current.y).toBe(first.y);
-    expect(result.current.opacity).toBe(first.opacity);
+    expect(result.current).toBe(first);
   });
 });

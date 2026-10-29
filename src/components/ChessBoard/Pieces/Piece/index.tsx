@@ -30,7 +30,7 @@ interface PieceProps {
 }
 
 const Piece: React.FC<PieceProps> = (props) => {
-  const { id, square, width, x, y, captured } = props;
+  const { id, square, width, orientation, x, y, captured } = props;
   const testID = captured ? `taken-piece-${square}` : `piece-${square}`;
   const { gesture, scale, zIndex } = usePieceGesture({ ...props, testID });
 
@@ -50,7 +50,14 @@ const Piece: React.FC<PieceProps> = (props) => {
         testID={testID}
         pointerEvents={captured ? 'none' : 'auto'}
       >
-        <Image source={PIECES[id]} style={{ width, height: width }} />
+        <Image
+          source={PIECES[id]}
+          style={[
+            { width, height: width },
+            // Upright again, on a board turned round for black.
+            orientation === 'b' && styles.upright,
+          ]}
+        />
       </Animated.View>
     </GestureDetector>
   );
@@ -59,6 +66,9 @@ const Piece: React.FC<PieceProps> = (props) => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
+  },
+  upright: {
+    transform: [{ rotate: '180deg' }],
   },
 });
 
