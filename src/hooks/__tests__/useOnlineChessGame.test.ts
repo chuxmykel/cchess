@@ -1,5 +1,8 @@
 import { act, renderHook } from '@testing-library/react-native';
+import { Chess } from 'chess.js';
+import { createAudioPlayer } from 'expo-audio';
 
+import { SOUNDS } from '../../constants/sounds';
 import { useOnlineChessGame } from '../useOnlineChessGame';
 import { GAME_RESULT_REASON } from '../../network/socketEvents';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
@@ -118,6 +121,54 @@ describe('useOnlineChessGame', () => {
     ).toHaveLength(1);
   });
 
+  it("sounds my move once, not again for its echo, and the opponent's", async () => {
+    const { socket, trigger } = createFakeSocket();
+    const snapshot = makeGameSnapshot();
+    const { result } = await renderHook(() =>
+      useOnlineChessGame(socket, GAME_ID, 'w', snapshot),
+    );
+    const movePlayer = jest.mocked(createAudioPlayer)(SOUNDS.move);
+    jest.mocked(movePlayer.play).mockClear();
+    const chess = new Chess();
+
+    await act(() => {
+      result.current.attemptMove('e2', 'e4');
+    });
+    chess.move('e4');
+    const afterE4 = chess.fen();
+    chess.move('e5');
+    const afterE5 = chess.fen();
+    for (const [ply, from, to, color, san, fen] of [
+      [1, 'e2', 'e4', 'w', 'e4', afterE4],
+      [2, 'e7', 'e5', 'b', 'e5', afterE5],
+    ] as const) {
+      await act(() => {
+        trigger('game:move', {
+          gameId: GAME_ID,
+          move: {
+            ply,
+            from,
+            to,
+            piece: 'p',
+            color,
+            san,
+            captured: null,
+            promotion: null,
+            fenAfter: fen,
+            clockAfterMs: 299000,
+          },
+          fen,
+          turn: color === 'w' ? 'b' : 'w',
+          whiteTimeRemainingMs: 299000,
+          blackTimeRemainingMs: 299000,
+        });
+      });
+    }
+
+    expect(result.current.fen).toBe(afterE5);
+    expect(movePlayer.play).toHaveBeenCalledTimes(2);
+  });
+
   it('reports isGameOver once the server reports the game as over', async () => {
     const { socket, trigger } = createFakeSocket();
     const snapshot = makeGameSnapshot();
@@ -135,6 +186,59 @@ describe('useOnlineChessGame', () => {
     });
 
     expect(result.current.isGameOver).toBe(true);
+  });
+
+  it('sounds a new game starting, and its end', async () => {
+    const { socket, trigger } = createFakeSocket();
+    const snapshot = makeGameSnapshot();
+    const startPlayer = jest.mocked(createAudioPlayer)(SOUNDS['game-start']);
+    const endPlayer = jest.mocked(createAudioPlayer)(SOUNDS['game-end']);
+    jest.mocked(startPlayer.play).mockClear();
+    jest.mocked(endPlayer.play).mockClear();
+
+    await renderHook(() => useOnlineChessGame(socket, GAME_ID, 'w', snapshot));
+    expect(startPlayer.play).toHaveBeenCalledTimes(1);
+    expect(endPlayer.play).not.toHaveBeenCalled();
+
+    await act(() => {
+      trigger('game:over', {
+        ...snapshot,
+        status: 'completed',
+        result: 'white',
+        resultReason: GAME_RESULT_REASON.RESIGNATION,
+      });
+    });
+    expect(endPlayer.play).toHaveBeenCalledTimes(1);
+  });
+
+  it('is quiet reopening a game already under way', async () => {
+    const { socket } = createFakeSocket();
+    const chess = new Chess();
+    chess.move('e4');
+    const snapshot = makeGameSnapshot({
+      fen: chess.fen(),
+      turn: 'b',
+      moves: [
+        {
+          ply: 1,
+          from: 'e2',
+          to: 'e4',
+          piece: 'p',
+          color: 'w',
+          san: 'e4',
+          captured: null,
+          promotion: null,
+          fenAfter: chess.fen(),
+          clockAfterMs: 300000,
+        },
+      ],
+    });
+    const startPlayer = jest.mocked(createAudioPlayer)(SOUNDS['game-start']);
+    jest.mocked(startPlayer.play).mockClear();
+
+    await renderHook(() => useOnlineChessGame(socket, GAME_ID, 'b', snapshot));
+
+    expect(startPlayer.play).not.toHaveBeenCalled();
   });
 
   it('emits resign/offerDraw/respondToDraw/abort with the gameId', async () => {

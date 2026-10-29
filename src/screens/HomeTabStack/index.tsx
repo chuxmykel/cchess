@@ -1,4 +1,5 @@
 import React from 'react';
+import { DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import Home from '../Home';
@@ -21,7 +22,17 @@ const HomeTabStack: React.FC = () => {
         }}
       >
         <Screen name="Home" component={Home} />
-        <Screen name="NewGame" component={NewGame} />
+        <Screen
+          name="NewGame"
+          component={NewGame}
+          // A way back Home; the screen draws its own large title, and the
+          // header shares its background, so the two read as one.
+          options={({ navigation }) => ({
+            ...plainHeaderOptions(navigation),
+            title: '',
+            headerStyle: { backgroundColor: DefaultTheme.colors.background },
+          })}
+        />
         <Screen
           name="Friends"
           component={Friends}

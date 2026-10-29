@@ -88,6 +88,7 @@ describe('usePieceAnimations', () => {
       isKingSideCastle: false,
       isQueenSideCastle: false,
       isPromotion: false,
+      san: 'e4',
     };
     const afterE4: DomainPiece[] = [
       { square: 'e4', type: 'p', color: 'w' },
@@ -137,6 +138,7 @@ describe('usePieceAnimations', () => {
       isKingSideCastle: false,
       isQueenSideCastle: false,
       isPromotion: false,
+      san: 'exd5',
     };
 
     async function renderCapture() {

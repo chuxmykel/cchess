@@ -49,6 +49,7 @@ export type AppliedMove = MoveCore & {
   rookFrom?: Square;
   rookTo?: Square;
   isPromotion: boolean;
+  san: string;
 };
 
 export type MoveResult =

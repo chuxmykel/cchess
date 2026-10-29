@@ -90,6 +90,12 @@ network/       pure networking infra (REST/socket clients, event types), same st
     material, counted on the board so promotions count - for the side
     ahead, as shown under the players' names (`materialImbalance(fen)`
     is that board count).
+  - `moveSound.ts` - `moveSound(san)`: the sound a move makes - checkmate,
+    check, castle, capture or a plain move, the first that applies - read
+    off its SAN (`AppliedMove` carries it); `stepSound`, that of stepping
+    through a game - forward, the move landed on, back, a plain move; and
+    `gameOverSound(reason)`, a game's end - none for mate, which sounded
+    with its move.
 
 - **`src/network/`** - a second framework-agnostic layer, mirroring
   `domain/`'s pure-infra style but for talking to `cchess-be` (the
@@ -186,7 +192,14 @@ network/       pure networking infra (REST/socket clients, event types), same st
     until seen, yours too - marking it read there with `game:chatRead`
     while open) and rematches (`useRematch`: offering one, answering the
     opponent's, and handing over the new game when the server starts it,
-    which `LiveGame` then plays in place), `useGameClock` (client-side ticking
+    which `LiveGame` then plays in place), the game sounds (`useGameSounds.ts`,
+    with `expo-audio` - one player per sound, shared app-wide; muted by the
+    silent switch, mixing with other apps' audio: `useMoveSounds`, each
+    move's as it's applied, either side's; `useMoveNavigationSounds`,
+    stepping through a game's moves, in `LiveGame` and `GameViewer`, plus a
+    watched game's moves as they arrive; `useGameStartSound`, a new game
+    opening; and `useGameOverSound`, a game ending while it's shown),
+    `useGameClock` (client-side ticking
     between authoritative server clock updates; paused until both sides
     have moved), `useFirstMoveCountdown` (seconds left to play the first
     move), and
@@ -302,7 +315,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
   decline; offering one waits, like resigning, until both sides have
   moved - the server refuses either before that),
   `SeekCard` (the waiting card: time control, rating range, lobby stats),
-  `LiveGameSkeleton`, `ConnectionStrengthIndicator`), shared
+  `LiveGameSkeleton`, `GameBoardArea` (the board between its two player
+  bars, 24pt from each, with more of the room left over below them than
+  above - clear of the toolbar - and laid out the same seeking, loading and playing,
+  so the board never jumps), `ConnectionStrengthIndicator`), shared
   primitives used across screens (`Button`, `Avatar`, `BottomSheet` -
   fits its content, or with `heightRatio` takes that share of the screen
   above the keyboard for content that fills it, running on behind the
@@ -429,6 +445,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   (`animations.ts`), castling squares, time controls, board
   themes (`boardThemes.ts`), seeks (`seek.ts`: the `Seek` that New Game
   hands to LiveGame, and the rating range's default, step and limit),
+  the game's sounds (`sounds.ts`, `assets/sounds/*.wav` - synthesized by
+  `node scripts/generate-sounds.js`; a recording saved under the same
+  name replaces one),
   the app's accent and muted colors
   (`colors.ts`, a start on a fuller theme), account rules mirrored from
   the server (`account.ts`) and the chat and direct message limits
@@ -481,7 +500,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
   renders the slider as a plain `View` keeping its props too, so tests
   fire `valueChange` on it directly, and victory-native's
   `CartesianChart` the same way (testID `cartesian-chart`), so tests check
-  what a chart was given to plot - Skia can't draw under Jest.
+  what a chart was given to plot - Skia can't draw under Jest. And it mocks
+  `expo-audio` with one player per sound, and names the sounds
+  (`move.wav`, ...) since jest-expo makes every asset `1` - so tests check
+  which sound's player played.
 
 ## Testing
 

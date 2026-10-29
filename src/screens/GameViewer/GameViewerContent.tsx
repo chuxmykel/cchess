@@ -13,6 +13,7 @@ import GameOverOverlay from '../../components/GameOverOverlay';
 import GameToolbar from '../../components/GameToolbar';
 import MoveList from '../../components/MoveList';
 import PlayerBar, { PlayerBarProps } from '../../components/PlayerBar';
+import GameBoardArea from '../../components/GameBoardArea';
 import { BOARD_THEMES } from '../../constants/boardThemes';
 import {
   animatesMoves,
@@ -27,6 +28,10 @@ import { UseGameChatResult } from '../../hooks/useGameChat';
 import { clocksAtPly } from '../../hooks/useGameViewer';
 import { useGameShare } from '../../hooks/useGameShare';
 import { useMoveNavigation } from '../../hooks/useMoveNavigation';
+import {
+  useGameOverSound,
+  useMoveNavigationSounds,
+} from '../../hooks/useGameSounds';
 import { GameSnapshot } from '../../network/socketEvents';
 
 export type ViewerChat = UseGameChatResult & {
@@ -69,6 +74,14 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
 }) => {
   const { orientation, flip } = useBoardOrientation(myColor ?? 'w');
   const moveNavigation = useMoveNavigation(snapshot.moves);
+  // Moves arriving in a game being watched sound too, as they're played.
+  useMoveNavigationSounds(
+    snapshot.moves,
+    moveNavigation.currentPly,
+    snapshot.status === 'active',
+  );
+  // And the end of one, as it happens.
+  useGameOverSound(snapshot.status !== 'active', snapshot.resultReason);
   const shareGame = useGameShare(snapshot.id, onError);
   const { isBookmarked, toggleBookmark } = useGameBookmark(
     snapshot.id,
@@ -169,7 +182,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
         onSelectPly={moveNavigation.goTo}
       />
 
-      <View style={styles.board}>
+      <GameBoardArea>
         <PlayerBar
           color={topColor}
           material={material[topColor]}
@@ -204,7 +217,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
           material={material[orientation]}
           {...sharedPlayerBarProps}
         />
-      </View>
+      </GameBoardArea>
 
       <BottomBar>
         <GameToolbar
@@ -248,10 +261,5 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     width: '100%',
-  },
-  board: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 12,
   },
 });

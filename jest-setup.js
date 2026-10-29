@@ -9,6 +9,38 @@ jest.mock(
   () => ({ installUIRuntimeBindings: () => {} }),
 );
 
+// expo-audio's native module isn't there under Jest: a player per sound,
+// the same one for the same source, so tests can check which one played.
+jest.mock('expo-audio', () => {
+  const players = new Map();
+  return {
+    setAudioModeAsync: jest.fn(() => Promise.resolve()),
+    createAudioPlayer: jest.fn((source) => {
+      if (!players.has(source)) {
+        players.set(source, {
+          play: jest.fn(),
+          seekTo: jest.fn(() => Promise.resolve()),
+        });
+      }
+      return players.get(source);
+    }),
+  };
+});
+
+// jest-expo makes every asset `1`; tell the sounds apart, so a test can
+// see which one played.
+jest.mock('./src/constants/sounds', () => ({
+  SOUNDS: {
+    move: 'move.wav',
+    capture: 'capture.wav',
+    castle: 'castle.wav',
+    check: 'check.wav',
+    checkmate: 'checkmate.wav',
+    'game-start': 'game-start.wav',
+    'game-end': 'game-end.wav',
+  },
+}));
+
 jest.mock('react-native/Libraries/Modal/Modal', () => {
   const PresetModal = jest.requireActual(
     '@react-native/jest-preset/jest/mocks/Modal',

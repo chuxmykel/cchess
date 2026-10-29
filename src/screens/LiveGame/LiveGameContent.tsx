@@ -14,6 +14,7 @@ import Chessboard from '../../components/ChessBoard';
 import MoveList from '../../components/MoveList';
 import PromotionMenu from '../../components/PromotionMenu';
 import PlayerBar, { PlayerBarProps } from '../../components/PlayerBar';
+import GameBoardArea from '../../components/GameBoardArea';
 import GameHeader from '../../components/GameHeader';
 import GameToolbar from '../../components/GameToolbar';
 import BottomBar from '../../components/BottomBar';
@@ -27,6 +28,7 @@ import { useGameClock } from '../../hooks/useGameClock';
 import { useFirstMoveCountdown } from '../../hooks/useFirstMoveCountdown';
 import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useMoveNavigation } from '../../hooks/useMoveNavigation';
+import { useMoveNavigationSounds } from '../../hooks/useGameSounds';
 import { useGameShare } from '../../hooks/useGameShare';
 import { useGameBookmark } from '../../hooks/useGameBookmark';
 import { capturedMaterial } from '../../domain/material';
@@ -155,6 +157,8 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
   const { orientation, flip } = useBoardOrientation(myColor);
   const moveNavigation = useMoveNavigation(moves);
+  // The live board sounds the game's own moves; this, stepping through them.
+  useMoveNavigationSounds(moves, moveNavigation.currentPly, false);
   const shareGame = useGameShare(snapshot.id, onError);
   const { isBookmarked, toggleBookmark } = useGameBookmark(
     snapshot.id,
@@ -273,7 +277,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         onSelectPly={moveNavigation.goTo}
       />
 
-      <View style={styles.board} testID="game-board-area">
+      <GameBoardArea testID="game-board-area">
         <PlayerBar
           color={topColor}
           isOnline={topColor === myColor ? undefined : isOpponentOnline}
@@ -339,7 +343,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
           material={material[orientation]}
           {...sharedPlayerBarProps}
         />
-      </View>
+      </GameBoardArea>
 
       {!isGameOver && drawOffer === 'received' && (
         <DrawOfferPrompt
@@ -389,10 +393,5 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     width: '100%',
-  },
-  board: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 12,
   },
 });

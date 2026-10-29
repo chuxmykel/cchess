@@ -141,7 +141,10 @@ just adds navigation the flow has to wait through for no reason.
   enclosing navigator/chrome changes where that centered board lands on
   screen with zero changes to board code. Recomputed via `maestro
 hierarchy`: piece-e2's center moved from `(226,613)` to `(226,562)`,
-  piece-g1's from `(326,663)` to `(326,613)`.
+  piece-g1's from `(326,663)` to `(326,613)`. Since then the screen
+  itself moved the board: a taller header, and the board 24pt from each
+  player bar with more room left below them than above (`GameBoardArea`),
+  putting piece-e2 at `(226,587)` and piece-g1 at `(326,637)`.
   Maestro reports `COMPLETED` for a swipe even when its start point
   misses the piece entirely - there's no error, the board just silently
   doesn't change. If a drag flow "succeeds" but nothing moved, don't

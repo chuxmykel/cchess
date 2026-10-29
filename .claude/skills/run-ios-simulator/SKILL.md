@@ -293,20 +293,21 @@ different point once the board is flipped or the app plays the other
 color.
 
 Measured on iPhone 18 Pro (iOS 27.0): the board runs from x 0-402 and
-y 264-666 in points, about 50.25pt per square - the same on the
+y 260-662 in points, about 50.25pt per square - the same on the
 seeking phase, which shares the game's layout. Point centers:
 
 | Square | App is white, unflipped | App is black, unflipped |
 | ------ | ----------------------- | ----------------------- |
-| e7     | (226, 339)              | (175, 590)              |
-| e5     | (226, 440)              | (175, 490)              |
-| g1     | (326, 641)              | (75, 289)               |
-| f3     | (276, 540)              | (125, 389)              |
+| e7     | (226, 335)              | (175, 587)              |
+| e5     | (226, 436)              | (175, 486)              |
+| g1     | (326, 637)              | (75, 285)               |
+| f3     | (276, 536)              | (125, 386)              |
 
-The black-side column was measured from a hierarchy dump during a live
-game on 2026-10-26. The white-side numbers are calculated from the same
-board bounds. The board is centered between the move list and the bottom
-bar, so it moves whenever anything above or below it changes height -
+The board's bounds were measured from a hierarchy dump during a live
+game on 2026-10-29; the centers are calculated from them. The board sits low
+in the room between the move list and the bottom bar (`GameBoardArea`:
+24pt from each player bar, the room left over split 1:2 above and
+below, under a 64pt `GameHeader`), so it moves whenever anything above or below it changes height -
 dump the hierarchy and re-check before trusting either column on another
 device or after any layout change.
 
