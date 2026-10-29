@@ -25,12 +25,16 @@ interface ChessboardProps {
   width: number;
   // Whose side of the board is at the bottom; defaults to white's.
   orientation?: Color;
+  // Slide pieces to their squares, rather than put them there at once - a
+  // bullet game has no time to watch them go.
+  animate?: boolean;
 }
 
 const Chessboard: React.FC<ChessboardProps> = ({
   colors,
   width,
   orientation = 'w',
+  animate = true,
 }) => {
   const {
     pieces,
@@ -50,6 +54,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
     lastMove,
     PIECE_WIDTH,
     pendingPromotion,
+    animate,
   );
   const dragGuide = useDragGuide();
   // For a drop to be judged where it lands, on the UI thread.

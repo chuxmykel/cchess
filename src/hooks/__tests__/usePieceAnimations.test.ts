@@ -195,6 +195,26 @@ describe('usePieceAnimations', () => {
       expect(positionOf(moverView)).toEqual(getXYFromSquare('d5', pieceWidth));
     });
 
+    it('puts the piece taking it straight on its square, and the piece taken straight off, without animations', async () => {
+      const { result, rerender } = await renderHook(
+        (props: { pieces: DomainPiece[]; lastMove: AppliedMove | null }) =>
+          usePieceAnimations(
+            props.pieces,
+            props.lastMove,
+            pieceWidth,
+            null,
+            false,
+          ),
+        { initialProps: { pieces: before, lastMove: null } },
+      );
+      const moverView = result.current[1];
+
+      await rerender({ pieces: after, lastMove: exd5 });
+
+      expect(positionOf(moverView)).toEqual(getXYFromSquare('d5', pieceWidth));
+      expect(result.current.some((view) => view.captured)).toBe(false);
+    });
+
     it("doesn't let an earlier move's landing remove a later capture's piece", async () => {
       const { result, rerender, moverView } = await renderCapture();
       // ...cxd5, while exd5 is still on its way.

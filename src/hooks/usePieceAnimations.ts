@@ -38,14 +38,21 @@ export type AnimatedPieceView = {
 
 type PendingAnimation = { pieceEntry: AnimatedPieceView; toSquare: Square };
 
-/** Moves a piece to `to` on the UI thread; `onLanded` (on the JS thread)
- * once it's there, or once a drag or a newer move takes it over. */
+/** Moves a piece to `to` on the UI thread - or puts it there, with no
+ * `config` - and `onLanded` (on the JS thread) once it's there, or once a
+ * drag or a newer move takes it over. */
 export function animatePieceTo(
   piece: Pick<AnimatedPieceView, 'x' | 'y'>,
   to: Position,
-  config: WithTimingConfig,
+  config: WithTimingConfig | null,
   onLanded?: () => void,
 ) {
+  if (!config) {
+    piece.x.set(to.x);
+    piece.y.set(to.y);
+    onLanded?.();
+    return;
+  }
   // Each axis is animated on its own, so the landing waits for both.
   let settling = 2;
   const settle = () => {
@@ -67,6 +74,8 @@ export function usePieceAnimations(
   lastMove: AppliedMove | null,
   pieceWidth: number,
   pendingPromotion: { from: Square; to: Square } | null = null,
+  // Slide pieces to their squares; otherwise they're put there at once.
+  animate = true,
 ): AnimatedPieceView[] {
   // This hook keeps its piece/animation bookkeeping in mutable refs that
   // are read and written synchronously during render, not inside an
@@ -226,11 +235,11 @@ export function usePieceAnimations(
       animatePieceTo(
         pieceEntry,
         getXYFromSquare(toSquare, pieceWidth),
-        MOVE_TIMING,
+        animate ? MOVE_TIMING : null,
         onLanded,
       );
     });
-  }, [lastMove, pieceWidth]);
+  }, [lastMove, pieceWidth, animate]);
 
   // A pawn waiting on the promotion menu stands on the square it's
   // promoting on - where it was dropped, or where it was tapped to - and
@@ -251,9 +260,9 @@ export function usePieceAnimations(
         pendingPromotion ? promotion.to : promotion.from,
         pieceWidth,
       ),
-      MOVE_TIMING,
+      animate ? MOVE_TIMING : null,
     );
-  }, [pendingPromotion, pieceWidth]);
+  }, [pendingPromotion, pieceWidth, animate]);
 
   if (
     pieces !== prevPieces.current ||

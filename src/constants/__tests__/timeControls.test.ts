@@ -1,4 +1,8 @@
-import { findTimeControl, TIME_CONTROL_GROUPS } from '../timeControls';
+import {
+  animatesMoves,
+  findTimeControl,
+  TIME_CONTROL_GROUPS,
+} from '../timeControls';
 
 describe('findTimeControl', () => {
   it('returns the matching preset', () => {
@@ -27,4 +31,17 @@ describe('findTimeControl', () => {
   it('labels a start of under a minute in seconds', () => {
     expect(findTimeControl(15, 0, 'bullet').label).toBe('15s+0');
   });
+});
+
+describe('animatesMoves', () => {
+  it('moves pieces at once in bullet - anything under 3+0', () => {
+    expect(animatesMoves('bullet')).toBe(false);
+  });
+
+  it.each(['blitz', 'rapid', 'classical'] as const)(
+    'slides pieces in %s - 3+0 and up',
+    (type) => {
+      expect(animatesMoves(type)).toBe(true);
+    },
+  );
 });
