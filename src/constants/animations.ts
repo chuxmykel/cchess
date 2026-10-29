@@ -7,18 +7,22 @@ const QUICK: WithTimingConfig = {
   easing: Easing.out(Easing.cubic),
 };
 
-// A piece travelling to its new square - a move, a capture, the rook in a
-// castle, or a drop from where the finger let go.
+// A piece travelling to its new square - a move played by tap, the
+// opponent's, the rook in a castle. A dragged piece is lifted and set down at
+// once instead, as on lichess (see usePieceGesture).
 export const MOVE_TIMING = QUICK;
 
-// A piece lifted as a drag starts, and set back down on release.
-export const SCALE_TIMING = QUICK;
-
-// A piece going home from a drop that wasn't a move.
-export const SNAP_BACK_TIMING = QUICK;
-
 // How much bigger a piece is drawn while it's being dragged.
-export const DRAG_SCALE = 1.4;
+export const DRAG_SCALE = 2;
+
+// How far above the finger a dragged piece is drawn, in squares: clear of the
+// finger, and clearly not on the square the drop counts for - the one under
+// the finger, which the guide marks.
+export const DRAG_LIFT = 1;
+
+// How long before the finger lifts a drop that's no move is judged again
+// from (see usePieceGesture): about two frames, what the guide was showing.
+export const DROP_LIFT_GRACE_MS = 35;
 
 // Drawn over every other piece while dragged.
 export const DRAGGED_Z_INDEX = 100;

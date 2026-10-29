@@ -12,7 +12,12 @@ import {
 import { useChessGame } from '../../hooks/useChessGame';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
 import { NUMBER_OF_ROWS } from '../../constants';
-import { dragPiece, tapPiece, touchPiece } from '../../testUtils/pieceGestures';
+import {
+  dragPiece,
+  settleAnimations,
+  tapPiece,
+  touchPiece,
+} from '../../testUtils/pieceGestures';
 import { animatedStyleOf } from '../../testUtils/animatedValue';
 import { piecePositionOnScreen } from '../../testUtils/boardPosition';
 import { usePieceGesture } from '../../hooks/usePieceGesture';
@@ -246,6 +251,26 @@ describe('Chessboard', () => {
 
           expect(screen.queryByTestId('piece-e2')).toBeNull();
           expect(screen.getByTestId('piece-e4')).toBeTruthy();
+        });
+
+        it('should show a piece that later lands where a drop took one', async () => {
+          // d4xe5 dropped, then d6xe5 back.
+          const screen = await renderChessBoard(
+            '4k3/8/3p4/4p3/3P4/8/8/4K3 w - - 0 1',
+            orientation,
+          );
+
+          const capture = dragDeltaBetween('d4', 'e5', orientation);
+          await dragPiece('piece-d4', capture.dx, capture.dy);
+          // Not dropped - as the opponent's move comes, from the server.
+          await fireEvent.press(screen.getByTestId('square-d6'));
+          await fireEvent.press(screen.getByTestId('square-e5'));
+          await settleAnimations();
+
+          expect(screen.queryByTestId('piece-d6')).toBeNull();
+          expect(animatedStyleOf(screen.getByTestId('piece-e5')).opacity).toBe(
+            1,
+          );
         });
 
         it("should not move an opponent's piece even if dragged", async () => {

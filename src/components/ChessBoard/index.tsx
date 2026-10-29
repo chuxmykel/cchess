@@ -5,12 +5,8 @@ import { useSharedValue } from 'react-native-reanimated';
 import { Color, Square } from 'chess.js';
 
 import { NUMBER_OF_ROWS } from '../../constants';
-import { SNAP_BACK_TIMING } from '../../constants/animations';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
-import {
-  animatePieceTo,
-  usePieceAnimations,
-} from '../../hooks/usePieceAnimations';
+import { usePieceAnimations } from '../../hooks/usePieceAnimations';
 import { useDragGuide } from '../../hooks/useDragGuide';
 import { useValidMoveIndicators } from '../../hooks/useValidMoveIndicators';
 import { useChessGameContext } from '../../context/ChessGameContext';
@@ -96,20 +92,36 @@ const Chessboard: React.FC<ChessboardProps> = ({
     latest.current.showFor(square);
   }, []);
 
-  const handleDragRelease = useCallback((from: Square, to: Square) => {
-    const { attemptMove, animatedPieces, PIECE_WIDTH } = latest.current;
-    const draggedPiece = animatedPieces.find((piece) => piece.square === from);
-    const result = attemptMove(from, to);
-    // Not a move after all: the drop already sent the piece home if it
-    // looked illegal there, but this is the final word.
-    if (result.status === 'illegal' && draggedPiece) {
-      animatePieceTo(
-        draggedPiece,
-        getXYFromSquare(from, PIECE_WIDTH),
-        SNAP_BACK_TIMING,
-      );
+  // A piece a drop took is hidden until the game moves on from that move -
+  // made, or refused and the board put back.
+  const { taken } = dragGuide;
+  useLayoutEffect(() => {
+    const drop = taken.get();
+    if (drop && (lastMove?.from !== drop.from || lastMove?.to !== drop.to)) {
+      taken.set(null);
     }
-  }, []);
+  }, [taken, lastMove]);
+
+  const handleDragRelease = useCallback(
+    (from: Square, to: Square) => {
+      const { attemptMove, animatedPieces, PIECE_WIDTH } = latest.current;
+      const draggedPiece = animatedPieces.find(
+        (piece) => piece.square === from,
+      );
+      const result = attemptMove(from, to);
+      // Not made yet - or not a move at all: whatever the drop took is back.
+      if (result.status !== 'ok') taken.set(null);
+      // Not a move after all: the drop already sent the piece home if it
+      // looked illegal there, but this is the final word - home at once, as
+      // a drop is set down.
+      if (result.status === 'illegal' && draggedPiece) {
+        const home = getXYFromSquare(from, PIECE_WIDTH);
+        draggedPiece.x.set(home.x);
+        draggedPiece.y.set(home.y);
+      }
+    },
+    [taken],
+  );
 
   return (
     // Its own root for the pieces' gestures, so the board works wherever it's

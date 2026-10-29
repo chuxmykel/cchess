@@ -9,13 +9,19 @@ interface PieceDragAndDropGuideProps {
   guide: DragGuide;
 }
 
+// How wide the guide's circle is, in squares - as on lichess.
+const GUIDE_SQUARES = 2;
+
+// What a drag shows on the board, as on lichess: the square the piece came
+// from, marked while it's held, and a circle centred on the square a drop
+// would land on.
 const PieceDragAndDropGuide: React.FC<PieceDragAndDropGuideProps> = ({
   boardWidth,
   squareWidth,
   guide,
 }) => {
-  const dragGuideDiameter = squareWidth * 2.5;
-  const offsetToCenter = -(dragGuideDiameter / 3.5);
+  const dragGuideDiameter = squareWidth * GUIDE_SQUARES;
+  const offsetToCenter = -(dragGuideDiameter - squareWidth) / 2;
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: guide.opacity.get(),
     transform: [
@@ -23,11 +29,29 @@ const PieceDragAndDropGuide: React.FC<PieceDragAndDropGuideProps> = ({
       { translateY: guide.y.get() },
     ] as const,
   }));
+  const originStyle = useAnimatedStyle(() => {
+    const origin = guide.origin.get();
+    return {
+      opacity: origin ? 1 : 0,
+      transform: [
+        { translateX: origin?.x ?? 0 },
+        { translateY: origin?.y ?? 0 },
+      ] as const,
+    };
+  });
   return (
     <View
       style={{ position: 'absolute', width: boardWidth, height: boardWidth }}
       pointerEvents="none"
     >
+      <Animated.View
+        testID="drag-origin"
+        style={[
+          styles.origin,
+          { width: squareWidth, height: squareWidth },
+          originStyle,
+        ]}
+      />
       <Animated.View
         testID="drag-guide"
         style={[
@@ -52,5 +76,11 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     backgroundColor: 'rgba(70, 70, 70, 0.4)',
+  },
+  origin: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    backgroundColor: 'rgba(255, 210, 60, 0.5)',
   },
 });

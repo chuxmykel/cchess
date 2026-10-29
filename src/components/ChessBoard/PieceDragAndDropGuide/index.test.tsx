@@ -9,11 +9,13 @@ describe('PieceDragAndDropGuide', () => {
   const boardWidth = 400;
   const squareWidth = 50;
 
-  async function renderGuide() {
+  async function renderGuide(origin: { x: number; y: number } | null = null) {
     const guide: DragGuide = {
       x: makeMutable(123),
       y: makeMutable(45),
       opacity: makeMutable(0.7),
+      origin: makeMutable<{ x: number; y: number } | null>(origin),
+      taken: makeMutable(null),
     };
     const screen = await render(
       <PieceDragAndDropGuide
@@ -22,24 +24,43 @@ describe('PieceDragAndDropGuide', () => {
         guide={guide}
       />,
     );
-    return { element: screen.getByTestId('drag-guide'), guide };
+    return {
+      element: screen.getByTestId('drag-guide'),
+      origin: screen.getByTestId('drag-origin'),
+      guide,
+    };
   }
 
   it('should exist', () => {
     expect(PieceDragAndDropGuide).toBeDefined();
   });
 
-  it('sizes the guide relative to a square, centered on the piece', async () => {
+  it('sizes the guide two squares across, centered on its square', async () => {
     const { element } = await renderGuide();
 
-    const diameter = squareWidth * 2.5;
     expect(element).toHaveStyle({
-      width: diameter,
-      height: diameter,
-      borderRadius: diameter / 2,
-      top: -(diameter / 3.5),
-      left: -(diameter / 3.5),
+      width: 2 * squareWidth,
+      height: 2 * squareWidth,
+      borderRadius: squareWidth,
+      top: -squareWidth / 2,
+      left: -squareWidth / 2,
     });
+  });
+
+  it('marks the square a held piece came from', async () => {
+    const { origin } = await renderGuide({ x: 150, y: 300 });
+
+    expect(origin).toHaveStyle({ width: squareWidth, height: squareWidth });
+    expect(animatedStyleOf(origin)).toMatchObject({
+      opacity: 1,
+      transform: [{ translateX: 150 }, { translateY: 300 }],
+    });
+  });
+
+  it('marks no square when nothing is held', async () => {
+    const { origin } = await renderGuide();
+
+    expect(animatedStyleOf(origin).opacity).toBe(0);
   });
 
   it('draws the guide where its shared values say, as see-through as they say', async () => {

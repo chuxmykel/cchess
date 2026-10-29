@@ -31,6 +31,8 @@ function GestureHarness({ onScaleAndZIndex, ...props }: HarnessProps) {
       x: makeMutable(0),
       y: makeMutable(0),
       opacity: makeMutable(0),
+      origin: makeMutable<{ x: number; y: number } | null>(null),
+      taken: makeMutable(null),
     },
   });
   onScaleAndZIndex?.(() => ({ scale: scale.get(), zIndex: zIndex.get() }));
@@ -52,6 +54,7 @@ describe('usePieceGesture', () => {
       <GestureHandlerRootView>
         <GestureHarness
           square={square}
+          color="w"
           width={width}
           orientation="w"
           disabled={false}

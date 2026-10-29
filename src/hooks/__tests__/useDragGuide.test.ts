@@ -9,6 +9,8 @@ describe('useDragGuide', () => {
     expect(result.current.opacity.get()).toBe(0);
     expect(result.current.x.get()).toBe(0);
     expect(result.current.y.get()).toBe(0);
+    expect(result.current.origin.get()).toBeNull();
+    expect(result.current.taken.get()).toBeNull();
   });
 
   it('returns the same guide across re-renders - every piece is given it', async () => {

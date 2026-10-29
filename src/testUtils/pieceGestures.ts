@@ -32,14 +32,18 @@ function panController(testID: string) {
   );
 }
 
-// Where the finger goes down, on screen - any point will do.
+// Where the finger goes down, on screen - any point will do - and where on
+// the piece: its middle, for the 50-point squares the tests use.
 const TOUCH_DOWN = { x: 100, y: 300 };
+const GRAB = { x: 25, y: 25 };
 
 // A drag's events as Gesture Handler sends them on iOS: the finger moves
 // TAP_MOVEMENT_THRESHOLD points, where the drag activates, then on by
 // (dx, dy) in all. Absolute positions count from the touch-down; translation
 // only from the activation - it's reset there.
-function dragEvents(dx: number, dy: number) {
+type Point = { x: number; y: number };
+
+function dragEvents(dx: number, dy: number, grab: Point = GRAB) {
   const distance = Math.hypot(dx, dy);
   const step = distance === 0 ? 0 : TAP_MOVEMENT_THRESHOLD / distance;
   const activation = { x: dx * step, y: dy * step };
@@ -50,7 +54,12 @@ function dragEvents(dx: number, dy: number) {
     translationY: moved.y - activation.y,
   });
   return {
-    begin: { absoluteX: TOUCH_DOWN.x, absoluteY: TOUCH_DOWN.y },
+    begin: {
+      absoluteX: TOUCH_DOWN.x,
+      absoluteY: TOUCH_DOWN.y,
+      x: grab.x,
+      y: grab.y,
+    },
     activate: at(activation),
     moved: at({ x: dx, y: dy }),
   };
@@ -77,9 +86,15 @@ export async function holdDrag(testID: string, dx: number, dy: number) {
   await settleAnimations(16);
 }
 
-/** A drag by (dx, dy) and release, then everything left to settle. */
-export async function dragPiece(testID: string, dx: number, dy: number) {
-  const events = dragEvents(dx, dy);
+/** A drag by (dx, dy) and release, then everything left to settle - the
+ * piece grabbed at `grab` on its view, its middle unless given. */
+export async function dragPiece(
+  testID: string,
+  dx: number,
+  dy: number,
+  grab?: Point,
+) {
+  const events = dragEvents(dx, dy, grab);
   await act(() =>
     firePan(testID, [
       { state: State.BEGAN, ...events.begin },
@@ -88,6 +103,28 @@ export async function dragPiece(testID: string, dx: number, dy: number) {
       { state: State.END, ...events.moved },
     ]),
   );
+  await settleAnimations();
+}
+
+/** A drag by (dx, dy) and release that Gesture Handler then reports as
+ * cancelled too, as it can straight after a drag ends. */
+export async function dragPieceThenCancelled(
+  testID: string,
+  dx: number,
+  dy: number,
+) {
+  const pan = panController(testID);
+  const events = dragEvents(dx, dy);
+  await act(() => {
+    pan.begin(events.begin);
+    pan.activate(events.activate);
+    pan.update(events.moved);
+    pan.end(events.moved);
+    // The controller won't cancel a gesture that has ended - put it back to
+    // where Gesture Handler acts as if it still is.
+    (pan as unknown as { state: State }).state = State.ACTIVE;
+    pan.cancel(events.moved);
+  });
   await settleAnimations();
 }
 
@@ -111,6 +148,33 @@ export async function flickPiece(
       { state: State.END, ...lifted },
     ]),
   );
+  await settleAnimations();
+}
+
+/** A drag that rests at (dx, dy) for `restMs`, then moves on to
+ * (thenDx, thenDy) `liftMs` before the finger lifts there - a finger
+ * sliding as it leaves the glass, or one moved on to another square. */
+export async function dragThenMoveOnLift(
+  testID: string,
+  dx: number,
+  dy: number,
+  restMs: number,
+  thenDx: number,
+  thenDy: number,
+  liftMs: number,
+) {
+  const pan = panController(testID);
+  const events = dragEvents(dx, dy);
+  const then = dragEvents(thenDx, thenDy).moved;
+  await act(() => {
+    pan.begin(events.begin);
+    pan.activate(events.activate);
+    pan.update(events.moved);
+    jest.advanceTimersByTime(restMs);
+    pan.update(then);
+    jest.advanceTimersByTime(liftMs);
+    pan.end(then);
+  });
   await settleAnimations();
 }
 

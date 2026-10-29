@@ -57,6 +57,8 @@ describe('Pieces', () => {
             x: makeMutable(0),
             y: makeMutable(0),
             opacity: makeMutable(0),
+            origin: makeMutable<{ x: number; y: number } | null>(null),
+            taken: makeMutable(null),
           }}
           onTap={onTap}
           onDragStart={onDragStart}

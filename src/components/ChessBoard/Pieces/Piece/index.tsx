@@ -32,7 +32,11 @@ interface PieceProps {
 const Piece: React.FC<PieceProps> = (props) => {
   const { id, square, width, orientation, x, y, captured } = props;
   const testID = captured ? `taken-piece-${square}` : `piece-${square}`;
-  const { gesture, scale, zIndex } = usePieceGesture({ ...props, testID });
+  const { gesture, scale, zIndex, hidden } = usePieceGesture({
+    ...props,
+    color: id[0] as Color,
+    testID,
+  });
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -41,6 +45,7 @@ const Piece: React.FC<PieceProps> = (props) => {
       { scale: scale.get() },
     ] as const,
     zIndex: zIndex.get(),
+    opacity: hidden.get() ? 0 : 1,
   }));
 
   return (
