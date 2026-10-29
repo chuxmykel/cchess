@@ -113,25 +113,18 @@ nohup npm run opponent --silent -- --color w > /tmp/opponent.log 2>&1 &
 - `--challenge` (with `--friend`) - the bot also challenges the account
   at `--time`, rated unless `--casual`. The challenge expires after 2
   minutes; start the bot again for another.
-- `--color w|b` - the color the **bot** must get. The server assigns
-  colors at random (a coin flip in `cchess-be`'s matchmaking service), so
-  this can't request one. If the bot gets the other color it aborts and
-  exits with code 2. So `--color w` means "make the app play black."
+- `--color w|b` - the color the **bot** asks for in its seek or
+  challenge; the server gives it that color, pairing a seek only with one
+  that wants the other color or doesn't mind. So `--color w` means "make
+  the app play black" - first time, no retrying. (The app's own seek
+  should leave "Play as" on Random, or pick the other color.) Rematches
+  swap colors as usual.
 - Exit codes: 0 when the game ends, 1 for connection/auth/matchmaking
-  errors (including `real_user_bot` not existing on that server), 2 for
-  the wrong color.
+  errors (including `real_user_bot` not existing on that server).
 
-To force a color, retry until it lands. A fresh launch each time clears
-the aborted game off the app's screen:
-
-```bash
-for i in 1 2 3 4 5 6 7 8; do
-  maestro --device $UDID test .claude/skills/run-ios-simulator/examples/to-new-game-and-seek.yaml >/dev/null 2>&1 || continue
-  nohup npm run opponent --silent -- --color w > /tmp/opponent.log 2>&1 &
-  until grep -qE "matched|error" /tmp/opponent.log; do sleep 0.5; done; sleep 1
-  grep -q "wrong color" /tmp/opponent.log || break
-done
-```
+To try a particular position - a promotion, an endgame - set
+`GAME_START_FEN` in `cchess-be`'s `.env` and restart it: every new game
+starts there (see `.env.example`). Remove it afterwards.
 
 **Stopping the opponent mid-game** (`kill <pid>` - save `$!` when you
 start it; `pkill -f` is blocked here) makes
