@@ -130,11 +130,19 @@ network/       pure networking infra (REST/socket clients, event types), same st
     one taking it until that lands, the pieces just moved are drawn over
     the rest, and a pawn waiting on the promotion menu stands on its
     promotion square), `usePieceGesture` (a piece's Gesture Handler pan
-    and tap, run on the UI thread: the piece follows the finger, and a
-    drop - judged where the piece was last drawn, not where a quick flick
-    lifts - lands straight on its square when `legalTargets` has it, or goes
-    home, before JS hears of it - JS still judges the move),
-    `useDragGuide` (the guide's shared values, which the drag moves) and
+    and tap, run on the UI thread, as on lichess: the piece is lifted at
+    once, twice its size, a square above the finger, its own square marked
+    while it's held, and a drop counts for the
+    square under the finger - where it last moved, not where a quick flick
+    lifts, or, when that's no move, the square next to it where it was
+    just before it lifted, as a finger slides leaving the glass - landing straight on it when
+    `legalTargets` has it - set down at once, the piece it
+    takes disappearing with it - or going straight home, before JS hears of
+    it - JS still judges the move),
+    `useDragGuide` (the guide's shared values - a circle two squares
+    across on the drop's square, which the drag moves, and the held piece's
+    own square - and the piece a drop has taken, hidden until the game
+    moves on) and
     `useValidMoveIndicators` (`Animated.Value` opacities).
   - Online-play orchestration, each wrapping the `network/` layer:
     `useAuthSessionLifecycle` (backs `AuthSessionContext`: on launch
@@ -248,7 +256,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `ChessGameContext` + the hooks above; everything under it
   (`BoardSurface`, `Pieces/Piece`, `Row`, `Square`,
   `PieceDragAndDropGuide`, `ValidMoveIndicators`) is purely presentational
-  and renders only what it's given as props/context. `StaticBoard` is a
+  and renders only what it's given as props/context. The board hands its
+  pieces callbacks that never change, though a game's own functions are new
+  on every render: re-rendering a piece makes Gesture Handler set its
+  gestures up again, which cancels a drag under way. `StaticBoard` is a
   separate read-only board drawn straight from a FEN (no game state,
   animation or gestures), used for viewing earlier positions.
 
@@ -409,7 +420,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
   etc.
 
 - **`src/utils/`** - RN `Animated` helpers (`animation.ts`: castling
-  animation, piece ids), color helpers (`color.ts`) and rating formatting
+  animation, piece ids), `dragLog.ts` (`logDrag`: with
+  `EXPO_PUBLIC_DEBUG_DRAG=1`, a line in the Metro terminal for every drop -
+  how the board judged it, and what the game made of it), color helpers
+  (`color.ts`) and rating formatting
   (`rating.ts`: `formatRating` - "1520", or "1520?" while provisional -
   `formatRatingRange`, "1320–2020", `highestRating`, `formatScore`,
   "2½ - 3½", and `formatTimePlayed`) and presence (`presence.ts`:
