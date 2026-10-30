@@ -30,6 +30,9 @@ jest.mock('../../network/restClient', () => ({
 jest.mock('@react-navigation/native', () =>
   jest.requireActual('../../testUtils/focusEffectRunsOnMount'),
 );
+jest.mock('../../hooks/useFirstMoveCountdown', () =>
+  jest.requireActual('../../testUtils/countdownStandingStill'),
+);
 
 const MAGNUS = {
   isGuest: false,

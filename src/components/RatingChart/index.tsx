@@ -92,12 +92,14 @@ const RatingChart: React.FC<RatingChartProps> = ({
     (index: number) => setSelection({ data, index }),
     [data],
   );
+  // No dependency list: Reanimated restarts the reaction itself when what
+  // its worklets capture (select, with the data) changes, and warns that a
+  // list is ignored on native.
   useAnimatedReaction(
     () => (pressState.isActive.value ? pressState.matchedIndex.value : -1),
     (index, previous) => {
       if (index >= 0 && index !== previous) scheduleOnRN(select, index);
     },
-    [select],
   );
 
   // Touching the chart picks the nearest point at once, here - before
