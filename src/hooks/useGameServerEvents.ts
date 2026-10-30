@@ -38,14 +38,6 @@ export type GameServerEventsResult = {
   clearDrawOffer: () => void;
 };
 
-// Reflects the server's view of an in-progress game into local state -
-// status/result/reason, both clocks, draw offers, and errors - and replays
-// an incoming opponent move onto the local engine. A game:move's fen is only
-// actually replayed when it doesn't already match ours - true for the
-// opponent's moves, false for the echo of our own (confirmed live that the
-// server pushes our own submitted move back to us) - which is what makes
-// this idempotent without tracking ply numbers separately. A move of ours
-// the server refuses is taken back, to the last position it confirmed.
 function withMoveAdded(
   moves: GameMoveSummary[],
   move: GameMoveSummary,
@@ -54,6 +46,17 @@ function withMoveAdded(
   return alreadyHasMove ? moves : [...moves, move];
 }
 
+// Reflects the server's view of an in-progress game into local state -
+// status/result/reason, both clocks, draw offers, and errors - and replays
+// an incoming opponent move onto the local engine. A game:move's fen is only
+// actually replayed when it doesn't already match ours - true for the
+// opponent's moves, false for the echo of our own (confirmed live that the
+// server pushes our own submitted move back to us) - which is what makes
+// this idempotent without tracking ply numbers separately. A move of ours
+// the server refuses is taken back, to the last position it confirmed. And
+// the whole game the server sends on rejoining after a reconnect replaces
+// ours: anything missed while away - the opponent's moves, the result -
+// board included.
 export function useGameServerEvents(
   socket: AppSocket,
   gameId: string,
@@ -117,12 +120,8 @@ export function useGameServerEvents(
       );
     }
 
-    function handleOver(payload: GameSnapshot) {
-      if (payload.id !== gameId) {
-        return;
-      }
+    function takeOutcome(payload: GameSnapshot) {
       setGameStatus(payload.status);
-      setFirstMoveDeadline(null);
       setResult(payload.result);
       setResultReason(payload.resultReason);
       setClocks({
@@ -134,6 +133,30 @@ export function useGameServerEvents(
         blackRatingDiff: payload.blackRatingDiff,
       });
       setSeries(payload.series);
+    }
+
+    function handleOver(payload: GameSnapshot) {
+      if (payload.id !== gameId) {
+        return;
+      }
+      takeOutcome(payload);
+      setFirstMoveDeadline(null);
+    }
+
+    // Socket.io sends what it held while offline - a move of ours, say -
+    // before rejoining, so this is the game as the server has it after.
+    function handleState(payload: GameSnapshot) {
+      if (payload.id !== gameId) {
+        return;
+      }
+      takeOutcome(payload);
+      setFirstMoveDeadline(payload.firstMoveDeadline);
+      setDrawOfferedBy(colorOf(payload.drawOfferedBy));
+      setMoves(payload.moves);
+      confirmedFenRef.current = payload.fen;
+      if (gameRef.current.fen !== payload.fen) {
+        gameRef.current.resetTo(payload.fen);
+      }
     }
 
     function handleDrawOffered(payload: DrawOfferedPayload) {
@@ -163,6 +186,7 @@ export function useGameServerEvents(
 
     socket.on('game:move', handleMove);
     socket.on('game:over', handleOver);
+    socket.on('game:state', handleState);
     socket.on('game:drawOffered', handleDrawOffered);
     socket.on('game:drawDeclined', handleDrawDeclined);
     socket.on('game:error', handleError);
@@ -170,6 +194,7 @@ export function useGameServerEvents(
     return () => {
       socket.off('game:move', handleMove);
       socket.off('game:over', handleOver);
+      socket.off('game:state', handleState);
       socket.off('game:drawOffered', handleDrawOffered);
       socket.off('game:drawDeclined', handleDrawDeclined);
       socket.off('game:error', handleError);

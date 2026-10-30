@@ -563,4 +563,122 @@ describe('useGameServerEvents', () => {
       expect(result.current.moves).toEqual([first, second]);
     });
   });
+
+  describe('rejoining after a reconnect', () => {
+    const AFTER_E4_E5 =
+      'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2';
+    const MISSED_MOVES: GameMoveSummary[] = [
+      {
+        ply: 1,
+        from: 'e2',
+        to: 'e4',
+        piece: 'p',
+        color: 'w',
+        san: 'e4',
+        captured: null,
+        promotion: null,
+        fenAfter: 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+        clockAfterMs: 300000,
+      },
+      {
+        ply: 2,
+        from: 'e7',
+        to: 'e5',
+        piece: 'p',
+        color: 'b',
+        san: 'e5',
+        captured: null,
+        promotion: null,
+        fenAfter: AFTER_E4_E5,
+        clockAfterMs: 300000,
+      },
+    ];
+
+    async function renderRealGame() {
+      const { socket, trigger } = createFakeSocket();
+      const snapshot = makeGameSnapshot();
+      const rendered = await renderHook(() => {
+        const game = useChessGame(snapshot.fen);
+        const events = useGameServerEvents(socket, GAME_ID, snapshot, game);
+        return { game, events };
+      });
+      return { ...rendered, snapshot, trigger };
+    }
+
+    it('catches up on the moves played while away, board included', async () => {
+      const { result, snapshot, trigger } = await renderRealGame();
+
+      await act(() => {
+        trigger('game:state', {
+          ...snapshot,
+          fen: AFTER_E4_E5,
+          turn: 'w',
+          moves: MISSED_MOVES,
+          whiteTimeRemainingMs: 290000,
+          blackTimeRemainingMs: 295000,
+          firstMoveDeadline: null,
+        });
+      });
+
+      expect(result.current.game.fen).toBe(AFTER_E4_E5);
+      expect(result.current.game.turn).toBe('w');
+      // Not played here, so not animated or sounded.
+      expect(result.current.game.lastMove).toBeNull();
+      expect(result.current.events.moves).toEqual(MISSED_MOVES);
+      expect(result.current.events.whiteTimeMs).toBe(290000);
+      expect(result.current.events.blackTimeMs).toBe(295000);
+      expect(result.current.events.firstMoveDeadline).toBeNull();
+    });
+
+    it('learns how a game ended while away', async () => {
+      const { result, snapshot, trigger } = await renderRealGame();
+
+      await act(() => {
+        trigger('game:state', {
+          ...snapshot,
+          status: 'completed',
+          result: 'black',
+          resultReason: GAME_RESULT_REASON.RESIGNATION,
+          drawOfferedBy: null,
+        });
+      });
+
+      expect(result.current.events.gameStatus).toBe('completed');
+      expect(result.current.events.result).toBe('black');
+      expect(result.current.events.resultReason).toBe(
+        GAME_RESULT_REASON.RESIGNATION,
+      );
+    });
+
+    it('leaves the board alone when nothing was missed', async () => {
+      const { socket, trigger } = createFakeSocket();
+      const snapshot = makeGameSnapshot();
+      const game = makeFakeGame();
+      await renderHook(() =>
+        useGameServerEvents(socket, GAME_ID, snapshot, game),
+      );
+
+      await act(() => {
+        trigger('game:state', snapshot);
+      });
+
+      expect(game.resetTo).not.toHaveBeenCalled();
+    });
+
+    it("ignores another game's state", async () => {
+      const { result, snapshot, trigger } = await renderRealGame();
+
+      await act(() => {
+        trigger('game:state', {
+          ...snapshot,
+          id: 'another-game',
+          fen: AFTER_E4_E5,
+          moves: MISSED_MOVES,
+        });
+      });
+
+      expect(result.current.game.fen).toBe(snapshot.fen);
+      expect(result.current.events.moves).toEqual([]);
+    });
+  });
 });
