@@ -189,7 +189,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
     and the first-move deadline, and replaying the opponent's moves
     idempotently via a fen comparison against the echo of our own, and
     taking a move of ours the server refuses (its `game:error` names
-    `game:move`) back to the last position it confirmed - and
+    `game:move`) back to the last position it confirmed, and taking the
+    whole game from the `game:state` a rejoin after a reconnect brings -
+    moves missed while away, the board put straight there - and
     owning the opponent's presence (`useOpponentPresence`) and the game's
     chat (`useGameChat`: history, new messages, and the unread count -
     from how far the server says you've read, every draw note counting
