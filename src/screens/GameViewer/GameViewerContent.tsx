@@ -190,10 +190,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
           onOpenMenu={() => setIsMenuOpen(true)}
           onOpenChat={chat?.open}
           unreadChatCount={chat?.unreadCount}
-          onPreviousMove={moveNavigation.back}
-          onNextMove={moveNavigation.forward}
-          canGoToPreviousMove={moveNavigation.canGoBack}
-          canGoToNextMove={moveNavigation.canGoForward}
+          moveSteps={moveNavigation}
         />
       </BottomBar>
 

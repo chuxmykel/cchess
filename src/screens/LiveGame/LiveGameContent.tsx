@@ -331,10 +331,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
           canResign={!isGameOver && !canAbort}
           onOpenChat={chat.open}
           unreadChatCount={chat.unreadCount}
-          onPreviousMove={moveNavigation.back}
-          onNextMove={moveNavigation.forward}
-          canGoToPreviousMove={moveNavigation.canGoBack}
-          canGoToNextMove={moveNavigation.canGoForward}
+          moveSteps={moveNavigation}
         />
       </BottomBar>
 
