@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { Color } from 'chess.js';
 
 import { MaterialImbalance } from '../../domain/material';
+import { otherColor } from '../../domain/players';
 import GameBoardArea from '../GameBoardArea';
 import PlayerBar, { PlayerBarProps } from '../PlayerBar';
 
@@ -36,7 +37,7 @@ const PlayerBarsFrame: React.FC<PlayerBarsFrameProps> = ({
   children,
   testID,
 }) => {
-  const topColor: Color = orientation === 'w' ? 'b' : 'w';
+  const topColor = otherColor(orientation);
   return (
     <GameBoardArea testID={testID}>
       <PlayerBar

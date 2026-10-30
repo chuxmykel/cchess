@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Alert, View, StyleSheet } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Color } from 'chess.js';
 
 import { NUMBER_OF_ROWS } from '../../constants';
 import { BOARD_THEMES } from '../../constants/boardThemes';
@@ -31,6 +30,7 @@ import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useMoveNavigation } from '../../hooks/useMoveNavigation';
 import { useMoveNavigationSounds } from '../../hooks/useGameSounds';
 import { capturedMaterial } from '../../domain/material';
+import { otherColor, playerOf, ratingDiffOf } from '../../domain/players';
 import { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
 import { useOnlineChessGameContext } from '../../context/LiveGame/OnlineChessGameContext';
@@ -207,9 +207,12 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
       : undefined,
   });
 
-  const myPlayer = myColor === 'w' ? snapshot.white : snapshot.black;
-  const myRatingDiff = myColor === 'w' ? whiteRatingDiff : blackRatingDiff;
-  const opponentColor: Color = myColor === 'w' ? 'b' : 'w';
+  const myPlayer = playerOf(snapshot, myColor);
+  const myRatingDiff = ratingDiffOf(
+    { whiteRatingDiff, blackRatingDiff },
+    myColor,
+  );
+  const opponentColor = otherColor(myColor);
 
   // Every capture up to the position on the board, live or looked back on.
   const material = capturedMaterial(

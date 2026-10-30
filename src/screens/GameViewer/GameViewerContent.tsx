@@ -22,6 +22,7 @@ import {
   TimeControl,
 } from '../../constants/timeControls';
 import { capturedMaterial } from '../../domain/material';
+import { playerOf, ratingDiffOf } from '../../domain/players';
 import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useGameClock } from '../../hooks/useGameClock';
 import { GameChat } from '../../hooks/useGameChat';
@@ -32,13 +33,12 @@ import {
   useMoveNavigationSounds,
 } from '../../hooks/useGameSounds';
 import { GameSnapshot } from '../../network/socketEvents';
-
 import { flipBoardAction, newOpponentAction } from '../gameMenuActions';
+
 interface GameViewerContentProps {
   width: number;
   snapshot: GameSnapshot;
-  /** The viewer's color, or null when they didn't play in the game. */
-  myColor: Color | null;
+  viewerPlayedAs: Color | null;
   /** The game's chat, for those who played in it. */
   chat?: GameChat;
   onBack: () => void;
@@ -58,14 +58,14 @@ function whenPlayed(snapshot: GameSnapshot): string {
 const GameViewerContent: React.FC<GameViewerContentProps> = ({
   width,
   snapshot,
-  myColor,
+  viewerPlayedAs,
   chat,
   onBack,
   onNewOpponent,
   onOpenPlayer,
   onError,
 }) => {
-  const { orientation, flip } = useBoardOrientation(myColor ?? 'w');
+  const { orientation, flip } = useBoardOrientation(viewerPlayedAs ?? 'w');
   const moveNavigation = useMoveNavigation(snapshot.moves);
   // Moves arriving in a game being watched sound too, as they're played.
   useMoveNavigationSounds(
@@ -97,19 +97,14 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   );
   const showsResult = isGameOver && moveNavigation.isLive && !isResultDismissed;
 
-  const myPlayer =
-    myColor === null ? null : myColor === 'w' ? snapshot.white : snapshot.black;
-  const myRatingDiff =
-    myColor === 'w'
-      ? snapshot.whiteRatingDiff
-      : myColor === 'b'
-        ? snapshot.blackRatingDiff
-        : null;
+  const viewerPlayer = viewerPlayedAs && playerOf(snapshot, viewerPlayedAs);
+  const viewerRatingDiff =
+    viewerPlayedAs && ratingDiffOf(snapshot, viewerPlayedAs);
 
   // Someone who only watched didn't just play an opponent - offer them a
   // game of their own at the same time control instead.
   const newGameLabel =
-    myColor === null ? `Play ${timeControl.label}` : 'New opponent';
+    viewerPlayedAs === null ? `Play ${timeControl.label}` : 'New opponent';
   const menuActions: ActionSheetAction[] = [
     flipBoardAction(flip),
     newOpponentAction(() => onNewOpponent(timeControl), newGameLabel),
@@ -161,10 +156,10 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
           <GameOverOverlay onDismiss={() => setIsResultDismissed(true)}>
             <GameOverCard
               result={snapshot.result}
-              myColor={myColor}
+              myColor={viewerPlayedAs}
               resultReason={snapshot.resultReason}
-              myRating={myPlayer?.rating ?? null}
-              myRatingDiff={myRatingDiff}
+              myRating={viewerPlayer?.rating ?? null}
+              myRatingDiff={viewerRatingDiff}
               onNewOpponent={() => onNewOpponent(timeControl)}
               newGameLabel={newGameLabel}
               onDismiss={() => setIsResultDismissed(true)}

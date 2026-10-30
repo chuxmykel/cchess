@@ -6,11 +6,11 @@ import GameViewerContent from './GameViewerContent';
 
 type ParticipantGameViewerProps = Omit<
   React.ComponentProps<typeof GameViewerContent>,
-  'chat' | 'myColor'
+  'chat' | 'viewerPlayedAs'
 > & {
   socket: AppSocket;
   myUserId: string;
-  myColor: Color;
+  viewerPlayedAs: Color;
 };
 
 function hasChatClosed(chatClosesAt: string | null): boolean {

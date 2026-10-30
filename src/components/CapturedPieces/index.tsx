@@ -4,6 +4,7 @@ import { Color } from 'chess.js';
 import { PIECES } from '../../constants';
 import { MUTED_COLOR } from '../../constants/colors';
 import { SideMaterial } from '../../domain/material';
+import { otherColor } from '../../domain/players';
 
 const PIECE_SIZE = 16;
 // Pieces of the same kind overlap, so a row of pawns stays short.
@@ -19,7 +20,7 @@ const CapturedPieces: React.FC<CapturedPiecesProps> = ({ color, material }) => {
   if (material.pieces.length === 0 && material.score === 0) {
     return null;
   }
-  const capturedColor = color === 'w' ? 'b' : 'w';
+  const capturedColor = otherColor(color);
   return (
     <View style={styles.container} testID={`captured-pieces-${color}`}>
       {material.pieces.map((type, index) => (

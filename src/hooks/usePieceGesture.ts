@@ -20,6 +20,7 @@ import {
   getXYFromSquare,
   isOnBoard,
 } from '../domain/boardCoordinates';
+import { otherColor } from '../domain/players';
 import { LegalTargets } from '../domain/types';
 import { TAP_MOVEMENT_THRESHOLD } from '../constants';
 import {
@@ -336,7 +337,7 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
           dragGuide.taken.set({
             from: square,
             to,
-            color: piece.get().color === 'w' ? 'b' : 'w',
+            color: otherColor(piece.get().color),
           });
         }
 
