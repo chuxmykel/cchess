@@ -99,6 +99,22 @@ describe('useGameClock', () => {
     });
   });
 
+  it('catches up on time no tick saw, as after the app was in the background', async () => {
+    const { result } = await renderHook(() =>
+      useGameClock(INITIAL_WHITE_MS, INITIAL_BLACK_MS, 'w', true),
+    );
+
+    // The timers stop while the app is away, but the time still passes.
+    jest.setSystemTime(Date.now() + FIVE_SECONDS_MS);
+    await act(() => {
+      jest.advanceTimersByTime(ONE_SECOND_MS);
+    });
+
+    expect(result.current.whiteMs).toBe(
+      INITIAL_WHITE_MS - FIVE_SECONDS_MS - ONE_SECOND_MS,
+    );
+  });
+
   it('never ticks below zero', async () => {
     const { result } = await renderHook(() =>
       useGameClock(ALMOST_FLAGGED_WHITE_MS, INITIAL_BLACK_MS, 'w', true),
