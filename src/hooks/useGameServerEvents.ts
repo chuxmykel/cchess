@@ -38,6 +38,14 @@ export type GameServerEventsResult = {
   clearDrawOffer: () => void;
 };
 
+function withMoveAdded(
+  moves: GameMoveSummary[],
+  move: GameMoveSummary,
+): GameMoveSummary[] {
+  const alreadyHasMove = moves.some(({ ply }) => ply === move.ply);
+  return alreadyHasMove ? moves : [...moves, move];
+}
+
 // Reflects the server's view of an in-progress game into local state -
 // status/result/reason, both clocks, draw offers, and errors - and replays
 // an incoming opponent move onto the local engine. A game:move's fen is only
@@ -49,14 +57,6 @@ export type GameServerEventsResult = {
 // the whole game the server sends on rejoining after a reconnect replaces
 // ours: anything missed while away - the opponent's moves, the result -
 // board included.
-function withMoveAdded(
-  moves: GameMoveSummary[],
-  move: GameMoveSummary,
-): GameMoveSummary[] {
-  const alreadyHasMove = moves.some(({ ply }) => ply === move.ply);
-  return alreadyHasMove ? moves : [...moves, move];
-}
-
 export function useGameServerEvents(
   socket: AppSocket,
   gameId: string,
