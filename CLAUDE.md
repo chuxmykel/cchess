@@ -90,6 +90,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
     material, counted on the board so promotions count - for the side
     ahead, as shown under the players' names (`materialImbalance(fen)`
     is that board count).
+  - `players.ts` - a game's sides: `otherColor` (a worklet too, for the
+    drag), and `playerOf`, `ratingDiffOf` and `colorPlayedBy` (the side a
+    user played, or null), for anything shaped like a game - a snapshot,
+    or the live game's own fields.
   - `moveSound.ts` - `moveSound(san)`: the sound a move makes - checkmate,
     check, castle, capture or a plain move, the first that applies - read
     off its SAN (`AppliedMove` carries it); `stepSound`, that of stepping
