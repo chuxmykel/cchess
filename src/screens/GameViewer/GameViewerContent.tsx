@@ -7,13 +7,14 @@ import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
 import BottomBar from '../../components/BottomBar';
 import ChatSheet from '../../components/ChatSheet';
 import StaticBoard from '../../components/ChessBoard/StaticBoard';
-import GameHeader from '../../components/GameHeader';
+import GameScreenHeader from '../../components/GameScreenHeader';
 import GameOverCard from '../../components/GameOverCard';
 import GameOverOverlay from '../../components/GameOverOverlay';
 import GameToolbar from '../../components/GameToolbar';
 import MoveList from '../../components/MoveList';
-import PlayerBar, { PlayerBarProps } from '../../components/PlayerBar';
-import GameBoardArea from '../../components/GameBoardArea';
+import PlayerBarsFrame, {
+  SharedPlayerBarProps,
+} from '../../components/PlayerBarsFrame';
 import { BOARD_THEMES } from '../../constants/boardThemes';
 import {
   animatesMoves,
@@ -22,11 +23,9 @@ import {
 } from '../../constants/timeControls';
 import { capturedMaterial } from '../../domain/material';
 import { useBoardOrientation } from '../../hooks/useBoardOrientation';
-import { useGameBookmark } from '../../hooks/useGameBookmark';
 import { useGameClock } from '../../hooks/useGameClock';
-import { UseGameChatResult } from '../../hooks/useGameChat';
+import { GameChat } from '../../hooks/useGameChat';
 import { clocksAtPly } from '../../hooks/useGameViewer';
-import { useGameShare } from '../../hooks/useGameShare';
 import { useMoveNavigation } from '../../hooks/useMoveNavigation';
 import {
   useGameOverSound,
@@ -34,20 +33,13 @@ import {
 } from '../../hooks/useGameSounds';
 import { GameSnapshot } from '../../network/socketEvents';
 
-export type ViewerChat = UseGameChatResult & {
-  myUserId: string;
-  isOpen: boolean;
-  isClosed: boolean;
-  open: () => void;
-  close: () => void;
-};
-
 interface GameViewerContentProps {
   width: number;
   snapshot: GameSnapshot;
   /** The viewer's color, or null when they didn't play in the game. */
   myColor: Color | null;
-  chat?: ViewerChat;
+  /** The game's chat, for those who played in it. */
+  chat?: GameChat;
   onBack: () => void;
   onNewOpponent: (timeControl: TimeControl) => void;
   onOpenPlayer: (username: string) => void;
@@ -82,11 +74,6 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   );
   // And the end of one, as it happens.
   useGameOverSound(snapshot.status !== 'active', snapshot.resultReason);
-  const shareGame = useGameShare(snapshot.id, onError);
-  const { isBookmarked, toggleBookmark } = useGameBookmark(
-    snapshot.id,
-    onError,
-  );
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isResultDismissed, setIsResultDismissed] = useState(false);
 
@@ -111,7 +98,6 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
     viewedFen,
     snapshot.moves.slice(0, moveNavigation.currentPly),
   );
-  const topColor: Color = orientation === 'w' ? 'b' : 'w';
   const showsResult = isGameOver && moveNavigation.isLive && !isResultDismissed;
 
   const myPlayer =
@@ -141,7 +127,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
     },
   ];
 
-  const sharedPlayerBarProps: Omit<PlayerBarProps, 'color'> = {
+  const playerBarProps: SharedPlayerBarProps = {
     white: snapshot.white,
     black: snapshot.black,
     clock,
@@ -155,25 +141,13 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
 
   return (
     <View style={styles.screen} testID="game-viewer">
-      <GameHeader
+      <GameScreenHeader
+        gameId={snapshot.id}
         timeControl={timeControl}
         rated={snapshot.rated}
         subtitle={whenPlayed(snapshot)}
         onBack={onBack}
-        menuItems={[
-          {
-            label: 'Share & export',
-            icon: 'export-variant',
-            onPress: shareGame,
-            testID: 'share-game-item',
-          },
-          {
-            label: isBookmarked ? 'Remove bookmark' : 'Bookmark this game',
-            icon: isBookmarked ? 'bookmark' : 'bookmark-outline',
-            onPress: toggleBookmark,
-            testID: 'bookmark-game-item',
-          },
-        ]}
+        onError={onError}
       />
 
       <MoveList
@@ -182,42 +156,34 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
         onSelectPly={moveNavigation.goTo}
       />
 
-      <GameBoardArea>
-        <PlayerBar
-          color={topColor}
-          material={material[topColor]}
-          {...sharedPlayerBarProps}
+      <PlayerBarsFrame
+        orientation={orientation}
+        material={material}
+        playerBarProps={playerBarProps}
+      >
+        <StaticBoard
+          fen={viewedFen}
+          colors={BOARD_THEMES.test}
+          width={width}
+          orientation={orientation}
+          lastMove={moveNavigation.lastMove}
+          animate={animatesMoves(snapshot.gameType)}
         />
-        <View>
-          <StaticBoard
-            fen={viewedFen}
-            colors={BOARD_THEMES.test}
-            width={width}
-            orientation={orientation}
-            lastMove={moveNavigation.lastMove}
-            animate={animatesMoves(snapshot.gameType)}
-          />
-          {showsResult && (
-            <GameOverOverlay onDismiss={() => setIsResultDismissed(true)}>
-              <GameOverCard
-                result={snapshot.result}
-                myColor={myColor}
-                resultReason={snapshot.resultReason}
-                myRating={myPlayer?.rating ?? null}
-                myRatingDiff={myRatingDiff}
-                onNewOpponent={() => onNewOpponent(timeControl)}
-                newGameLabel={newGameLabel}
-                onDismiss={() => setIsResultDismissed(true)}
-              />
-            </GameOverOverlay>
-          )}
-        </View>
-        <PlayerBar
-          color={orientation}
-          material={material[orientation]}
-          {...sharedPlayerBarProps}
-        />
-      </GameBoardArea>
+        {showsResult && (
+          <GameOverOverlay onDismiss={() => setIsResultDismissed(true)}>
+            <GameOverCard
+              result={snapshot.result}
+              myColor={myColor}
+              resultReason={snapshot.resultReason}
+              myRating={myPlayer?.rating ?? null}
+              myRatingDiff={myRatingDiff}
+              onNewOpponent={() => onNewOpponent(timeControl)}
+              newGameLabel={newGameLabel}
+              onDismiss={() => setIsResultDismissed(true)}
+            />
+          </GameOverOverlay>
+        )}
+      </PlayerBarsFrame>
 
       <BottomBar>
         <GameToolbar
@@ -238,18 +204,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
       />
 
       {chat && (
-        <ChatSheet
-          visible={chat.isOpen}
-          onClose={chat.close}
-          messages={chat.messages}
-          myUserId={chat.myUserId}
-          playerNames={{
-            [snapshot.white.id]: snapshot.white.displayName,
-            [snapshot.black.id]: snapshot.black.displayName,
-          }}
-          onSend={chat.send}
-          isClosed={chat.isClosed}
-        />
+        <ChatSheet chat={chat} players={[snapshot.white, snapshot.black]} />
       )}
     </View>
   );

@@ -1,7 +1,6 @@
-import { useState } from 'react';
 import { Color } from 'chess.js';
 
-import { useGameChat } from '../../hooks/useGameChat';
+import { useGameChatSheet } from '../../hooks/useGameChat';
 import { AppSocket } from '../../network/socketClient';
 import GameViewerContent from './GameViewerContent';
 
@@ -24,22 +23,14 @@ const ParticipantGameViewer: React.FC<ParticipantGameViewerProps> = ({
   myUserId,
   ...props
 }) => {
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const chat = useGameChat(socket, props.snapshot.id, myUserId, isChatOpen);
-
-  return (
-    <GameViewerContent
-      {...props}
-      chat={{
-        ...chat,
-        myUserId,
-        isOpen: isChatOpen,
-        isClosed: hasChatClosed(props.snapshot.chatClosesAt),
-        open: () => setIsChatOpen(true),
-        close: () => setIsChatOpen(false),
-      }}
-    />
+  const chat = useGameChatSheet(
+    socket,
+    props.snapshot.id,
+    myUserId,
+    hasChatClosed(props.snapshot.chatClosesAt),
   );
+
+  return <GameViewerContent {...props} chat={chat} />;
 };
 
 export default ParticipantGameViewer;

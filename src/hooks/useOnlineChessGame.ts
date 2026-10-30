@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Color, Square } from 'chess.js';
 
 import { MoveResult } from '../domain/types';
@@ -13,7 +13,7 @@ import {
 import { useChessGame, UseChessGameResult } from './useChessGame';
 import { GameStatus, useGameServerEvents } from './useGameServerEvents';
 import { useOpponentPresence } from './useOpponentPresence';
-import { useGameChat, UseGameChatResult } from './useGameChat';
+import { GameChat, useGameChatSheet } from './useGameChat';
 import {
   useGameOverSound,
   useGameStartSound,
@@ -22,13 +22,6 @@ import {
 import { useRematch, UseRematchResult } from './useRematch';
 
 export type { GameStatus };
-
-export type GameChat = UseGameChatResult & {
-  myUserId: string;
-  isOpen: boolean;
-  open: () => void;
-  close: () => void;
-};
 
 export type UseOnlineChessGameResult = Omit<
   UseChessGameResult,
@@ -100,8 +93,7 @@ export function useOnlineChessGame(
   const opponent = myColor === 'w' ? snapshot.black : snapshot.white;
   const isOpponentOnline = useOpponentPresence(socket, gameId, opponent.id);
   const myUserId = myColor === 'w' ? snapshot.white.id : snapshot.black.id;
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const chatMessages = useGameChat(socket, gameId, myUserId, isChatOpen);
+  const chat = useGameChatSheet(socket, gameId, myUserId);
 
   const pliesPlayedIncludingOurUnconfirmedMove = plyCountFromFen(game.fen);
   const canAbort =
@@ -187,13 +179,7 @@ export function useOnlineChessGame(
     rematch,
     canAbort,
     isOpponentOnline,
-    chat: {
-      ...chatMessages,
-      myUserId,
-      isOpen: isChatOpen,
-      open: () => setIsChatOpen(true),
-      close: () => setIsChatOpen(false),
-    },
+    chat,
     attemptMove,
     handleSquareTap,
     isOwnPieceAt,

@@ -1,7 +1,8 @@
 import { fireEvent, render } from '@testing-library/react-native';
 
 import ChatSheet from '.';
-import { ChatMessage } from '../../network/socketEvents';
+import { GameChat } from '../../hooks/useGameChat';
+import { ChatMessage, GameUserSummary } from '../../network/socketEvents';
 import { withSafeArea } from '../../testUtils/safeArea';
 
 function message(id: string, userId: string, text: string): ChatMessage {
@@ -15,18 +16,38 @@ function message(id: string, userId: string, text: string): ChatMessage {
   };
 }
 
+function player(id: string, displayName: string): GameUserSummary {
+  return {
+    id,
+    username: id,
+    displayName,
+    avatarColor: '#3b82f6',
+    rating: 1500,
+    provisional: false,
+  };
+}
+
+function openChat(overrides: Partial<GameChat> = {}): GameChat {
+  return {
+    messages: [],
+    unreadCount: 0,
+    send: jest.fn(),
+    myUserId: 'me',
+    isOpen: true,
+    isClosed: false,
+    open: jest.fn(),
+    close: jest.fn(),
+    ...overrides,
+  };
+}
+
+const PLAYERS = [player('me', 'Me'), player('them', 'Judit')];
+
 describe('ChatSheet', () => {
-  function renderSheet(messages: ChatMessage[] = [], onSend = jest.fn()) {
+  function renderSheet(messages: ChatMessage[] = [], send = jest.fn()) {
     return render(
       withSafeArea(
-        <ChatSheet
-          visible
-          onClose={jest.fn()}
-          messages={messages}
-          myUserId="me"
-          playerNames={{ me: 'Me', them: 'Judit' }}
-          onSend={onSend}
-        />,
+        <ChatSheet chat={openChat({ messages, send })} players={PLAYERS} />,
       ),
     );
   }
@@ -73,14 +94,14 @@ describe('ChatSheet', () => {
   });
 
   it('sends the draft and clears it', async () => {
-    const onSend = jest.fn();
-    const screen = await renderSheet([], onSend);
+    const send = jest.fn();
+    const screen = await renderSheet([], send);
 
     expect(screen.getByTestId('chat-send-button')).toBeDisabled();
     await fireEvent.changeText(screen.getByTestId('chat-input'), 'gg');
     await fireEvent.press(screen.getByTestId('chat-send-button'));
 
-    expect(onSend).toHaveBeenCalledWith('gg');
+    expect(send).toHaveBeenCalledWith('gg');
     expect(screen.getByTestId('chat-input').props.value).toBe('');
   });
 
@@ -93,15 +114,7 @@ describe('ChatSheet', () => {
   it('shows the history but no way to send once the chat has closed', async () => {
     const screen = await render(
       withSafeArea(
-        <ChatSheet
-          visible
-          onClose={jest.fn()}
-          messages={[]}
-          myUserId="me"
-          playerNames={{}}
-          onSend={jest.fn()}
-          isClosed
-        />,
+        <ChatSheet chat={openChat({ isClosed: true })} players={PLAYERS} />,
       ),
     );
 

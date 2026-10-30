@@ -13,9 +13,10 @@ import {
 import Chessboard from '../../components/ChessBoard';
 import MoveList from '../../components/MoveList';
 import PromotionMenu from '../../components/PromotionMenu';
-import PlayerBar, { PlayerBarProps } from '../../components/PlayerBar';
-import GameBoardArea from '../../components/GameBoardArea';
-import GameHeader from '../../components/GameHeader';
+import PlayerBarsFrame, {
+  SharedPlayerBarProps,
+} from '../../components/PlayerBarsFrame';
+import GameScreenHeader from '../../components/GameScreenHeader';
 import GameToolbar from '../../components/GameToolbar';
 import BottomBar from '../../components/BottomBar';
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
@@ -29,8 +30,6 @@ import { useFirstMoveCountdown } from '../../hooks/useFirstMoveCountdown';
 import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useMoveNavigation } from '../../hooks/useMoveNavigation';
 import { useMoveNavigationSounds } from '../../hooks/useGameSounds';
-import { useGameShare } from '../../hooks/useGameShare';
-import { useGameBookmark } from '../../hooks/useGameBookmark';
 import { capturedMaterial } from '../../domain/material';
 import { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
@@ -159,11 +158,6 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   const moveNavigation = useMoveNavigation(moves);
   // The live board sounds the game's own moves; this, stepping through them.
   useMoveNavigationSounds(moves, moveNavigation.currentPly, false);
-  const shareGame = useGameShare(snapshot.id, onError);
-  const { isBookmarked, toggleBookmark } = useGameBookmark(
-    snapshot.id,
-    onError,
-  );
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // The rematch status the result card was dismissed at: it stays hidden
   // until that changes - when the opponent offers a rematch, say - so a
@@ -227,15 +221,15 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
 
   const myPlayer = myColor === 'w' ? snapshot.white : snapshot.black;
   const myRatingDiff = myColor === 'w' ? whiteRatingDiff : blackRatingDiff;
+  const opponentColor: Color = myColor === 'w' ? 'b' : 'w';
 
-  const topColor: Color = orientation === 'w' ? 'b' : 'w';
   // Every capture up to the position on the board, live or looked back on.
   const material = capturedMaterial(
     moveNavigation.viewedFen ?? fen,
     moves.slice(0, moveNavigation.currentPly),
   );
   const showsResult = isGameOver && moveNavigation.isLive && !isResultDismissed;
-  const sharedPlayerBarProps: Omit<PlayerBarProps, 'color'> = {
+  const playerBarProps: SharedPlayerBarProps = {
     white: snapshot.white,
     black: snapshot.black,
     clock,
@@ -251,24 +245,12 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
 
   return (
     <View style={styles.screen}>
-      <GameHeader
+      <GameScreenHeader
+        gameId={snapshot.id}
         timeControl={timeControl}
         rated={snapshot.rated}
         onBack={isGameOver ? leaveGame : undefined}
-        menuItems={[
-          {
-            label: 'Share & export',
-            icon: 'export-variant',
-            onPress: shareGame,
-            testID: 'share-game-item',
-          },
-          {
-            label: isBookmarked ? 'Remove bookmark' : 'Bookmark this game',
-            icon: isBookmarked ? 'bookmark' : 'bookmark-outline',
-            onPress: toggleBookmark,
-            testID: 'bookmark-game-item',
-          },
-        ]}
+        onError={onError}
       />
 
       <MoveList
@@ -277,73 +259,63 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         onSelectPly={moveNavigation.goTo}
       />
 
-      <GameBoardArea testID="game-board-area">
-        <PlayerBar
-          color={topColor}
-          isOnline={topColor === myColor ? undefined : isOpponentOnline}
-          material={material[topColor]}
-          {...sharedPlayerBarProps}
+      <PlayerBarsFrame
+        orientation={orientation}
+        material={material}
+        playerBarProps={playerBarProps}
+        isOnline={{ [opponentColor]: isOpponentOnline }}
+        testID="game-board-area"
+      >
+        <Chessboard
+          colors={BOARD_THEMES.test}
+          width={width}
+          orientation={orientation}
+          animate={animatesMoves(snapshot.gameType)}
+          lastPlayedMove={moves.at(-1) ?? null}
         />
-
-        <View>
-          <Chessboard
-            colors={BOARD_THEMES.test}
-            width={width}
-            orientation={orientation}
-            animate={animatesMoves(snapshot.gameType)}
-            lastPlayedMove={moves.at(-1) ?? null}
+        {pendingPromotion && moveNavigation.isLive && (
+          <PromotionMenu
+            promotingColor={turn}
+            boardWidth={width}
+            pieceWidth={PIECE_WIDTH}
+            handlePromotion={promoteTo}
+            onCancel={cancelPromotion}
           />
-          {pendingPromotion && moveNavigation.isLive && (
-            <PromotionMenu
-              promotingColor={turn}
-              boardWidth={width}
-              pieceWidth={PIECE_WIDTH}
-              handlePromotion={promoteTo}
-              onCancel={cancelPromotion}
-            />
-          )}
-          <EarlierPositionOverlay
-            fen={moveNavigation.viewedFen ?? fen}
-            visible={!moveNavigation.isLive}
-            width={width}
-            orientation={orientation}
-            lastMove={moveNavigation.lastMove}
-            animate={animatesMoves(snapshot.gameType)}
-          />
-          {showsResult && (
-            <GameOverOverlay
+        )}
+        <EarlierPositionOverlay
+          fen={moveNavigation.viewedFen ?? fen}
+          visible={!moveNavigation.isLive}
+          width={width}
+          orientation={orientation}
+          lastMove={moveNavigation.lastMove}
+          animate={animatesMoves(snapshot.gameType)}
+        />
+        {showsResult && (
+          <GameOverOverlay
+            onDismiss={() => setResultDismissedAt(rematch.status)}
+          >
+            <GameOverCard
+              result={result}
+              myColor={myColor}
+              resultReason={resultReason}
+              myRating={myPlayer.rating}
+              myRatingDiff={myRatingDiff}
+              onNewOpponent={findNewOpponent}
+              // Only a game played out can be rematched, not one aborted.
+              rematch={
+                gameStatus === 'completed'
+                  ? {
+                      status: rematch.status,
+                      onOffer: rematch.offer,
+                      onDecline: rematch.decline,
+                    }
+                  : undefined
+              }
               onDismiss={() => setResultDismissedAt(rematch.status)}
-            >
-              <GameOverCard
-                result={result}
-                myColor={myColor}
-                resultReason={resultReason}
-                myRating={myPlayer.rating}
-                myRatingDiff={myRatingDiff}
-                onNewOpponent={findNewOpponent}
-                // Only a game played out can be rematched, not one aborted.
-                rematch={
-                  gameStatus === 'completed'
-                    ? {
-                        status: rematch.status,
-                        onOffer: rematch.offer,
-                        onDecline: rematch.decline,
-                      }
-                    : undefined
-                }
-                onDismiss={() => setResultDismissedAt(rematch.status)}
-              />
-            </GameOverOverlay>
-          )}
-        </View>
-
-        <PlayerBar
-          color={orientation}
-          isOnline={orientation === myColor ? undefined : isOpponentOnline}
-          material={material[orientation]}
-          {...sharedPlayerBarProps}
-        />
-      </GameBoardArea>
+            />
+          </GameOverOverlay>
+        )}
+      </PlayerBarsFrame>
 
       {!isGameOver && drawOffer === 'received' && (
         <DrawOfferPrompt
@@ -372,17 +344,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         actions={menuActions}
       />
 
-      <ChatSheet
-        visible={chat.isOpen}
-        onClose={chat.close}
-        messages={chat.messages}
-        myUserId={chat.myUserId}
-        playerNames={{
-          [snapshot.white.id]: snapshot.white.displayName,
-          [snapshot.black.id]: snapshot.black.displayName,
-        }}
-        onSend={chat.send}
-      />
+      <ChatSheet chat={chat} players={[snapshot.white, snapshot.black]} />
     </View>
   );
 };
