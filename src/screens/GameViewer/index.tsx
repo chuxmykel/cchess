@@ -10,6 +10,7 @@ import { DEFAULT_RATING_RANGE } from '../../constants/seek';
 import { TimeControl } from '../../constants/timeControls';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { colorPlayedBy } from '../../domain/players';
+import { useFollowPlayer } from '../../hooks/useFollowPlayer';
 import { useGameViewer } from '../../hooks/useGameViewer';
 import { useToast } from '../../hooks/useToast';
 import { HomeStackParamList } from '../HomeStack/types';
@@ -19,17 +20,29 @@ import ParticipantGameViewer from './ParticipantGameViewer';
 type GameViewerProps = NativeStackScreenProps<HomeStackParamList, 'GameViewer'>;
 
 const GameViewer: React.FC<GameViewerProps> = ({ navigation, route }) => {
-  const { gameId } = route.params;
+  const { gameId, watchedUserId } = route.params;
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const session = useAuthSession();
   const toast = useToast();
   const { state, reload } = useGameViewer(gameId);
   const me = session.isReady ? session.user : null;
-  const snapshot = state.status === 'ready' ? state.snapshot : null;
+  // The game this screen is on: not the one before, while the next a
+  // followed player started is loading.
+  const snapshot =
+    state.status === 'ready' && state.snapshot.id === gameId
+      ? state.snapshot
+      : null;
   const viewerPlayedAs = snapshot && me ? colorPlayedBy(snapshot, me.id) : null;
   const isMyGameInPlay =
     viewerPlayedAs !== null && snapshot?.status === 'active';
+
+  // On to the watched player's next game as it starts.
+  useFollowPlayer(
+    session.isReady ? session.socket : null,
+    watchedUserId ?? null,
+    (nextGameId) => navigation.setParams({ gameId: nextGameId }),
+  );
 
   useEffect(() => {
     if (isMyGameInPlay) {
@@ -65,6 +78,7 @@ const GameViewer: React.FC<GameViewerProps> = ({ navigation, route }) => {
     const contentProps = {
       width,
       snapshot,
+      watchedUserId,
       onBack: navigation.goBack,
       onNewOpponent: findNewOpponent,
       onOpenPlayer: (username: string) =>
@@ -74,6 +88,7 @@ const GameViewer: React.FC<GameViewerProps> = ({ navigation, route }) => {
     if (viewerPlayedAs && session.isReady) {
       return (
         <ParticipantGameViewer
+          key={snapshot.id}
           {...contentProps}
           socket={session.socket}
           myUserId={session.user.id}
@@ -81,7 +96,15 @@ const GameViewer: React.FC<GameViewerProps> = ({ navigation, route }) => {
         />
       );
     }
-    return <GameViewerContent {...contentProps} viewerPlayedAs={null} />;
+    // Keyed by game, so a followed player's next one starts afresh: the
+    // move shown, the result card.
+    return (
+      <GameViewerContent
+        key={snapshot.id}
+        {...contentProps}
+        viewerPlayedAs={null}
+      />
+    );
   }
 
   return (

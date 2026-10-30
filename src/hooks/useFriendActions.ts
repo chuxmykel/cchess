@@ -18,7 +18,8 @@ type FriendNavigation = {
 export type FriendActions = {
   openProfile: (friend: FriendLike) => void;
   message: (friend: FriendLike) => void;
-  watch: (gameId: string) => void;
+  /** Watches this player's game, following them into their next. */
+  watch: (player: FriendLike, gameId: string) => void;
   startChallenge: (friend: FriendLike) => void;
   challengeTarget: FriendLike | null;
   closeChallenge: () => void;
@@ -69,7 +70,8 @@ export function useFriendActions(
         displayName: friend.displayName,
         avatarColor: friend.avatarColor,
       }),
-    watch: (gameId) => navigate('GameViewer', { gameId }),
+    watch: (player, gameId) =>
+      navigate('GameViewer', { gameId, watchedUserId: player.id }),
     startChallenge: setChallengeTarget,
     challengeTarget,
     closeChallenge: () => setChallengeTarget(null),

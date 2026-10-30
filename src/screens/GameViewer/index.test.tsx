@@ -88,6 +88,7 @@ describe('GameViewer', () => {
   async function renderScreen(
     snapshot: GameSnapshot,
     userId = snapshot.white.id,
+    watchedUserId?: string,
   ) {
     const fake = createFakeSocket();
     (useAuthSession as jest.Mock).mockReturnValue(
@@ -101,21 +102,27 @@ describe('GameViewer', () => {
       navigate: jest.fn(),
       replace: jest.fn(),
       goBack: jest.fn(),
+      setParams: jest.fn(),
     };
-    const screen = await render(
+    const screenFor = (gameId: string) =>
       withSafeArea(
         <GameViewer
           navigation={navigation as never}
           route={{
             key: 'k',
             name: 'GameViewer',
-            params: { gameId: snapshot.id },
+            params: { gameId, watchedUserId },
           }}
         />,
-      ),
-    );
+      );
+    const screen = await render(screenFor(snapshot.id));
     await act(async () => {});
-    return { screen, navigation, socket: fake.socket };
+    /** What navigation.setParams does: the screen again, on another game. */
+    async function showGame(gameId: string) {
+      await screen.rerender(screenFor(gameId));
+      await act(async () => {});
+    }
+    return { screen, navigation, socket: fake.socket, ...fake, showGame };
   }
 
   afterEach(() => {
@@ -181,6 +188,52 @@ describe('GameViewer', () => {
     expect(screen.getByTestId('game-header-subtitle')).toHaveTextContent(
       'Playing now',
     );
+  });
+
+  it('shows the player being watched at the bottom, whatever their side', async () => {
+    const snapshot = makeGameSnapshot();
+    const { screen } = await renderScreen(
+      snapshot,
+      'someone-else',
+      snapshot.black.id,
+    );
+
+    expect(
+      screen.getAllByTestId(/^player-bar-/).map((bar) => bar.props.testID),
+    ).toEqual(['player-bar-w', 'player-bar-b']);
+  });
+
+  it("moves on to the watched player's next game as it starts", async () => {
+    const first = finishedGame();
+    const next = makeGameSnapshot({
+      id: 'next-game',
+      white: { ...first.black },
+      black: { ...first.white, id: 'new-opponent', displayName: 'Hikaru' },
+    });
+    const { screen, navigation, trigger, showGame } = await renderScreen(
+      first,
+      'someone-else',
+      first.black.id,
+    );
+
+    await act(() => {
+      trigger('user:gameStarted', {
+        userId: first.black.id,
+        gameId: next.id,
+      });
+    });
+    expect(navigation.setParams).toHaveBeenCalledWith({ gameId: next.id });
+
+    (getGame as jest.Mock).mockResolvedValue(next);
+    await showGame(next.id);
+
+    expect(getGame).toHaveBeenLastCalledWith(next.id, expect.anything());
+    expect(screen.getByText('Hikaru')).toBeTruthy();
+    expect(screen.queryByTestId('game-over-card')).toBeNull();
+    // Still from the watched player's side, now that they're white.
+    expect(
+      screen.getAllByTestId(/^player-bar-/).map((bar) => bar.props.testID),
+    ).toEqual(['player-bar-b', 'player-bar-w']);
   });
 
   it('finds a new opponent at the same time control', async () => {
