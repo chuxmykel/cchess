@@ -18,7 +18,7 @@ import PlayerBarsFrame, {
 import { BOARD_THEMES } from '../../constants/boardThemes';
 import {
   animatesMoves,
-  findTimeControl,
+  timeControlOf,
   TimeControl,
 } from '../../constants/timeControls';
 import { capturedMaterial } from '../../domain/material';
@@ -88,11 +88,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
     !isGameOver && moveNavigation.isLive
       ? liveClock
       : clocksAtPly(snapshot, moveNavigation.currentPly);
-  const timeControl = findTimeControl(
-    snapshot.initialSeconds,
-    snapshot.incrementSeconds,
-    snapshot.gameType,
-  );
+  const timeControl = timeControlOf(snapshot);
   const viewedFen = moveNavigation.viewedFen ?? snapshot.fen;
   const material = capturedMaterial(
     viewedFen,

@@ -2,6 +2,7 @@ import {
   animatesMoves,
   findTimeControl,
   TIME_CONTROL_GROUPS,
+  timeControlOf,
 } from '../timeControls';
 
 describe('findTimeControl', () => {
@@ -30,6 +31,18 @@ describe('findTimeControl', () => {
 
   it('labels a start of under a minute in seconds', () => {
     expect(findTimeControl(15, 0, 'bullet').label).toBe('15s+0');
+  });
+});
+
+describe('timeControlOf', () => {
+  it("finds a game's time control from its clock settings", () => {
+    expect(
+      timeControlOf({
+        initialSeconds: 120,
+        incrementSeconds: 1,
+        gameType: 'bullet',
+      }),
+    ).toBe(findTimeControl(120, 1, 'bullet'));
   });
 });
 

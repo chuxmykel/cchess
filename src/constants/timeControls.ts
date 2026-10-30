@@ -163,3 +163,20 @@ export function findTimeControl(
     }
   );
 }
+
+/** The clock settings a game or challenge carries, as the server sends
+ * them. */
+export type TimedGame = {
+  initialSeconds: number;
+  incrementSeconds: number;
+  gameType: GameType;
+};
+
+/** A game's or challenge's time control. */
+export function timeControlOf(game: TimedGame): TimeControl {
+  return findTimeControl(
+    game.initialSeconds,
+    game.incrementSeconds,
+    game.gameType,
+  );
+}

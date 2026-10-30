@@ -7,7 +7,7 @@ import { NUMBER_OF_ROWS } from '../../constants';
 import { BOARD_THEMES } from '../../constants/boardThemes';
 import {
   animatesMoves,
-  findTimeControl,
+  timeControlOf,
   TimeControl,
 } from '../../constants/timeControls';
 import Chessboard from '../../components/ChessBoard';
@@ -175,11 +175,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   );
   const firstMoveSecondsLeft = useFirstMoveCountdown(firstMoveDeadline);
 
-  const timeControl = findTimeControl(
-    snapshot.initialSeconds,
-    snapshot.incrementSeconds,
-    snapshot.gameType,
-  );
+  const timeControl = timeControlOf(snapshot);
 
   function leaveGame() {
     navigation.popToTop();
