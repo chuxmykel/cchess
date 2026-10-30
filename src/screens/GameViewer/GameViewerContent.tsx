@@ -33,6 +33,7 @@ import {
 } from '../../hooks/useGameSounds';
 import { GameSnapshot } from '../../network/socketEvents';
 
+import { flipBoardAction, newOpponentAction } from '../gameMenuActions';
 interface GameViewerContentProps {
   width: number;
   snapshot: GameSnapshot;
@@ -110,17 +111,8 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   const newGameLabel =
     myColor === null ? `Play ${timeControl.label}` : 'New opponent';
   const menuActions: ActionSheetAction[] = [
-    {
-      label: 'Flip board',
-      onPress: flip,
-      immediate: true,
-      testID: 'flip-board-action',
-    },
-    {
-      label: newGameLabel,
-      onPress: () => onNewOpponent(timeControl),
-      testID: 'new-opponent-action',
-    },
+    flipBoardAction(flip),
+    newOpponentAction(() => onNewOpponent(timeControl), newGameLabel),
   ];
 
   const playerBarProps: SharedPlayerBarProps = {

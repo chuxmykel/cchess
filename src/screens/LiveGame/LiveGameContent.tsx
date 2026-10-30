@@ -35,6 +35,7 @@ import { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
 import { useOnlineChessGameContext } from '../../context/LiveGame/OnlineChessGameContext';
 import { RematchStatus } from '../../hooks/useRematch';
+import { flipBoardAction, newOpponentAction } from '../gameMenuActions';
 import EarlierPositionOverlay from './EarlierPositionOverlay';
 
 export type LiveGameContentNavigation = Pick<
@@ -74,12 +75,7 @@ function gameMenuActions({
   findNewOpponent,
   showResult,
 }: GameMenuOptions): ActionSheetAction[] {
-  const flipBoard: ActionSheetAction = {
-    label: 'Flip board',
-    onPress: flip,
-    immediate: true,
-    testID: 'flip-board-action',
-  };
+  const flipBoard = flipBoardAction(flip);
   if (isGameOver) {
     return [
       flipBoard,
@@ -92,11 +88,7 @@ function gameMenuActions({
             },
           ]
         : []),
-      {
-        label: 'New opponent',
-        onPress: findNewOpponent,
-        testID: 'new-opponent-action',
-      },
+      newOpponentAction(findNewOpponent),
     ];
   }
   const leaveGame: ActionSheetAction = canAbort
