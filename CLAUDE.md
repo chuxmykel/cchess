@@ -190,9 +190,11 @@ network/       pure networking infra (REST/socket clients, event types), same st
     chat (`useGameChat`: history, new messages, and the unread count -
     from how far the server says you've read, every draw note counting
     until seen, yours too - marking it read there with `game:chatRead`
-    while open) and rematches (`useRematch`: offering one, answering the
-    opponent's, and handing over the new game when the server starts it,
-    which `LiveGame` then plays in place), the game sounds (`useGameSounds.ts`,
+    while open; `useGameChatSheet` adds the sheet it's read in, open or
+    not, for `ChatSheet` - the game viewer's own games use it too) and
+    rematches (`useRematch`: offering one, answering the opponent's, and
+    handing over the new game when the server starts it, which `LiveGame`
+    then plays in place), the game sounds (`useGameSounds.ts`,
     with `expo-audio` - one player per sound, shared app-wide; muted by the
     silent switch, mixing with other apps' audio: `useMoveSounds`, each
     move's as it's applied, either side's; `useMoveNavigationSounds`,
@@ -318,7 +320,12 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `LiveGameSkeleton`, `GameBoardArea` (the board between its two player
   bars, 24pt from each, with more of the room left over below them than
   above - clear of the toolbar - and laid out the same seeking, loading and playing,
-  so the board never jumps), `ConnectionStrengthIndicator`), shared
+  so the board never jumps), `PlayerBarsFrame` (a game's two
+  `PlayerBar`s in `GameBoardArea`, with whatever board the screen draws
+  between them, the side at the bottom facing it), `GameScreenHeader`
+  (`GameHeader` with the menu every game has - share it, bookmark it),
+  `ConnectionStrengthIndicator`; `LiveGame` and `GameViewer` both build on
+  `PlayerBarsFrame`, `GameScreenHeader` and `ChatSheet`), shared
   primitives used across screens (`Button`, `Avatar`, `BottomSheet` -
   fits its content, or with `heightRatio` takes that share of the screen
   above the keyboard for content that fills it, running on behind the
