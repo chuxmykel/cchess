@@ -1,23 +1,28 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
 
-import GameToolbar from '.';
+import GameToolbar, { MoveSteps } from '.';
 import { REPEAT_INTERVAL_MS } from '../../hooks/usePressAndHoldRepeat';
 
 describe('GameToolbar', () => {
-  function renderToolbar(
-    overrides: Partial<Parameters<typeof GameToolbar>[0]> = {},
-  ) {
+  type Overrides = Partial<
+    Omit<Parameters<typeof GameToolbar>[0], 'moveSteps'>
+  > & { moveSteps?: Partial<MoveSteps> };
+
+  function renderToolbar(overrides: Overrides = {}) {
     const props = {
       onOpenMenu: jest.fn(),
       onResign: jest.fn(),
       canResign: true,
       onOpenChat: jest.fn(),
       unreadChatCount: 0,
-      onPreviousMove: jest.fn(),
-      onNextMove: jest.fn(),
-      canGoToPreviousMove: true,
-      canGoToNextMove: true,
       ...overrides,
+      moveSteps: {
+        back: jest.fn(),
+        forward: jest.fn(),
+        canGoBack: true,
+        canGoForward: true,
+        ...overrides.moveSteps,
+      },
     };
     return { props, screenPromise: render(<GameToolbar {...props} />) };
   }
@@ -35,13 +40,13 @@ describe('GameToolbar', () => {
     expect(props.onOpenMenu).toHaveBeenCalledTimes(1);
     expect(props.onResign).toHaveBeenCalledTimes(1);
     expect(props.onOpenChat).toHaveBeenCalledTimes(1);
-    expect(props.onPreviousMove).toHaveBeenCalledTimes(1);
-    expect(props.onNextMove).toHaveBeenCalledTimes(1);
+    expect(props.moveSteps.back).toHaveBeenCalledTimes(1);
+    expect(props.moveSteps.forward).toHaveBeenCalledTimes(1);
   });
 
   it.each([
-    ['previous-move-button', 'onPreviousMove'],
-    ['next-move-button', 'onNextMove'],
+    ['previous-move-button', 'back'],
+    ['next-move-button', 'forward'],
   ] as const)(
     'keeps stepping through the moves while %s is held',
     async (testID, handler) => {
@@ -56,7 +61,7 @@ describe('GameToolbar', () => {
         await fireEvent(button, 'pressOut');
         await act(() => jest.advanceTimersByTime(2 * REPEAT_INTERVAL_MS));
 
-        expect(props[handler]).toHaveBeenCalledTimes(3);
+        expect(props.moveSteps[handler]).toHaveBeenCalledTimes(3);
       } finally {
         jest.useRealTimers();
       }
@@ -75,16 +80,15 @@ describe('GameToolbar', () => {
 
   it('disables move navigation at either end of the move list', async () => {
     const { props, screenPromise } = renderToolbar({
-      canGoToPreviousMove: false,
-      canGoToNextMove: false,
+      moveSteps: { canGoBack: false, canGoForward: false },
     });
     const screen = await screenPromise;
 
     await fireEvent.press(screen.getByTestId('previous-move-button'));
     await fireEvent.press(screen.getByTestId('next-move-button'));
 
-    expect(props.onPreviousMove).not.toHaveBeenCalled();
-    expect(props.onNextMove).not.toHaveBeenCalled();
+    expect(props.moveSteps.back).not.toHaveBeenCalled();
+    expect(props.moveSteps.forward).not.toHaveBeenCalled();
   });
 
   describe('chat badge', () => {

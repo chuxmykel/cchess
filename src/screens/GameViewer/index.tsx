@@ -9,6 +9,7 @@ import Toast from '../../components/Toast';
 import { DEFAULT_RATING_RANGE } from '../../constants/seek';
 import { TimeControl } from '../../constants/timeControls';
 import { useAuthSession } from '../../context/AuthSessionContext';
+import { colorPlayedBy } from '../../domain/players';
 import { useGameViewer } from '../../hooks/useGameViewer';
 import { useToast } from '../../hooks/useToast';
 import { HomeStackParamList } from '../HomeStack/types';
@@ -26,15 +27,9 @@ const GameViewer: React.FC<GameViewerProps> = ({ navigation, route }) => {
   const { state, reload } = useGameViewer(gameId);
   const me = session.isReady ? session.user : null;
   const snapshot = state.status === 'ready' ? state.snapshot : null;
-  const myColor =
-    snapshot && me
-      ? snapshot.white.id === me.id
-        ? 'w'
-        : snapshot.black.id === me.id
-          ? 'b'
-          : null
-      : null;
-  const isMyGameInPlay = myColor !== null && snapshot?.status === 'active';
+  const viewerPlayedAs = snapshot && me ? colorPlayedBy(snapshot, me.id) : null;
+  const isMyGameInPlay =
+    viewerPlayedAs !== null && snapshot?.status === 'active';
 
   useEffect(() => {
     if (isMyGameInPlay) {
@@ -76,17 +71,17 @@ const GameViewer: React.FC<GameViewerProps> = ({ navigation, route }) => {
         navigation.navigate('UserProfile', { username }),
       onError: (message: string) => toast.show(message),
     };
-    if (myColor && session.isReady) {
+    if (viewerPlayedAs && session.isReady) {
       return (
         <ParticipantGameViewer
           {...contentProps}
           socket={session.socket}
           myUserId={session.user.id}
-          myColor={myColor}
+          viewerPlayedAs={viewerPlayedAs}
         />
       );
     }
-    return <GameViewerContent {...contentProps} myColor={null} />;
+    return <GameViewerContent {...contentProps} viewerPlayedAs={null} />;
   }
 
   return (

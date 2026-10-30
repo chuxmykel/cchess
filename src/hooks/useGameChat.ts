@@ -9,6 +9,16 @@ export type UseGameChatResult = {
   send: (text: string) => void;
 };
 
+/** A game's chat with the sheet it's read in, for a game screen. */
+export type GameChat = UseGameChatResult & {
+  myUserId: string;
+  isOpen: boolean;
+  /** No more messages can be sent; the history stays readable. */
+  isClosed: boolean;
+  open: () => void;
+  close: () => void;
+};
+
 /** How far the chat's been read, and whether this app marked it so -
  * which the server still needs telling - or heard it from the server. */
 type ReadMark = { at: string | null; isLocal: boolean };
@@ -101,4 +111,24 @@ export function useGameChat(
   );
 
   return { messages, unreadCount, send };
+}
+
+// A game's chat as a game screen shows it: in a sheet, opened and closed
+// here, and marked read while it's open.
+export function useGameChatSheet(
+  socket: AppSocket,
+  gameId: string,
+  myUserId: string,
+  isClosed = false,
+): GameChat {
+  const [isOpen, setIsOpen] = useState(false);
+  const chat = useGameChat(socket, gameId, myUserId, isOpen);
+  return {
+    ...chat,
+    myUserId,
+    isOpen,
+    isClosed,
+    open: () => setIsOpen(true),
+    close: () => setIsOpen(false),
+  };
 }

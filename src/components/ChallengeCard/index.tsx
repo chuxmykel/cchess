@@ -4,7 +4,7 @@ import Avatar from '../Avatar';
 import CircleIconButton from '../CircleIconButton';
 import GameTypeIcon from '../GameTypeIcon';
 import { MUTED_COLOR } from '../../constants/colors';
-import { findTimeControl } from '../../constants/timeControls';
+import { timeControlOf } from '../../constants/timeControls';
 import { useFirstMoveCountdown } from '../../hooks/useFirstMoveCountdown';
 import { Challenge } from '../../network/restClient';
 
@@ -25,11 +25,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = (props) => {
   }
   const other =
     direction === 'incoming' ? challenge.challenger : challenge.opponent;
-  const timeControl = findTimeControl(
-    challenge.initialSeconds,
-    challenge.incrementSeconds,
-    challenge.gameType,
-  );
+  const timeControl = timeControlOf(challenge);
 
   return (
     <View style={styles.card} testID={`challenge-card-${challenge.id}`}>

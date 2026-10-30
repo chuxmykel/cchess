@@ -11,7 +11,7 @@ import {
 } from '../../network/socketEvents';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
 import { makeGameSnapshot } from '../../testUtils/gameSnapshot';
-import { findTimeControl } from '../../constants/timeControls';
+import { timeControlOf } from '../../constants/timeControls';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { waitForSheetToClose } from '../../testUtils/modal';
 import { piecePositionOnScreen } from '../../testUtils/boardPosition';
@@ -740,13 +740,7 @@ describe('LiveGameContent', () => {
 
       await fireEvent.press(screen.getByTestId('new-opponent-button'));
 
-      expect(onNewOpponent).toHaveBeenCalledWith(
-        findTimeControl(
-          snapshot.initialSeconds,
-          snapshot.incrementSeconds,
-          snapshot.gameType,
-        ),
-      );
+      expect(onNewOpponent).toHaveBeenCalledWith(timeControlOf(snapshot));
     });
 
     it('swaps the connection indicator for a back button that leaves the game', async () => {

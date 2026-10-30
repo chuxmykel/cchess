@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react';
 import { Color } from 'chess.js';
 
+import { otherColor } from '../domain/players';
+
 export type BoardOrientation = {
   orientation: Color;
   isFlipped: boolean;
@@ -17,9 +19,8 @@ export function useBoardOrientation(myColor: Color): BoardOrientation {
     setIsFlipped((previous) => !previous);
   }, []);
 
-  const opponentColor: Color = myColor === 'w' ? 'b' : 'w';
   return {
-    orientation: isFlipped ? opponentColor : myColor,
+    orientation: isFlipped ? otherColor(myColor) : myColor,
     isFlipped,
     flip,
   };

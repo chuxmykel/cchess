@@ -14,7 +14,8 @@ import EmptyState from '../EmptyState';
 import Icon from '../Icon';
 import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { MAX_CHAT_MESSAGE_LENGTH } from '../../constants/chat';
-import { ChatMessage } from '../../network/socketEvents';
+import { GameChat } from '../../hooks/useGameChat';
+import { ChatMessage, GameUserSummary } from '../../network/socketEvents';
 
 const SHEET_HEIGHT_RATIO = 0.8;
 
@@ -28,50 +29,38 @@ const NOTE_VERBS: Record<Exclude<ChatMessage['kind'], 'message'>, string> = {
 function noteText(
   message: ChatMessage,
   myUserId: string,
-  playerNames: Record<string, string>,
+  players: GameUserSummary[],
 ): string {
   const who =
     message.userId === myUserId
       ? 'You'
-      : (playerNames[message.userId] ?? 'Your opponent');
+      : (players.find((player) => player.id === message.userId)?.displayName ??
+        'Your opponent');
   return `${who} ${NOTE_VERBS[message.kind as keyof typeof NOTE_VERBS]}`;
 }
 
 interface ChatSheetProps {
-  visible: boolean;
-  onClose: () => void;
-  messages: ChatMessage[];
-  myUserId: string;
-  /** Each player's name by id, for the notes of what they did. */
-  playerNames: Record<string, string>;
-  onSend: (text: string) => void;
-  /** No more messages can be sent; the history stays readable. */
-  isClosed?: boolean;
+  chat: GameChat;
+  /** The game's players, named in the notes of what they did. */
+  players: GameUserSummary[];
 }
 
-const ChatSheet: React.FC<ChatSheetProps> = ({
-  visible,
-  onClose,
-  messages,
-  myUserId,
-  playerNames,
-  onSend,
-  isClosed = false,
-}) => {
+const ChatSheet: React.FC<ChatSheetProps> = ({ chat, players }) => {
+  const { messages, myUserId, isClosed } = chat;
   const [draft, setDraft] = useState('');
   const messagesRef = useRef<ScrollViewInstance>(null);
   const canSend = draft.trim().length > 0;
 
   function send() {
     if (!canSend) return;
-    onSend(draft);
+    chat.send(draft);
     setDraft('');
   }
 
   return (
     <BottomSheet
-      visible={visible}
-      onClose={onClose}
+      visible={chat.isOpen}
+      onClose={chat.close}
       heightRatio={SHEET_HEIGHT_RATIO}
     >
       <View style={styles.container} testID="chat-sheet">
@@ -109,7 +98,7 @@ const ChatSheet: React.FC<ChatSheetProps> = ({
                     style={styles.notice}
                     testID={`chat-notice-${message.id}`}
                   >
-                    {noteText(message, myUserId, playerNames)}
+                    {noteText(message, myUserId, players)}
                   </Text>
                 );
               }

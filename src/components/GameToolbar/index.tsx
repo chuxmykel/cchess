@@ -1,12 +1,19 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 
 import Icon, { IconName } from '../Icon';
+import { MoveNavigation } from '../../hooks/useMoveNavigation';
 import { usePressAndHoldRepeat } from '../../hooks/usePressAndHoldRepeat';
 
 const ICON_SIZE = 28;
 const ENABLED_COLOR = '#333';
 const DISABLED_COLOR = '#c4c4c4';
 const MAX_BADGE_COUNT = 9;
+
+/** Stepping back and forward through a game's moves. */
+export type MoveSteps = Pick<
+  MoveNavigation,
+  'back' | 'forward' | 'canGoBack' | 'canGoForward'
+>;
 
 interface GameToolbarProps {
   onOpenMenu: () => void;
@@ -16,10 +23,7 @@ interface GameToolbarProps {
   /** Leave out to hide the chat button. */
   onOpenChat?: () => void;
   unreadChatCount?: number;
-  onPreviousMove: () => void;
-  onNextMove: () => void;
-  canGoToPreviousMove: boolean;
-  canGoToNextMove: boolean;
+  moveSteps: MoveSteps;
 }
 
 interface ToolbarButtonProps {
@@ -76,10 +80,7 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
   canResign = false,
   onOpenChat,
   unreadChatCount = 0,
-  onPreviousMove,
-  onNextMove,
-  canGoToPreviousMove,
-  canGoToNextMove,
+  moveSteps,
 }) => (
   <View style={styles.container} testID="game-toolbar">
     <ToolbarButton
@@ -109,16 +110,16 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
     <ToolbarButton
       icon="chevron-left"
       label="Previous move"
-      onPress={onPreviousMove}
-      disabled={!canGoToPreviousMove}
+      onPress={moveSteps.back}
+      disabled={!moveSteps.canGoBack}
       repeatsWhileHeld
       testID="previous-move-button"
     />
     <ToolbarButton
       icon="chevron-right"
       label="Next move"
-      onPress={onNextMove}
-      disabled={!canGoToNextMove}
+      onPress={moveSteps.forward}
+      disabled={!moveSteps.canGoForward}
       repeatsWhileHeld
       testID="next-move-button"
     />

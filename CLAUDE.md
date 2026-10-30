@@ -90,6 +90,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
     material, counted on the board so promotions count - for the side
     ahead, as shown under the players' names (`materialImbalance(fen)`
     is that board count).
+  - `players.ts` - a game's sides: `otherColor` (a worklet too, for the
+    drag), and `playerOf`, `ratingDiffOf` and `colorPlayedBy` (the side a
+    user played, or null), for anything shaped like a game - a snapshot,
+    or the live game's own fields.
   - `moveSound.ts` - `moveSound(san)`: the sound a move makes - checkmate,
     check, castle, capture or a plain move, the first that applies - read
     off its SAN (`AppliedMove` carries it); `stepSound`, that of stepping
@@ -190,9 +194,11 @@ network/       pure networking infra (REST/socket clients, event types), same st
     chat (`useGameChat`: history, new messages, and the unread count -
     from how far the server says you've read, every draw note counting
     until seen, yours too - marking it read there with `game:chatRead`
-    while open) and rematches (`useRematch`: offering one, answering the
-    opponent's, and handing over the new game when the server starts it,
-    which `LiveGame` then plays in place), the game sounds (`useGameSounds.ts`,
+    while open; `useGameChatSheet` adds the sheet it's read in, open or
+    not, for `ChatSheet` - the game viewer's own games use it too) and
+    rematches (`useRematch`: offering one, answering the opponent's, and
+    handing over the new game when the server starts it, which `LiveGame`
+    then plays in place), the game sounds (`useGameSounds.ts`,
     with `expo-audio` - one player per sound, shared app-wide; muted by the
     silent switch, mixing with other apps' audio: `useMoveSounds`, each
     move's as it's applied, either side's; `useMoveNavigationSounds`,
@@ -318,7 +324,12 @@ network/       pure networking infra (REST/socket clients, event types), same st
   `LiveGameSkeleton`, `GameBoardArea` (the board between its two player
   bars, 24pt from each, with more of the room left over below them than
   above - clear of the toolbar - and laid out the same seeking, loading and playing,
-  so the board never jumps), `ConnectionStrengthIndicator`), shared
+  so the board never jumps), `PlayerBarsFrame` (a game's two
+  `PlayerBar`s in `GameBoardArea`, with whatever board the screen draws
+  between them, the side at the bottom facing it), `GameScreenHeader`
+  (`GameHeader` with the menu every game has - share it, bookmark it),
+  `ConnectionStrengthIndicator`; `LiveGame` and `GameViewer` both build on
+  `PlayerBarsFrame`, `GameScreenHeader` and `ChatSheet`), shared
   primitives used across screens (`Button`, `Avatar`, `BottomSheet` -
   fits its content, or with `heightRatio` takes that share of the screen
   above the keyboard for content that fills it, running on behind the
