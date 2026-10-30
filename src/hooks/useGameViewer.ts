@@ -70,8 +70,11 @@ export function useGameViewer(gameId: string): {
       })
       .catch(() => {
         if (requestId === latestRequest.current) {
+          // A game already shown stays, but not the one before it.
           setState((previous) =>
-            previous.status === 'ready' ? previous : { status: 'error' },
+            previous.status === 'ready' && previous.snapshot.id === gameId
+              ? previous
+              : { status: 'error' },
           );
         }
       });
@@ -101,7 +104,7 @@ export function useGameViewer(gameId: string): {
         return;
       }
       setState((current) =>
-        current.status === 'ready'
+        current.status === 'ready' && current.snapshot.id === gameId
           ? { status: 'ready', snapshot: withMove(current.snapshot, push) }
           : current,
       );

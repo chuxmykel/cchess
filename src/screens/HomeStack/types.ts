@@ -14,7 +14,9 @@ export type ConversationPartner = {
 export type HomeStackParamList = {
   HomeTabs: undefined;
   LiveGame: { seek: Seek } | { gameId: string };
-  GameViewer: { gameId: string };
+  /** watchedUserId: the player whose game this is being watched for -
+   * shown at the bottom, and followed into their next game. */
+  GameViewer: { gameId: string; watchedUserId?: string };
   UserProfile: { username: string };
   Conversation: ConversationPartner;
   /** Friends over the tabs, for screens there to open; focusSearch opens

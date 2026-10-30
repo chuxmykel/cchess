@@ -256,6 +256,7 @@ describe('Home', () => {
 
       expect(navigation.navigate).toHaveBeenCalledWith('GameViewer', {
         gameId: 'game-5',
+        watchedUserId: playing.id,
       });
     });
   });

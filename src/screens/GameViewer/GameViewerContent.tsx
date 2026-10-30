@@ -22,7 +22,7 @@ import {
   TimeControl,
 } from '../../constants/timeControls';
 import { capturedMaterial } from '../../domain/material';
-import { playerOf, ratingDiffOf } from '../../domain/players';
+import { colorPlayedBy, playerOf, ratingDiffOf } from '../../domain/players';
 import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useGameClock } from '../../hooks/useGameClock';
 import { GameChat } from '../../hooks/useGameChat';
@@ -39,6 +39,8 @@ interface GameViewerContentProps {
   width: number;
   snapshot: GameSnapshot;
   viewerPlayedAs: Color | null;
+  /** The player whose game this is being watched for, at the bottom. */
+  watchedUserId?: string;
   /** The game's chat, for those who played in it. */
   chat?: GameChat;
   onBack: () => void;
@@ -59,13 +61,20 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   width,
   snapshot,
   viewerPlayedAs,
+  watchedUserId,
   chat,
   onBack,
   onNewOpponent,
   onOpenPlayer,
   onError,
 }) => {
-  const { orientation, flip } = useBoardOrientation(viewerPlayedAs ?? 'w');
+  // From your own side, or else that of the player being watched.
+  const watchedPlayedAs = watchedUserId
+    ? colorPlayedBy(snapshot, watchedUserId)
+    : null;
+  const { orientation, flip } = useBoardOrientation(
+    viewerPlayedAs ?? watchedPlayedAs ?? 'w',
+  );
   const moveNavigation = useMoveNavigation(snapshot.moves);
   // Moves arriving in a game being watched sound too, as they're played.
   useMoveNavigationSounds(

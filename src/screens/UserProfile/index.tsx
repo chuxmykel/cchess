@@ -140,7 +140,7 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
         label: 'Watch game',
         icon: 'television-play',
         onPress: playingGameId
-          ? () => friendActions.watch(playingGameId)
+          ? () => friendActions.watch(profile, playingGameId)
           : undefined,
         disabled: !playingGameId,
         testID: 'profile-watch',

@@ -205,6 +205,8 @@ export interface ClientToServerEvents {
   'game:chatRead': (payload: { gameId: string }) => void;
   'game:watch': (payload: { gameId: string }) => void;
   'game:unwatch': (payload: { gameId: string }) => void;
+  'user:follow': (payload: { userId: string }) => void;
+  'user:unfollow': (payload: { userId: string }) => void;
   'game:rematchOffer': (payload: { gameId: string }) => void;
   'game:rematchDecline': (payload: { gameId: string }) => void;
   ping: (clientTimeMs: number, ack: () => void) => void;
@@ -231,6 +233,8 @@ export interface ServerToClientEvents {
   'friend:requestResolved': (payload: { id: string }) => void;
   'friend:removed': (payload: { userIds: string[] }) => void;
   'friend:status': (payload: FriendStatusPayload) => void;
+  /** A game started by a player this socket follows (`user:follow`). */
+  'user:gameStarted': (payload: { userId: string; gameId: string }) => void;
   'challenge:received': (payload: Challenge) => void;
   'challenge:accepted': (payload: Challenge) => void;
   'challenge:resolved': (payload: Challenge) => void;

@@ -149,15 +149,18 @@ describe('UserProfile', () => {
     });
   });
 
-  it('watches the game a player is in', async () => {
-    const { screen, navigation } = await renderScreen(
-      makeUserProfile({ online: true, playingGameId: 'live-game' }),
-    );
+  it('watches the game a player is in, following them', async () => {
+    const profile = makeUserProfile({
+      online: true,
+      playingGameId: 'live-game',
+    });
+    const { screen, navigation } = await renderScreen(profile);
 
     await fireEvent.press(screen.getByTestId('profile-watch'));
 
     expect(navigation.navigate).toHaveBeenCalledWith('GameViewer', {
       gameId: 'live-game',
+      watchedUserId: profile.id,
     });
   });
 
@@ -198,17 +201,17 @@ describe('UserProfile', () => {
   });
 
   it("watches the game of a player I'm not friends with", async () => {
-    const { screen, navigation } = await renderScreen(
-      makeUserProfile({
-        friendship: { status: 'none', requestId: null },
-        playingGameId: 'their-live-game',
-      }),
-    );
+    const profile = makeUserProfile({
+      friendship: { status: 'none', requestId: null },
+      playingGameId: 'their-live-game',
+    });
+    const { screen, navigation } = await renderScreen(profile);
 
     await fireEvent.press(screen.getByTestId('profile-watch'));
 
     expect(navigation.navigate).toHaveBeenCalledWith('GameViewer', {
       gameId: 'their-live-game',
+      watchedUserId: profile.id,
     });
   });
 

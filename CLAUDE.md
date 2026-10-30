@@ -220,7 +220,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
     `useGameBookmark` (whether you've bookmarked the game, toggled
     optimistically), and `useGameViewer` (one game to look through, fetched
     once and - while it's still being played - watched with `game:watch`;
-    `clocksAtPly` gives each side's clock at any position).
+    `clocksAtPly` gives each side's clock at any position), and
+    `useFollowPlayer` (a player's next game as it starts, from
+    `user:follow` - so the viewer, opened from a Watch button, moves on with
+    that player).
   - Friends and everything around them: `useSocial` (backs
     `SocialContext`: friends with their live status, friend requests,
     challenges and unread message counts, kept current from the
@@ -438,7 +441,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   from a sheet, and the friend accepts it from Home, which opens `LiveGame`
   for both. A recent game opens `GameViewer` (any finished game, or a
   friend's game in progress - your own game in progress opens `LiveGame`
-  instead), and "See All" opens `Friends` or `GamesList`. A fresh launch lands on the `Home` tab
+  instead), and "See All" opens `Friends` or `GamesList`. Watch opens it
+  with `watchedUserId`, that player at the bottom (unless flipped) and
+  followed: when their next game starts, the viewer switches to it. A fresh launch lands on the `Home` tab
   (not the board) - the path to a game is Home -> New Game -> Start New
   Game -> LiveGame. New Game picks the time control, Casual or Rated
   (guests can only play casual) and, when signed in, a rating range; the

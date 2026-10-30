@@ -13,7 +13,7 @@ export interface FriendCardProps {
   onPress: (friend: Friend) => void;
   onMessage: (friend: Friend) => void;
   onChallenge: (friend: Friend) => void;
-  onWatch: (gameId: string) => void;
+  onWatch: (friend: Friend, gameId: string) => void;
 }
 
 const FriendCard: React.FC<FriendCardProps> = ({
@@ -79,7 +79,7 @@ const FriendCard: React.FC<FriendCardProps> = ({
       {playingGameId && (
         <Pressable
           style={styles.watch}
-          onPress={() => onWatch(playingGameId)}
+          onPress={() => onWatch(friend, playingGameId)}
           hitSlop={6}
           accessibilityRole="button"
           accessibilityLabel={`Watch ${friend.displayName}'s game`}
