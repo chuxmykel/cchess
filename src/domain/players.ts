@@ -22,6 +22,15 @@ export function ratingDiffOf(
   return color === 'w' ? game.whiteRatingDiff : game.blackRatingDiff;
 }
 
+/** The side that lost a game: null while it's on, or drawn. */
+export function defeatedColor(
+  result: 'white' | 'black' | 'draw' | null,
+): Color | null {
+  if (result === 'white') return 'b';
+  if (result === 'black') return 'w';
+  return null;
+}
+
 /** The side this player played in a game, or null if they didn't. */
 export function colorPlayedBy(
   game: { white: { id: string }; black: { id: string } },

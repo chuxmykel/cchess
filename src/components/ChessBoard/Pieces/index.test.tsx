@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react-native';
+import { render, within } from '@testing-library/react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { makeMutable } from 'react-native-reanimated';
 import { Square } from 'chess.js';
@@ -6,6 +6,7 @@ import { Square } from 'chess.js';
 import Pieces from '.';
 import { AnimatedPieceView } from '../../../hooks/usePieceAnimations';
 import { getXYFromSquare } from '../../../domain/boardCoordinates';
+import { KingInDanger } from '../../../domain/types';
 import { dragPiece, tapPiece } from '../../../testUtils/pieceGestures';
 
 describe('Pieces', () => {
@@ -35,6 +36,7 @@ describe('Pieces', () => {
       pieces: AnimatedPieceView[];
       isOwnPieceAt: (square: Square) => boolean;
       locked: boolean;
+      kingInDanger: KingInDanger | null;
     }> = {},
   ) {
     const pieces = overrides.pieces ?? [buildPiece('e2', 'wp')];
@@ -52,6 +54,7 @@ describe('Pieces', () => {
           orientation="w"
           isOwnPieceAt={isOwnPieceAt}
           locked={locked}
+          kingInDanger={overrides.kingInDanger ?? null}
           legalTargets={makeMutable({ e2: ['e3', 'e4'] as Square[] })}
           dragGuide={{
             x: makeMutable(0),
@@ -131,5 +134,27 @@ describe('Pieces', () => {
     await tapPiece('piece-e2');
 
     expect(onTap).toHaveBeenCalledWith('e2');
+  });
+
+  it('makes only the king in check glow', async () => {
+    const { screen } = await renderPieces({
+      pieces: [buildPiece('e1', 'wk'), buildPiece('e8', 'bk')],
+      kingInDanger: { square: 'e1', fallen: false },
+    });
+
+    const checked = within(screen.getByTestId('piece-e1'));
+    const other = within(screen.getByTestId('piece-e8'));
+    expect(checked.getAllByTestId('danger-glow').length).toBeGreaterThan(0);
+    expect(other.queryByTestId('danger-glow')).toBeNull();
+  });
+
+  it("doesn't make a piece just taken glow from the king's square", async () => {
+    const { screen } = await renderPieces({
+      pieces: [buildPiece('e1', 'wq', true), buildPiece('e1', 'wk')],
+      kingInDanger: { square: 'e1', fallen: false },
+    });
+
+    const taken = within(screen.getByTestId('taken-piece-e1'));
+    expect(taken.queryByTestId('danger-glow')).toBeNull();
   });
 });

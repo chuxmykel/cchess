@@ -1,10 +1,11 @@
-import { render } from '@testing-library/react-native';
+import { render, within } from '@testing-library/react-native';
 import { DEFAULT_POSITION } from 'chess.js';
 
 import StaticBoard from '.';
 import { NUMBER_OF_ROWS } from '../../../constants';
 import { piecePositionOnScreen } from '../../../testUtils/boardPosition';
 import { settleAnimations } from '../../../testUtils/pieceGestures';
+import { animatedStyleOf } from '../../../testUtils/animatedValue';
 
 describe('StaticBoard', () => {
   const width = 400;
@@ -182,5 +183,54 @@ describe('StaticBoard', () => {
       left: 4 * PIECE_WIDTH,
       top: 3 * PIECE_WIDTH,
     });
+  });
+
+  // How far a king's image is tipped over.
+  function tilt(screen: Screen, square: string) {
+    const sprite = within(screen.getByTestId(`piece-${square}`)).getByTestId(
+      'sprite',
+    );
+    return animatedStyleOf(sprite).transform[0].rotate;
+  }
+
+  it('makes a mated king glow, and tips it over', async () => {
+    // Fool's mate, a move before and after.
+    const before =
+      'rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq - 0 2';
+    const mate =
+      'rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3';
+    const screen = await render(
+      <StaticBoard fen={before} colors={colors} width={width} />,
+    );
+    expect(screen.queryByTestId('danger-glow')).toBeNull();
+
+    await screen.rerender(
+      <StaticBoard fen={mate} colors={colors} width={width} />,
+    );
+    await settleAnimations();
+
+    const king = within(screen.getByTestId('piece-e1'));
+    expect(king.getByTestId('danger-glow')).toBeTruthy();
+    expect(tilt(screen, 'e1')).toBe('45deg');
+    expect(
+      within(screen.getByTestId('piece-e8')).queryByTestId('danger-glow'),
+    ).toBeNull();
+  });
+
+  it("tips over the beaten side's king, however it lost", async () => {
+    const screen = await render(
+      <StaticBoard
+        fen={KINGS_AND_E4_PAWN}
+        colors={colors}
+        width={width}
+        defeated="b"
+      />,
+    );
+    await settleAnimations();
+
+    const king = within(screen.getByTestId('piece-e8'));
+    expect(king.getByTestId('danger-glow')).toBeTruthy();
+    expect(tilt(screen, 'e8')).toBe('45deg');
+    expect(tilt(screen, 'e1')).toBe('0deg');
   });
 });

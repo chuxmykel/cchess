@@ -22,7 +22,12 @@ import {
   TimeControl,
 } from '../../constants/timeControls';
 import { capturedMaterial } from '../../domain/material';
-import { colorPlayedBy, playerOf, ratingDiffOf } from '../../domain/players';
+import {
+  colorPlayedBy,
+  defeatedColor,
+  playerOf,
+  ratingDiffOf,
+} from '../../domain/players';
 import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useGameClock } from '../../hooks/useGameClock';
 import { GameChat } from '../../hooks/useGameChat';
@@ -160,6 +165,10 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
           orientation={orientation}
           lastMove={moveNavigation.lastMove}
           animate={animatesMoves(snapshot.gameType)}
+          // Only on the last position, where the game was lost.
+          defeated={
+            moveNavigation.isLive ? defeatedColor(snapshot.result) : null
+          }
         />
         {showsResult && (
           <GameOverOverlay onDismiss={() => setIsResultDismissed(true)}>

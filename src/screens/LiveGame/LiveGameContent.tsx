@@ -30,7 +30,12 @@ import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useMoveNavigation } from '../../hooks/useMoveNavigation';
 import { useMoveNavigationSounds } from '../../hooks/useGameSounds';
 import { capturedMaterial } from '../../domain/material';
-import { otherColor, playerOf, ratingDiffOf } from '../../domain/players';
+import {
+  defeatedColor,
+  otherColor,
+  playerOf,
+  ratingDiffOf,
+} from '../../domain/players';
 import { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
 import { useOnlineChessGameContext } from '../../context/LiveGame/OnlineChessGameContext';
@@ -263,6 +268,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
           orientation={orientation}
           animate={animatesMoves(snapshot.gameType)}
           lastPlayedMove={moves.at(-1) ?? null}
+          defeated={defeatedColor(result)}
         />
         {pendingPromotion && moveNavigation.isLive && (
           <PromotionMenu
