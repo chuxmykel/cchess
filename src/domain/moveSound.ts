@@ -16,14 +16,17 @@ export function moveSound(san: string): MoveSound {
 
 // The sound of going from one position in a game to another: forward, the
 // move that lands there makes its own sound; back, the pieces just slide
-// back - taking back a capture or a mate isn't one.
+// back - taking back a capture isn't one - unless the position landed on is
+// a check, which always sounds as one.
 export function stepSound(
   sans: string[],
   fromPly: number,
   toPly: number,
 ): MoveSound | null {
   if (toPly === fromPly) return null;
-  return toPly > fromPly ? moveSound(sans[toPly - 1]) : 'move';
+  if (toPly > fromPly) return moveSound(sans[toPly - 1]);
+  const landedOn = toPly > 0 ? moveSound(sans[toPly - 1]) : 'move';
+  return landedOn === 'check' ? 'check' : 'move';
 }
 
 // The sound of a game ending, by how it ended: a mate has already sounded

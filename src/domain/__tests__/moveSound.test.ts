@@ -33,6 +33,14 @@ describe('stepSound', () => {
     expect(stepSound(sans, 5, 0)).toBe('move');
   });
 
+  it('sounds a check, stepping or jumping back onto one', () => {
+    const checks = ['e4', 'e5', 'Bc4', 'Nc6', 'Bxf7+', 'Kxf7', 'Qh5+'];
+    expect(stepSound(checks, 6, 5)).toBe('check');
+    expect(stepSound(checks, 7, 5)).toBe('check');
+    expect(stepSound(checks, 7, 4)).toBe('move');
+    expect(stepSound(checks, 1, 0)).toBe('move');
+  });
+
   it('is quiet staying put', () => {
     expect(stepSound(sans, 3, 3)).toBeNull();
   });
