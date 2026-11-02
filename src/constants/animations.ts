@@ -26,3 +26,13 @@ export const DROP_LIFT_GRACE_MS = 35;
 
 // Drawn over every other piece while dragged.
 export const DRAGGED_Z_INDEX = 100;
+
+// A mated king tipping over: slow enough to see it go, and
+// gathering speed as it falls.
+export const KING_FALL_TIMING: WithTimingConfig = {
+  duration: 400,
+  easing: Easing.in(Easing.quad),
+};
+
+// How far a mated king tips over.
+export const KING_FALL_DEGREES = 45;

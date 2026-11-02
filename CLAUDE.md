@@ -85,6 +85,11 @@ network/       pure networking infra (REST/socket clients, event types), same st
     function is also a worklet (a `'worklet'` string directive, no import),
     so a drag can work out squares on the UI thread.
   - `castlingSquares.ts` - castling rook from/to squares.
+  - `kingInDanger.ts` - `kingInDanger(fen, defeated)`: the king a board
+    marks in danger - the side that lost the game, however it lost,
+    fallen; or else the side to move's king in check, fallen only on mate
+    - for the boards to make it glow red and tip over (`PieceImage`).
+      `players.ts`' `defeatedColor(result)` gives the side that lost.
   - `material.ts` - `capturedMaterial(fen, moves)`: every piece each side
     has captured, from the moves, least valuable first, and the score - how far ahead in
     material, counted on the board so promotions count - for the side
@@ -97,7 +102,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
   - `moveSound.ts` - `moveSound(san)`: the sound a move makes - checkmate,
     check, castle, capture or a plain move, the first that applies - read
     off its SAN (`AppliedMove` carries it); `stepSound`, that of stepping
-    through a game - forward, the move landed on, back, a plain move; and
+    through a game - forward, the move landed on, back, a plain move, or a
+    check when the position landed on is one; and
     `gameOverSound(reason)`, a game's end - none for mate, which sounded
     with its move.
 
@@ -285,7 +291,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
 - **`src/components/ChessBoard/`** - composes the board from
   `ChessGameContext` + the hooks above; everything under it
   (`BoardSurface`, `Pieces/Piece`, `Row`, `Square`,
-  `PieceDragAndDropGuide`, `ValidMoveIndicators`, `LastMoveHighlight` -
+  `PieceDragAndDropGuide`, `ValidMoveIndicators`, `PieceImage` - a piece's
+  image as both boards draw it, upright for black, a king in check
+  glowing red (an iOS shadow, which follows the piece's shape) and
+  tipping over 45° once its side has lost - `LastMoveHighlight` -
   the last move's two squares tinted, as on lichess - for a castle, the
   king's and rook's starting squares (`domain/lastMoveSquares.ts`): the move the game
   just made, or the last one the server has on record while it has made

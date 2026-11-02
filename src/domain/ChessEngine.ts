@@ -183,6 +183,11 @@ export class ChessEngine {
     return this.game.isCheckmate();
   }
 
+  /** Where one side's king stands - null only on a board set up without it. */
+  getKingSquare(color: Color): Square | null {
+    return this.game.findPiece({ type: 'k', color })[0] ?? null;
+  }
+
   isStalemate(): boolean {
     return this.game.isStalemate();
   }

@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Image, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   SharedValue,
@@ -7,10 +7,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Color, Square } from 'chess.js';
 
-import { PIECES } from '../../../../constants';
 import { DragGuide } from '../../../../hooks/useDragGuide';
 import { LegalTargets } from '../../../../domain/types';
 import { usePieceGesture } from '../../../../hooks/usePieceGesture';
+import PieceImage from '../../PieceImage';
 
 interface PieceProps {
   id: string;
@@ -22,6 +22,9 @@ interface PieceProps {
   disabled: boolean;
   // Just taken, and only still shown until the piece taking it lands.
   captured: boolean;
+  // A king in danger, and whether it has fallen (see PieceImage).
+  inDanger?: boolean;
+  fallen?: boolean;
   legalTargets: SharedValue<LegalTargets>;
   dragGuide: DragGuide;
   onTap: (square: Square) => void;
@@ -31,6 +34,7 @@ interface PieceProps {
 
 const Piece: React.FC<PieceProps> = (props) => {
   const { id, square, width, orientation, x, y, captured } = props;
+  const { inDanger = false, fallen = false } = props;
   const testID = captured ? `taken-piece-${square}` : `piece-${square}`;
   const { gesture, scale, zIndex, hidden } = usePieceGesture({
     ...props,
@@ -55,13 +59,12 @@ const Piece: React.FC<PieceProps> = (props) => {
         testID={testID}
         pointerEvents={captured ? 'none' : 'auto'}
       >
-        <Image
-          source={PIECES[id]}
-          style={[
-            { width, height: width },
-            // Upright again, on a board turned round for black.
-            orientation === 'b' && styles.upright,
-          ]}
+        <PieceImage
+          id={id}
+          width={width}
+          orientation={orientation}
+          inDanger={inDanger}
+          fallen={fallen}
         />
       </Animated.View>
     </GestureDetector>
@@ -71,9 +74,6 @@ const Piece: React.FC<PieceProps> = (props) => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-  },
-  upright: {
-    transform: [{ rotate: '180deg' }],
   },
 });
 

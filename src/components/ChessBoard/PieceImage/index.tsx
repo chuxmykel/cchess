@@ -1,0 +1,84 @@
+import { useEffect } from 'react';
+import { Image, StyleSheet, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { Color } from 'chess.js';
+
+import { PIECES } from '../../../constants';
+import {
+  KING_FALL_DEGREES,
+  KING_FALL_TIMING,
+} from '../../../constants/animations';
+import { DANGER_COLOR } from '../../../constants/colors';
+
+interface PieceImageProps {
+  id: string;
+  width: number;
+  orientation: Color;
+  // A king in check, or whose side lost, glowing red.
+  inDanger?: boolean;
+  // A king whose side lost - mated, or any other way - tipped over.
+  fallen?: boolean;
+  fadeDuration?: number;
+}
+
+// How far a king in check's glow spreads, as a share of the square.
+const GLOW_RADIUS_RATIO = 0.15;
+
+// A piece's image, as both boards draw it: stood upright on a board turned
+// round for black, and for a king in danger, glowing red - toppling over
+// once its side has lost.
+const PieceImage: React.FC<PieceImageProps> = ({
+  id,
+  width,
+  orientation,
+  inDanger = false,
+  fallen = false,
+  fadeDuration,
+}) => {
+  const fall = useSharedValue(fallen ? 1 : 0);
+  useEffect(() => {
+    fall.set(withTiming(fallen ? 1 : 0, KING_FALL_TIMING));
+  }, [fall, fallen]);
+  const fallStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${fall.get() * KING_FALL_DEGREES}deg` }],
+  }));
+
+  const size = { width, height: width };
+  return (
+    <View style={[size, orientation === 'b' && styles.upright]}>
+      <Animated.View style={[size, fallStyle]} testID="sprite">
+        {/* With no background of its own, the view's shadow follows the
+            piece's shape - a glow around the king, not a box. */}
+        <View
+          style={[
+            size,
+            inDanger && [
+              styles.glow,
+              { shadowRadius: width * GLOW_RADIUS_RATIO },
+            ],
+          ]}
+          testID={inDanger ? 'danger-glow' : undefined}
+        >
+          <Image source={PIECES[id]} fadeDuration={fadeDuration} style={size} />
+        </View>
+      </Animated.View>
+    </View>
+  );
+};
+
+export default PieceImage;
+
+const styles = StyleSheet.create({
+  upright: {
+    transform: [{ rotate: '180deg' }],
+  },
+  glow: {
+    shadowColor: DANGER_COLOR,
+    shadowOpacity: 1,
+    shadowOffset: { width: 0, height: 0 },
+  },
+});

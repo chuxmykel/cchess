@@ -52,6 +52,13 @@ export type AppliedMove = MoveCore & {
   san: string;
 };
 
+// A king a board marks in danger - in check, or its side beaten: where it
+// stands, and whether it has fallen (mated, or the game lost another way).
+export type KingInDanger = {
+  square: Square;
+  fallen: boolean;
+};
+
 export type MoveResult =
   | { status: 'illegal' }
   | { status: 'needs-promotion-choice'; from: Square; to: Square }

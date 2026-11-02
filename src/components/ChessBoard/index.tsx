@@ -1,4 +1,4 @@
-import { memo, useCallback, useLayoutEffect, useRef } from 'react';
+import { memo, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSharedValue } from 'react-native-reanimated';
@@ -9,6 +9,7 @@ import { getXYFromSquare } from '../../domain/boardCoordinates';
 import { usePieceAnimations } from '../../hooks/usePieceAnimations';
 import { useDragGuide } from '../../hooks/useDragGuide';
 import { lastMoveSquares, PlayedMove } from '../../domain/lastMoveSquares';
+import { kingInDanger } from '../../domain/kingInDanger';
 import { logDrag } from '../../utils/dragLog';
 import { useValidMoveIndicators } from '../../hooks/useValidMoveIndicators';
 import { useChessGameContext } from '../../context/ChessGameContext';
@@ -33,6 +34,8 @@ interface ChessboardProps {
   // The last move the game has a record of, marked until the board makes
   // one itself - on a game resumed, say, or put back after a move refused.
   lastPlayedMove?: PlayedMove | null;
+  // The side that lost the game, whose king falls.
+  defeated?: Color | null;
 }
 
 const Chessboard: React.FC<ChessboardProps> = ({
@@ -41,8 +44,10 @@ const Chessboard: React.FC<ChessboardProps> = ({
   orientation = 'w',
   animate = true,
   lastPlayedMove = null,
+  defeated = null,
 }) => {
   const {
+    fen,
     pieces,
     isGameOver,
     legalMoveSquares,
@@ -63,6 +68,10 @@ const Chessboard: React.FC<ChessboardProps> = ({
     animate,
   );
   const markedMove = lastMove ?? lastPlayedMove;
+  const endangered = useMemo(
+    () => kingInDanger(fen, defeated),
+    [fen, defeated],
+  );
   const dragGuide = useDragGuide();
   // For a drop to be judged where it lands, on the UI thread.
   const legalTargetsOnUI = useSharedValue(legalTargets);
@@ -182,6 +191,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
           orientation={orientation}
           isOwnPieceAt={isOwnPieceAt}
           locked={isGameOver}
+          kingInDanger={endangered}
           legalTargets={legalTargetsOnUI}
           dragGuide={dragGuide}
           onTap={handleTap}

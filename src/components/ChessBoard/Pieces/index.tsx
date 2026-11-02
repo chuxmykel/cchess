@@ -3,7 +3,7 @@ import { Color, Square } from 'chess.js';
 
 import { AnimatedPieceView } from '../../../hooks/usePieceAnimations';
 import { DragGuide } from '../../../hooks/useDragGuide';
-import { LegalTargets } from '../../../domain/types';
+import { KingInDanger, LegalTargets } from '../../../domain/types';
 import Piece from './Piece';
 
 interface PiecesProps {
@@ -12,6 +12,8 @@ interface PiecesProps {
   orientation: Color;
   isOwnPieceAt: (square: Square) => boolean;
   locked: boolean;
+  // The king in danger, if any, glowing red - and fallen, once beaten.
+  kingInDanger: KingInDanger | null;
   legalTargets: SharedValue<LegalTargets>;
   dragGuide: DragGuide;
   onTap: (square: Square) => void;
@@ -25,6 +27,7 @@ const Pieces: React.FC<PiecesProps> = ({
   orientation,
   isOwnPieceAt,
   locked,
+  kingInDanger,
   legalTargets,
   dragGuide,
   onTap,
@@ -32,24 +35,29 @@ const Pieces: React.FC<PiecesProps> = ({
   onDragRelease,
 }) => (
   <>
-    {pieces.map((piece) => (
-      <Piece
-        key={piece.id}
-        id={piece.spriteId}
-        square={piece.square}
-        width={pieceWidth}
-        orientation={orientation}
-        x={piece.x}
-        y={piece.y}
-        disabled={piece.captured || !isOwnPieceAt(piece.square) || locked}
-        captured={piece.captured ?? false}
-        legalTargets={legalTargets}
-        dragGuide={dragGuide}
-        onTap={onTap}
-        onDragStart={onDragStart}
-        onDragRelease={onDragRelease}
-      />
-    ))}
+    {pieces.map((piece) => {
+      const inDanger = !piece.captured && piece.square === kingInDanger?.square;
+      return (
+        <Piece
+          key={piece.id}
+          id={piece.spriteId}
+          square={piece.square}
+          width={pieceWidth}
+          orientation={orientation}
+          x={piece.x}
+          y={piece.y}
+          disabled={piece.captured || !isOwnPieceAt(piece.square) || locked}
+          captured={piece.captured ?? false}
+          inDanger={inDanger}
+          fallen={inDanger && kingInDanger.fallen}
+          legalTargets={legalTargets}
+          dragGuide={dragGuide}
+          onTap={onTap}
+          onDragStart={onDragStart}
+          onDragRelease={onDragRelease}
+        />
+      );
+    })}
   </>
 );
 

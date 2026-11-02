@@ -1,4 +1,10 @@
-import { colorPlayedBy, otherColor, playerOf, ratingDiffOf } from '../players';
+import {
+  colorPlayedBy,
+  defeatedColor,
+  otherColor,
+  playerOf,
+  ratingDiffOf,
+} from '../players';
 
 const GAME = {
   white: { id: 'magnus' },
@@ -42,5 +48,14 @@ describe('colorPlayedBy', () => {
 
   it("has none for someone who didn't play", () => {
     expect(colorPlayedBy(GAME, 'hikaru')).toBeNull();
+  });
+});
+
+describe('defeatedColor', () => {
+  it('is the side that lost, or null while on or drawn', () => {
+    expect(defeatedColor('white')).toBe('b');
+    expect(defeatedColor('black')).toBe('w');
+    expect(defeatedColor('draw')).toBeNull();
+    expect(defeatedColor(null)).toBeNull();
   });
 });

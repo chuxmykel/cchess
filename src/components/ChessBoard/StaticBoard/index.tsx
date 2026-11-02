@@ -1,16 +1,18 @@
-import { memo } from 'react';
-import { Image, View, StyleSheet } from 'react-native';
+import { memo, useMemo } from 'react';
+import { View, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { Color } from 'chess.js';
 
-import { NUMBER_OF_ROWS, PIECES } from '../../../constants';
+import { NUMBER_OF_ROWS } from '../../../constants';
 import {
   PositionPieceView,
   usePositionPieces,
 } from '../../../hooks/usePositionPieces';
-import { MoveSquares } from '../../../domain/types';
+import { KingInDanger, MoveSquares } from '../../../domain/types';
+import { kingInDanger } from '../../../domain/kingInDanger';
 import BoardSurface from '../BoardSurface';
 import LastMoveHighlight from '../LastMoveHighlight';
+import PieceImage from '../PieceImage';
 
 interface StaticBoardProps {
   fen: string;
@@ -26,16 +28,21 @@ interface StaticBoardProps {
   animate?: boolean;
   /** Once the pieces are all in a new position. */
   onSettled?: () => void;
+  /** The side that lost, when this is the game's last position. */
+  defeated?: Color | null;
 }
 
 const StaticPiece = memo(function StaticPiece({
   piece,
   width,
   orientation,
+  danger,
 }: {
   piece: PositionPieceView;
   width: number;
   orientation: Color;
+  // This piece's king in danger, if it is one.
+  danger: KingInDanger | null;
 }) {
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -48,14 +55,13 @@ const StaticPiece = memo(function StaticPiece({
       style={[styles.piece, animatedStyle]}
       testID={`piece-${piece.square}`}
     >
-      <Image
-        source={PIECES[piece.spriteId]}
+      <PieceImage
+        id={piece.spriteId}
+        width={width}
+        orientation={orientation}
+        inDanger={danger !== null}
+        fallen={danger?.fallen ?? false}
         fadeDuration={0}
-        style={[
-          { width, height: width },
-          // Upright again, on a board turned round for black.
-          orientation === 'b' && styles.turned,
-        ]}
       />
     </Animated.View>
   );
@@ -72,9 +78,14 @@ const StaticBoard: React.FC<StaticBoardProps> = ({
   lastMove = null,
   animate = false,
   onSettled,
+  defeated = null,
 }) => {
   const pieceWidth = width / NUMBER_OF_ROWS;
   const pieces = usePositionPieces(fen, pieceWidth, animate, onSettled);
+  const endangered = useMemo(
+    () => kingInDanger(fen, defeated),
+    [fen, defeated],
+  );
 
   return (
     <View
@@ -100,6 +111,7 @@ const StaticBoard: React.FC<StaticBoardProps> = ({
             piece={piece}
             width={pieceWidth}
             orientation={orientation}
+            danger={piece.square === endangered?.square ? endangered : null}
           />
         ))}
       </View>
