@@ -6,6 +6,27 @@ by drag-and-drop; all rules enforcement (legal moves, check/checkmate/
 stalemate, castling, en passant, promotion) is delegated to
 [chess.js](https://github.com/jhlywa/chess.js).
 
+## Demo
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/media/gameplay.gif" alt="Starting a rated 5+0 game: seeking an opponent, playing e4, Bc4, Qh5 and Qxf7# by drag-and-drop, and the result card with the rating change" width="300" />
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/media/game-review-and-stats.gif" alt="Opening the finished game from Recent Games, stepping back and forward through its moves, then the Profile tab and the blitz rating chart over one month and all time" width="300" />
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      Online play: matchmaking, drag-and-drop moves, checkmate
+    </td>
+    <td align="center">
+      Reviewing a finished game, then rating history and stats
+    </td>
+  </tr>
+</table>
+
 ## Features
 
 WIP (TBD)
