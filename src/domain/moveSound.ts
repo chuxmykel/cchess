@@ -24,8 +24,18 @@ export function stepSound(
   toPly: number,
 ): MoveSound | null {
   if (toPly === fromPly) return null;
-  if (toPly > fromPly) return moveSound(sans[toPly - 1]);
-  const landedOn = toPly > 0 ? moveSound(sans[toPly - 1]) : 'move';
+  return stepSoundTo(fromPly, toPly, toPly > 0 ? sans[toPly - 1] : null);
+}
+
+// The same, knowing only the plies and the move that led to where it lands
+// (null at the start) - for an analysis, whose moves branch.
+export function stepSoundTo(
+  fromPly: number,
+  toPly: number,
+  landedSan: string | null,
+): MoveSound {
+  const landedOn = landedSan ? moveSound(landedSan) : 'move';
+  if (toPly >= fromPly) return landedOn;
   return landedOn === 'check' ? 'check' : 'move';
 }
 
