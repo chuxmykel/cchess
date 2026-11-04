@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import Slider from '@react-native-community/slider';
 
 import Icon from '../Icon';
+import NotchedSlider from '../NotchedSlider';
 import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { RatingRange } from '../../network/socketEvents';
 import {
@@ -59,7 +59,7 @@ const RatingRangeSelector: React.FC<RatingRangeSelectorProps> = ({
               </Text>
             </View>
             <View style={styles.controls}>
-              <Slider
+              <NotchedSlider
                 style={styles.slider}
                 minimumValue={0}
                 maximumValue={MAX_RATING_RANGE_DELTA}
