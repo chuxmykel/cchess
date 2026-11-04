@@ -154,7 +154,7 @@ describe('GameViewer', () => {
     expect(whiteBar().getByText('4:50')).toBeTruthy();
     expect(whiteBar().getByTestId('material-score-w')).toHaveTextContent('+1');
 
-    await fireEvent.press(screen.getByTestId('previous-move-button'));
+    await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
 
     expect(whiteBar().getByText('4:58')).toBeTruthy();
     expect(whiteBar().queryByTestId('material-score-w')).toBeNull();

@@ -34,8 +34,8 @@ describe('GameToolbar', () => {
     await fireEvent.press(screen.getByTestId('game-menu-button'));
     await fireEvent.press(screen.getByTestId('toolbar-resign-button'));
     await fireEvent.press(screen.getByTestId('chat-button'));
-    await fireEvent.press(screen.getByTestId('previous-move-button'));
-    await fireEvent.press(screen.getByTestId('next-move-button'));
+    await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
+    await fireEvent(screen.getByTestId('next-move-button'), 'pressIn');
 
     expect(props.onOpenMenu).toHaveBeenCalledTimes(1);
     expect(props.onResign).toHaveBeenCalledTimes(1);
@@ -84,8 +84,8 @@ describe('GameToolbar', () => {
     });
     const screen = await screenPromise;
 
-    await fireEvent.press(screen.getByTestId('previous-move-button'));
-    await fireEvent.press(screen.getByTestId('next-move-button'));
+    await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
+    await fireEvent(screen.getByTestId('next-move-button'), 'pressIn');
 
     expect(props.moveSteps.back).not.toHaveBeenCalled();
     expect(props.moveSteps.forward).not.toHaveBeenCalled();
