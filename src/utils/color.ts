@@ -10,6 +10,8 @@ function channels(hex: string): [number, number, number] {
 export function tintColor(
   hex: string,
   amount: number,
+  // Plain white, the math's default - not a color the app draws.
+  // eslint-disable-next-line no-restricted-syntax
   toward = '#ffffff',
 ): string {
   const to = channels(toward);
