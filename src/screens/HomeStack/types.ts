@@ -36,6 +36,8 @@ export type HomeStackParamList = {
   CreateAccount: undefined;
   /** The analysis board's settings, over it. */
   AnalysisSettings: undefined;
+  /** Credit and licences for what the app uses, the engine's above all. */
+  Licenses: undefined;
 };
 
 export type RootStackParamList = {

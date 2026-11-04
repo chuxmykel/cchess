@@ -22,6 +22,7 @@ import RatingStats from '../RatingStats';
 import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import SignIn from '../SignIn';
 import CreateAccount from '../CreateAccount';
+import Licenses from '../Licenses';
 import { plainHeaderOptions } from '../plainHeaderOptions';
 import { HomeStackParamList, RootStackParamList } from './types';
 
@@ -131,6 +132,14 @@ const HomeStack: React.FC = () => {
             options={({ navigation }) => ({
               ...plainHeaderOptions(navigation),
               title: 'Analysis Settings',
+            })}
+          />
+          <Screen
+            name="Licenses"
+            component={Licenses}
+            options={({ navigation }) => ({
+              ...plainHeaderOptions(navigation),
+              title: 'Licenses',
             })}
           />
         </Navigator>
