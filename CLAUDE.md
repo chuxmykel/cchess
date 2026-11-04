@@ -64,6 +64,7 @@ blind to the ones above it:
 ```
 domain/        pure chess logic, zero React/RN imports, plain Jest-testable
 network/       pure networking infra (REST/socket clients, event types), same style
+engine/        the analysis engine's infra (UCI over a transport, its files), same style
   -> hooks/     React state, animation, and online-play orchestration layer
     -> context/   thin Providers wrapping a same-purpose hook, for prop-drilling
       -> components/   presentational only, consumes hooks/context above
@@ -105,7 +106,40 @@ network/       pure networking infra (REST/socket clients, event types), same st
     through a game - forward, the move landed on, back, a plain move, or a
     check when the position landed on is one; and
     `gameOverSound(reason)`, a game's end - none for mate, which sounded
-    with its move.
+    with its move. `stepSoundTo(fromPly, toPly, landedSan)` is the same
+    step for an analysis, whose moves branch.
+  - Analysis:
+    - `analysisTree.ts` - an analysis's moves as an immutable tree:
+      each `AnalysisNode` is a position (its move, FEN and ply, counted
+      as the FEN does so a set-up position numbers on), its first child
+      the line it continues, any others variations. `addMove` goes to a
+      move already there rather than adding it twice; plus
+      `treeFromMoves`, `pathTo`, `lineThrough`, `promoteVariation`,
+      `deleteFrom`, and `toMoveListTokens` - the move list as it reads,
+      variations in brackets after the move they replace.
+    - `uci.ts` - `parseUciLine`: the UCI lines analysis uses (`info` with
+      a score and a line of moves, `bestmove`, the handshake).
+    - `evalScore.ts` - `EngineScore`, always from white's side
+      (`toWhitePov`), `formatScore` ("+0.34", "-#2", "1-0" once mated),
+      `evalBarFraction` (lichess's winning-chances curve), `finalScore`
+      (a position with no moves left: mate or level), `pvToSan`, and
+      `numberMoves` (a line's moves numbered from where it starts - "4..."
+      for one beginning with black's).
+    - `threat.ts` - `nullMoveFen`: the move passed to the other side, for
+      what it threatens; null in check.
+    - `pgnImport.ts` - `parseImport(text)`: a pasted FEN or PGN (from its
+      `[FEN]` tag if it has one) as a start and UCI moves; the main line
+      only, its comments taken out first - chess.js can't read two in a
+      row, as lichess writes them.
+    - `positionSetup.ts` - a position set up by hand: `setupToFen`/
+      `setupFromFen`, `availableCastling` (king and rook on their
+      squares), and `validateSetup` (one king a side, no pawns on the back
+      ranks, at most 16 a side, the side not to move not in check).
+    - `openings.ts` - `openingAt(fens)`: the opening a line is in, the
+      deepest named position along it, keyed by EPD so transpositions
+      match - from `openings.json`, lichess's CC0 opening list built by
+      `node scripts/build-openings.js` (pinned to a commit; kept out of
+      Prettier).
 
 - **`src/network/`** - a second framework-agnostic layer, mirroring
   `domain/`'s pure-infra style but for talking to `cchess-be` (the
@@ -125,7 +159,37 @@ network/       pure networking infra (REST/socket clients, event types), same st
   see that file's own header comment), and `tokenStorage.ts`
   (`expo-secure-store` wrapper for the refresh token - access tokens
   last 15 minutes, so every launch trades the stored refresh token for a
-  fresh pair instead of keeping one).
+  fresh pair instead of keeping one), and `analysisSettingsStorage.ts`
+  (the analysis board's settings in AsyncStorage, over their defaults).
+
+- **`src/engine/`** - the analysis engine: Stockfish 19, the lite
+  single-threaded WASM build of stockfish.js (GPL-3.0), **downloaded on
+  first use rather than shipped**, so the app binary holds no GPL code -
+  and run in a hidden `react-native-webview`, so it works in Expo Go.
+  - `types.ts` - `AnalysisEngine` (`analyse(request, onUpdate)`, returning
+    a stop), `EngineUpdate`, and `UciTransport`, so another engine (native,
+    or on a server) could stand in.
+  - `UciEngine.ts` - analysis over UCI: a new position stops the search
+    running and waits for its `bestmove` before starting, so a line from
+    the old position is never shown for the new; of several asked for
+    meanwhile, only the latest runs.
+  - `engineFiles.ts` - `ensureEngineFiles(store, files, onProgress)`:
+    each file kept only if its SHA-256 matches the pin, from its sources
+    in turn (the author's GitHub release, then unpkg - jsDelivr refuses
+    the package, it's over 150 MB), and nothing downloaded once they're
+    there, so analysis works offline after the first time.
+    `engineStore.ts` is the device's store: the documents folder (never
+    cleared by iOS, kept through updates), one folder per version.
+    `constants/engine.ts` pins the version, URLs, hashes and sizes;
+    `node scripts/pin-stockfish.js <version>` prints them, checking every
+    source serves the same bytes.
+  - `stockfishPage.ts` - the WebView page: booted with the glue script
+    and the WASM (base64), it starts one Worker per search slot (the
+    position's own, and the threat), giving each its WASM as a blob URL
+    in the Worker URL's `#fragment`, where the glue looks for it. Only the
+    lines analysis reads cross to the app - every message is work for the
+    JS thread that also runs the board. `webViewTransport.ts` is each slot's `UciTransport` over
+    `postMessage`.
 
 - **`src/hooks/`** - two families, both consumed by `components/`/`screens/`
   above them:
@@ -135,7 +199,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
     drag-and-drop calls `attemptMove` directly, and a move already decided -
     the opponent's, from the server - passes its promotion piece to
     `attemptMove` rather than asking; it also keeps `legalTargets`, every
-    legal move of the side to move, for judging a drop) plus the hooks that
+    legal move of the side to move, for judging a drop; what it returns is
+    the same object until the game changes, so a screen re-rendering for
+    something else - the engine's lines - doesn't re-render the board) plus the hooks that
     bridge its state to the screen, none of which know chess rules
     themselves: `usePieceAnimations` (each piece's position as Reanimated
     shared values, always from white's side - `Chessboard` turns the whole
@@ -147,7 +213,11 @@ network/       pure networking infra (REST/socket clients, event types), same st
     move takes stays drawn under the
     one taking it until that lands, the pieces just moved are drawn over
     the rest, and a pawn waiting on the promotion menu stands on its
-    promotion square), `usePieceGesture` (a piece's Gesture Handler pan
+    promotion square; a position reached without a move is put straight
+    there (and put straight onto their squares at a new size when the
+    board's resized), or with `slideOnReset` - stepping back through an analysis -
+    each piece slides from where it stood, matched by `matchPieces`),
+    `usePieceGesture` (a piece's Gesture Handler pan
     and tap, run on the UI thread, as on lichess: the piece is lifted at
     once, twice its size, a square above the finger, its own square marked
     while it's held, and a drop counts for the
@@ -230,6 +300,28 @@ network/       pure networking infra (REST/socket clients, event types), same st
     `useFollowPlayer` (a player's next game as it starts, from
     `user:follow` - so the viewer, opened from a Watch button, moves on with
     that player).
+  - Analysis: `useAnalysisTree` (the tree and the position looked at in
+    it - Forward follows the line you came along, so back and forward
+    again returns through a variation, not the main line; promote and
+    delete), `useAnalysisBoard` (a `useChessGame` kept on the tree's
+    position: its `onMoveApplied` - every move, tapped, dragged or
+    promoted - goes into the tree, and a step forward is played as a move,
+    anything else a reset that slides; its steps move the board in the same
+    render as the tree, using the tree's `peek` at where a step goes - a
+    render for the tree and then another for the board made every step lag), `useAnalysisSource` (what an
+    analysis starts from - new, set up, a game fetched by id at a ply,
+    from your side, or moves brought in), `useEngineAnalysis` (an engine's
+    best lines for a position, as SAN with formatted scores: waits 150ms on
+    a position before searching, shows progress four times a second, and
+    keeps the last position's lines, marked `stale`, until this one's
+    come - shown greyed, never drawn or played; each update's lines are
+    written as SAN once, 20 moves at most, through a cache of moves
+    already written, since chess.js playing them out is costly; the lines'
+    room stays the same once the game's over), `useAnalysisSettings`
+    (saved as they change), `usePositionEditor` (a piece, the eraser, or
+    the hand, which drags pieces), `useAnalysisSounds` (in
+    `useGameSounds.ts`) and `useAppIsActive` (searches pause in the
+    background; iOS can say 'unknown' at first, counted as active).
   - Friends and everything around them: `useSocial` (backs
     `SocialContext`: friends with their live status, friend requests,
     challenges and unread message counts, kept current from the
@@ -256,7 +348,7 @@ network/       pure networking infra (REST/socket clients, event types), same st
     move an absolutely positioned sheet),
     `useCaretRotation`, `useGameScreenGestureLock`,
     `usePressAndHoldRepeat` (a button's handlers for an action that
-    repeats while held - a tap once, then every 100ms after a 400ms hold,
+    repeats while held - once as the finger goes down, not as it lifts, then every 100ms after a 400ms hold,
     until let go or disabled - as the toolbar's ‹ › step through moves),
     `useSwipeBackUntilGameLoads` (keeps a game screen's swipe-back gesture
     available until its game has loaded), `useRunAfterDismiss` (holds a
@@ -287,6 +379,17 @@ network/       pure networking infra (REST/socket clients, event types), same st
   - `SocialContext.tsx` - wraps `useSocial`, mounted in `HomeStack` (inside
     navigation, so a game started from a challenge can open `LiveGame`
     from any screen).
+  - `AnalysisSettingsContext.tsx` - wraps `useAnalysisSettings`, mounted
+    in `HomeStack`, so the analysis board and the settings screen over it
+    share one set.
+  - `EngineContext.tsx` - `EngineProvider`, mounted in `App.tsx`, and
+    `useEngine()`: the analysis engine for the whole app, started while a
+    screen uses it (downloading its files the first time, with progress),
+    run in a hidden WebView - given a `containerStyle` too, or its
+    container takes half the screen - shut down 30s after the last screen
+    lets go, and restarted if iOS ends its process. Its status is
+    `idle`/`downloading`/`starting`/`ready` (an engine per slot)/`error`,
+    with `retry`.
 
 - **`src/components/ChessBoard/`** - composes the board from
   `ChessGameContext` + the hooks above; everything under it
@@ -302,7 +405,11 @@ network/       pure networking infra (REST/socket clients, event types), same st
   and renders only what it's given as props/context. The board hands its
   pieces callbacks that never change, though a game's own functions are new
   on every render: re-rendering a piece makes Gesture Handler set its
-  gestures up again, which cancels a drag under way. `StaticBoard` is a
+  gestures up again, which cancels a drag under way. Nor does a move
+  change their props: which pieces can be picked up is one shared value
+  for the whole board (`MovableSquares`), read by the gestures on the UI
+  thread - as props, whose turn it is flipping them re-rendered all 32 on
+  every move. `BoardSurface`'s 64 squares are memoised too. `StaticBoard` is a
   separate read-only board drawn straight from a FEN (no game state or
   gestures), used for viewing earlier positions: `usePositionPieces` keeps
   its pieces the same pieces from one position to the next
@@ -310,11 +417,43 @@ network/       pure networking infra (REST/socket clients, event types), same st
   sliding, unless it's bullet - rather than drawing new images, which
   flickered - marking the move that led to it. In `LiveGame` it's drawn over the live board while stepping
   back (`EarlierPositionOverlay`), staying up when stepping onto the live
-  position until that last move has slid there.
+  position until that last move has slid there. `BoardArrows` draws
+  arrows square centre to square centre in SVG (`react-native-svg`), over
+  a board's pieces and out of the way of touches - a sibling of the
+  memoised `Chessboard`, not inside it; `utils/analysisArrows.ts` picks
+  them (each engine line's first move in soft green, the best boldest, and
+  the threat in soft red).
+
+- **Analysis components** - `EvalBar` (white's share, animated, with the
+  score - across the board above or below it, or beside it from white's
+  end, as the settings say, the board narrowing for it; it keeps the last
+  score while the next position's comes, so stepping through glides from
+  one to the next), `EngineLines` (0-3 lines, each its score chip -
+  to one decimal - and as much of its SAN as fits, numbered, the numbers
+  lighter than the moves as in `VariationMoveList`, a tap playing its
+  first move; the depth - or the engine's download
+  progress, starting, or a retry), `OpeningName`, `VariationMoveList` (the moves wrapping like
+  text, variations bracketed in smaller type, scrolled to keep the current
+  move in view; a tap goes there, a long
+  press opens Promote variation / Delete from here), `PositionEditor`
+  (the board tapped with a piece from the palette or the eraser - or,
+  with the hand, pieces dragged on its own pan gesture, off the board to
+  take them away - and why it can't be analysed yet; it brings its own
+  `GestureHandlerRootView`, as it's also shown in a modal),
+  `PositionSetupSheet` (side to move, castling checkboxes offered only
+  where possible), `RadioRow` (a few choices as radio buttons in a row),
+  `AnalysisSettingsForm` (the eval bar and its side, a 0-3 lines slider,
+  a search time slider of 1-20 seconds then Unlimited, the arrows and
+  sounds - the `AnalysisSettings` screen), and `GameHistoryList` (a
+  player's finished games, paged - `GamesList` and the analysis game
+  picker share it).
 
 - **`src/components/`** (everything else) - also purely presentational,
   consuming hooks/context the same way: in-game UI (`GameHeader`,
-  `MoveList`, `GameToolbar` (with the chat button's unread badge),
+  `MoveList`, `GameToolbar` (with the chat button's unread badge;
+  each button held shows what it does in a `ToolbarTooltip` above it,
+  kept on screen, with a light haptic tap - all but ‹ ›, which repeat
+  while held),
   `BottomBar`, `GameClock`, `GameOverCard`, `GameResultIcon`,
   `GameTypeIcon`, `PlayerBar` (a square avatar - the opponent's online
   badge on its corner, and in a rematch series that side's points, "1.5",
@@ -356,7 +495,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   a `ColorChoicePicker` the challenge sheet shares - a Rated switch (a guest pressing
   it gets a toast to sign in, rendered inside the sheet's modal through
   its `overlay` slot) and a
-  `RatingRangeSelector` - two sliders, `@react-native-community/slider`,
+  `RatingRangeSelector` - two sliders, `@react-native-community/slider`
+  (every slider in the app is a `NotchedSlider`: notched at its steps,
+  with a haptic tick, `expo-haptics`, as the thumb reaches each),
   for how far below and above your rating an opponent may be, each with
   an "Open" checkbox that leaves that side unlimited, shown as "+∞"),
   `TextField`/`PasswordField`, and
@@ -420,16 +561,31 @@ network/       pure networking infra (REST/socket clients, event types), same st
   friends. Its `RatingsList` rows - and your own on the Profile tab -
   open `RatingStats` for that category:
   the rating with what it gained or lost over the period, a 1W/1M/3M/1Y/All
-  `SegmentedTabs`, the chart, and the two cards.
+  `SegmentedTabs`, the chart, and the two cards. Once a game is over,
+  `GameOverCard` and the ☰ of `LiveGame` and `GameViewer` offer Analyse,
+  opening `AnalysisBoard` at the move shown. Profile's Licenses row
+  opens `Licenses`: the Stockfish build the app downloads, its GPL-3.0
+  and where its source is, and credit for lichess's opening names.
 
 - **Navigation** (React Navigation, nested stacks/tabs):
   `App.tsx` (root native-stack, inside a `GestureHandlerRootView` for
   the chart's gestures - the board brings its own, so it works wherever
   it's rendered, tests included) -> `HomeStack` (`HomeTabs`, `LiveGame`,
-  `GameViewer`, `UserProfile`, `Conversation`, `GamesList`,
-  `RatingStats`, `UserFriends`, `FindFriends`, `SignIn`, `CreateAccount`) ->
-  `HomeTabs` (bottom tabs: `HomeTabStack`, `Profile`) -> `HomeTabStack`
-  (native-stack: `Home`, `NewGame`, `Friends`). Every screen with a shown
+  `GameViewer`, `AnalysisBoard`, `AnalysisSettings`, `UserProfile`, `Conversation`, `GamesList`,
+  `RatingStats`, `UserFriends`, `FindFriends`, `SignIn`, `CreateAccount`,
+  `Licenses`) ->
+  `HomeTabs` (bottom tabs: `HomeTabStack`, `AnalysisStack` - the
+  Analysis tab, testID `analysis-tab` - and `Profile`) -> `HomeTabStack`
+  (native-stack: `Home`, `NewGame`, `Friends`) and `AnalysisStack`
+  (native-stack: `AnalysisHome` - New analysis, Set up position, From
+  your games (`PickGame`), Paste PGN or FEN (`PasteGame`)). Each opens
+  `AnalysisBoard`, which takes an `AnalysisSource`, over the tabs - so its
+  own toolbar is the only one at the bottom (the position editor has its
+  own too: a menu - starting position, clear - flip, Analyse, and a sheet
+  of whose move and castling) - as does Analyse from a game, which returns
+  there on Back. It holds a session - what it's analysing - so New
+  analysis and Edit position (the editor in a modal over the analysis,
+  which Cancel keeps) change it in place, without navigating. Every screen with a shown
   header uses `screens/plainHeaderOptions.tsx`: no line under it, and a
   plain chevron (`HeaderBackButton`) in place of the native back button,
   whose glass circle iOS 26+ draws - header buttons go in as
@@ -479,7 +635,8 @@ network/       pure networking infra (REST/socket clients, event types), same st
   (`colors.ts`, a start on a fuller theme), account rules mirrored from
   the server (`account.ts`) and the chat and direct message limits
   (`chat.ts`), the rating stats periods (`ratingPeriods.ts`), user-facing error-message fallbacks (`errorMessages.ts`),
-  etc.
+  the analysis board's settings and their defaults (`analysis.ts`), the
+  pinned engine download (`engine.ts`), etc.
 
 - **`src/utils/`** - RN `Animated` helpers (`animation.ts`: castling
   animation, piece ids), `dragLog.ts` (`logDrag`: with
@@ -516,7 +673,10 @@ network/       pure networking infra (REST/socket clients, event types), same st
   (`ratingStats.ts`), `captureKeyboardListeners` to show and hide the
   keyboard (`keyboard.ts`), a safe-area
   wrapper for components that read insets (`safeArea.tsx`),
-  `waitForSheetToClose` (`modal.ts`), and shared mock modules for
+  `waitForSheetToClose` (`modal.ts`), a UCI channel a test plays the
+  engine's side of (`fakeUciTransport.ts`), an `AnalysisEngine` a test
+  reports updates through (`fakeEngine.ts` - given to screens by
+  `EngineContext.Provider`), and shared mock modules for
   `jest.mock` factories (`ConnectionStrengthIndicatorStub.tsx`,
   `popoverMenuStartingOpen.ts`, and `focusEffectRunsOnMount.ts` for
   screens that use `useFocusEffect`). `jest-setup.js` makes the mocked
@@ -530,7 +690,9 @@ network/       pure networking infra (REST/socket clients, event types), same st
   what a chart was given to plot - Skia can't draw under Jest. And it mocks
   `expo-audio` with one player per sound, and names the sounds
   (`move.wav`, ...) since jest-expo makes every asset `1` - so tests check
-  which sound's player played.
+  which sound's player played. The engine's WebView is a plain `View`
+  keeping its props (fire its `onMessage`), whatever's posted to it kept
+  in the mock's `postedMessages`; AsyncStorage is its own jest mock.
 
 ## Testing
 
