@@ -150,9 +150,10 @@ resign or abort from the app (see `examples/resign.yaml` /
   `rated-switch` gets a "Sign in to play rated games." toast at the
   bottom, over the sheet's Done button, gone after 2s - a
   `takeScreenshot` step straight after the tap catches it; a separate
-  `simctl` screenshot is too late. The tab bar has no testIDs and its
-  labels aren't matched by text - tap Home at (100, 817) and Profile at
-  (301, 817).
+  `simctl` screenshot is too late. The tab bar has three tabs - Home,
+  Analysis, Profile. Only Analysis has a testID (`analysis-tab`), and
+  the labels aren't matched by text - tap Home at (67, 817) and Profile
+  at (335, 817) (measured 2026-11-03 on iPhone 18 Pro).
 - **Home**: `avatar-button` (header, opens Profile), `recent-games-loading`,
   `game-row-<gameId>` (opens the game viewer), `recent-games-retry`,
   `recent-games-see-all` (the full list), `recent-games-empty`. Guests
@@ -211,8 +212,45 @@ resign or abort from the app (see `examples/resign.yaml` /
   `activity-empty`, `profile-games-empty`, `messages-empty`,
   `chat-empty`.
 - **Profile**: `profile-screen`, `rating-<category>` (opens your rating
-  stats), `sign-out-button`;
+  stats), `sign-out-button`, `licenses-row` (opens `licenses-screen`);
   guests get the same `sign-in-prompt`.
+- **Analysis** (no backend needed, except to pick one of your games):
+  - `analysis-home` with `analysis-new`, `analysis-set-up`,
+    `analysis-pick-game` (a `games-list`) and `analysis-paste`
+    (`paste-game-input`, `paste-game-analyse`, `paste-game-error`).
+  - The board, `analysis-board`: the usual `square-*`/`piece-*`, then
+    `eval-bar` (`eval-bar-score`), `engine-line-<n>`
+    (`engine-line-<n>-score`), `engine-depth`, `engine-downloading` /
+    `engine-error` (`engine-retry`), `arrow-<from><to>`, `opening-name`,
+    the move list `analysis-move-<nodeId>` (long-press for
+    `promote-variation-action` / `delete-variation-action`), and the
+    toolbar's `game-menu-button` (☰: `flip-board-action`,
+    `new-analysis-action`, `edit-position-action`,
+    `analysis-settings-action`, which opens the settings screen) and ‹ ›.
+    Tapping `engine-line-<n>` plays its first move. The board is over the
+    tabs, so there's no tab bar there; `header-back` returns to the tab.
+  - Settings (a screen, `analysis-settings`; `header-back` returns):
+    `analysis-setting-<name>` switches (`evalBar`, `bestMoveArrows`,
+    `threatArrows`, `sounds`), under `evalBar` the radio buttons
+    `eval-bar-position-<top|right|bottom|left>`, and the sliders
+    `engine-line-count-slider` (0-3, shown in `engine-line-count`) and
+    `search-time-slider` (1-20 s then Unlimited, shown in
+    `search-time`).
+  - The position editor: `set-up-position` with `editor-tool-hand`
+    (drag pieces: swipe on `editor-board`, off it to remove),
+    `editor-tool-<wk…bp>`, `editor-tool-erase`, `editor-piece-<square>`,
+    `editor-error-<code>`, and its toolbar: `set-up-menu` (an action
+    sheet: `editor-start-position`, `editor-clear`, and `set-up-cancel`
+    when opened over an analysis), `set-up-flip`, `set-up-analyse`, and
+    `set-up-options` (a sheet: `editor-turn-<w|b>` radio buttons,
+    `editor-castling-<KQkq>` checkboxes, `position-setup-done`). On iPhone 18 Pro the editor's board runs
+    y 172-574 (opened from the tab), 50.25pt a square: e2 is at
+    (226, 498).
+  - From a finished game: `analyse-button` on the result card, or
+    `analyse-action` in ☰.
+  - The engine downloads the first time it's used. `clearState` wipes
+    it, so a fresh launch downloads it again: give `engine-line-0` up to
+    30s.
 - **Sign in / Create account**: `sign-in-screen` / `create-account-screen`,
   inputs `username-or-email-input`, `username-input`, `email-input`,
   `password-input` (its eye button, which shows or hides the password, is
