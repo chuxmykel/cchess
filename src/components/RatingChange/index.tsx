@@ -57,6 +57,7 @@ const useStyles = makeStyles((t) => ({
     transform: [{ skewX: '-12deg' }],
   },
   points: {
+    color: t.colors.text,
     fontSize: t.fontSize.xl,
     fontWeight: t.fontWeight.bold,
   },

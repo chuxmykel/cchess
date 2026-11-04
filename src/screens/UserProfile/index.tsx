@@ -387,6 +387,7 @@ export default UserProfileScreen;
 
 const useStyles = makeStyles((t) => ({
   headerTitle: {
+    color: t.colors.text,
     fontSize: t.fontSize.xl,
     fontWeight: t.fontWeight.semibold,
   },
@@ -421,6 +422,7 @@ const useStyles = makeStyles((t) => ({
     flex: 1,
   },
   name: {
+    color: t.colors.text,
     fontSize: t.fontSize.h3,
     fontWeight: t.fontWeight.bold,
   },
@@ -441,6 +443,7 @@ const useStyles = makeStyles((t) => ({
     backgroundColor: t.colors.surface,
   },
   cardLine: {
+    color: t.colors.text,
     fontSize: t.fontSize.base,
   },
   section: {

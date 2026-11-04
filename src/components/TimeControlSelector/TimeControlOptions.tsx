@@ -67,6 +67,7 @@ export default TimeControlOptions;
 
 const useStyles = makeStyles((t) => ({
   sheetTitle: {
+    color: t.colors.text,
     fontSize: t.fontSize.xxl,
     fontWeight: t.fontWeight.bold,
     textAlign: 'center',

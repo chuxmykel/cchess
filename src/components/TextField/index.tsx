@@ -52,6 +52,7 @@ const useStyles = makeStyles((t) => ({
     backgroundColor: t.colors.background,
   },
   input: {
+    color: t.colors.text,
     flex: 1,
     paddingVertical: t.spacing.md,
     fontSize: t.fontSize.xl,

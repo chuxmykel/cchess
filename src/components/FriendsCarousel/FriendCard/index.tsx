@@ -124,6 +124,7 @@ const useStyles = makeStyles((t) => ({
     backgroundColor: t.colors.accent,
   },
   name: {
+    color: t.colors.text,
     marginTop: t.spacing.sm,
     fontSize: t.fontSize.md,
     fontWeight: t.fontWeight.semibold,

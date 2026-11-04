@@ -77,6 +77,7 @@ const useStyles = makeStyles((t) => ({
     opacity: 0.4,
   },
   label: {
+    color: t.colors.text,
     fontSize: t.fontSize.lg,
   },
   destructive: {

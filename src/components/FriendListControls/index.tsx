@@ -134,6 +134,7 @@ const useStyles = makeStyles((t) => ({
     backgroundColor: t.colors.accent,
   },
   chipLabel: {
+    color: t.colors.text,
     fontSize: t.fontSize.base,
   },
   chipLabelSelected: {
@@ -166,6 +167,7 @@ const useStyles = makeStyles((t) => ({
     paddingVertical: t.spacing.md,
   },
   optionLabel: {
+    color: t.colors.text,
     flex: 1,
     fontSize: t.fontSize.lg,
   },

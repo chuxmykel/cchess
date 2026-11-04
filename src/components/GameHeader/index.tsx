@@ -117,6 +117,7 @@ const useStyles = makeStyles((t) => ({
     gap: t.spacing.sm,
   },
   titleText: {
+    color: t.colors.text,
     fontSize: t.fontSize.lg,
     fontWeight: t.fontWeight.semibold,
   },

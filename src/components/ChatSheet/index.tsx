@@ -162,6 +162,7 @@ export default ChatSheet;
 
 const useStyles = makeStyles((t) => ({
   title: {
+    color: t.colors.text,
     fontSize: t.fontSize.xxl,
     fontWeight: t.fontWeight.bold,
     marginTop: t.spacing.xs,
@@ -219,6 +220,7 @@ const useStyles = makeStyles((t) => ({
     marginTop: t.spacing.sm,
   },
   input: {
+    color: t.colors.text,
     flex: 1,
     paddingVertical: t.spacing.md,
     paddingHorizontal: t.spacing.lg,

@@ -55,6 +55,7 @@ const useStyles = makeStyles((t) => ({
     paddingVertical: t.spacing.md,
   },
   title: {
+    color: t.colors.text,
     marginTop: t.spacing.sm,
     fontSize: t.fontSize.xl,
     fontWeight: t.fontWeight.semibold,

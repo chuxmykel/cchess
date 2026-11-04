@@ -225,6 +225,7 @@ const useStyles = makeStyles((t) => ({
     fontWeight: t.fontWeight.semibold,
   },
   name: {
+    color: t.colors.text,
     flexShrink: 1,
     fontSize: t.fontSize.lg,
     fontWeight: t.fontWeight.semibold,

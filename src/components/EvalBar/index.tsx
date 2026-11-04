@@ -122,12 +122,14 @@ const useStyles = makeStyles((t) => ({
     backgroundColor: t.colors.evalBar.white,
   },
   score: {
+    color: t.colors.text,
     position: 'absolute',
     fontSize: t.fontSize.xs,
     fontWeight: t.fontWeight.bold,
     fontVariant: ['tabular-nums'],
   },
   verticalScore: {
+    color: t.colors.text,
     left: 0,
     right: 0,
     fontSize: t.fontSize.micro,

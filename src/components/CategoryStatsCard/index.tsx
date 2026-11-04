@@ -142,6 +142,7 @@ const useStyles = makeStyles((t) => ({
     paddingTop: t.spacing.lg,
   },
   totalCount: {
+    color: t.colors.text,
     fontSize: t.fontSize.h1,
     fontWeight: t.fontWeight.bold,
   },
@@ -154,6 +155,7 @@ const useStyles = makeStyles((t) => ({
     alignItems: 'center',
   },
   resultCount: {
+    color: t.colors.text,
     fontSize: t.fontSize.h3,
     fontWeight: t.fontWeight.bold,
   },
@@ -174,10 +176,12 @@ const useStyles = makeStyles((t) => ({
     paddingVertical: t.spacing.md,
   },
   rowLabel: {
+    color: t.colors.text,
     flex: 1,
     fontSize: t.fontSize.lg,
   },
   rowValue: {
+    color: t.colors.text,
     fontSize: t.fontSize.lg,
     fontWeight: t.fontWeight.semibold,
   },

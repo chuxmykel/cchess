@@ -211,6 +211,7 @@ const useStyles = makeStyles((t) => ({
     gap: t.spacing.sm,
   },
   rating: {
+    color: t.colors.text,
     fontSize: t.fontSize.display,
     fontWeight: t.fontWeight.bold,
   },

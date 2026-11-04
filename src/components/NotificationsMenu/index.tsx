@@ -134,6 +134,7 @@ const useStyles = makeStyles((t) => ({
     shadowColor: t.colors.shadow,
   },
   title: {
+    color: t.colors.text,
     paddingHorizontal: t.spacing.md,
     marginBottom: t.spacing.sm,
     fontSize: t.fontSize.xl,

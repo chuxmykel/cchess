@@ -249,6 +249,7 @@ const useStyles = makeStyles((t) => ({
     right: 10,
   },
   title: {
+    color: t.colors.text,
     fontSize: t.fontSize.h2,
     fontWeight: t.fontWeight.bold,
   },

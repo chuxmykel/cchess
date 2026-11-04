@@ -140,6 +140,7 @@ const useStyles = makeStyles((t) => ({
     marginBottom: t.spacing.sm,
   },
   displayName: {
+    color: t.colors.text,
     fontSize: t.fontSize.h3,
     fontWeight: t.fontWeight.bold,
     marginTop: t.spacing.sm,
@@ -149,6 +150,7 @@ const useStyles = makeStyles((t) => ({
     color: t.colors.textMuted,
   },
   sectionTitle: {
+    color: t.colors.text,
     fontSize: t.fontSize.xxl,
     fontWeight: t.fontWeight.bold,
     paddingHorizontal: t.spacing.lg,

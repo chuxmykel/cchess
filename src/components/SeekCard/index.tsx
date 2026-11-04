@@ -78,6 +78,7 @@ const useStyles = makeStyles((t) => ({
     marginTop: t.spacing.xs,
   },
   timeControlLabel: {
+    color: t.colors.text,
     fontSize: t.fontSize.h2,
     fontWeight: t.fontWeight.bold,
   },

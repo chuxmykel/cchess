@@ -199,6 +199,7 @@ const useStyles = makeStyles((t) => ({
     borderTopColor: t.colors.border,
   },
   input: {
+    color: t.colors.text,
     flex: 1,
     paddingVertical: t.spacing.md,
     paddingHorizontal: t.spacing.lg,

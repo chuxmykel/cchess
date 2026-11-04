@@ -223,3 +223,86 @@ export const lightTheme: Theme = {
     evalBar,
   },
 };
+
+// The same roles on dark greys, like lichess's: the accent kept, text and
+// status colors lifted so they read on the darker ground. Hex colors stay
+// six digits where a component adds an alpha to them (the rating chart's
+// fill under its line).
+export const darkTheme: Theme = {
+  mode: 'dark',
+  ...scales,
+  colors: {
+    background: '#161512',
+    surface: '#262421',
+    surfaceSubtle: '#1f1e1b',
+    surfaceStrong: '#33312d',
+    surfaceRaised: '#2a2825',
+    surfaceTranslucent: 'rgba(42, 40, 37, 0.96)',
+    skeleton: '#2e2c29',
+
+    separator: '#3d3a36',
+    border: '#4a4743',
+    divider: '#33312d',
+
+    text: '#e8e6e3',
+    textSecondary: '#bab7b2',
+    textMuted: '#8c8984',
+    textFaint: '#6d6a65',
+    disabled: '#5a5752',
+    textOnAccent: '#fff',
+    textOnAccentMuted: 'rgba(255, 255, 255, 0.8)',
+
+    accent: '#769656',
+    accentSubtle: '#232b1c',
+    accentSoft: '#2f3b24',
+    accentText: '#9cc37a',
+    link: '#5b9cf0',
+
+    danger: '#ef5350',
+    success: '#66bb6a',
+    warning: '#d6a930',
+    badge: '#e53935',
+    presenceOffline: '#6d6a65',
+
+    inverseSurface: '#e8e6e3',
+    inverseText: '#161512',
+
+    scrim: 'rgba(0, 0, 0, 0.6)',
+    overlay: 'rgba(0, 0, 0, 0.75)',
+    onOverlay: 'rgba(255, 255, 255, 0.9)',
+    shadow: '#000',
+
+    ratingUp: '#66bb6a',
+    ratingDown: '#ef5350',
+    ratingEven: '#8c8984',
+    results: { win: '#6fb83f', draw: '#d6a930', loss: '#e0573f' },
+    gameType: {
+      bullet: '#F5A623',
+      blitz: '#F0763A',
+      rapid: '#B08F72',
+      classical: '#bab7b2',
+    },
+
+    chart: { selection: '#A8C98A', guide: '#5a5752', grid: '#33312d' },
+    illustration: {
+      light: '#33402a',
+      pale: '#232b1c',
+      grey: '#4a4743',
+      dark: '#bab7b2',
+    },
+
+    board: {
+      ...sharedBoardColors,
+      veil: 'rgba(22, 21, 18, 0.55)',
+      check: '#ef5350',
+      promotionTile: '#3a3835',
+      promotionTilePressed: '#4a4743',
+    },
+    evalBar,
+  },
+};
+
+export const THEMES: Record<ThemeMode, Theme> = {
+  light: lightTheme,
+  dark: darkTheme,
+};

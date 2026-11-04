@@ -1,16 +1,10 @@
-import {
-  Text,
-  Pressable,
-  StyleSheet,
-  StyleProp,
-  ViewStyle,
-} from 'react-native';
+import { Text, Pressable, StyleProp, ViewStyle } from 'react-native';
 
 import { usePopoverMenu } from '../../hooks/usePopoverMenu';
 import { useRunAfterDismiss } from '../../hooks/useRunAfterDismiss';
 import Icon, { IconName } from '../Icon';
 import Popover, { POPOVER_TRIGGER_HIT_SLOP } from '../Popover';
-import { fontSize, spacing, useTheme } from '../../theme';
+import { fontSize, spacing, useTheme, makeStyles } from '../../theme';
 
 const DEFAULT_MENU_WIDTH = 160;
 
@@ -36,6 +30,8 @@ const PopoverMenu: React.FC<PopoverMenuProps> = ({
   style,
   testID,
 }) => {
+  const styles = useStyles();
+
   const { colors } = useTheme();
 
   const { triggerRef, visible, position, open, close } = usePopoverMenu(width);
@@ -95,7 +91,7 @@ const PopoverMenu: React.FC<PopoverMenuProps> = ({
 
 export default PopoverMenu;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   trigger: {
     padding: spacing.xs,
   },
@@ -110,6 +106,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   menuItemText: {
+    color: t.colors.text,
     fontSize: fontSize.lg,
   },
-});
+}));

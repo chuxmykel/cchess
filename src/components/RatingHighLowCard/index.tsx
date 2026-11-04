@@ -65,6 +65,7 @@ const useStyles = makeStyles((t) => ({
     color: t.colors.textMuted,
   },
   rating: {
+    color: t.colors.text,
     fontSize: t.fontSize.h2,
     fontWeight: t.fontWeight.bold,
   },

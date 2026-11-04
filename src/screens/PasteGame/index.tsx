@@ -103,6 +103,7 @@ const useStyles = makeStyles((t) => ({
     gap: t.spacing.md,
   },
   input: {
+    color: t.colors.text,
     minHeight: 180,
     borderRadius: t.radius.md,
     borderWidth: StyleSheet.hairlineWidth,

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -16,11 +16,13 @@ import { useToast } from '../../hooks/useToast';
 import { HomeStackParamList } from '../HomeStack/types';
 import GameViewerContent from './GameViewerContent';
 import ParticipantGameViewer from './ParticipantGameViewer';
-import { fontSize, spacing } from '../../theme';
+import { fontSize, spacing, makeStyles } from '../../theme';
 
 type GameViewerProps = NativeStackScreenProps<HomeStackParamList, 'GameViewer'>;
 
 const GameViewer: React.FC<GameViewerProps> = ({ navigation, route }) => {
+  const styles = useStyles();
+
   const { gameId, watchedUserId } = route.params;
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -122,7 +124,7 @@ const GameViewer: React.FC<GameViewerProps> = ({ navigation, route }) => {
 
 export default GameViewer;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -134,6 +136,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   errorText: {
+    color: t.colors.text,
     fontSize: fontSize.xl,
   },
-});
+}));

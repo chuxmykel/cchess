@@ -100,6 +100,7 @@ const useStyles = makeStyles((t) => ({
     marginRight: t.spacing.sm,
   },
   label: {
+    color: t.colors.text,
     fontSize: t.fontSize.xl,
     fontWeight: t.fontWeight.semibold,
   },

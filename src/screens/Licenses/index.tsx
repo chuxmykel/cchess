@@ -81,6 +81,7 @@ const useStyles = makeStyles((t) => ({
     gap: t.spacing.sm,
   },
   title: {
+    color: t.colors.text,
     fontSize: t.fontSize.xl,
     fontWeight: t.fontWeight.bold,
   },

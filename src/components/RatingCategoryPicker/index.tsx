@@ -100,6 +100,7 @@ const useStyles = makeStyles((t) => ({
     gap: t.spacing.sm,
   },
   title: {
+    color: t.colors.text,
     fontSize: t.fontSize.xl,
     fontWeight: t.fontWeight.semibold,
   },
@@ -121,6 +122,7 @@ const useStyles = makeStyles((t) => ({
     paddingVertical: t.spacing.md,
   },
   optionLabel: {
+    color: t.colors.text,
     flex: 1,
     fontSize: t.fontSize.lg,
   },

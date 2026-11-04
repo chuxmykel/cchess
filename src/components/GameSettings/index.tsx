@@ -121,6 +121,7 @@ const useStyles = makeStyles((t) => ({
     color: t.colors.textMuted,
   },
   title: {
+    color: t.colors.text,
     fontSize: t.fontSize.xxl,
     fontWeight: t.fontWeight.bold,
     marginTop: t.spacing.xs,

@@ -64,6 +64,7 @@ const useStyles = makeStyles((t) => ({
     backgroundColor: t.colors.accentSoft,
   },
   time: {
+    color: t.colors.text,
     fontSize: t.fontSize.xxl,
     fontWeight: t.fontWeight.bold,
     fontVariant: ['tabular-nums'],

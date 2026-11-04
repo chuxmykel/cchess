@@ -118,6 +118,7 @@ const useStyles = makeStyles((t) => ({
     flex: 1,
   },
   played: {
+    color: t.colors.text,
     fontSize: t.fontSize.base,
   },
   rating: {

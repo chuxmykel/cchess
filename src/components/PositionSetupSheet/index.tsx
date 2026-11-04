@@ -99,6 +99,7 @@ const useStyles = makeStyles((t) => ({
     gap: t.spacing.lg,
   },
   title: {
+    color: t.colors.text,
     fontSize: t.fontSize.xxl,
     fontWeight: t.fontWeight.bold,
     marginTop: t.spacing.xs,

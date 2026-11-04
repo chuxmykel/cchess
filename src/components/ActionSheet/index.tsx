@@ -95,6 +95,7 @@ const useStyles = makeStyles((t) => ({
     marginTop: t.spacing.sm,
   },
   cancelLabel: {
+    color: t.colors.text,
     fontWeight: t.fontWeight.semibold,
   },
 }));

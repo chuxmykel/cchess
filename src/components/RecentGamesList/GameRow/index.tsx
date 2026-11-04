@@ -91,6 +91,7 @@ const useStyles = makeStyles((t) => ({
     flex: 1,
   },
   name: {
+    color: t.colors.text,
     fontSize: t.fontSize.base,
     fontWeight: t.fontWeight.semibold,
   },

@@ -118,6 +118,7 @@ const useStyles = makeStyles((t) => ({
     color: t.colors.text,
   },
   value: {
+    color: t.colors.text,
     fontSize: t.fontSize.xl,
     fontWeight: t.fontWeight.semibold,
     fontVariant: ['tabular-nums'],

@@ -79,6 +79,7 @@ const useStyles = makeStyles((t) => ({
     paddingVertical: t.spacing.md,
   },
   category: {
+    color: t.colors.text,
     flex: 1,
     fontSize: t.fontSize.lg,
     fontWeight: t.fontWeight.semibold,
@@ -88,6 +89,7 @@ const useStyles = makeStyles((t) => ({
     color: t.colors.textMuted,
   },
   rating: {
+    color: t.colors.text,
     minWidth: 48,
     textAlign: 'right',
     fontSize: t.fontSize.xl,

@@ -115,6 +115,7 @@ const useStyles = makeStyles((t) => ({
     paddingHorizontal: t.spacing.xl,
   },
   title: {
+    color: t.colors.text,
     fontSize: t.fontSize.h1,
     fontWeight: t.fontWeight.bold,
     marginBottom: t.spacing.xxl,
