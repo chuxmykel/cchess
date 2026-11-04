@@ -1,5 +1,5 @@
 import { Color } from 'chess.js';
-import { Pressable, View, Text, StyleSheet } from 'react-native';
+import { Pressable, View, Text } from 'react-native';
 
 import Button from '../Button';
 import CircleIconButton from '../CircleIconButton';
@@ -12,6 +12,7 @@ import {
   GAME_RESULT_REASON,
   GameResultReason,
 } from '../../network/socketEvents';
+import { makeStyles, useTheme } from '../../theme';
 
 interface GameOverCardProps {
   result: 'white' | 'black' | 'draw' | null;
@@ -100,6 +101,9 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
   onDismiss,
   onAnalyse,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const myResult = myColor === null ? null : toMyResult(result, myColor);
   const wasAborted = resultReason === GAME_RESULT_REASON.ABORT;
 
@@ -114,7 +118,7 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
           accessibilityLabel="Close"
           testID="game-over-dismiss"
         >
-          <Icon name="close" size={20} color="#888" />
+          <Icon name="close" size={20} color={colors.textMuted} />
         </Pressable>
       )}
       {myColor === null && result !== null ? (
@@ -168,6 +172,8 @@ const RematchControls: React.FC<NonNullable<GameOverCardProps['rematch']>> = ({
   onOffer,
   onDecline,
 }) => {
+  const styles = useStyles();
+
   switch (status) {
     case 'none':
       return (
@@ -225,20 +231,17 @@ const RematchControls: React.FC<NonNullable<GameOverCardProps['rematch']>> = ({
 
 export default GameOverCard;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   card: {
     minWidth: 240,
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    backgroundColor: 'white',
+    paddingVertical: t.spacing.xl,
+    paddingHorizontal: t.spacing.xl,
+    borderRadius: t.radius.lg,
+    backgroundColor: t.colors.surfaceRaised,
     alignItems: 'center',
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    gap: t.spacing.sm,
+    ...t.elevation.md,
+    shadowColor: t.colors.shadow,
   },
   dismiss: {
     position: 'absolute',
@@ -246,37 +249,37 @@ const styles = StyleSheet.create({
     right: 10,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: t.fontSize.h2,
+    fontWeight: t.fontWeight.bold,
   },
   reason: {
-    fontSize: 15,
-    color: '#666',
+    fontSize: t.fontSize.lg,
+    color: t.colors.textSecondary,
     textTransform: 'capitalize',
   },
   rating: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: t.spacing.sm,
   },
   ratingLabel: {
-    fontSize: 15,
-    color: '#333',
+    fontSize: t.fontSize.lg,
+    color: t.colors.text,
   },
   // The card's buttons all as wide as it, so they line up the same size.
   newOpponentButton: {
     alignSelf: 'stretch',
     minWidth: 180,
-    marginTop: 8,
+    marginTop: t.spacing.sm,
   },
   rematchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 4,
+    gap: t.spacing.sm,
+    marginTop: t.spacing.xs,
   },
   rematchStatus: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: t.fontSize.base,
+    color: t.colors.textSecondary,
   },
-});
+}));

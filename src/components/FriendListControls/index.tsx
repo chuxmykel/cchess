@@ -2,9 +2,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import Icon from '../Icon';
 import Popover, { POPOVER_TRIGGER_HIT_SLOP } from '../Popover';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { usePopoverMenu } from '../../hooks/usePopoverMenu';
 import { FRIEND_SORTS, FriendSort } from '../../utils/friendSort';
+import { makeStyles, useTheme } from '../../theme';
 
 const MENU_WIDTH = 200;
 
@@ -25,6 +25,9 @@ const FriendListControls: React.FC<FriendListControlsProps> = ({
   onOnlineOnlyChange,
   onlineCount,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const { triggerRef, visible, position, open, close } =
     usePopoverMenu(MENU_WIDTH);
   const sortLabel = FRIEND_SORTS.find((each) => each.key === sort)?.label;
@@ -49,7 +52,7 @@ const FriendListControls: React.FC<FriendListControlsProps> = ({
         >
           Online {onlineCount}
         </Text>
-        {onlineOnly && <Icon name="close" size={14} color={ACCENT_COLOR} />}
+        {onlineOnly && <Icon name="close" size={14} color={colors.accent} />}
       </Pressable>
 
       <Pressable
@@ -61,9 +64,9 @@ const FriendListControls: React.FC<FriendListControlsProps> = ({
         accessibilityLabel={`Sort: ${sortLabel}`}
         testID="friends-sort"
       >
-        <Icon name="sort" size={18} color={MUTED_COLOR} />
+        <Icon name="sort" size={18} color={colors.textMuted} />
         <Text style={styles.sortLabel}>{sortLabel}</Text>
-        <Icon name="chevron-down" size={16} color={MUTED_COLOR} />
+        <Icon name="chevron-down" size={16} color={colors.textMuted} />
       </Pressable>
       <Popover
         visible={visible}
@@ -90,7 +93,7 @@ const FriendListControls: React.FC<FriendListControlsProps> = ({
                 {each.label}
               </Text>
               {isSelected && (
-                <Icon name="check" size={18} color={ACCENT_COLOR} />
+                <Icon name="check" size={18} color={colors.accent} />
               )}
             </Pressable>
           );
@@ -102,75 +105,72 @@ const FriendListControls: React.FC<FriendListControlsProps> = ({
 
 export default FriendListControls;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.md,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    gap: t.spacing.sm,
+    paddingHorizontal: t.spacing.md,
+    paddingVertical: t.spacing.sm,
+    borderRadius: t.radius.xl,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#c8c8c8',
+    borderColor: t.colors.separator,
   },
   chipSelected: {
-    borderColor: ACCENT_COLOR,
-    backgroundColor: '#eef4e8',
+    borderColor: t.colors.accent,
+    backgroundColor: t.colors.accentSubtle,
   },
   onlineDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: ACCENT_COLOR,
+    backgroundColor: t.colors.accent,
   },
   chipLabel: {
-    fontSize: 14,
+    fontSize: t.fontSize.base,
   },
   chipLabelSelected: {
-    fontWeight: '600',
-    color: ACCENT_COLOR,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.accent,
   },
   sortTrigger: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: t.spacing.xs,
   },
   sortLabel: {
-    fontSize: 14,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.base,
+    color: t.colors.textMuted,
   },
   // A visible edge and a lift off the page, like the rating category
   // dropdown.
   menu: {
-    paddingVertical: 4,
+    paddingVertical: t.spacing.xs,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#cfcfcf',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 14,
-    elevation: 8,
+    borderColor: t.colors.border,
+    borderRadius: t.radius.lg,
+    ...t.elevation.lg,
+    shadowColor: t.colors.shadow,
   },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.md,
   },
   optionLabel: {
     flex: 1,
-    fontSize: 15,
+    fontSize: t.fontSize.lg,
   },
   selectedLabel: {
-    fontWeight: '600',
-    color: ACCENT_COLOR,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.accent,
   },
-});
+}));

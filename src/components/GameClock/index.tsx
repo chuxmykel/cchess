@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
+import { makeStyles } from '../../theme';
 
 interface GameClockProps {
   ms: number;
@@ -32,6 +33,8 @@ function formatClock(ms: number): string {
 }
 
 const GameClock: React.FC<GameClockProps> = ({ ms, isActive, label }) => {
+  const styles = useStyles();
+
   return (
     <View
       style={[styles.container, isActive && styles.active]}
@@ -48,24 +51,24 @@ const GameClock: React.FC<GameClockProps> = ({ ms, isActive, label }) => {
 
 export default GameClock;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   container: {
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    backgroundColor: '#f2f2f2',
+    paddingVertical: t.spacing.sm,
+    paddingHorizontal: t.spacing.lg,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
     minWidth: 84,
   },
   active: {
-    backgroundColor: '#e3edd8',
+    backgroundColor: t.colors.accentSoft,
   },
   time: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: t.fontSize.xxl,
+    fontWeight: t.fontWeight.bold,
     fontVariant: ['tabular-nums'],
   },
   timeLow: {
-    color: '#e53935',
+    color: t.colors.danger,
   },
-});
+}));

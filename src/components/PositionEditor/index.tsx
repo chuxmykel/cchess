@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import {
   GestureDetector,
   GestureHandlerRootView,
@@ -18,7 +18,6 @@ import Icon, { IconName } from '../Icon';
 import { PIECES, TAP_MOVEMENT_THRESHOLD } from '../../constants';
 import { DRAG_LIFT, DRAG_SCALE } from '../../constants/animations';
 import { BOARD_THEMES } from '../../theme/boardThemes';
-import { ACCENT_COLOR } from '../../constants/colors';
 import {
   getSquareFromXY,
   getXYFromSquare,
@@ -29,6 +28,7 @@ import {
   EditorTool,
   PositionEditor as Editor,
 } from '../../hooks/usePositionEditor';
+import { makeStyles, useTheme } from '../../theme';
 
 interface PositionEditorProps {
   editor: Editor;
@@ -61,6 +61,9 @@ const PositionEditor: React.FC<PositionEditorProps> = ({
   width,
   orientation = 'w',
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const square = width / 8;
   const pieces = Object.entries(editor.setup.board) as [
     Square,
@@ -100,7 +103,7 @@ const PositionEditor: React.FC<PositionEditorProps> = ({
       editor.tool === tool,
       label,
       `editor-tool-${tool === 'move' ? 'hand' : tool}`,
-      <Icon name={icon} size={26} color="#444" />,
+      <Icon name={icon} size={26} color={colors.textSecondary} />,
     );
 
   // Each colour's pieces, after a tool of the board's own: the hand above,
@@ -265,24 +268,24 @@ function useEditorDrag(
   return { lifted, gesture, liftedStyle };
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   palette: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 4,
-    paddingVertical: 6,
+    gap: t.spacing.xs,
+    paddingVertical: t.spacing.sm,
   },
   tool: {
     width: 44,
     height: 44,
-    borderRadius: 8,
+    borderRadius: t.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   selectedTool: {
-    backgroundColor: '#dfe9d5',
+    backgroundColor: t.colors.accentSoft,
     borderWidth: 2,
-    borderColor: ACCENT_COLOR,
+    borderColor: t.colors.accent,
   },
   toolImage: {
     width: 36,
@@ -295,9 +298,9 @@ const styles = StyleSheet.create({
     opacity: 0,
   },
   error: {
-    color: '#c62828',
-    fontSize: 13,
-    paddingHorizontal: 16,
-    paddingTop: 4,
+    color: t.colors.danger,
+    fontSize: t.fontSize.md,
+    paddingHorizontal: t.spacing.lg,
+    paddingTop: t.spacing.xs,
   },
-});
+}));

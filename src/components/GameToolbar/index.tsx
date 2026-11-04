@@ -3,7 +3,6 @@ import {
   View,
   Text,
   Pressable,
-  StyleSheet,
   useWindowDimensions,
   type ViewInstance,
 } from 'react-native';
@@ -13,10 +12,9 @@ import Icon, { IconName } from '../Icon';
 import ToolbarTooltip, { tooltipShift } from './ToolbarTooltip';
 import { MoveNavigation } from '../../hooks/useMoveNavigation';
 import { usePressAndHoldRepeat } from '../../hooks/usePressAndHoldRepeat';
+import { makeStyles, useTheme } from '../../theme';
 
 const ICON_SIZE = 28;
-const ENABLED_COLOR = '#333';
-const DISABLED_COLOR = '#c4c4c4';
 const MAX_BADGE_COUNT = 9;
 // How long a button is held before its tooltip shows.
 export const TOOLTIP_DELAY_MS = 350;
@@ -62,6 +60,9 @@ export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
   repeatsWhileHeld = false,
   testID,
 }) => {
+  const { colors } = useTheme();
+  const styles = useStyles();
+
   const repeating = usePressAndHoldRepeat(onPress, !disabled);
   const button = useRef<ViewInstance>(null);
   const screen = useWindowDimensions();
@@ -102,7 +103,7 @@ export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
       <Icon
         name={icon}
         size={ICON_SIZE}
-        color={disabled ? DISABLED_COLOR : ENABLED_COLOR}
+        color={disabled ? colors.disabled : colors.text}
       />
       {badgeCount > 0 && (
         <View style={styles.badge} testID={`${testID}-badge`}>
@@ -129,60 +130,65 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
   onOpenChat,
   unreadChatCount = 0,
   moveSteps,
-}) => (
-  <View style={styles.container} testID="game-toolbar">
-    <ToolbarButton
-      icon="menu"
-      label="Menu"
-      onPress={onOpenMenu}
-      testID="game-menu-button"
-    />
-    {onResign && (
+}) => {
+  const styles = useStyles();
+  return (
+    <View style={styles.container} testID="game-toolbar">
       <ToolbarButton
-        icon="flag-variant-outline"
-        label="Resign"
-        onPress={onResign}
-        disabled={!canResign}
-        testID="toolbar-resign-button"
+        icon="menu"
+        label="Menu"
+        onPress={onOpenMenu}
+        testID="game-menu-button"
       />
-    )}
-    {onOpenChat && (
+      {onResign && (
+        <ToolbarButton
+          icon="flag-variant-outline"
+          label="Resign"
+          onPress={onResign}
+          disabled={!canResign}
+          testID="toolbar-resign-button"
+        />
+      )}
+      {onOpenChat && (
+        <ToolbarButton
+          icon="chat-outline"
+          label={
+            unreadChatCount > 0 ? `Chat, ${unreadChatCount} unread` : 'Chat'
+          }
+          onPress={onOpenChat}
+          badgeCount={unreadChatCount}
+          testID="chat-button"
+        />
+      )}
       <ToolbarButton
-        icon="chat-outline"
-        label={unreadChatCount > 0 ? `Chat, ${unreadChatCount} unread` : 'Chat'}
-        onPress={onOpenChat}
-        badgeCount={unreadChatCount}
-        testID="chat-button"
+        icon="chevron-left"
+        label="Previous move"
+        onPress={moveSteps.back}
+        disabled={!moveSteps.canGoBack}
+        repeatsWhileHeld
+        testID="previous-move-button"
       />
-    )}
-    <ToolbarButton
-      icon="chevron-left"
-      label="Previous move"
-      onPress={moveSteps.back}
-      disabled={!moveSteps.canGoBack}
-      repeatsWhileHeld
-      testID="previous-move-button"
-    />
-    <ToolbarButton
-      icon="chevron-right"
-      label="Next move"
-      onPress={moveSteps.forward}
-      disabled={!moveSteps.canGoForward}
-      repeatsWhileHeld
-      testID="next-move-button"
-    />
-  </View>
-);
+      <ToolbarButton
+        icon="chevron-right"
+        label="Next move"
+        onPress={moveSteps.forward}
+        disabled={!moveSteps.canGoForward}
+        repeatsWhileHeld
+        testID="next-move-button"
+      />
+    </View>
+  );
+};
 
 export default GameToolbar;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   container: {
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: t.spacing.sm,
   },
   button: {
     minWidth: 44,
@@ -196,15 +202,15 @@ const styles = StyleSheet.create({
     right: 0,
     minWidth: 18,
     height: 18,
-    paddingHorizontal: 4,
+    paddingHorizontal: t.spacing.xs,
     borderRadius: 9,
-    backgroundColor: '#d33',
+    backgroundColor: t.colors.badge,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badgeText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
+    color: t.colors.textOnAccent,
+    fontSize: t.fontSize.xs,
+    fontWeight: t.fontWeight.bold,
   },
-});
+}));

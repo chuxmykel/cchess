@@ -1,15 +1,13 @@
 import { Fragment } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { format, parseISO } from 'date-fns';
 
 import EmptyState from '../EmptyState';
 import GameTypeIcon from '../GameTypeIcon';
 import RatingDiff from '../RatingDiff';
-import { MUTED_COLOR } from '../../constants/colors';
 import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import { ActivityDay } from '../../network/restClient';
-
-const RESULT_COLORS = { wins: '#5a9e2f', draws: '#c99a1c', losses: '#c8402a' };
+import { makeStyles, useTheme } from '../../theme';
 
 function playedLabel(day: ActivityDay): string {
   const category = GAME_TYPE_LABELS[day.category];
@@ -26,6 +24,14 @@ const ActivityList: React.FC<ActivityListProps> = ({
   activity,
   emptyMessage,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+  const resultColors = {
+    wins: colors.results.win,
+    draws: colors.results.draw,
+    losses: colors.results.loss,
+  };
+
   if (activity.length === 0) {
     return (
       <EmptyState
@@ -70,7 +76,7 @@ const ActivityList: React.FC<ActivityListProps> = ({
                         key={result}
                         style={[
                           styles.result,
-                          { backgroundColor: RESULT_COLORS[result] },
+                          { backgroundColor: resultColors[result] },
                         ]}
                       >
                         {day[result]}
@@ -88,54 +94,54 @@ const ActivityList: React.FC<ActivityListProps> = ({
 
 export default ActivityList;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   card: {
-    marginHorizontal: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    marginHorizontal: t.spacing.lg,
+    paddingHorizontal: t.spacing.lg,
+    paddingBottom: t.spacing.sm,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
   },
   date: {
-    marginTop: 12,
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#c99a1c',
+    marginTop: t.spacing.md,
+    fontSize: t.fontSize.sm,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.warning,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 8,
+    gap: t.spacing.md,
+    paddingVertical: t.spacing.sm,
   },
   details: {
     flex: 1,
   },
   played: {
-    fontSize: 14,
+    fontSize: t.fontSize.base,
   },
   rating: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: t.spacing.xs,
   },
   ratingText: {
-    fontSize: 12,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.sm,
+    color: t.colors.textMuted,
   },
   results: {
     flexDirection: 'row',
-    gap: 3,
+    gap: t.spacing.xs,
   },
   result: {
     minWidth: 22,
-    paddingHorizontal: 4,
-    paddingVertical: 2,
+    paddingHorizontal: t.spacing.xs,
+    paddingVertical: t.spacing.xxs,
     textAlign: 'center',
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '700',
+    color: t.colors.textOnAccent,
+    fontSize: t.fontSize.sm,
+    fontWeight: t.fontWeight.bold,
     overflow: 'hidden',
-    borderRadius: 3,
+    borderRadius: t.radius.hairline,
   },
-});
+}));

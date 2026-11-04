@@ -1,10 +1,5 @@
-import {
-  View,
-  Text,
-  TextInput,
-  TextInputProps,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TextInput, TextInputProps } from 'react-native';
+import { makeStyles, useTheme } from '../../theme';
 
 interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   label: string;
@@ -15,46 +10,50 @@ const TextField: React.FC<TextFieldProps> = ({
   label,
   trailing,
   ...inputProps
-}) => (
-  <View style={styles.field}>
-    <Text style={styles.label}>{label}</Text>
-    <View style={styles.box}>
-      <TextInput
-        style={styles.input}
-        autoCapitalize="none"
-        autoCorrect={false}
-        accessibilityLabel={label}
-        placeholderTextColor="#aaa"
-        {...inputProps}
-      />
-      {trailing}
+}) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.box}>
+        <TextInput
+          style={styles.input}
+          autoCapitalize="none"
+          autoCorrect={false}
+          accessibilityLabel={label}
+          placeholderTextColor={colors.textFaint}
+          {...inputProps}
+        />
+        {trailing}
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 export default TextField;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   field: {
-    gap: 6,
+    gap: t.spacing.sm,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: t.fontSize.base,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.text,
   },
   box: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#d0d0d0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    backgroundColor: 'white',
+    borderColor: t.colors.border,
+    borderRadius: t.radius.md,
+    paddingHorizontal: t.spacing.md,
+    backgroundColor: t.colors.background,
   },
   input: {
     flex: 1,
-    paddingVertical: 12,
-    fontSize: 16,
+    paddingVertical: t.spacing.md,
+    fontSize: t.fontSize.xl,
   },
-});
+}));

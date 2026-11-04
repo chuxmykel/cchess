@@ -4,6 +4,7 @@ import { Color } from 'chess.js';
 import PlayerBar from '.';
 import { SideMaterial } from '../../domain/material';
 import { GameUserSummary } from '../../network/socketEvents';
+import { lightTheme } from '../../theme';
 
 describe('PlayerBar', () => {
   const white: GameUserSummary = {
@@ -162,14 +163,14 @@ describe('PlayerBar', () => {
 
       expect(
         screen.getByText('25 seconds to play the first move'),
-      ).not.toHaveStyle({ color: '#d33' });
+      ).not.toHaveStyle({ color: lightTheme.colors.danger });
     });
 
     it('turns red with 10 seconds or less left', async () => {
       const screen = await renderBar('w', { firstMoveSecondsLeft: 10 });
 
       expect(screen.getByText('10 seconds to play the first move')).toHaveStyle(
-        { color: '#d33' },
+        { color: lightTheme.colors.danger },
       );
     });
 

@@ -6,6 +6,7 @@ import {
   TIME_CONTROL_GROUPS,
   GAME_TYPE_LABELS,
 } from '../../constants/timeControls';
+import { makeStyles } from '../../theme';
 
 interface TimeControlOptionsProps {
   selected: TimeControl;
@@ -16,6 +17,8 @@ const TimeControlOptions: React.FC<TimeControlOptionsProps> = ({
   selected,
   onSelect,
 }) => {
+  const styles = useStyles();
+
   return (
     <>
       <Text style={styles.sheetTitle}>Time Control</Text>
@@ -62,51 +65,51 @@ const TimeControlOptions: React.FC<TimeControlOptionsProps> = ({
 
 export default TimeControlOptions;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   sheetTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: t.fontSize.xxl,
+    fontWeight: t.fontWeight.bold,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: t.spacing.sm,
   },
   group: {
-    paddingVertical: 12,
+    paddingVertical: t.spacing.md,
   },
   groupDivider: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: t.colors.divider,
   },
   groupHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-    gap: 8,
+    marginBottom: t.spacing.md,
+    gap: t.spacing.sm,
   },
   groupTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#555',
+    fontSize: t.fontSize.base,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.textSecondary,
   },
   optionsRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: t.spacing.sm,
   },
   option: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: '#f0f0f0',
+    paddingVertical: t.spacing.md,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
   },
   optionSelected: {
-    backgroundColor: '#769656',
+    backgroundColor: t.colors.accent,
   },
   optionLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: t.fontSize.lg,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.text,
   },
   optionLabelSelected: {
-    color: 'white',
+    color: t.colors.textOnAccent,
   },
-});
+}));

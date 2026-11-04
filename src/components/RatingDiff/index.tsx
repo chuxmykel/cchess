@@ -1,4 +1,5 @@
-import { Text, StyleSheet } from 'react-native';
+import { Text } from 'react-native';
+import { makeStyles } from '../../theme';
 
 interface RatingDiffProps {
   diff: number;
@@ -13,27 +14,30 @@ function formatDiff(diff: number): string {
   return '±0';
 }
 
-const RatingDiff: React.FC<RatingDiffProps> = ({ diff, testID }) => (
-  <Text
-    style={[styles.diff, diff > 0 && styles.gain, diff < 0 && styles.loss]}
-    testID={testID}
-  >
-    {formatDiff(diff)}
-  </Text>
-);
+const RatingDiff: React.FC<RatingDiffProps> = ({ diff, testID }) => {
+  const styles = useStyles();
+  return (
+    <Text
+      style={[styles.diff, diff > 0 && styles.gain, diff < 0 && styles.loss]}
+      testID={testID}
+    >
+      {formatDiff(diff)}
+    </Text>
+  );
+};
 
 export default RatingDiff;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   diff: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#888',
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.ratingEven,
   },
   gain: {
-    color: '#4caf50',
+    color: t.colors.ratingUp,
   },
   loss: {
-    color: '#e53935',
+    color: t.colors.ratingDown,
   },
-});
+}));

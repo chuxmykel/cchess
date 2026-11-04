@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
+import { makeStyles } from '../../theme';
 
 export type SegmentedTab<Key extends string> = { key: Key; label: string };
 
@@ -15,6 +15,8 @@ function SegmentedTabs<Key extends string>({
   selected,
   onSelect,
 }: SegmentedTabsProps<Key>) {
+  const styles = useStyles();
+
   return (
     <View style={styles.container} accessibilityRole="tablist">
       {tabs.map((tab) => {
@@ -40,29 +42,29 @@ function SegmentedTabs<Key extends string>({
 
 export default SegmentedTabs;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   container: {
     flexDirection: 'row',
-    marginHorizontal: 16,
+    marginHorizontal: t.spacing.lg,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#c8c8c8',
+    borderBottomColor: t.colors.separator,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: t.spacing.md,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
   selected: {
-    borderBottomColor: ACCENT_COLOR,
+    borderBottomColor: t.colors.accent,
   },
   label: {
-    fontSize: 14,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.base,
+    color: t.colors.textMuted,
   },
   selectedLabel: {
-    color: ACCENT_COLOR,
-    fontWeight: '600',
+    color: t.colors.accent,
+    fontWeight: t.fontWeight.semibold,
   },
-});
+}));

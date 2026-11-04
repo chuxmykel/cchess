@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import Icon from '../Icon';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
+import { makeStyles, useTheme } from '../../theme';
 
 export type RadioOption<Key extends string> = { key: Key; label: string };
 
@@ -20,6 +20,9 @@ function RadioRow<Key extends string>({
   onSelect,
   testIDPrefix,
 }: RadioRowProps<Key>) {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   return (
     <View style={styles.row} accessibilityRole="radiogroup">
       {options.map(({ key, label }) => {
@@ -38,7 +41,7 @@ function RadioRow<Key extends string>({
             <Icon
               name={isSelected ? 'radiobox-marked' : 'radiobox-blank'}
               size={22}
-              color={isSelected ? ACCENT_COLOR : MUTED_COLOR}
+              color={isSelected ? colors.accent : colors.textMuted}
             />
             <Text style={[styles.label, isSelected && styles.selectedLabel]}>
               {label}
@@ -52,24 +55,24 @@ function RadioRow<Key extends string>({
 
 export default RadioRow;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    columnGap: 20,
-    rowGap: 8,
+    columnGap: t.spacing.xl,
+    rowGap: t.spacing.sm,
   },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: t.spacing.sm,
   },
   label: {
-    fontSize: 15,
-    color: '#444',
+    fontSize: t.fontSize.lg,
+    color: t.colors.textSecondary,
   },
   selectedLabel: {
-    color: '#222',
-    fontWeight: '600',
+    color: t.colors.text,
+    fontWeight: t.fontWeight.semibold,
   },
-});
+}));

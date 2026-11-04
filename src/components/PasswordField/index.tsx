@@ -3,6 +3,7 @@ import { Pressable, TextInputProps } from 'react-native';
 
 import Icon from '../Icon';
 import TextField from '../TextField';
+import { useTheme } from '../../theme';
 
 interface PasswordFieldProps extends Omit<
   TextInputProps,
@@ -16,6 +17,8 @@ const PasswordField: React.FC<PasswordFieldProps> = ({
   testID,
   ...fieldProps
 }) => {
+  const { colors } = useTheme();
+
   const [isRevealed, setIsRevealed] = useState(false);
 
   return (
@@ -34,7 +37,7 @@ const PasswordField: React.FC<PasswordFieldProps> = ({
           <Icon
             name={isRevealed ? 'eye-off-outline' : 'eye-outline'}
             size={22}
-            color="#888"
+            color={colors.textMuted}
             testID={`${testID}-visibility-icon`}
           />
         </Pressable>

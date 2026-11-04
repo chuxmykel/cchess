@@ -8,6 +8,7 @@ import EmptyState from '../EmptyState';
 import GameRow from './GameRow';
 import { RECENT_GAMES_STATUS, RecentGames } from '../../hooks/useRecentGames';
 import { GameSummary } from '../../network/restClient';
+import { makeStyles } from '../../theme';
 
 interface RecentGamesListProps {
   recentGames: RecentGames;
@@ -18,16 +19,19 @@ interface RecentGamesListProps {
 
 const LOADING_ROW_COUNT = 3;
 
-const LoadingRows: React.FC = () => (
-  <View testID="recent-games-loading">
-    {Array.from({ length: LOADING_ROW_COUNT }, (_, index) => (
-      <View key={index} style={styles.loadingRow}>
-        <Placeholder width={36} height={36} />
-        <Placeholder width="50%" height={16} />
-      </View>
-    ))}
-  </View>
-);
+const LoadingRows: React.FC = () => {
+  const styles = useStyles();
+  return (
+    <View testID="recent-games-loading">
+      {Array.from({ length: LOADING_ROW_COUNT }, (_, index) => (
+        <View key={index} style={styles.loadingRow}>
+          <Placeholder width={36} height={36} />
+          <Placeholder width="50%" height={16} />
+        </View>
+      ))}
+    </View>
+  );
+};
 
 const RecentGamesList: React.FC<RecentGamesListProps> = ({
   recentGames,
@@ -35,6 +39,8 @@ const RecentGamesList: React.FC<RecentGamesListProps> = ({
   onPressGame,
   onSeeAll,
 }) => {
+  const styles = useStyles();
+
   function renderContent() {
     switch (recentGames.status) {
       case RECENT_GAMES_STATUS.LOADING:
@@ -89,40 +95,37 @@ const RecentGamesList: React.FC<RecentGamesListProps> = ({
 
 export default RecentGamesList;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   container: {
-    paddingTop: 24,
+    paddingTop: t.spacing.xl,
   },
   card: {
-    marginHorizontal: 16,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    marginHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.xs,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
+    ...t.elevation.sm,
+    shadowColor: t.colors.shadow,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#c8c8c8',
-    marginHorizontal: 16,
+    backgroundColor: t.colors.separator,
+    marginHorizontal: t.spacing.lg,
   },
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    gap: t.spacing.md,
+    paddingHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.md,
   },
   message: {
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 20,
+    gap: t.spacing.sm,
+    paddingVertical: t.spacing.xl,
   },
   messageText: {
-    fontSize: 14,
-    color: '#888',
+    fontSize: t.fontSize.base,
+    color: t.colors.textMuted,
   },
-});
+}));

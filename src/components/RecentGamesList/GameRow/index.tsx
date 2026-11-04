@@ -1,4 +1,4 @@
-import { Pressable, View, Text, StyleSheet } from 'react-native';
+import { Pressable, View, Text } from 'react-native';
 import { formatDistanceToNowStrict, min } from 'date-fns';
 
 import Avatar from '../../Avatar';
@@ -7,6 +7,7 @@ import GameResultIcon from '../../GameResultIcon';
 import RatingDiff from '../../RatingDiff';
 import { GameSummary } from '../../../network/restClient';
 import { formatRating } from '../../../utils/rating';
+import { makeStyles } from '../../../theme';
 
 const ROW_ICON_SIZE = 26;
 
@@ -22,6 +23,8 @@ function subtitleFor(game: GameSummary): string {
 }
 
 const GameRow: React.FC<GameRowProps> = ({ game, onPress }) => {
+  const styles = useStyles();
+
   return (
     <Pressable
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
@@ -66,43 +69,43 @@ const GameRow: React.FC<GameRowProps> = ({ game, onPress }) => {
 
 export default GameRow;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   pressed: {
     opacity: 0.6,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.md,
   },
   typeIcon: {
     width: ROW_ICON_SIZE,
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: t.spacing.md,
   },
   avatar: {
-    marginRight: 12,
+    marginRight: t.spacing.md,
   },
   details: {
     flex: 1,
   },
   name: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: t.fontSize.base,
+    fontWeight: t.fontWeight.semibold,
   },
   rating: {
-    fontWeight: '400',
-    color: '#888',
+    fontWeight: t.fontWeight.regular,
+    color: t.colors.textMuted,
   },
   outcome: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: t.spacing.sm,
   },
   subtitle: {
-    fontSize: 12,
-    color: '#888',
-    marginTop: 2,
+    fontSize: t.fontSize.sm,
+    color: t.colors.textMuted,
+    marginTop: t.spacing.xxs,
   },
-});
+}));

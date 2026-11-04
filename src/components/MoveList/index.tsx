@@ -3,11 +3,11 @@ import {
   ScrollView,
   Text,
   Pressable,
-  StyleSheet,
   type ScrollViewInstance,
 } from 'react-native';
 
 import { GameMoveSummary } from '../../network/socketEvents';
+import { makeStyles } from '../../theme';
 
 interface MoveListProps {
   moves: GameMoveSummary[];
@@ -28,6 +28,8 @@ const MoveList: React.FC<MoveListProps> = ({
   currentPly,
   onSelectPly,
 }) => {
+  const styles = useStyles();
+
   const scrollRef = useRef<ScrollViewInstance>(null);
   const moveXOffsetsByPly = useRef(new Map<number, number>());
 
@@ -84,7 +86,7 @@ const MoveList: React.FC<MoveListProps> = ({
 
 export default MoveList;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   list: {
     width: '100%',
     flexGrow: 0,
@@ -92,27 +94,27 @@ const styles = StyleSheet.create({
   content: {
     minHeight: MOVE_LIST_HEIGHT,
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: t.spacing.md,
   },
   moveNumber: {
-    fontSize: 15,
-    color: '#999',
-    marginLeft: 6,
+    fontSize: t.fontSize.lg,
+    color: t.colors.textMuted,
+    marginLeft: t.spacing.sm,
   },
   move: {
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    borderRadius: 4,
+    paddingHorizontal: t.spacing.sm,
+    paddingVertical: t.spacing.xs,
+    borderRadius: t.radius.xs,
   },
   currentMove: {
-    backgroundColor: '#e3edd8',
+    backgroundColor: t.colors.accentSoft,
   },
   san: {
-    fontSize: 15,
-    color: '#333',
+    fontSize: t.fontSize.lg,
+    color: t.colors.text,
   },
   currentSan: {
-    color: '#2f6f3e',
-    fontWeight: '700',
+    color: t.colors.accentText,
+    fontWeight: t.fontWeight.bold,
   },
-});
+}));

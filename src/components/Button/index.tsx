@@ -1,22 +1,14 @@
-import {
-  Text,
-  Pressable,
-  StyleProp,
-  ViewStyle,
-  StyleSheet,
-} from 'react-native';
+import { Text, Pressable, StyleProp, ViewStyle } from 'react-native';
 
 import Icon, { IconName } from '../Icon';
-import { ACCENT_COLOR } from '../../constants/colors';
+import { makeStyles, ThemeColors, useTheme } from '../../theme';
 
 type ButtonVariant = 'primary' | 'outline' | 'text';
 
-const DISABLED_COLOR = '#aaa';
-const VARIANT_COLORS: Record<ButtonVariant, string> = {
-  primary: 'white',
-  outline: ACCENT_COLOR,
-  text: ACCENT_COLOR,
-};
+// A variant's label and icon color: white on the accent, else the accent.
+function variantColor(colors: ThemeColors, variant: ButtonVariant): string {
+  return variant === 'primary' ? colors.textOnAccent : colors.accent;
+}
 
 interface ButtonProps {
   label: string;
@@ -44,6 +36,11 @@ const Button: React.FC<ButtonProps> = ({
   style,
   testID,
 }) => {
+  const variantStyles = useVariantStyles();
+  const variantLabelStyles = useVariantLabelStyles();
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   function handlePress() {
     if (appearsDisabled) {
       onDisabledPress?.();
@@ -68,7 +65,9 @@ const Button: React.FC<ButtonProps> = ({
         <Icon
           name={icon}
           size={20}
-          color={appearsDisabled ? DISABLED_COLOR : VARIANT_COLORS[variant]}
+          color={
+            appearsDisabled ? colors.textFaint : variantColor(colors, variant)
+          }
           style={styles.icon}
           testID={testID && `${testID}-icon`}
         />
@@ -88,55 +87,55 @@ const Button: React.FC<ButtonProps> = ({
 
 export default Button;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   base: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: t.spacing.md,
+    paddingHorizontal: t.spacing.lg,
+    borderRadius: t.radius.md,
   },
   icon: {
-    marginRight: 8,
+    marginRight: t.spacing.sm,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: t.fontSize.xl,
+    fontWeight: t.fontWeight.semibold,
   },
   disabled: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#d0d0d0',
+    borderColor: t.colors.border,
   },
   disabledLabel: {
-    color: DISABLED_COLOR,
+    color: t.colors.textFaint,
   },
-});
+}));
 
-const variantStyles = StyleSheet.create({
+const useVariantStyles = makeStyles((t) => ({
   primary: {
-    backgroundColor: ACCENT_COLOR,
+    backgroundColor: t.colors.accent,
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: ACCENT_COLOR,
+    borderColor: t.colors.accent,
   },
   text: {
     paddingVertical: 0,
     paddingHorizontal: 0,
   },
-});
+}));
 
-const variantLabelStyles = StyleSheet.create({
+const useVariantLabelStyles = makeStyles((t) => ({
   primary: {
-    color: VARIANT_COLORS.primary,
+    color: variantColor(t.colors, 'primary'),
   },
   outline: {
-    color: VARIANT_COLORS.outline,
+    color: variantColor(t.colors, 'outline'),
   },
   text: {
-    color: VARIANT_COLORS.text,
+    color: variantColor(t.colors, 'text'),
   },
-});
+}));

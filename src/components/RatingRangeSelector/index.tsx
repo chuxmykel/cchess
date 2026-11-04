@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 
 import Icon from '../Icon';
 import NotchedSlider from '../NotchedSlider';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { RatingRange } from '../../network/socketEvents';
 import {
   MAX_RATING_RANGE_DELTA,
   RATING_RANGE_STEP,
 } from '../../constants/seek';
+import { makeStyles, useTheme } from '../../theme';
 
 type RangeSide = keyof RatingRange;
 
@@ -26,6 +26,9 @@ const RatingRangeSelector: React.FC<RatingRangeSelectorProps> = ({
   range,
   onChange,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const [lastLimits, setLastLimits] = useState({
     below: range.below ?? MAX_RATING_RANGE_DELTA,
     above: range.above ?? MAX_RATING_RANGE_DELTA,
@@ -67,8 +70,8 @@ const RatingRangeSelector: React.FC<RatingRangeSelectorProps> = ({
                 value={range[side] ?? lastLimits[side]}
                 onValueChange={(limit) => setLimit(side, limit)}
                 disabled={isOpen}
-                minimumTrackTintColor={isOpen ? '#ccc' : ACCENT_COLOR}
-                maximumTrackTintColor="#ddd"
+                minimumTrackTintColor={isOpen ? colors.disabled : colors.accent}
+                maximumTrackTintColor={colors.border}
                 accessibilityLabel={label}
                 testID={`rating-range-${side}-slider`}
               />
@@ -84,7 +87,7 @@ const RatingRangeSelector: React.FC<RatingRangeSelectorProps> = ({
                 <Icon
                   name={isOpen ? 'checkbox-marked' : 'checkbox-blank-outline'}
                   size={22}
-                  color={isOpen ? ACCENT_COLOR : MUTED_COLOR}
+                  color={isOpen ? colors.accent : colors.textMuted}
                 />
                 <Text style={styles.checkboxLabel}>Open</Text>
               </Pressable>
@@ -98,12 +101,12 @@ const RatingRangeSelector: React.FC<RatingRangeSelectorProps> = ({
 
 export default RatingRangeSelector;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   container: {
-    gap: 16,
+    gap: t.spacing.lg,
   },
   row: {
-    gap: 4,
+    gap: t.spacing.xs,
   },
   heading: {
     flexDirection: 'row',
@@ -111,21 +114,21 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   label: {
-    fontSize: 15,
-    color: '#333',
+    fontSize: t.fontSize.lg,
+    color: t.colors.text,
   },
   value: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: t.fontSize.xl,
+    fontWeight: t.fontWeight.semibold,
     fontVariant: ['tabular-nums'],
   },
   openValue: {
-    color: MUTED_COLOR,
+    color: t.colors.textMuted,
   },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: t.spacing.md,
   },
   slider: {
     flex: 1,
@@ -133,10 +136,10 @@ const styles = StyleSheet.create({
   checkbox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: t.spacing.xs,
   },
   checkboxLabel: {
-    fontSize: 13,
-    color: '#555',
+    fontSize: t.fontSize.md,
+    color: t.colors.textSecondary,
   },
-});
+}));

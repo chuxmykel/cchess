@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { View, StyleSheet } from 'react-native';
 
 import { PLAYER_BAR_HEIGHT } from '../PlayerBar';
+import { spacing } from '../../theme';
 
 interface GameBoardAreaProps {
   /** A player bar, the board and the other bar - or a PlayerBarSpace
@@ -40,7 +41,7 @@ const styles = StyleSheet.create({
     flex: 2,
   },
   stack: {
-    gap: 24,
+    gap: spacing.xl,
   },
   barSpace: {
     height: PLAYER_BAR_HEIGHT,

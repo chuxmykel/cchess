@@ -9,6 +9,7 @@ import { MOVE_LIST_HEIGHT } from '../MoveList';
 import { PLAYER_BAR_HEIGHT } from '../PlayerBar';
 import { BOARD_THEMES } from '../../theme/boardThemes';
 import { TimeControl } from '../../constants/timeControls';
+import { spacing } from '../../theme';
 
 interface LiveGameSkeletonProps {
   width: number;
@@ -57,6 +58,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
   },
 });

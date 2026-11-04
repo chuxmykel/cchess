@@ -1,10 +1,10 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { Color } from 'chess.js';
 
 import { PIECES } from '../../constants';
-import { MUTED_COLOR } from '../../constants/colors';
 import { SideMaterial } from '../../domain/material';
 import { otherColor } from '../../domain/players';
+import { makeStyles } from '../../theme';
 
 const PIECE_SIZE = 16;
 // Pieces of the same kind overlap, so a row of pawns stays short.
@@ -17,6 +17,8 @@ interface CapturedPiecesProps {
 }
 
 const CapturedPieces: React.FC<CapturedPiecesProps> = ({ color, material }) => {
+  const styles = useStyles();
+
   if (material.pieces.length === 0 && material.score === 0) {
     return null;
   }
@@ -49,7 +51,7 @@ const CapturedPieces: React.FC<CapturedPiecesProps> = ({ color, material }) => {
 
 export default CapturedPieces;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -60,8 +62,8 @@ const styles = StyleSheet.create({
     height: PIECE_SIZE,
   },
   score: {
-    marginLeft: 4,
-    fontSize: 12,
-    color: MUTED_COLOR,
+    marginLeft: t.spacing.xs,
+    fontSize: t.fontSize.sm,
+    color: t.colors.textMuted,
   },
-});
+}));

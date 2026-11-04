@@ -1,14 +1,14 @@
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 
 import Avatar from '../Avatar';
 import EmptyState from '../EmptyState';
 import Icon from '../Icon';
 import Placeholder from '../Placeholder';
 import SectionHeader from '../SectionHeader';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { UserFriend } from '../../network/restClient';
 import { sortFriends } from '../../utils/friendSort';
 import { presenceLabel } from '../../utils/presence';
+import { makeStyles, useTheme } from '../../theme';
 
 export const PROFILE_FRIENDS_SHOWN = 10;
 const TILE_WIDTH = 76;
@@ -36,6 +36,9 @@ const ProfileFriends: React.FC<ProfileFriendsProps> = ({
   onViewAll,
   onAddFriends,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   return (
     <View>
       <SectionHeader
@@ -116,7 +119,7 @@ const ProfileFriends: React.FC<ProfileFriendsProps> = ({
                   <Icon
                     name="account-plus-outline"
                     size={26}
-                    color={ACCENT_COLOR}
+                    color={colors.accent}
                   />
                 </View>
                 <Text style={styles.name} numberOfLines={1}>
@@ -135,15 +138,15 @@ const ProfileFriends: React.FC<ProfileFriendsProps> = ({
 
 export default ProfileFriends;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   list: {
     flexDirection: 'row',
-    paddingHorizontal: 12,
+    paddingHorizontal: t.spacing.md,
   },
   tile: {
     width: TILE_WIDTH,
     alignItems: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: t.spacing.xs,
   },
   pressed: {
     opacity: 0.6,
@@ -156,8 +159,8 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 7,
     borderWidth: 2,
-    borderColor: 'white',
-    backgroundColor: ACCENT_COLOR,
+    borderColor: t.colors.background,
+    backgroundColor: t.colors.accent,
   },
   addCircle: {
     width: 56,
@@ -167,12 +170,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderColor: ACCENT_COLOR,
+    borderColor: t.colors.accent,
   },
   name: {
-    marginTop: 6,
-    fontSize: 12,
-    color: MUTED_COLOR,
+    marginTop: t.spacing.sm,
+    fontSize: t.fontSize.sm,
+    color: t.colors.textMuted,
     textAlign: 'center',
   },
-});
+}));

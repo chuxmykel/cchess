@@ -2,9 +2,9 @@ import { Fragment } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import Icon from '../Icon';
-import { MUTED_COLOR } from '../../constants/colors';
 import { NotableGame, RatingStats } from '../../network/restClient';
 import { formatTimePlayed } from '../../utils/rating';
+import { makeStyles, useTheme } from '../../theme';
 
 interface CategoryStatsCardProps {
   stats: RatingStats;
@@ -12,9 +12,9 @@ interface CategoryStatsCardProps {
 }
 
 const RESULTS = [
-  { key: 'wins', label: 'Wins', color: '#5a9e2f' },
-  { key: 'draws', label: 'Draws', color: '#c99a1c' },
-  { key: 'losses', label: 'Losses', color: '#c8402a' },
+  { key: 'wins', label: 'Wins', result: 'win' },
+  { key: 'draws', label: 'Draws', result: 'draw' },
+  { key: 'losses', label: 'Losses', result: 'loss' },
 ] as const;
 
 function gamesLabel(count: number): string {
@@ -38,6 +38,9 @@ const CategoryStatsCard: React.FC<CategoryStatsCardProps> = ({
   stats,
   onOpenGame,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   function notableRow(
     label: string,
     game: NotableGame | null,
@@ -90,7 +93,12 @@ const CategoryStatsCard: React.FC<CategoryStatsCardProps> = ({
             style={styles.result}
             testID={`stats-${result.key}`}
           >
-            <Text style={[styles.resultCount, { color: result.color }]}>
+            <Text
+              style={[
+                styles.resultCount,
+                { color: colors.results[result.result] },
+              ]}
+            >
               {stats[result.key]}
             </Text>
             <Text style={styles.label}>
@@ -112,7 +120,7 @@ const CategoryStatsCard: React.FC<CategoryStatsCardProps> = ({
             <Text style={styles.rowLabel}>{row.label}</Text>
             <Text style={styles.rowValue}>{row.value}</Text>
             {row.onPress && (
-              <Icon name="chevron-right" size={18} color={MUTED_COLOR} />
+              <Icon name="chevron-right" size={18} color={colors.textMuted} />
             )}
           </Pressable>
         </Fragment>
@@ -123,54 +131,54 @@ const CategoryStatsCard: React.FC<CategoryStatsCardProps> = ({
 
 export default CategoryStatsCard;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   card: {
-    marginHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    marginHorizontal: t.spacing.lg,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
   },
   total: {
     alignItems: 'center',
-    paddingTop: 14,
+    paddingTop: t.spacing.lg,
   },
   totalCount: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: t.fontSize.h1,
+    fontWeight: t.fontWeight.bold,
   },
   results: {
     flexDirection: 'row',
-    paddingVertical: 12,
+    paddingVertical: t.spacing.md,
   },
   result: {
     flex: 1,
     alignItems: 'center',
   },
   resultCount: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: t.fontSize.h3,
+    fontWeight: t.fontWeight.bold,
   },
   label: {
-    fontSize: 13,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.md,
+    color: t.colors.textMuted,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#c8c8c8',
-    marginHorizontal: 16,
+    backgroundColor: t.colors.separator,
+    marginHorizontal: t.spacing.lg,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    gap: t.spacing.sm,
+    paddingHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.md,
   },
   rowLabel: {
     flex: 1,
-    fontSize: 15,
+    fontSize: t.fontSize.lg,
   },
   rowValue: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: t.fontSize.lg,
+    fontWeight: t.fontWeight.semibold,
   },
-});
+}));

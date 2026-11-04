@@ -2,14 +2,13 @@ import { useCallback, useEffect, useRef } from 'react';
 import {
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
   type ScrollViewInstance,
 } from 'react-native';
 
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { MoveListToken } from '../../domain/analysisTree';
+import { makeStyles } from '../../theme';
 
 interface VariationMoveListProps {
   tokens: MoveListToken[];
@@ -29,6 +28,8 @@ const VariationMoveList: React.FC<VariationMoveListProps> = ({
   onSelect,
   onLongPress,
 }) => {
+  const styles = useStyles();
+
   const scroll = useRef<ScrollViewInstance>(null);
   const isEmpty = tokens.length === 0;
 
@@ -144,7 +145,7 @@ const LIST_PADDING = 12;
 // How much of the list to show beyond a move scrolled to - about a row.
 const REVEAL_MARGIN = 24;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   list: {
     flex: 1,
   },
@@ -157,41 +158,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   move: {
-    paddingHorizontal: 4,
-    paddingVertical: 3,
-    borderRadius: 4,
+    paddingHorizontal: t.spacing.xs,
+    paddingVertical: t.spacing.xs,
+    borderRadius: t.radius.xs,
   },
   current: {
-    backgroundColor: ACCENT_COLOR,
+    backgroundColor: t.colors.accent,
   },
   san: {
-    fontSize: 15,
-    color: '#222',
+    fontSize: t.fontSize.lg,
+    color: t.colors.text,
   },
   currentText: {
-    color: 'white',
-    fontWeight: '600',
+    color: t.colors.textOnAccent,
+    fontWeight: t.fontWeight.semibold,
   },
   // Lighter than the moves, so they stand out from them.
   number: {
-    color: MUTED_COLOR,
+    color: t.colors.textMuted,
   },
   currentNumber: {
-    color: 'rgba(255, 255, 255, 0.75)',
+    color: t.colors.textOnAccentMuted,
   },
   nested: {
-    fontSize: 13,
-    color: '#555',
+    fontSize: t.fontSize.md,
+    color: t.colors.textSecondary,
   },
   bracket: {
-    fontSize: 15,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.lg,
+    color: t.colors.textMuted,
     paddingHorizontal: 1,
   },
   empty: {
-    fontSize: 14,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.base,
+    color: t.colors.textMuted,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: t.spacing.sm,
   },
-});
+}));

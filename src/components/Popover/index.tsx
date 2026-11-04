@@ -1,13 +1,7 @@
-import {
-  View,
-  Pressable,
-  Modal,
-  StyleSheet,
-  StyleProp,
-  ViewStyle,
-} from 'react-native';
+import { View, Pressable, Modal, StyleProp, ViewStyle } from 'react-native';
 
 import { MenuPosition } from '../../hooks/usePopoverMenu';
+import { makeStyles } from '../../theme';
 
 export type CaretSide = 'top' | 'bottom' | 'left' | 'right';
 
@@ -40,7 +34,6 @@ const CARET_SPAN = 12;
 // after the caret, so on top - comfortably covers the join with no sliver
 // gap from sub-pixel rounding.
 const OVERLAP = 2;
-const CARET_COLOR = 'white';
 
 // The Modal/overlay/anchored-box plumbing shared by every popover in the
 // app (PopoverMenu's dropdown, ConnectionStrengthIndicator's info bubble,
@@ -70,6 +63,9 @@ const Popover: React.FC<PopoverProps> = ({
   overlayTestID,
   children,
 }) => {
+  const styles = useStyles();
+  const caretPlacement = useCaretPlacement();
+
   return (
     <Modal
       visible={visible}
@@ -93,7 +89,7 @@ const Popover: React.FC<PopoverProps> = ({
         >
           {caretSide && (
             <View
-              style={CARET_PLACEMENT[caretSide]}
+              style={caretPlacement[caretSide]}
               testID={testID && `${testID}-caret`}
             />
           )}
@@ -108,7 +104,7 @@ const Popover: React.FC<PopoverProps> = ({
 
 export default Popover;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   overlay: {
     flex: 1,
   },
@@ -116,74 +112,78 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   content: {
-    backgroundColor: 'white',
-    borderRadius: 8,
+    backgroundColor: t.colors.surfaceRaised,
+    borderRadius: t.radius.md,
     // No border (and no shadow - see the file-level note) - a border here
     // would trace content's full rect including the segment right behind
     // the caret, drawing a line straight across exactly where the
     // triangle's base meets it. Nothing decorative on any edge anywhere is
     // what actually makes the two pieces read as one shape.
   },
-});
+}));
 
 const AXIS_OFFSET = OVERLAP - CARET_DEPTH;
 const HALF_SPAN = CARET_SPAN / 2;
 
-const CARET_PLACEMENT: Record<CaretSide, ViewStyle> = {
-  left: {
-    position: 'absolute',
-    left: AXIS_OFFSET,
-    top: '50%',
-    marginTop: -HALF_SPAN,
-    width: 0,
-    height: 0,
-    borderTopWidth: HALF_SPAN,
-    borderBottomWidth: HALF_SPAN,
-    borderRightWidth: CARET_DEPTH,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderRightColor: CARET_COLOR,
-  },
-  right: {
-    position: 'absolute',
-    right: AXIS_OFFSET,
-    top: '50%',
-    marginTop: -HALF_SPAN,
-    width: 0,
-    height: 0,
-    borderTopWidth: HALF_SPAN,
-    borderBottomWidth: HALF_SPAN,
-    borderLeftWidth: CARET_DEPTH,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: CARET_COLOR,
-  },
-  top: {
-    position: 'absolute',
-    top: AXIS_OFFSET,
-    left: '50%',
-    marginLeft: -HALF_SPAN,
-    width: 0,
-    height: 0,
-    borderLeftWidth: HALF_SPAN,
-    borderRightWidth: HALF_SPAN,
-    borderBottomWidth: CARET_DEPTH,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: CARET_COLOR,
-  },
-  bottom: {
-    position: 'absolute',
-    bottom: AXIS_OFFSET,
-    left: '50%',
-    marginLeft: -HALF_SPAN,
-    width: 0,
-    height: 0,
-    borderLeftWidth: HALF_SPAN,
-    borderRightWidth: HALF_SPAN,
-    borderTopWidth: CARET_DEPTH,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: CARET_COLOR,
-  },
-};
+const useCaretPlacement = makeStyles((t) => {
+  const caretColor = t.colors.surfaceRaised;
+  const placement: Record<CaretSide, ViewStyle> = {
+    left: {
+      position: 'absolute',
+      left: AXIS_OFFSET,
+      top: '50%',
+      marginTop: -HALF_SPAN,
+      width: 0,
+      height: 0,
+      borderTopWidth: HALF_SPAN,
+      borderBottomWidth: HALF_SPAN,
+      borderRightWidth: CARET_DEPTH,
+      borderTopColor: 'transparent',
+      borderBottomColor: 'transparent',
+      borderRightColor: caretColor,
+    },
+    right: {
+      position: 'absolute',
+      right: AXIS_OFFSET,
+      top: '50%',
+      marginTop: -HALF_SPAN,
+      width: 0,
+      height: 0,
+      borderTopWidth: HALF_SPAN,
+      borderBottomWidth: HALF_SPAN,
+      borderLeftWidth: CARET_DEPTH,
+      borderTopColor: 'transparent',
+      borderBottomColor: 'transparent',
+      borderLeftColor: caretColor,
+    },
+    top: {
+      position: 'absolute',
+      top: AXIS_OFFSET,
+      left: '50%',
+      marginLeft: -HALF_SPAN,
+      width: 0,
+      height: 0,
+      borderLeftWidth: HALF_SPAN,
+      borderRightWidth: HALF_SPAN,
+      borderBottomWidth: CARET_DEPTH,
+      borderLeftColor: 'transparent',
+      borderRightColor: 'transparent',
+      borderBottomColor: caretColor,
+    },
+    bottom: {
+      position: 'absolute',
+      bottom: AXIS_OFFSET,
+      left: '50%',
+      marginLeft: -HALF_SPAN,
+      width: 0,
+      height: 0,
+      borderLeftWidth: HALF_SPAN,
+      borderRightWidth: HALF_SPAN,
+      borderTopWidth: CARET_DEPTH,
+      borderLeftColor: 'transparent',
+      borderRightColor: 'transparent',
+      borderTopColor: caretColor,
+    },
+  };
+  return placement;
+});

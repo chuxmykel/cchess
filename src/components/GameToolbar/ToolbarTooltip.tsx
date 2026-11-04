@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { makeStyles } from '../../theme';
 
 interface ToolbarTooltipProps {
   text: string;
@@ -34,27 +35,30 @@ const ToolbarTooltip: React.FC<ToolbarTooltipProps> = ({
   text,
   shift,
   onMeasured,
-}) => (
-  <View
-    style={[styles.container, shift === null && styles.measuring]}
-    pointerEvents="none"
-    accessibilityElementsHidden
-    importantForAccessibility="no-hide-descendants"
-    testID="toolbar-tooltip"
-  >
+}) => {
+  const styles = useStyles();
+  return (
     <View
-      style={[styles.bubble, { transform: [{ translateX: shift ?? 0 }] }]}
-      onLayout={(event) => onMeasured(event.nativeEvent.layout.width)}
+      style={[styles.container, shift === null && styles.measuring]}
+      pointerEvents="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      testID="toolbar-tooltip"
     >
-      <Text style={styles.text}>{text}</Text>
+      <View
+        style={[styles.bubble, { transform: [{ translateX: shift ?? 0 }] }]}
+        onLayout={(event) => onMeasured(event.nativeEvent.layout.width)}
+      >
+        <Text style={styles.text}>{text}</Text>
+      </View>
+      <View style={styles.arrow} />
     </View>
-    <View style={styles.arrow} />
-  </View>
-);
+  );
+};
 
 export default ToolbarTooltip;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   // As wide as the longest tooltip and centred on the button, so the
   // bubble can be wider than the button without its text wrapping.
   container: {
@@ -63,7 +67,7 @@ const styles = StyleSheet.create({
     left: '50%',
     width: MAX_WIDTH,
     marginLeft: -MAX_WIDTH / 2,
-    marginBottom: 4,
+    marginBottom: t.spacing.xs,
     alignItems: 'center',
   },
   measuring: {
@@ -71,22 +75,22 @@ const styles = StyleSheet.create({
   },
   bubble: {
     maxWidth: MAX_WIDTH,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: '#333',
+    paddingHorizontal: t.spacing.md,
+    paddingVertical: t.spacing.sm,
+    borderRadius: t.radius.sm,
+    backgroundColor: t.colors.inverseSurface,
   },
   text: {
-    color: 'white',
-    fontSize: 13,
-    fontWeight: '500',
+    color: t.colors.inverseText,
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.medium,
     textAlign: 'center',
   },
   arrow: {
     width: 10,
     height: 10,
-    marginTop: -6,
-    backgroundColor: '#333',
+    marginTop: -t.spacing.sm,
+    backgroundColor: t.colors.inverseSurface,
     transform: [{ rotate: '45deg' }],
   },
-});
+}));

@@ -20,13 +20,6 @@ export const GAME_TYPE_LABELS: Record<GameType, string> = {
   classical: 'Classical',
 };
 
-export const GAME_TYPE_COLORS: Record<GameType, string> = {
-  bullet: '#F5A623',
-  blitz: '#E8601C',
-  rapid: '#8E6E53',
-  classical: '#3A3A3A',
-};
-
 // Whether a game's board slides its pieces to their squares: not in bullet
 // - anything under 3+0 - where there's no time to watch them go; there they
 // move at once. Stepping back through a game follows its time control too.

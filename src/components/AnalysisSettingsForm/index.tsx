@@ -8,7 +8,7 @@ import {
   MAX_ENGINE_LINES,
   SEARCH_SECONDS,
 } from '../../constants/analysis';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
+import { makeStyles, useTheme } from '../../theme';
 
 interface AnalysisSettingsFormProps {
   settings: AnalysisSettings;
@@ -42,13 +42,16 @@ const AnalysisSettingsForm: React.FC<AnalysisSettingsFormProps> = ({
   settings,
   onChange,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const toggle = (key: Toggle, label: string) => (
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
       <Switch
         value={settings[key]}
         onValueChange={(value) => onChange({ [key]: value })}
-        trackColor={{ true: ACCENT_COLOR }}
+        trackColor={{ true: colors.accent }}
         accessibilityLabel={label}
         testID={`analysis-setting-${key}`}
       />
@@ -86,8 +89,8 @@ const AnalysisSettingsForm: React.FC<AnalysisSettingsFormProps> = ({
           step={1}
           value={settings.engineLineCount}
           onValueChange={(engineLineCount) => onChange({ engineLineCount })}
-          minimumTrackTintColor={ACCENT_COLOR}
-          maximumTrackTintColor="#ddd"
+          minimumTrackTintColor={colors.accent}
+          maximumTrackTintColor={colors.border}
           accessibilityLabel="Engine lines"
           testID="engine-line-count-slider"
         />
@@ -108,8 +111,8 @@ const AnalysisSettingsForm: React.FC<AnalysisSettingsFormProps> = ({
           onValueChange={(seconds) =>
             onChange({ searchSeconds: seconds >= UNLIMITED ? null : seconds })
           }
-          minimumTrackTintColor={ACCENT_COLOR}
-          maximumTrackTintColor="#ddd"
+          minimumTrackTintColor={colors.accent}
+          maximumTrackTintColor={colors.border}
           accessibilityLabel="Search time"
           testID="search-time-slider"
         />
@@ -130,20 +133,20 @@ const AnalysisSettingsForm: React.FC<AnalysisSettingsFormProps> = ({
 
 export default AnalysisSettingsForm;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   screen: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: t.colors.background,
   },
   content: {
-    padding: 16,
-    gap: 8,
+    padding: t.spacing.lg,
+    gap: t.spacing.sm,
   },
   section: {
-    gap: 8,
-    paddingBottom: 12,
+    gap: t.spacing.sm,
+    paddingBottom: t.spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: t.colors.divider,
   },
   row: {
     flexDirection: 'row',
@@ -152,18 +155,18 @@ const styles = StyleSheet.create({
     minHeight: 40,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#222',
+    fontSize: t.fontSize.xl,
+    fontWeight: t.fontWeight.medium,
+    color: t.colors.text,
   },
   value: {
-    fontSize: 15,
-    color: ACCENT_COLOR,
-    fontWeight: '600',
+    fontSize: t.fontSize.lg,
+    color: t.colors.accent,
+    fontWeight: t.fontWeight.semibold,
     fontVariant: ['tabular-nums'],
   },
   hint: {
-    fontSize: 13,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.md,
+    color: t.colors.textMuted,
   },
-});
+}));

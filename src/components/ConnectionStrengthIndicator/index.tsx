@@ -1,12 +1,15 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 
 import {
   useConnectionStrengthIndicator,
   BAR_COUNT,
 } from '../../hooks/useConnectionStrengthIndicator';
 import Popover, { POPOVER_TRIGGER_HIT_SLOP } from '../Popover';
+import { makeStyles } from '../../theme';
 
 const ConnectionStrengthIndicator: React.FC = () => {
+  const styles = useStyles();
+
   const {
     litBars,
     label,
@@ -53,31 +56,31 @@ const ConnectionStrengthIndicator: React.FC = () => {
 
 export default ConnectionStrengthIndicator;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   container: {
-    padding: 4,
+    padding: t.spacing.xs,
   },
   bars: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 2,
+    gap: t.spacing.xxs,
   },
   bar: {
     width: 4,
     borderRadius: 2,
   },
   barLit: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: t.colors.success,
   },
   barDim: {
-    backgroundColor: '#444',
+    backgroundColor: t.colors.textSecondary,
   },
   popoverContent: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: t.spacing.sm,
+    paddingHorizontal: t.spacing.md,
   },
   popoverText: {
-    fontSize: 13,
-    color: '#333',
+    fontSize: t.fontSize.md,
+    color: t.colors.text,
   },
-});
+}));

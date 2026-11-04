@@ -1,9 +1,9 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { PieceSymbol, Color } from 'chess.js';
 
 import { PIECES } from '../../constants';
-import { MUTED_COLOR } from '../../constants/colors';
 import { PROMOTION_PIECE_TYPES } from '../../domain/types';
+import { makeStyles } from '../../theme';
 
 interface PromotionMenuProps {
   boardWidth: number;
@@ -30,6 +30,8 @@ const PromotionMenu: React.FC<PromotionMenuProps> = ({
   onCancel,
   promotingColor,
 }) => {
+  const styles = useStyles();
+
   const tileSize = pieceWidth * 1.2;
   return (
     <Pressable
@@ -71,7 +73,7 @@ const PromotionMenu: React.FC<PromotionMenuProps> = ({
 
 export default PromotionMenu;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   overlay: {
     position: 'absolute',
     top: 0,
@@ -79,37 +81,34 @@ const styles = StyleSheet.create({
     zIndex: 100,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    backgroundColor: t.colors.board.veil,
   },
   card: {
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: 'white',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 14,
-    elevation: 8,
+    gap: t.spacing.md,
+    paddingVertical: t.spacing.lg,
+    paddingHorizontal: t.spacing.lg,
+    borderRadius: t.radius.lg,
+    backgroundColor: t.colors.surfaceRaised,
+    ...t.elevation.lg,
+    shadowColor: t.colors.shadow,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.base,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.textMuted,
   },
   options: {
     flexDirection: 'row',
-    gap: 8,
+    gap: t.spacing.sm,
   },
   tile: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
-    backgroundColor: '#e9ebee',
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.board.promotionTile,
   },
   pressed: {
-    backgroundColor: '#d5d9de',
+    backgroundColor: t.colors.board.promotionTilePressed,
   },
-});
+}));

@@ -1,6 +1,7 @@
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image } from 'react-native';
 
 import Icon from '../Icon';
+import { makeStyles, useTheme } from '../../theme';
 
 interface AvatarProps {
   size?: number;
@@ -31,6 +32,9 @@ const Avatar: React.FC<AvatarProps> = ({
   square = false,
   raiseInitials = 0,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const dimensions = {
     width: size,
     height: size,
@@ -73,7 +77,7 @@ const Avatar: React.FC<AvatarProps> = ({
         <Icon
           name="account"
           size={size * 0.6}
-          color="white"
+          color={colors.textOnAccent}
           testID="avatar-guest-icon"
         />
       )}
@@ -83,17 +87,17 @@ const Avatar: React.FC<AvatarProps> = ({
 
 export default Avatar;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   avatar: {
     overflow: 'hidden',
   },
   placeholder: {
-    backgroundColor: '#769656',
+    backgroundColor: t.colors.accent,
     justifyContent: 'center',
     alignItems: 'center',
   },
   initials: {
-    color: 'white',
-    fontWeight: '600',
+    color: t.colors.textOnAccent,
+    fontWeight: t.fontWeight.semibold,
   },
-});
+}));

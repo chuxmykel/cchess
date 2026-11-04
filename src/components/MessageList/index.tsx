@@ -1,17 +1,11 @@
 import { Fragment, useRef } from 'react';
-import {
-  ScrollView,
-  type ScrollViewInstance,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ScrollView, type ScrollViewInstance, Text, View } from 'react-native';
 import { format, isSameDay, parseISO } from 'date-fns';
 
 import Button from '../Button';
 import EmptyState from '../EmptyState';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { DirectMessage } from '../../network/restClient';
+import { makeStyles } from '../../theme';
 
 interface MessageListProps {
   /** Oldest first. */
@@ -30,6 +24,8 @@ const MessageList: React.FC<MessageListProps> = ({
   hasOlder,
   onLoadOlder,
 }) => {
+  const styles = useStyles();
+
   const scrollRef = useRef<ScrollViewInstance>(null);
   return (
     <ScrollView
@@ -86,54 +82,54 @@ const MessageList: React.FC<MessageListProps> = ({
 
 export default MessageList;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   list: {
     flex: 1,
   },
   content: {
-    gap: 6,
-    padding: 16,
+    gap: t.spacing.sm,
+    padding: t.spacing.lg,
   },
   day: {
     alignSelf: 'center',
-    marginVertical: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 10,
+    marginVertical: t.spacing.sm,
+    paddingHorizontal: t.spacing.md,
+    paddingVertical: t.spacing.xs,
+    borderRadius: t.radius.md,
     overflow: 'hidden',
-    backgroundColor: '#eee',
-    fontSize: 12,
-    color: MUTED_COLOR,
+    backgroundColor: t.colors.surfaceStrong,
+    fontSize: t.fontSize.sm,
+    color: t.colors.textMuted,
   },
   bubble: {
     maxWidth: '80%',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 14,
+    paddingVertical: t.spacing.sm,
+    paddingHorizontal: t.spacing.md,
+    borderRadius: t.radius.lg,
   },
   mine: {
     alignSelf: 'flex-end',
-    backgroundColor: ACCENT_COLOR,
+    backgroundColor: t.colors.accent,
   },
   theirs: {
     alignSelf: 'flex-start',
-    backgroundColor: '#eee',
+    backgroundColor: t.colors.surfaceStrong,
   },
   mineText: {
-    color: 'white',
-    fontSize: 15,
+    color: t.colors.textOnAccent,
+    fontSize: t.fontSize.lg,
   },
   theirsText: {
-    color: '#222',
-    fontSize: 15,
+    color: t.colors.text,
+    fontSize: t.fontSize.lg,
   },
   time: {
-    marginTop: 2,
+    marginTop: t.spacing.xxs,
     alignSelf: 'flex-end',
-    fontSize: 10,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.xxs,
+    color: t.colors.textMuted,
   },
   mineTime: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: t.colors.textOnAccentMuted,
   },
-});
+}));

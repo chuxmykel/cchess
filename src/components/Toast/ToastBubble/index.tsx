@@ -1,12 +1,15 @@
-import { Animated, Text, StyleSheet } from 'react-native';
+import { Animated, Text } from 'react-native';
 
 import { useToastBubbleAnimation } from '../../../hooks/useToastBubbleAnimation';
+import { makeStyles } from '../../../theme';
 
 export interface ToastBubbleProps {
   message: string;
 }
 
 const ToastBubble: React.FC<ToastBubbleProps> = ({ message }) => {
+  const styles = useStyles();
+
   const { opacity, translateY } = useToastBubbleAnimation();
 
   return (
@@ -18,16 +21,16 @@ const ToastBubble: React.FC<ToastBubbleProps> = ({ message }) => {
 
 export default ToastBubble;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   text: {
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    color: 'rgba(255, 255, 255, 0.85)',
-    fontSize: 13,
-    fontWeight: '500',
-    paddingHorizontal: 18,
-    paddingVertical: 7,
-    borderRadius: 18,
+    backgroundColor: t.colors.overlay,
+    color: t.colors.onOverlay,
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.medium,
+    paddingHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.sm,
+    borderRadius: t.radius.xl,
     overflow: 'hidden',
-    marginTop: 6,
+    marginTop: t.spacing.sm,
   },
-});
+}));

@@ -4,6 +4,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import ActionSheet, { ActionSheetAction } from '.';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { waitForSheetToClose } from '../../testUtils/modal';
+import { lightTheme } from '../../theme';
 
 function ActionSheetWithParentState({
   onClose,
@@ -107,9 +108,11 @@ describe('ActionSheet', () => {
   it('shows destructive actions in red', async () => {
     const screen = await renderSheet();
 
-    expect(screen.getByText('Resign')).toHaveStyle({ color: '#e53935' });
+    expect(screen.getByText('Resign')).toHaveStyle({
+      color: lightTheme.colors.danger,
+    });
     expect(screen.getByText('Flip board')).not.toHaveStyle({
-      color: '#e53935',
+      color: lightTheme.colors.danger,
     });
   });
 });

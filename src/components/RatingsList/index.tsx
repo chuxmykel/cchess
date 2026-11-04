@@ -3,11 +3,11 @@ import { Pressable, View, Text, StyleSheet } from 'react-native';
 
 import GameTypeIcon from '../GameTypeIcon';
 import Icon from '../Icon';
-import { MUTED_COLOR } from '../../constants/colors';
 import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import { GameType } from '../../domain/types';
 import { UserRating } from '../../network/restClient';
 import { formatRating } from '../../utils/rating';
+import { makeStyles, useTheme } from '../../theme';
 
 interface RatingsListProps {
   ratings: UserRating[];
@@ -21,75 +21,81 @@ function gamesPlayedLabel(gamesPlayed: number): string {
   return gamesPlayed === 1 ? '1 game' : `${gamesPlayed} games`;
 }
 
-const RatingsList: React.FC<RatingsListProps> = ({ ratings, onSelect }) => (
-  <View style={styles.card}>
-    {CATEGORIES.map((category, index) => {
-      const rating = ratings.find((each) => each.category === category);
-      return (
-        <Fragment key={category}>
-          {index > 0 && <View style={styles.divider} />}
-          <Pressable
-            style={styles.row}
-            onPress={rating && onSelect ? () => onSelect(category) : undefined}
-            disabled={!rating || !onSelect}
-            accessibilityRole={rating && onSelect ? 'button' : undefined}
-            testID={`rating-${category}`}
-          >
-            <GameTypeIcon type={category} />
-            <Text style={styles.category}>{GAME_TYPE_LABELS[category]}</Text>
-            <Text style={styles.gamesPlayed}>
-              {rating ? gamesPlayedLabel(rating.gamesPlayed) : 'No games yet'}
-            </Text>
-            <Text style={styles.rating}>
-              {rating ? formatRating(rating.rating, rating.provisional) : '—'}
-            </Text>
-            {onSelect && (
-              <Icon
-                name="chevron-right"
-                size={18}
-                color={rating ? MUTED_COLOR : 'transparent'}
-              />
-            )}
-          </Pressable>
-        </Fragment>
-      );
-    })}
-  </View>
-);
+const RatingsList: React.FC<RatingsListProps> = ({ ratings, onSelect }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+  return (
+    <View style={styles.card}>
+      {CATEGORIES.map((category, index) => {
+        const rating = ratings.find((each) => each.category === category);
+        return (
+          <Fragment key={category}>
+            {index > 0 && <View style={styles.divider} />}
+            <Pressable
+              style={styles.row}
+              onPress={
+                rating && onSelect ? () => onSelect(category) : undefined
+              }
+              disabled={!rating || !onSelect}
+              accessibilityRole={rating && onSelect ? 'button' : undefined}
+              testID={`rating-${category}`}
+            >
+              <GameTypeIcon type={category} />
+              <Text style={styles.category}>{GAME_TYPE_LABELS[category]}</Text>
+              <Text style={styles.gamesPlayed}>
+                {rating ? gamesPlayedLabel(rating.gamesPlayed) : 'No games yet'}
+              </Text>
+              <Text style={styles.rating}>
+                {rating ? formatRating(rating.rating, rating.provisional) : '—'}
+              </Text>
+              {onSelect && (
+                <Icon
+                  name="chevron-right"
+                  size={18}
+                  color={rating ? colors.textMuted : 'transparent'}
+                />
+              )}
+            </Pressable>
+          </Fragment>
+        );
+      })}
+    </View>
+  );
+};
 
 export default RatingsList;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   card: {
-    marginHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    marginHorizontal: t.spacing.lg,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    gap: t.spacing.md,
+    paddingHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.md,
   },
   category: {
     flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: t.fontSize.lg,
+    fontWeight: t.fontWeight.semibold,
   },
   gamesPlayed: {
-    fontSize: 13,
-    color: '#888',
+    fontSize: t.fontSize.md,
+    color: t.colors.textMuted,
   },
   rating: {
     minWidth: 48,
     textAlign: 'right',
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: t.fontSize.xl,
+    fontWeight: t.fontWeight.bold,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#c8c8c8',
-    marginHorizontal: 16,
+    backgroundColor: t.colors.separator,
+    marginHorizontal: t.spacing.lg,
   },
-});
+}));

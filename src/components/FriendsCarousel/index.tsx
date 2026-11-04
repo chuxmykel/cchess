@@ -5,6 +5,7 @@ import SectionHeader from '../SectionHeader';
 import FriendCard, { FriendCardProps } from './FriendCard';
 import { Friend } from '../../network/restClient';
 import { byPresence } from '../../utils/presence';
+import { spacing } from '../../theme';
 
 type FriendActions = Omit<FriendCardProps, 'friend' | 'unreadCount'>;
 
@@ -73,11 +74,11 @@ export default FriendsCarousel;
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 16,
+    paddingTop: spacing.lg,
   },
   list: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   separator: {
     width: 12,

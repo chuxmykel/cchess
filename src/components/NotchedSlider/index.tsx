@@ -1,7 +1,8 @@
 import { useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Slider, { SliderProps } from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
+import { makeStyles } from '../../theme';
 
 // A slider that stops at its steps, and shows and feels it: a notch on the
 // track at each one, and a tick under the finger as the thumb reaches the
@@ -33,13 +34,16 @@ const NotchedSlider: React.FC<SliderProps> = ({
 export default NotchedSlider;
 
 // Drawn under the track and thumb, standing out above and below the track.
-const Notch: React.FC = () => <View style={styles.notch} />;
+const Notch: React.FC = () => {
+  const styles = useStyles();
+  return <View style={styles.notch} />;
+};
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   notch: {
     width: 2,
     height: 12,
     borderRadius: 1,
-    backgroundColor: '#c4c4c4',
+    backgroundColor: t.colors.disabled,
   },
-});
+}));

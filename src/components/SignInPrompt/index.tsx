@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 
 import Button from '../Button';
+import { makeStyles } from '../../theme';
 
 interface SignInPromptProps {
   onSignIn: () => void;
@@ -10,54 +11,57 @@ interface SignInPromptProps {
 const SignInPrompt: React.FC<SignInPromptProps> = ({
   onSignIn,
   onCreateAccount,
-}) => (
-  <View style={styles.card} testID="sign-in-prompt">
-    <Text style={styles.title}>{"You're playing as a guest"}</Text>
-    <Text style={styles.body}>
-      Sign in to play rated games and add friends.
-    </Text>
-    <View style={styles.actions}>
-      <Button
-        label="Sign in"
-        onPress={onSignIn}
-        style={styles.action}
-        testID="sign-in-button"
-      />
-      <Button
-        label="Create account"
-        onPress={onCreateAccount}
-        variant="outline"
-        style={styles.action}
-        testID="create-account-button"
-      />
+}) => {
+  const styles = useStyles();
+  return (
+    <View style={styles.card} testID="sign-in-prompt">
+      <Text style={styles.title}>{"You're playing as a guest"}</Text>
+      <Text style={styles.body}>
+        Sign in to play rated games and add friends.
+      </Text>
+      <View style={styles.actions}>
+        <Button
+          label="Sign in"
+          onPress={onSignIn}
+          style={styles.action}
+          testID="sign-in-button"
+        />
+        <Button
+          label="Create account"
+          onPress={onCreateAccount}
+          variant="outline"
+          style={styles.action}
+          testID="create-account-button"
+        />
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 export default SignInPrompt;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   card: {
-    marginHorizontal: 16,
-    padding: 16,
-    gap: 8,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    marginHorizontal: t.spacing.lg,
+    padding: t.spacing.lg,
+    gap: t.spacing.sm,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
   },
   title: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: t.fontSize.xl,
+    fontWeight: t.fontWeight.semibold,
   },
   body: {
-    fontSize: 14,
-    color: '#555',
+    fontSize: t.fontSize.base,
+    color: t.colors.textSecondary,
   },
   actions: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
+    gap: t.spacing.md,
+    marginTop: t.spacing.sm,
   },
   action: {
     flex: 1,
   },
-});
+}));

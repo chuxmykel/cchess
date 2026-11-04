@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 
 import Button from '../Button';
+import { fontSize, fontWeight, spacing } from '../../theme';
 
 interface DrawOfferPromptProps {
   onAccept: () => void;
@@ -37,17 +38,17 @@ export default DrawOfferPrompt;
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    paddingHorizontal: 16,
-    gap: 8,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
   },
   message: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
     textAlign: 'center',
   },
   buttons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing.md,
   },
   button: {
     flex: 1,

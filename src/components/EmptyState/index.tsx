@@ -1,8 +1,8 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import Button from '../Button';
 import { ILLUSTRATIONS, IllustrationName } from './illustrations';
-import { MUTED_COLOR } from '../../constants/colors';
+import { makeStyles } from '../../theme';
 
 interface EmptyStateProps {
   illustration: IllustrationName;
@@ -22,6 +22,8 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   compact = false,
   testID,
 }) => {
+  const styles = useStyles();
+
   const Illustration = ILLUSTRATIONS[illustration];
   return (
     <View style={[styles.container, compact && styles.compact]} testID={testID}>
@@ -42,26 +44,26 @@ const EmptyState: React.FC<EmptyStateProps> = ({
 
 export default EmptyState;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   container: {
     alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 24,
-    gap: 6,
+    paddingHorizontal: t.spacing.xxl,
+    paddingVertical: t.spacing.xl,
+    gap: t.spacing.sm,
   },
   compact: {
-    paddingVertical: 12,
+    paddingVertical: t.spacing.md,
   },
   title: {
-    marginTop: 8,
-    fontSize: 16,
-    fontWeight: '600',
+    marginTop: t.spacing.sm,
+    fontSize: t.fontSize.xl,
+    fontWeight: t.fontWeight.semibold,
     textAlign: 'center',
   },
   message: {
-    fontSize: 14,
+    fontSize: t.fontSize.base,
     lineHeight: 20,
-    color: MUTED_COLOR,
+    color: t.colors.textMuted,
     textAlign: 'center',
   },
-});
+}));
