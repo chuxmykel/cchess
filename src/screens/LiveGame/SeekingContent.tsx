@@ -7,11 +7,10 @@ import GameHeader from '../../components/GameHeader';
 import { MOVE_LIST_HEIGHT } from '../../components/MoveList';
 import SeekCard from '../../components/SeekCard';
 import Icon from '../../components/Icon';
-import { BOARD_THEMES } from '../../theme/boardThemes';
 import { Seek } from '../../constants/seek';
 import { LobbyStats } from '../../network/socketEvents';
 import { formatRatingRange } from '../../utils/rating';
-import { makeStyles } from '../../theme';
+import { makeStyles, useBoardColors } from '../../theme';
 
 interface SeekingContentProps {
   width: number;
@@ -32,6 +31,7 @@ const SeekingContent: React.FC<SeekingContentProps> = ({
   isConnecting,
   onCancel,
 }) => {
+  const boardColors = useBoardColors();
   const styles = useStyles();
   return (
     <View style={styles.screen} testID="seeking-content">
@@ -41,7 +41,7 @@ const SeekingContent: React.FC<SeekingContentProps> = ({
       <GameBoardArea>
         <PlayerBarSpace />
         <View style={{ width, height: width }}>
-          <BoardSurface colors={BOARD_THEMES.test} />
+          <BoardSurface colors={boardColors} />
           <View style={styles.cardOverlay} pointerEvents="box-none">
             <SeekCard
               timeControl={seek.timeControl}

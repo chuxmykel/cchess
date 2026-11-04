@@ -19,7 +19,7 @@ import { makeStyles } from '../../theme';
 interface ProfileProps {
   navigation: {
     navigate: {
-      (route: 'SignIn' | 'CreateAccount' | 'Licenses'): void;
+      (route: 'SignIn' | 'CreateAccount' | 'Appearance' | 'Licenses'): void;
       (route: 'RatingStats', params: HomeStackParamList['RatingStats']): void;
     } & MyFriendsNavigation['navigate'];
   };
@@ -110,6 +110,12 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
       )}
       <ActionList
         items={[
+          {
+            label: 'Appearance',
+            icon: 'palette-outline',
+            onPress: () => navigation.navigate('Appearance'),
+            testID: 'appearance-row',
+          },
           {
             label: 'Licenses',
             icon: 'scale-balance',

@@ -17,7 +17,6 @@ import OpeningName from '../../components/OpeningName';
 import PromotionMenu from '../../components/PromotionMenu';
 import VariationMoveList from '../../components/VariationMoveList';
 import { THREAT_DEPTH } from '../../constants/analysis';
-import { BOARD_THEMES } from '../../theme/boardThemes';
 import { ChessGameContext } from '../../context/ChessGameContext';
 import { useAnalysisSettingsContext } from '../../context/AnalysisSettingsContext';
 import { useEngine } from '../../context/EngineContext';
@@ -33,7 +32,7 @@ import { useEngineAnalysis } from '../../hooks/useEngineAnalysis';
 import { useAnalysisSounds } from '../../hooks/useGameSounds';
 import { analysisArrows } from '../../utils/analysisArrows';
 import { flipBoardAction } from '../gameMenuActions';
-import { makeStyles, useTheme } from '../../theme';
+import { makeStyles, useTheme, useBoardColors } from '../../theme';
 
 interface AnalysisBoardContentProps {
   start: AnalysisStart;
@@ -56,6 +55,7 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
   onEditPosition,
   onOpenSettings,
 }) => {
+  const boardColors = useBoardColors();
   const styles = useStyles();
   const { colors } = useTheme();
 
@@ -219,7 +219,7 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
         <View style={{ width: boardWidth, height: boardWidth }}>
           <ChessGameContext.Provider value={game}>
             <Chessboard
-              colors={BOARD_THEMES.test}
+              colors={boardColors}
               width={boardWidth}
               orientation={orientation}
               lastPlayedMove={lastPlayedMove}

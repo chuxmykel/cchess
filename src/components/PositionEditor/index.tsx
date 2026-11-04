@@ -17,7 +17,6 @@ import BoardSurface from '../ChessBoard/BoardSurface';
 import Icon, { IconName } from '../Icon';
 import { PIECES, TAP_MOVEMENT_THRESHOLD } from '../../constants';
 import { DRAG_LIFT, DRAG_SCALE } from '../../constants/animations';
-import { BOARD_THEMES } from '../../theme/boardThemes';
 import {
   getSquareFromXY,
   getXYFromSquare,
@@ -28,7 +27,7 @@ import {
   EditorTool,
   PositionEditor as Editor,
 } from '../../hooks/usePositionEditor';
-import { makeStyles, useTheme } from '../../theme';
+import { makeStyles, useTheme, useBoardColors } from '../../theme';
 
 interface PositionEditorProps {
   editor: Editor;
@@ -61,6 +60,7 @@ const PositionEditor: React.FC<PositionEditorProps> = ({
   width,
   orientation = 'w',
 }) => {
+  const boardColors = useBoardColors();
   const styles = useStyles();
   const { colors } = useTheme();
 
@@ -139,7 +139,7 @@ const PositionEditor: React.FC<PositionEditorProps> = ({
         <GestureDetector gesture={gesture}>
           <View style={{ width, height: width }} testID="editor-board">
             <BoardSurface
-              colors={BOARD_THEMES.test}
+              colors={boardColors}
               orientation={orientation}
               onSquarePress={editor.tapSquare}
             />

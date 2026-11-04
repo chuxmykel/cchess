@@ -7,9 +7,8 @@ import Placeholder from '../Placeholder';
 import GameBoardArea from '../GameBoardArea';
 import { MOVE_LIST_HEIGHT } from '../MoveList';
 import { PLAYER_BAR_HEIGHT } from '../PlayerBar';
-import { BOARD_THEMES } from '../../theme/boardThemes';
 import { TimeControl } from '../../constants/timeControls';
-import { spacing } from '../../theme';
+import { spacing, useBoardColors } from '../../theme';
 
 interface LiveGameSkeletonProps {
   width: number;
@@ -28,20 +27,23 @@ const LiveGameSkeleton: React.FC<LiveGameSkeletonProps> = ({
   width,
   timeControl,
   rated,
-}) => (
-  <View style={styles.screen} testID="live-game-skeleton">
-    <GameHeader timeControl={timeControl} rated={rated} />
-    <View style={styles.moveListSpace} />
-    <GameBoardArea>
-      <PlayerBarPlaceholder />
-      <View style={{ width, height: width }}>
-        <BoardSurface colors={BOARD_THEMES.test} />
-      </View>
-      <PlayerBarPlaceholder />
-    </GameBoardArea>
-    <BottomBar />
-  </View>
-);
+}) => {
+  const boardColors = useBoardColors();
+  return (
+    <View style={styles.screen} testID="live-game-skeleton">
+      <GameHeader timeControl={timeControl} rated={rated} />
+      <View style={styles.moveListSpace} />
+      <GameBoardArea>
+        <PlayerBarPlaceholder />
+        <View style={{ width, height: width }}>
+          <BoardSurface colors={boardColors} />
+        </View>
+        <PlayerBarPlaceholder />
+      </GameBoardArea>
+      <BottomBar />
+    </View>
+  );
+};
 
 export default LiveGameSkeleton;
 
