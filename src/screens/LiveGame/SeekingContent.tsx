@@ -7,7 +7,7 @@ import GameHeader from '../../components/GameHeader';
 import { MOVE_LIST_HEIGHT } from '../../components/MoveList';
 import SeekCard from '../../components/SeekCard';
 import Icon from '../../components/Icon';
-import { BOARD_THEMES } from '../../constants/boardThemes';
+import { BOARD_THEMES } from '../../theme/boardThemes';
 import { Seek } from '../../constants/seek';
 import { LobbyStats } from '../../network/socketEvents';
 import { formatRatingRange } from '../../utils/rating';

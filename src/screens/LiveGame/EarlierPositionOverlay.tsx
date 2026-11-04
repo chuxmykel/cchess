@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Color } from 'chess.js';
 
 import StaticBoard from '../../components/ChessBoard/StaticBoard';
-import { BOARD_THEMES } from '../../constants/boardThemes';
+import { BOARD_THEMES } from '../../theme/boardThemes';
 import { MoveSquares } from '../../domain/types';
 
 interface EarlierPositionOverlayProps {

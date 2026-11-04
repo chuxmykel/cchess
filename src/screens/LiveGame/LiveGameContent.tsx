@@ -3,7 +3,7 @@ import { Alert, View, StyleSheet } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { NUMBER_OF_ROWS } from '../../constants';
-import { BOARD_THEMES } from '../../constants/boardThemes';
+import { BOARD_THEMES } from '../../theme/boardThemes';
 import {
   animatesMoves,
   timeControlOf,

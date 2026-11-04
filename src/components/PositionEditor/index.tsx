@@ -17,7 +17,7 @@ import BoardSurface from '../ChessBoard/BoardSurface';
 import Icon, { IconName } from '../Icon';
 import { PIECES, TAP_MOVEMENT_THRESHOLD } from '../../constants';
 import { DRAG_LIFT, DRAG_SCALE } from '../../constants/animations';
-import { BOARD_THEMES } from '../../constants/boardThemes';
+import { BOARD_THEMES } from '../../theme/boardThemes';
 import { ACCENT_COLOR } from '../../constants/colors';
 import {
   getSquareFromXY,

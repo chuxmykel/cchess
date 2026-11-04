@@ -7,7 +7,7 @@ import Placeholder from '../Placeholder';
 import GameBoardArea from '../GameBoardArea';
 import { MOVE_LIST_HEIGHT } from '../MoveList';
 import { PLAYER_BAR_HEIGHT } from '../PlayerBar';
-import { BOARD_THEMES } from '../../constants/boardThemes';
+import { BOARD_THEMES } from '../../theme/boardThemes';
 import { TimeControl } from '../../constants/timeControls';
 
 interface LiveGameSkeletonProps {

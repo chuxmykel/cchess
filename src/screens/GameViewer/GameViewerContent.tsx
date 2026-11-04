@@ -15,7 +15,7 @@ import MoveList from '../../components/MoveList';
 import PlayerBarsFrame, {
   SharedPlayerBarProps,
 } from '../../components/PlayerBarsFrame';
-import { BOARD_THEMES } from '../../constants/boardThemes';
+import { BOARD_THEMES } from '../../theme/boardThemes';
 import {
   animatesMoves,
   timeControlOf,

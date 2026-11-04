@@ -17,7 +17,7 @@ import OpeningName from '../../components/OpeningName';
 import PromotionMenu from '../../components/PromotionMenu';
 import VariationMoveList from '../../components/VariationMoveList';
 import { THREAT_DEPTH } from '../../constants/analysis';
-import { BOARD_THEMES } from '../../constants/boardThemes';
+import { BOARD_THEMES } from '../../theme/boardThemes';
 import { ChessGameContext } from '../../context/ChessGameContext';
 import { useAnalysisSettingsContext } from '../../context/AnalysisSettingsContext';
 import { useEngine } from '../../context/EngineContext';
