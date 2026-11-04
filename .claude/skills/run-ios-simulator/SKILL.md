@@ -212,8 +212,16 @@ resign or abort from the app (see `examples/resign.yaml` /
   `activity-empty`, `profile-games-empty`, `messages-empty`,
   `chat-empty`.
 - **Profile**: `profile-screen`, `rating-<category>` (opens your rating
-  stats), `sign-out-button`, `licenses-row` (opens `licenses-screen`);
-  guests get the same `sign-in-prompt`.
+  stats), `sign-out-button`, `appearance-row` (opens Appearance),
+  `licenses-row` (opens `licenses-screen`); guests get the same
+  `sign-in-prompt`.
+- **Appearance**: `appearance-settings`, the radio buttons
+  `color-scheme-<system|light|dark>`, and `board-theme-<name>` (`test` -
+  the default blue - `chess.com`, `lichess.org`, `powderblue`,
+  `monochrome`). Saved on the device, in Expo Go's data: set them back to
+  System and `test` after trying others. To see System follow iOS, switch
+  the simulator with `xcrun simctl ui booted appearance dark` (and back
+  with `light`).
 - **Analysis** (no backend needed, except to pick one of your games):
   - `analysis-home` with `analysis-new`, `analysis-set-up`,
     `analysis-pick-game` (a `games-list`) and `analysis-paste`
