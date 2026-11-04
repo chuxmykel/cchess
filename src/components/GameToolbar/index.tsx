@@ -1,6 +1,16 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  type ViewInstance,
+} from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 import Icon, { IconName } from '../Icon';
+import ToolbarTooltip, { tooltipShift } from './ToolbarTooltip';
 import { MoveNavigation } from '../../hooks/useMoveNavigation';
 import { usePressAndHoldRepeat } from '../../hooks/usePressAndHoldRepeat';
 
@@ -8,6 +18,8 @@ const ICON_SIZE = 28;
 const ENABLED_COLOR = '#333';
 const DISABLED_COLOR = '#c4c4c4';
 const MAX_BADGE_COUNT = 9;
+// How long a button is held before its tooltip shows.
+export const TOOLTIP_DELAY_MS = 350;
 
 /** Stepping back and forward through a game's moves. */
 export type MoveSteps = Pick<
@@ -32,25 +44,54 @@ interface ToolbarButtonProps {
   onPress: () => void;
   disabled?: boolean;
   badgeCount?: number;
-  // Held down, it presses again and again, until let go.
+  // What the button does, shown while it's held - the label when left out.
+  hint?: string;
+  // Held down, it presses again and again, until let go - so it has no
+  // tooltip.
   repeatsWhileHeld?: boolean;
   testID: string;
 }
 
-const ToolbarButton: React.FC<ToolbarButtonProps> = ({
+export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
   icon,
   label,
   onPress,
   disabled = false,
   badgeCount = 0,
+  hint,
   repeatsWhileHeld = false,
   testID,
 }) => {
   const repeating = usePressAndHoldRepeat(onPress, !disabled);
+  const button = useRef<ViewInstance>(null);
+  const screen = useWindowDimensions();
+  // Held long enough to show what it does; let go, it goes - and the press
+  // that showed it doesn't count.
+  const [isTooltipShown, setIsTooltipShown] = useState(false);
+  const [tooltipOffset, setTooltipOffset] = useState<number | null>(null);
+  const tooltipHandlers = {
+    onPress,
+    onLongPress: () => {
+      setIsTooltipShown(true);
+      // Felt as the tooltip shows, as iOS does for a long press.
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    },
+    delayLongPress: TOOLTIP_DELAY_MS,
+    onPressOut: () => {
+      setIsTooltipShown(false);
+      setTooltipOffset(null);
+    },
+  };
+  // Where the button is on screen, once the bubble's width is known.
+  const placeTooltip = (width: number) =>
+    button.current?.measureInWindow((x, _y, buttonWidth) =>
+      setTooltipOffset(tooltipShift(x, buttonWidth, width, screen.width)),
+    );
   return (
     <Pressable
+      ref={button}
       style={styles.button}
-      {...(repeatsWhileHeld ? repeating : { onPress })}
+      {...(repeatsWhileHeld ? repeating : tooltipHandlers)}
       disabled={disabled}
       hitSlop={8}
       accessibilityRole="button"
@@ -70,6 +111,13 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
           </Text>
         </View>
       )}
+      {isTooltipShown && (
+        <ToolbarTooltip
+          text={hint ?? label}
+          shift={tooltipOffset}
+          onMeasured={placeTooltip}
+        />
+      )}
     </Pressable>
   );
 };
@@ -85,7 +133,7 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
   <View style={styles.container} testID="game-toolbar">
     <ToolbarButton
       icon="menu"
-      label="Game menu"
+      label="Menu"
       onPress={onOpenMenu}
       testID="game-menu-button"
     />

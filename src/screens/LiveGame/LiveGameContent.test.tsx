@@ -475,13 +475,13 @@ describe('LiveGameContent', () => {
       );
       expect(screen.queryByTestId('earlier-position')).toBeNull();
 
-      await fireEvent.press(screen.getByTestId('previous-move-button'));
+      await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
 
       const earlier = within(screen.getByTestId('earlier-position'));
       expect(earlier.getByTestId('piece-e2')).toBeTruthy();
       expect(earlier.queryByTestId('piece-e4')).toBeNull();
 
-      await fireEvent.press(screen.getByTestId('next-move-button'));
+      await fireEvent(screen.getByTestId('next-move-button'), 'pressIn');
 
       expect(screen.queryByTestId('earlier-position')).toBeNull();
       expect(screen.getByTestId('piece-e4')).toBeTruthy();
@@ -494,10 +494,10 @@ describe('LiveGameContent', () => {
       );
       const liveBoard = screen.getByTestId('chessboard');
 
-      await fireEvent.press(screen.getByTestId('previous-move-button'));
+      await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
       expect(screen.getByTestId('chessboard')).toBe(liveBoard);
 
-      await fireEvent.press(screen.getByTestId('next-move-button'));
+      await fireEvent(screen.getByTestId('next-move-button'), 'pressIn');
       expect(screen.getByTestId('chessboard')).toBe(liveBoard);
     });
 
@@ -511,7 +511,7 @@ describe('LiveGameContent', () => {
         includeHiddenElements: true,
       });
 
-      await fireEvent.press(screen.getByTestId('previous-move-button'));
+      await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
 
       expect(screen.getByTestId('static-chessboard')).toBe(hiddenStaticBoard);
     });
@@ -539,7 +539,7 @@ describe('LiveGameContent', () => {
       await act(() =>
         pushMove(trigger, snapshot.id, moveSummary(1, 'e2', 'e4', AFTER_E4)),
       );
-      await fireEvent.press(screen.getByTestId('previous-move-button'));
+      await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
 
       await act(() =>
         pushMove(trigger, snapshot.id, moveSummary(2, 'e7', 'e5', AFTER_E5)),
@@ -662,6 +662,37 @@ describe('LiveGameContent', () => {
       );
     });
 
+    it('opens the game in the analysis board, from the card or the menu', async () => {
+      const { screen, snapshot, trigger, navigation } =
+        await renderContent('w');
+      await finishGame(trigger, snapshot);
+      const analysis = {
+        source: { kind: 'game', gameId: snapshot.id, ply: 0 },
+      };
+
+      await fireEvent.press(screen.getByTestId('analyse-button'));
+      expect(navigation.navigate).toHaveBeenLastCalledWith(
+        'AnalysisBoard',
+        analysis,
+      );
+
+      await openGameMenu(screen);
+      await chooseMenuAction(screen, 'analyse-action');
+      expect(navigation.navigate).toHaveBeenCalledTimes(2);
+      expect(navigation.navigate).toHaveBeenLastCalledWith(
+        'AnalysisBoard',
+        analysis,
+      );
+    });
+
+    it("doesn't offer analysis while the game is on", async () => {
+      const { screen } = await renderContent('w');
+
+      await openGameMenu(screen);
+
+      expect(screen.queryByTestId('analyse-action')).toBeNull();
+    });
+
     it('offers a new opponent from the menu once the game is over', async () => {
       const { screen, snapshot, trigger, onNewOpponent } =
         await renderContent('w');
@@ -761,7 +792,7 @@ describe('LiveGameContent', () => {
       );
       await finishGame(trigger, snapshot);
 
-      await fireEvent.press(screen.getByTestId('previous-move-button'));
+      await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
 
       expect(screen.queryByTestId('game-over-overlay')).toBeNull();
     });

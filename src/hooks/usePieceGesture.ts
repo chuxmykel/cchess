@@ -32,6 +32,8 @@ import {
 import { DRAG_LOG_ENABLED, logDrag } from '../utils/dragLog';
 import { DragGuide } from './useDragGuide';
 
+export type MovableSquares = Partial<Record<Square, boolean>>;
+
 export type PieceGestureInput = {
   square: Square;
   color: Color;
@@ -41,9 +43,14 @@ export type PieceGestureInput = {
   // usePieceAnimations).
   x: SharedValue<number>;
   y: SharedValue<number>;
-  // Can't be picked up - an opponent's piece, or any piece once the game is
-  // over. A tap still reports, so it can be a move's target.
+  // Can't be picked up - any piece once the game is over. A tap still
+  // reports, so it can be a move's target.
   disabled: boolean;
+  // The squares whose pieces can be picked up now - the side to move's, or
+  // in an online game your own on your turn. A board-wide shared value, read
+  // when a touch starts, so a move changing whose pieces they are doesn't
+  // re-render every piece.
+  movable: SharedValue<MovableSquares>;
   // A piece just taken: no gestures at all.
   captured?: boolean;
   legalTargets: SharedValue<LegalTargets>;
@@ -166,7 +173,15 @@ type PieceState = {
 // heard about the drop at all. JS gets the outcome through the callbacks and
 // stays the judge of the move - a drop it refuses is sent home from there.
 export function usePieceGesture(props: PieceGestureInput): PieceGesture {
-  const { x, y, legalTargets, dragGuide, captured = false, testID } = props;
+  const {
+    x,
+    y,
+    legalTargets,
+    movable,
+    dragGuide,
+    captured = false,
+    testID,
+  } = props;
   const scale = useSharedValue(1);
   const zIndex = useSharedValue(0);
   // Where the finger went down, on screen, and where on the piece.
@@ -196,6 +211,13 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
     // the piece just moved. Lowered too if it's taken, or play stops.
     zIndex.set(0);
   }, [piece, zIndex, square, color, width, orientation, disabled, captured]);
+
+  // Whether the piece can't be picked up, as things stand at the touch.
+  const isDisabled = useCallback(() => {
+    'worklet';
+    const state = piece.get();
+    return state.disabled || !movable.get()[state.square];
+  }, [piece, movable]);
 
   const hidden = useDerivedValue(() => {
     const taken = dragGuide.taken.get();
@@ -229,7 +251,8 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
         'worklet';
         touchDown.set({ x: event.absoluteX, y: event.absoluteY });
         trail.set([]);
-        const { square, width, orientation, disabled } = piece.get();
+        const { square, width, orientation } = piece.get();
+        const disabled = isDisabled();
         grab.set(grabPoint(event, width, orientation));
         if (disabled) return;
         // The guide marks the piece's own square from touch-down, and its
@@ -248,14 +271,15 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
         trail.set([
           { t: Date.now(), moved: movedSinceTouchDown(touchDown.get(), event) },
         ]);
-        if (piece.get().disabled) return;
+        if (isDisabled()) return;
         // Lifted at once, as on lichess.
         zIndex.set(DRAGGED_Z_INDEX);
         scale.set(DRAG_SCALE);
       },
       onUpdate: (event) => {
         'worklet';
-        const { square, width, orientation, disabled } = piece.get();
+        const { square, width, orientation } = piece.get();
+        const disabled = isDisabled();
         const moved = movedSinceTouchDown(touchDown.get(), event);
         trail.set([
           ...trail.get().slice(1 - TRAIL_LENGTH),
@@ -294,7 +318,8 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
         'worklet';
         if (!dragging.get()) return;
         dragging.set(false);
-        const { square, width, orientation, disabled } = piece.get();
+        const { square, width, orientation } = piece.get();
+        const disabled = isDisabled();
         dragGuide.opacity.set(0);
         dragGuide.origin.set(null);
         const targets = legalTargets.get()[square] ?? [];
@@ -382,6 +407,7 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
       scale,
       zIndex,
       legalTargets,
+      isDisabled,
       report,
     ],
   );

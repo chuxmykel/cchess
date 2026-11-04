@@ -34,13 +34,14 @@ describe('Pieces', () => {
   async function renderPieces(
     overrides: Partial<{
       pieces: AnimatedPieceView[];
-      isOwnPieceAt: (square: Square) => boolean;
+      // Whether e2's piece can be picked up.
+      movable: boolean;
       locked: boolean;
       kingInDanger: KingInDanger | null;
     }> = {},
   ) {
     const pieces = overrides.pieces ?? [buildPiece('e2', 'wp')];
-    const isOwnPieceAt = overrides.isOwnPieceAt ?? jest.fn(() => true);
+    const movable = makeMutable({ e2: overrides.movable ?? true });
     const locked = overrides.locked ?? false;
     const onTap = jest.fn();
     const onDragStart = jest.fn();
@@ -52,7 +53,7 @@ describe('Pieces', () => {
           pieces={pieces}
           pieceWidth={pieceWidth}
           orientation="w"
-          isOwnPieceAt={isOwnPieceAt}
+          movable={movable}
           locked={locked}
           kingInDanger={overrides.kingInDanger ?? null}
           legalTargets={makeMutable({ e2: ['e3', 'e4'] as Square[] })}
@@ -93,9 +94,9 @@ describe('Pieces', () => {
     expect(screen.getByTestId('piece-d5')).toBeDefined();
   });
 
-  it("enables dragging a piece isOwnPieceAt reports as the player's own", async () => {
+  it('enables dragging a piece the board says can be picked up', async () => {
     const { onDragStart } = await renderPieces({
-      isOwnPieceAt: () => true,
+      movable: true,
       locked: false,
     });
 
@@ -104,9 +105,9 @@ describe('Pieces', () => {
     expect(onDragStart).toHaveBeenCalledWith('e2');
   });
 
-  it("disables dragging a piece isOwnPieceAt reports as the opponent's", async () => {
+  it("disables dragging a piece the board says can't be picked up", async () => {
     const { onDragStart } = await renderPieces({
-      isOwnPieceAt: () => false,
+      movable: false,
     });
 
     await dragPiece('piece-e2', 0, -100);
@@ -116,7 +117,7 @@ describe('Pieces', () => {
 
   it("disables dragging every piece while locked, even the player's own", async () => {
     const { onDragStart } = await renderPieces({
-      isOwnPieceAt: () => true,
+      movable: true,
       locked: true,
     });
 
@@ -127,7 +128,7 @@ describe('Pieces', () => {
 
   it("still lets a locked or opponent's piece be tapped", async () => {
     const { onTap } = await renderPieces({
-      isOwnPieceAt: () => false,
+      movable: false,
       locked: true,
     });
 

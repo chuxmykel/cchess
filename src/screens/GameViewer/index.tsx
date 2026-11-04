@@ -83,6 +83,10 @@ const GameViewer: React.FC<GameViewerProps> = ({ navigation, route }) => {
       onNewOpponent: findNewOpponent,
       onOpenPlayer: (username: string) =>
         navigation.navigate('UserProfile', { username }),
+      onAnalyse: (ply: number) =>
+        navigation.navigate('AnalysisBoard', {
+          source: { kind: 'game', gameId: snapshot.id, ply },
+        }),
       onError: (message: string) => toast.show(message),
     };
     if (viewerPlayedAs && session.isReady) {

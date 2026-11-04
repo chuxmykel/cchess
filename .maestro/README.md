@@ -68,6 +68,13 @@ on another's leftover state, and they can run in any order.
   without changing the selection (`bottom-sheet-dismiss.yaml`), and the
   "Coming Soon" buttons' disabled-look-but-still-tappable toast
   (`coming-soon-toast.yaml`).
+- **Analysis tab** (no game server, but the internet: the engine is
+  downloaded the first time it's used, and `launch-fresh.yaml`'s cleared
+  state means every run downloads it again): a new analysis played for
+  both sides, a variation from an earlier position, the opening's name
+  and an engine line appearing (`analysis-variations.yaml` - it checks a
+  line is there, never what it says, since engine output varies), and a
+  pasted FEN analysed (`analysis-paste-fen.yaml`).
 - **Not covered**: Home itself (Friends carousel, Recent Games, Profile -
   no interactive behavior worth a real-device flow yet, mostly
   TODO-stubbed handlers; `common/launch-fresh.yaml` is ready for this

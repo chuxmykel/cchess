@@ -78,6 +78,27 @@ jest.mock('@react-native-community/slider', () => {
   return { __esModule: true, default: SliderStub };
 });
 
+// The WebView the analysis engine runs in is native. Render it as a plain
+// View keeping its props, so a test can fire its onMessage; whatever's
+// posted to it is kept in `postedMessages`, for a test to read.
+jest.mock('react-native-webview', () => {
+  const { View } = jest.requireActual('react-native');
+  const React = jest.requireActual('react');
+  const postedMessages = [];
+  const WebView = React.forwardRef((props, ref) => {
+    React.useImperativeHandle(ref, () => ({
+      postMessage: (message) => postedMessages.push(message),
+    }));
+    return React.createElement(View, props);
+  });
+  WebView.displayName = 'WebView';
+  return { __esModule: true, WebView, default: WebView, postedMessages };
+});
+
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
 // Skia draws on a native canvas Jest doesn't have. Charts render their
 // CartesianChart as a plain View keeping its props, so tests check what
 // it was given to plot, and skip what's drawn inside it.

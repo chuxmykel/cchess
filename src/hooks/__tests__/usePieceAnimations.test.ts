@@ -77,6 +77,19 @@ describe('usePieceAnimations', () => {
     expect(result.current[0]).toBe(firstPieceView);
   });
 
+  it('puts every piece on its square at a new size when the board is resized', async () => {
+    const { result, rerender } = await renderHook(
+      (props: { width: number }) =>
+        usePieceAnimations(twoPieces, null, props.width),
+      { initialProps: { width: pieceWidth } },
+    );
+
+    await rerender({ width: 40 });
+
+    const e7 = result.current.find((view) => view.square === 'e7');
+    expect(positionOf(e7)).toEqual(getXYFromSquare('e7', 40));
+  });
+
   it('puts pieces straight on their squares for a position reached without a move', async () => {
     const e2e4: AppliedMove = {
       from: 'e2',
@@ -110,6 +123,51 @@ describe('usePieceAnimations', () => {
       getXYFromSquare('e2', pieceWidth),
     );
     expect(result.current[1]).toBe(e7View);
+  });
+
+  describe('sliding into a position reached without a move', () => {
+    const afterE4xd5: DomainPiece[] = [
+      { square: 'd5', type: 'p', color: 'w' },
+      { square: 'e7', type: 'p', color: 'b' },
+    ];
+    const beforeIt: DomainPiece[] = [
+      { square: 'e4', type: 'p', color: 'w' },
+      { square: 'd5', type: 'p', color: 'b' },
+      { square: 'e7', type: 'p', color: 'b' },
+    ];
+
+    async function stepBack() {
+      const { result, rerender } = await renderHook(
+        (props: { pieces: DomainPiece[] }) =>
+          usePieceAnimations(props.pieces, null, pieceWidth, null, true, true),
+        { initialProps: { pieces: afterE4xd5 } },
+      );
+      const capturer = result.current[0];
+      await rerender({ pieces: beforeIt });
+      return { result, capturer };
+    }
+
+    it('keeps the piece that moved, sliding it back from where it stood', async () => {
+      const { result, capturer } = await stepBack();
+
+      const pawn = result.current.find((view) => view.square === 'e4');
+      expect(pawn).toBe(capturer);
+      expect(positionOf(capturer)).toEqual(getXYFromSquare('d5', pieceWidth));
+
+      await settleAnimations();
+      expect(positionOf(capturer)).toEqual(getXYFromSquare('e4', pieceWidth));
+    });
+
+    it('puts a piece taken back straight on its square', async () => {
+      const { result } = await stepBack();
+
+      const taken = result.current.find(
+        (view) => view.square === 'd5' && view.spriteId === 'bp',
+      );
+      expect(taken && positionOf(taken)).toEqual(
+        getXYFromSquare('d5', pieceWidth),
+      );
+    });
   });
 
   describe('a capture', () => {

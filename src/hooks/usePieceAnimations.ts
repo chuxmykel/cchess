@@ -10,6 +10,7 @@ import { Color, PieceSymbol, Square } from 'chess.js';
 
 import { AppliedMove, DomainPiece, Position } from '../domain/types';
 import { getXYFromSquare } from '../domain/boardCoordinates';
+import { matchPieces } from '../domain/matchPieces';
 import { generatePieceId } from '../utils/animation';
 import { MOVE_TIMING } from '../constants/animations';
 
@@ -76,6 +77,10 @@ export function usePieceAnimations(
   pendingPromotion: { from: Square; to: Square } | null = null,
   // Slide pieces to their squares; otherwise they're put there at once.
   animate = true,
+  // A new position with no move to get there - stepping back through an
+  // analysis - slides each piece from where it stood, as a move does, rather
+  // than putting them all straight there.
+  slideOnReset = false,
 ): AnimatedPieceView[] {
   // This hook keeps its piece/animation bookkeeping in mutable refs that
   // are read and written synchronously during render, not inside an
@@ -194,6 +199,40 @@ export function usePieceAnimations(
     capturedViews.current = [];
   }
 
+  // Matches the bookkeeping to `pieces` by which piece is which (see
+  // matchPieces): each keeps its entry and slides to its new square; a piece
+  // that's come back - one a capture took - is new, and placed there.
+  function slideAll(): PendingAnimation[] {
+    const previous = [...entryById.current.values()].map((entry) => ({
+      id: entry.id,
+      square: entry.square,
+      color: entry.spriteId[0] as Color,
+      type: entry.spriteId[1] as PieceSymbol,
+    }));
+    const matched = matchPieces(previous, pieces, () => '');
+    const idBySquare = new Map<Square, string>();
+    const entries = new Map<string, AnimatedPieceView>();
+    const animations: PendingAnimation[] = [];
+    matched.forEach((piece) => {
+      const existing = piece.id ? entryById.current.get(piece.id) : undefined;
+      const pieceEntry = existing ?? createEntry(piece);
+      if (existing && existing.square !== piece.square) {
+        existing.square = piece.square;
+        animations.push({ pieceEntry: existing, toSquare: piece.square });
+      }
+      pieceEntry.spriteId = `${piece.color}${piece.type}`;
+      idBySquare.set(piece.square, pieceEntry.id);
+      entries.set(pieceEntry.id, pieceEntry);
+    });
+    pieceIdBySquare.current = idBySquare;
+    entryById.current = entries;
+    movedIds.current = new Set(
+      animations.map(({ pieceEntry }) => pieceEntry.id),
+    );
+    capturedViews.current = [];
+    return animations;
+  }
+
   if (!initialized.current) {
     initialized.current = true;
     placeAll();
@@ -203,10 +242,12 @@ export function usePieceAnimations(
     pendingAnimations.current = applyMove(lastMove);
   } else if (pieces !== prevPieces.current) {
     // A new position with no move to get there - a refused move taken
-    // back - so the pieces are put straight on their squares.
+    // back - so the pieces are put straight on their squares, unless they
+    // slide there.
     processedMove.current = lastMove;
     moveCount.current += 1;
-    placeAll();
+    if (slideOnReset) pendingAnimations.current = slideAll();
+    else placeAll();
   }
 
   // A layout effect, so the move is already under way in the first frame
@@ -239,7 +280,19 @@ export function usePieceAnimations(
         onLanded,
       );
     });
-  }, [lastMove, pieceWidth, animate]);
+    // `pieces` too: a new position with no move can have pieces to slide.
+  }, [lastMove, pieces, pieceWidth, animate]);
+
+  // A board drawn at a new size - narrowed for an eval bar beside it - puts
+  // every piece straight onto its square at that size.
+  const prevPieceWidth = useRef(pieceWidth);
+  useLayoutEffect(() => {
+    if (prevPieceWidth.current === pieceWidth) return;
+    prevPieceWidth.current = pieceWidth;
+    entryById.current.forEach((entry) =>
+      animatePieceTo(entry, getXYFromSquare(entry.square, pieceWidth), null),
+    );
+  }, [pieceWidth]);
 
   // A pawn waiting on the promotion menu stands on the square it's
   // promoting on - where it was dropped, or where it was tapped to - and

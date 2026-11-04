@@ -154,7 +154,7 @@ describe('GameViewer', () => {
     expect(whiteBar().getByText('4:50')).toBeTruthy();
     expect(whiteBar().getByTestId('material-score-w')).toHaveTextContent('+1');
 
-    await fireEvent.press(screen.getByTestId('previous-move-button'));
+    await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
 
     expect(whiteBar().getByText('4:58')).toBeTruthy();
     expect(whiteBar().queryByTestId('material-score-w')).toBeNull();
@@ -270,6 +270,35 @@ describe('GameViewer', () => {
         timeControl: expect.objectContaining({ initialSeconds: 300 }),
       }),
     });
+  });
+
+  it('opens the finished game in the analysis board, at the move shown', async () => {
+    const { screen, navigation } = await renderScreen(finishedGame());
+
+    await fireEvent.press(screen.getByTestId('analyse-button'));
+    expect(navigation.navigate).toHaveBeenLastCalledWith('AnalysisBoard', {
+      source: { kind: 'game', gameId: 'game-1', ply: 3 },
+    });
+
+    await fireEvent.press(screen.getByTestId('game-over-dismiss'));
+    await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
+    await fireEvent.press(screen.getByTestId('game-menu-button'));
+    await fireEvent.press(screen.getByTestId('analyse-action'));
+    await waitForSheetToClose();
+    expect(navigation.navigate).toHaveBeenLastCalledWith('AnalysisBoard', {
+      source: { kind: 'game', gameId: 'game-1', ply: 2 },
+    });
+  });
+
+  it("doesn't offer to analyse a game still being played", async () => {
+    const { screen } = await renderScreen(
+      makeGameSnapshot({ status: 'active', moves: MOVES, fen: AFTER_EXD5 }),
+      'someone-else',
+    );
+
+    await fireEvent.press(screen.getByTestId('game-menu-button'));
+
+    expect(screen.queryByTestId('analyse-action')).toBeNull();
   });
 
   it('offers a new opponent after a game I played', async () => {

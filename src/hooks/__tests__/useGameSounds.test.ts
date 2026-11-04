@@ -4,6 +4,7 @@ import { createAudioPlayer } from 'expo-audio';
 import { SOUNDS } from '../../constants/sounds';
 import { GameSound } from '../../domain/moveSound';
 import {
+  useAnalysisSounds,
   useGameOverSound,
   useGameStartSound,
   useMoveNavigationSounds,
@@ -196,5 +197,53 @@ describe('useGameOverSound', () => {
     await renderGame(true);
 
     expect(playsOf('game-end')).toBe(0);
+  });
+});
+
+describe('useAnalysisSounds', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const start = { id: '0', ply: 0, move: null };
+  const e4 = { id: '1', ply: 1, move: { san: 'e4' } };
+  const qh5 = { id: '2', ply: 3, move: { san: 'Qh5+' } };
+  const nf6 = { id: '3', ply: 4, move: { san: 'Nf6' } };
+
+  it("sounds each move it goes forward to, as that move's sound", async () => {
+    const { rerender } = await renderHook(
+      ({ at }) => useAnalysisSounds(at, true),
+      { initialProps: { at: start } },
+    );
+    expect(playsOf('move')).toBe(0);
+
+    await rerender({ at: e4 });
+    await rerender({ at: qh5 });
+
+    expect(playsOf('move')).toBe(1);
+    expect(playsOf('check')).toBe(1);
+  });
+
+  it('sounds a check stepping back onto one, a plain move otherwise', async () => {
+    const { rerender } = await renderHook(
+      ({ at }) => useAnalysisSounds(at, true),
+      { initialProps: { at: nf6 } },
+    );
+
+    await rerender({ at: qh5 });
+    expect(playsOf('check')).toBe(1);
+    await rerender({ at: start });
+    expect(playsOf('move')).toBe(1);
+  });
+
+  it('is quiet with sounds off', async () => {
+    const { rerender } = await renderHook(
+      ({ at }) => useAnalysisSounds(at, false),
+      { initialProps: { at: start } },
+    );
+
+    await rerender({ at: e4 });
+
+    expect(playsOf('move')).toBe(0);
   });
 });

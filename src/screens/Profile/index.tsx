@@ -9,6 +9,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import ActionList from '../../components/ActionList';
 import Avatar from '../../components/Avatar';
 import Button from '../../components/Button';
 import RatingsList from '../../components/RatingsList';
@@ -23,7 +24,7 @@ import MyFriends, { MyFriendsNavigation } from './MyFriends';
 interface ProfileProps {
   navigation: {
     navigate: {
-      (route: 'SignIn' | 'CreateAccount'): void;
+      (route: 'SignIn' | 'CreateAccount' | 'Licenses'): void;
       (route: 'RatingStats', params: HomeStackParamList['RatingStats']): void;
     } & MyFriendsNavigation['navigate'];
   };
@@ -110,6 +111,16 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
           </View>
         </>
       )}
+      <ActionList
+        items={[
+          {
+            label: 'Licenses',
+            icon: 'scale-balance',
+            onPress: () => navigation.navigate('Licenses'),
+            testID: 'licenses-row',
+          },
+        ]}
+      />
     </ScrollView>
   );
 };

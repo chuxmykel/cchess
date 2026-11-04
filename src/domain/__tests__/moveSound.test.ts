@@ -1,4 +1,4 @@
-import { gameOverSound, moveSound, stepSound } from '../moveSound';
+import { gameOverSound, moveSound, stepSound, stepSoundTo } from '../moveSound';
 
 describe('moveSound', () => {
   it.each([
@@ -43,6 +43,19 @@ describe('stepSound', () => {
 
   it('is quiet staying put', () => {
     expect(stepSound(sans, 3, 3)).toBeNull();
+  });
+});
+
+describe('stepSoundTo', () => {
+  it('sounds the move landed on going forward, or jumping across', () => {
+    expect(stepSoundTo(2, 3, 'Nxe5')).toBe('capture');
+    expect(stepSoundTo(3, 3, 'Bb5+')).toBe('check');
+  });
+
+  it('sounds a plain move going back, unless it lands on a check', () => {
+    expect(stepSoundTo(5, 2, 'Nxe5')).toBe('move');
+    expect(stepSoundTo(5, 2, 'Bb5+')).toBe('check');
+    expect(stepSoundTo(5, 0, null)).toBe('move');
   });
 });
 

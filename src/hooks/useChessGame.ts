@@ -1,4 +1,4 @@
-import { useCallback, useReducer, useRef } from 'react';
+import { useCallback, useMemo, useReducer, useRef } from 'react';
 import { Color, PieceSymbol, Square } from 'chess.js';
 
 import { ChessEngine } from '../domain/ChessEngine';
@@ -110,7 +110,13 @@ function initState(engine: ChessEngine): ChessGameState {
   };
 }
 
-export function useChessGame(fen?: string) {
+export type ChessGameOptions = {
+  // Every move the game makes - tapped, dragged, promoted or played for it -
+  // with the position it reached.
+  onMoveApplied?: (move: AppliedMove, fen: string) => void;
+};
+
+export function useChessGame(fen?: string, options: ChessGameOptions = {}) {
   // `engineRef` follows React's own documented lazy-ref-init pattern
   // (https://react.dev/reference/react/useRef#avoiding-recreating-the-ref-contents)
   // for constructing a stable instance exactly once. `stateRef` mirrors
@@ -132,6 +138,9 @@ export function useChessGame(fen?: string) {
 
   const stateRef = useRef(state);
   stateRef.current = state;
+  // Always the latest, so the handlers below needn't change with it.
+  const onMoveAppliedRef = useRef(options.onMoveApplied);
+  onMoveAppliedRef.current = options.onMoveApplied;
   /* eslint-enable react-hooks/refs */
 
   const applyResult = useCallback(
@@ -156,6 +165,7 @@ export function useChessGame(fen?: string) {
         legalTargets: engine.getLegalTargets(),
         isGameOver: engine.isGameOver(),
       });
+      onMoveAppliedRef.current?.(result.move, engine.getFen());
     },
     [engine],
   );
@@ -253,27 +263,44 @@ export function useChessGame(fen?: string) {
     [engine, applyResult],
   );
 
-  return {
-    pieces: state.pieces,
-    // engine is engineRef.current (lazy-inited above) - safe under React's
-    // current non-compiled runtime, see the react-hooks/refs note above.
-    // eslint-disable-next-line react-hooks/refs
-    fen: engine.getFen(),
-    turn: state.turn,
-    legalTargets: state.legalTargets,
-    isGameOver: state.isGameOver,
-    selectedSquare: state.selectedSquare,
-    legalMoveSquares: state.legalMoveSquares,
-    pendingPromotion: state.pendingPromotion,
-    lastMove: state.lastMove,
-    isOwnPieceAt,
-    getLegalMoveSquares,
-    handleSquareTap,
-    attemptMove,
-    promoteTo,
-    cancelPromotion,
-    resetTo,
-  };
+  // The same object until the game changes, so a screen re-rendering for
+  // something else - an engine's lines - doesn't re-render the board under
+  // ChessGameContext.
+  return useMemo(
+    () => ({
+      pieces: state.pieces,
+      // engine is engineRef.current (lazy-inited above), and `state` changes
+      // whenever it does - safe under React's current non-compiled runtime,
+      // see the react-hooks/refs note above.
+      // eslint-disable-next-line react-hooks/refs
+      fen: engine.getFen(),
+      turn: state.turn,
+      legalTargets: state.legalTargets,
+      isGameOver: state.isGameOver,
+      selectedSquare: state.selectedSquare,
+      legalMoveSquares: state.legalMoveSquares,
+      pendingPromotion: state.pendingPromotion,
+      lastMove: state.lastMove,
+      isOwnPieceAt,
+      getLegalMoveSquares,
+      handleSquareTap,
+      attemptMove,
+      promoteTo,
+      cancelPromotion,
+      resetTo,
+    }),
+    [
+      state,
+      engine,
+      isOwnPieceAt,
+      getLegalMoveSquares,
+      handleSquareTap,
+      attemptMove,
+      promoteTo,
+      cancelPromotion,
+      resetTo,
+    ],
+  );
 }
 
 export type UseChessGameResult = ReturnType<typeof useChessGame>;

@@ -38,7 +38,11 @@ import {
   useMoveNavigationSounds,
 } from '../../hooks/useGameSounds';
 import { GameSnapshot } from '../../network/socketEvents';
-import { flipBoardAction, newOpponentAction } from '../gameMenuActions';
+import {
+  analyseAction,
+  flipBoardAction,
+  newOpponentAction,
+} from '../gameMenuActions';
 
 interface GameViewerContentProps {
   width: number;
@@ -51,6 +55,8 @@ interface GameViewerContentProps {
   onBack: () => void;
   onNewOpponent: (timeControl: TimeControl) => void;
   onOpenPlayer: (username: string) => void;
+  // Opens the finished game in the analysis board, at the move shown.
+  onAnalyse: (ply: number) => void;
   onError: (message: string) => void;
 }
 
@@ -71,6 +77,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   onBack,
   onNewOpponent,
   onOpenPlayer,
+  onAnalyse,
   onError,
 }) => {
   // From your own side, or else that of the player being watched.
@@ -119,8 +126,11 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   // game of their own at the same time control instead.
   const newGameLabel =
     viewerPlayedAs === null ? `Play ${timeControl.label}` : 'New opponent';
+  const analyse = () => onAnalyse(moveNavigation.currentPly);
   const menuActions: ActionSheetAction[] = [
     flipBoardAction(flip),
+    // A game still being played is analysed once it's over.
+    ...(isGameOver ? [analyseAction(analyse)] : []),
     newOpponentAction(() => onNewOpponent(timeControl), newGameLabel),
   ];
 
@@ -181,6 +191,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
               onNewOpponent={() => onNewOpponent(timeControl)}
               newGameLabel={newGameLabel}
               onDismiss={() => setIsResultDismissed(true)}
+              onAnalyse={analyse}
             />
           </GameOverOverlay>
         )}

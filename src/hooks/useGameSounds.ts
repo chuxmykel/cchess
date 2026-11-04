@@ -7,6 +7,7 @@ import {
   gameOverSound,
   moveSound,
   stepSound,
+  stepSoundTo,
 } from '../domain/moveSound';
 
 // One player per sound for the whole app, made when a board first needs
@@ -123,4 +124,28 @@ export function useGameOverSound(
     // The reason arrives with the end, so only the end needs watching.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOver]);
+}
+
+// Sounds an analysis moving from one position to another - a move played,
+// or a step through its moves - unless sounds are off.
+export function useAnalysisSounds(
+  position: { id: string; ply: number; move: { san: string } | null },
+  enabled: boolean,
+): void {
+  const shown = useRef(position);
+
+  useEffect(() => {
+    loadPlayers();
+  }, []);
+
+  useEffect(() => {
+    const before = shown.current;
+    shown.current = position;
+    if (!enabled || before.id === position.id) return;
+    playSound(
+      stepSoundTo(before.ply, position.ply, position.move?.san ?? null),
+    );
+    // Only a different position sounds.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [position.id]);
 }

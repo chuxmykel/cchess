@@ -19,10 +19,10 @@ describe('usePressAndHoldRepeat', () => {
     return { action, ...hook };
   }
 
-  it('runs once on a tap', async () => {
+  it('runs once as soon as it is touched', async () => {
     const { action, result } = await renderRepeat();
 
-    await act(() => result.current.onPress());
+    await act(() => result.current.onPressIn());
 
     expect(action).toHaveBeenCalledTimes(1);
   });

@@ -7,6 +7,7 @@ import { StyleSheet } from 'react-native';
 
 import HomeStack from './src/screens/HomeStack';
 import { AuthSessionProvider } from './src/context/AuthSessionContext';
+import { EngineProvider } from './src/context/EngineContext';
 
 const { Navigator, Screen } = createNativeStackNavigator();
 
@@ -15,18 +16,20 @@ export default function App() {
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <AuthSessionProvider>
-          <NavigationContainer>
-            <Navigator
-              id="RootNavigator"
-              initialRouteName="HomeStack"
-              screenOptions={{
-                headerShown: false,
-              }}
-            >
-              <Screen name="HomeStack" component={HomeStack} />
-            </Navigator>
-            <StatusBar style="auto" />
-          </NavigationContainer>
+          <EngineProvider>
+            <NavigationContainer>
+              <Navigator
+                id="RootNavigator"
+                initialRouteName="HomeStack"
+                screenOptions={{
+                  headerShown: false,
+                }}
+              >
+                <Screen name="HomeStack" component={HomeStack} />
+              </Navigator>
+              <StatusBar style="auto" />
+            </NavigationContainer>
+          </EngineProvider>
         </AuthSessionProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

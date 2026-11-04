@@ -18,6 +18,7 @@ web-build/
 
 # Auto-generated, not hand-formatted
 package-lock.json
+src/domain/openings.json
 
 # YAML files are DSL/config consumed by external tools (GitHub Actions,
 # Maestro) with their own exact-formatting gotchas (e.g. Maestro's

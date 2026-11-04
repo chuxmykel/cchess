@@ -6,14 +6,15 @@ export const HOLD_DELAY_MS = 400;
 export const REPEAT_INTERVAL_MS = 100;
 
 export type PressAndHoldRepeat = {
-  onPress: () => void;
+  onPressIn: () => void;
   onLongPress: () => void;
   onPressOut: () => void;
   delayLongPress: number;
 };
 
 // A button's press handlers for an action that keeps going while it's held:
-// a tap runs it once; held, it runs again every REPEAT_INTERVAL_MS until let
+// a touch runs it once, as the finger goes down - not when it lifts, which
+// would make stepping through moves lag behind the press; held, it runs again every REPEAT_INTERVAL_MS until let
 // go - or until `enabled` turns false, as when there's nothing left to step
 // through. Spread onto a Pressable. Each run calls `action` as it is then.
 export function usePressAndHoldRepeat(
@@ -33,7 +34,7 @@ export function usePressAndHoldRepeat(
     }
   }, []);
 
-  const onPress = useCallback(() => latestAction.current(), []);
+  const onPressIn = useCallback(() => latestAction.current(), []);
 
   const onLongPress = useCallback(() => {
     stop();
@@ -52,7 +53,7 @@ export function usePressAndHoldRepeat(
   useEffect(() => stop, [stop]);
 
   return {
-    onPress,
+    onPressIn,
     onLongPress,
     onPressOut: stop,
     delayLongPress: HOLD_DELAY_MS,
