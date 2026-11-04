@@ -2,7 +2,6 @@ import { useLayoutEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
-  StyleSheet,
   Text,
   useWindowDimensions,
   View,
@@ -15,6 +14,7 @@ import {
 } from '../../hooks/useAnalysisSource';
 import AnalysisBoardContent from './AnalysisBoardContent';
 import SetUpPositionView from './SetUpPositionView';
+import { makeStyles } from '../../theme';
 
 // The analysis board's route, in the Analysis tab or over a game.
 export type AnalysisBoardProps = {
@@ -32,6 +32,8 @@ export type AnalysisBoardProps = {
 type Session = { source: AnalysisSource; key: number };
 
 const AnalysisBoard: React.FC<AnalysisBoardProps> = ({ route, navigation }) => {
+  const styles = useStyles();
+
   const { width } = useWindowDimensions();
   const [session, setSession] = useState<Session>({
     source: route.params.source,
@@ -112,16 +114,16 @@ const AnalysisBoard: React.FC<AnalysisBoardProps> = ({ route, navigation }) => {
 
 export default AnalysisBoard;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   centred: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    backgroundColor: 'white',
+    gap: t.spacing.md,
+    backgroundColor: t.colors.background,
   },
   message: {
-    fontSize: 16,
-    color: '#444',
+    fontSize: t.fontSize.xl,
+    color: t.colors.textSecondary,
   },
-});
+}));

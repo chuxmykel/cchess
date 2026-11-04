@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
 import BottomBar from '../../components/BottomBar';
@@ -8,6 +8,7 @@ import PositionEditor from '../../components/PositionEditor';
 import PositionSetupSheet from '../../components/PositionSetupSheet';
 import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { usePositionEditor } from '../../hooks/usePositionEditor';
+import { makeStyles } from '../../theme';
 
 interface SetUpPositionViewProps {
   initialFen?: string;
@@ -27,6 +28,8 @@ const SetUpPositionView: React.FC<SetUpPositionViewProps> = ({
   onAnalyse,
   onCancel,
 }) => {
+  const styles = useStyles();
+
   const editor = usePositionEditor(initialFen);
   const [areOptionsOpen, setAreOptionsOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -114,22 +117,22 @@ const SetUpPositionView: React.FC<SetUpPositionViewProps> = ({
 
 export default SetUpPositionView;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   screen: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: t.colors.background,
   },
   // The editor in the middle of the room above the toolbar.
   content: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingVertical: 16,
+    paddingVertical: t.spacing.lg,
   },
   toolbar: {
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: t.spacing.sm,
   },
-});
+}));

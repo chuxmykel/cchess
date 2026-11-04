@@ -8,9 +8,9 @@ import {
 } from 'react-native';
 
 import Button from '../../components/Button';
-import { MUTED_COLOR } from '../../constants/colors';
 import { parseImport } from '../../domain/pgnImport';
 import { AnalysisStackScreenProps } from '../AnalysisStack/types';
+import { makeStyles, useTheme } from '../../theme';
 
 type PasteGameProps = {
   navigation: Pick<
@@ -24,6 +24,9 @@ const PASTE_LENGTH = 10;
 
 // A game or a position pasted in - a PGN or a FEN - to analyse.
 const PasteGame: React.FC<PasteGameProps> = ({ navigation }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -59,7 +62,7 @@ const PasteGame: React.FC<PasteGameProps> = ({ navigation }) => {
           setError(null);
         }}
         placeholder={'[Event "…"]\n1. e4 e5 2. Nf3 …\n\nor a FEN'}
-        placeholderTextColor="#aaa"
+        placeholderTextColor={colors.textFaint}
         multiline
         autoCapitalize="none"
         autoCorrect={false}
@@ -90,32 +93,32 @@ const PasteGame: React.FC<PasteGameProps> = ({ navigation }) => {
 
 export default PasteGame;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   screen: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: t.colors.background,
   },
   content: {
-    padding: 16,
-    gap: 12,
+    padding: t.spacing.lg,
+    gap: t.spacing.md,
   },
   input: {
     minHeight: 180,
-    borderRadius: 8,
+    borderRadius: t.radius.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#c8c8c8',
-    backgroundColor: '#fafafa',
-    padding: 12,
-    fontSize: 14,
+    borderColor: t.colors.separator,
+    backgroundColor: t.colors.surfaceSubtle,
+    padding: t.spacing.md,
+    fontSize: t.fontSize.base,
     fontFamily: 'Menlo',
     textAlignVertical: 'top',
   },
   error: {
-    color: '#c62828',
-    fontSize: 14,
+    color: t.colors.danger,
+    fontSize: t.fontSize.base,
   },
   hint: {
-    color: MUTED_COLOR,
-    fontSize: 13,
+    color: t.colors.textMuted,
+    fontSize: t.fontSize.md,
   },
-});
+}));

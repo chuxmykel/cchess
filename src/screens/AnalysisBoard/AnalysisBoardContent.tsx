@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { Color } from 'chess.js';
 
@@ -33,6 +33,7 @@ import { useEngineAnalysis } from '../../hooks/useEngineAnalysis';
 import { useAnalysisSounds } from '../../hooks/useGameSounds';
 import { analysisArrows } from '../../utils/analysisArrows';
 import { flipBoardAction } from '../gameMenuActions';
+import { makeStyles, useTheme } from '../../theme';
 
 interface AnalysisBoardContentProps {
   start: AnalysisStart;
@@ -55,6 +56,9 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
   onEditPosition,
   onOpenSettings,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const analysis = useAnalysisTree(start);
   const {
     game,
@@ -115,6 +119,7 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
             settings.threatArrows && !threat.stale
               ? threat.lines[0]
               : undefined,
+            colors.board,
           ),
     [
       best.lines,
@@ -124,6 +129,7 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
       settings.bestMoveArrows,
       settings.threatArrows,
       game.pendingPromotion,
+      colors.board,
     ],
   );
   const evalBarAt = settings.evalBar ? settings.evalBarPosition : null;
@@ -269,11 +275,11 @@ export default AnalysisBoardContent;
 
 const THREAT_LIMIT = { depth: THREAT_DEPTH };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   screen: {
     flex: 1,
     width: '100%',
-    backgroundColor: 'white',
+    backgroundColor: t.colors.background,
   },
   boardRow: {
     flexDirection: 'row',
@@ -281,4 +287,4 @@ const styles = StyleSheet.create({
   lines: {
     justifyContent: 'center',
   },
-});
+}));

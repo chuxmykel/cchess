@@ -11,10 +11,10 @@ import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
 import FriendRow from '../../components/FriendRow';
 import FriendListControls from '../../components/FriendListControls';
-import { MUTED_COLOR } from '../../constants/colors';
 import { useUserFriends } from '../../hooks/useUserFriends';
 import { FriendSort, isAround, sortFriends } from '../../utils/friendSort';
 import { HomeStackScreenProps } from '../HomeStack/types';
+import { makeStyles } from '../../theme';
 
 type UserFriendsProps = Pick<
   HomeStackScreenProps<'UserFriends'>,
@@ -24,6 +24,8 @@ type UserFriendsProps = Pick<
 // Everyone a player is friends with - or only those online - sorted online
 // first, by name, or the most recently added first.
 const UserFriends: React.FC<UserFriendsProps> = ({ navigation, route }) => {
+  const styles = useStyles();
+
   const { username, displayName } = route.params;
   const { state, reload } = useUserFriends(username);
   const [sort, setSort] = useState<FriendSort>('online');
@@ -98,26 +100,26 @@ const UserFriends: React.FC<UserFriendsProps> = ({ navigation, route }) => {
 
 export default UserFriends;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   screen: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: t.colors.background,
   },
   loading: {
-    marginTop: 32,
+    marginTop: t.spacing.xxl,
   },
   message: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: t.spacing.md,
   },
   messageText: {
-    color: MUTED_COLOR,
+    color: t.colors.textMuted,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#c8c8c8',
-    marginHorizontal: 16,
+    backgroundColor: t.colors.separator,
+    marginHorizontal: t.spacing.lg,
   },
-});
+}));

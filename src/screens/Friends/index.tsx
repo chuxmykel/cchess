@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { Alert, FlatList, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, View } from 'react-native';
 
 import ChallengeSheet from '../../components/ChallengeSheet';
 import EmptyState from '../../components/EmptyState';
@@ -18,6 +18,7 @@ import { Friend } from '../../network/restClient';
 import { byPresence } from '../../utils/presence';
 import { HomeStackScreenProps } from '../HomeStack/types';
 import { HomeTabStackScreenProps } from '../HomeTabStack/types';
+import { makeStyles } from '../../theme';
 
 type FriendsTab = 'online' | 'all' | 'requests';
 
@@ -38,6 +39,8 @@ type FriendsProps = {
 };
 
 const Friends: React.FC<FriendsProps> = ({ navigation, route }) => {
+  const styles = useStyles();
+
   const social = useSocialContext();
   const toast = useToast();
   const friendActions = useFriendActions(navigation, (friend) =>
@@ -220,17 +223,17 @@ const Friends: React.FC<FriendsProps> = ({ navigation, route }) => {
 
 export default Friends;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   screen: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: t.colors.background,
   },
   search: {
-    padding: 16,
+    padding: t.spacing.lg,
   },
   requests: {
-    gap: 8,
-    paddingTop: 12,
-    paddingHorizontal: 16,
+    gap: t.spacing.sm,
+    paddingTop: t.spacing.md,
+    paddingHorizontal: t.spacing.lg,
   },
-});
+}));

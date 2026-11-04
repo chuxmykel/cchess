@@ -16,6 +16,7 @@ import { useToast } from '../../hooks/useToast';
 import { HomeStackParamList } from '../HomeStack/types';
 import GameViewerContent from './GameViewerContent';
 import ParticipantGameViewer from './ParticipantGameViewer';
+import { fontSize, spacing } from '../../theme';
 
 type GameViewerProps = NativeStackScreenProps<HomeStackParamList, 'GameViewer'>;
 
@@ -130,9 +131,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: fontSize.xl,
   },
 });

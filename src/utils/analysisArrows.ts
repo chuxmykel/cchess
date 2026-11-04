@@ -2,15 +2,10 @@ import { Square } from 'chess.js';
 
 import { BoardArrow } from '../components/ChessBoard/BoardArrows';
 import { EngineLineView } from '../hooks/useEngineAnalysis';
+import { ThemeColors } from '../theme/themes';
 
-// Soft enough to see the pieces under them; each line's weaker than the last.
-const BEST_COLOURS = [
-  'rgba(98, 153, 88, 0.62)',
-  'rgba(98, 153, 88, 0.42)',
-  'rgba(98, 153, 88, 0.3)',
-];
+// Each line's weaker than the last, as its color is (colors.board.arrows).
 const BEST_WEIGHTS = [0.19, 0.15, 0.15];
-const THREAT_COLOUR = 'rgba(214, 96, 86, 0.58)';
 const THREAT_WEIGHT = 0.15;
 
 function firstMove(line: EngineLineView | undefined) {
@@ -25,20 +20,25 @@ function firstMove(line: EngineLineView | undefined) {
 export function analysisArrows(
   bestLines: EngineLineView[],
   threatLine: EngineLineView | undefined,
+  colors: Pick<ThemeColors['board'], 'arrows' | 'threatArrow'>,
 ): BoardArrow[] {
   const arrows: BoardArrow[] = [];
   bestLines.forEach((line, index) => {
     const move = firstMove(line);
-    if (!move || index >= BEST_COLOURS.length) return;
+    if (!move || index >= colors.arrows.length) return;
     arrows.push({
       ...move,
-      color: BEST_COLOURS[index],
+      color: colors.arrows[index],
       weight: BEST_WEIGHTS[index],
     });
   });
   const threat = firstMove(threatLine);
   if (threat) {
-    arrows.push({ ...threat, color: THREAT_COLOUR, weight: THREAT_WEIGHT });
+    arrows.push({
+      ...threat,
+      color: colors.threatArrow,
+      weight: THREAT_WEIGHT,
+    });
   }
   return arrows;
 }

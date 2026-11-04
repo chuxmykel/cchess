@@ -1,11 +1,5 @@
 import { useCallback } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,6 +14,7 @@ import { AUTH_SESSION_STATUS } from '../../hooks/useAuthSessionLifecycle';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { HomeStackParamList } from '../HomeStack/types';
 import MyFriends, { MyFriendsNavigation } from './MyFriends';
+import { makeStyles } from '../../theme';
 
 interface ProfileProps {
   navigation: {
@@ -31,6 +26,8 @@ interface ProfileProps {
 }
 
 const Profile: React.FC<ProfileProps> = ({ navigation }) => {
+  const styles = useStyles();
+
   const insets = useSafeAreaInsets();
   const session = useAuthSession();
   const { reloadUser, signOut } = session;
@@ -127,43 +124,43 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
 
 export default Profile;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   content: {
-    paddingBottom: 24,
-    gap: 16,
+    paddingBottom: t.spacing.xl,
+    gap: t.spacing.lg,
   },
   identity: {
     alignItems: 'center',
-    gap: 4,
-    marginBottom: 8,
+    gap: t.spacing.xs,
+    marginBottom: t.spacing.sm,
   },
   displayName: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginTop: 8,
+    fontSize: t.fontSize.h3,
+    fontWeight: t.fontWeight.bold,
+    marginTop: t.spacing.sm,
   },
   muted: {
-    fontSize: 14,
-    color: '#888',
+    fontSize: t.fontSize.base,
+    color: t.colors.textMuted,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    paddingHorizontal: 16,
+    fontSize: t.fontSize.xxl,
+    fontWeight: t.fontWeight.bold,
+    paddingHorizontal: t.spacing.lg,
   },
   signOut: {
-    paddingHorizontal: 16,
-    marginTop: 8,
-    gap: 8,
+    paddingHorizontal: t.spacing.lg,
+    marginTop: t.spacing.sm,
+    gap: t.spacing.sm,
   },
   error: {
-    color: '#e53935',
-    fontSize: 14,
+    color: t.colors.danger,
+    fontSize: t.fontSize.base,
     textAlign: 'center',
   },
-});
+}));

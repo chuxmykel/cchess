@@ -1,14 +1,16 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import Icon from '../../components/Icon';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import AnalysisStack from '../AnalysisStack';
 import HomeTabStack from '../HomeTabStack';
 import Profile from '../Profile';
+import { useTheme } from '../../theme';
 
 const { Navigator, Screen } = createBottomTabNavigator();
 
 const HomeTabs: React.FC = () => {
+  const { colors } = useTheme();
+
   return (
     <>
       <Navigator
@@ -17,8 +19,8 @@ const HomeTabs: React.FC = () => {
         screenOptions={{
           headerShown: false,
           animation: 'shift',
-          tabBarActiveTintColor: ACCENT_COLOR,
-          tabBarInactiveTintColor: MUTED_COLOR,
+          tabBarActiveTintColor: colors.accent,
+          tabBarInactiveTintColor: colors.textMuted,
           tabBarStyle: {
             borderTopWidth: 0,
             elevation: 0,

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { parseISO, subDays } from 'date-fns';
 
 import Button from '../../components/Button';
@@ -12,7 +12,6 @@ import RatingChart from '../../components/RatingChart';
 import RatingCategoryPicker from '../../components/RatingCategoryPicker';
 import RatingHighLowCard from '../../components/RatingHighLowCard';
 import SegmentedTabs from '../../components/SegmentedTabs';
-import { MUTED_COLOR } from '../../constants/colors';
 import {
   DEFAULT_RATING_PERIOD,
   RATING_PERIOD_DAYS,
@@ -27,6 +26,7 @@ import {
 } from '../../network/restClient';
 import { formatRating } from '../../utils/rating';
 import { HomeStackScreenProps } from '../HomeStack/types';
+import { makeStyles } from '../../theme';
 
 const PERIOD_CAPTIONS: Record<RatingPeriod, string> = {
   '1w': 'Past week',
@@ -54,6 +54,8 @@ const RatingStatsScreen: React.FC<RatingStatsProps> = ({
   navigation,
   route,
 }) => {
+  const styles = useStyles();
+
   const { username, displayName, category } = route.params;
   const [period, setPeriod] = useState<RatingPeriod>(DEFAULT_RATING_PERIOD);
   const { state, reload } = useRatingStats(username, category, period);
@@ -168,57 +170,57 @@ const RatingStatsScreen: React.FC<RatingStatsProps> = ({
 
 export default RatingStatsScreen;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   screen: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: t.colors.background,
   },
   content: {
-    paddingBottom: 32,
+    paddingBottom: t.spacing.xxl,
   },
   loading: {
     flex: 1,
     alignItems: 'center',
-    gap: 16,
-    paddingTop: 32,
-    backgroundColor: 'white',
+    gap: t.spacing.lg,
+    paddingTop: t.spacing.xxl,
+    backgroundColor: t.colors.background,
   },
   error: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    backgroundColor: 'white',
+    gap: t.spacing.md,
+    backgroundColor: t.colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    padding: 16,
+    gap: t.spacing.lg,
+    padding: t.spacing.lg,
   },
   headerText: {
     flex: 1,
   },
   name: {
-    fontSize: 14,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.base,
+    color: t.colors.textMuted,
   },
   ratingLine: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: t.spacing.sm,
   },
   rating: {
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: t.fontSize.display,
+    fontWeight: t.fontWeight.bold,
   },
   caption: {
-    fontSize: 12,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.sm,
+    color: t.colors.textMuted,
   },
   body: {
-    gap: 16,
-    paddingTop: 16,
+    gap: t.spacing.lg,
+    paddingTop: t.spacing.lg,
   },
   updating: {
     opacity: 0.5,
@@ -227,13 +229,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    paddingTop: 8,
+    gap: t.spacing.xs,
+    paddingTop: t.spacing.sm,
   },
   failedText: {
-    color: MUTED_COLOR,
+    color: t.colors.textMuted,
   },
   chart: {
-    marginHorizontal: 16,
+    marginHorizontal: t.spacing.lg,
   },
-});
+}));
