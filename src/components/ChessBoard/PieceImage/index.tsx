@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -12,7 +12,7 @@ import {
   KING_FALL_DEGREES,
   KING_FALL_TIMING,
 } from '../../../constants/animations';
-import { DANGER_COLOR } from '../../../constants/colors';
+import { makeStyles } from '../../../theme';
 
 interface PieceImageProps {
   id: string;
@@ -39,6 +39,8 @@ const PieceImage: React.FC<PieceImageProps> = ({
   fallen = false,
   fadeDuration,
 }) => {
+  const styles = useStyles();
+
   const fall = useSharedValue(fallen ? 1 : 0);
   useEffect(() => {
     fall.set(withTiming(fallen ? 1 : 0, KING_FALL_TIMING));
@@ -72,13 +74,13 @@ const PieceImage: React.FC<PieceImageProps> = ({
 
 export default PieceImage;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   upright: {
     transform: [{ rotate: '180deg' }],
   },
   glow: {
-    shadowColor: DANGER_COLOR,
+    shadowColor: t.colors.board.check,
     shadowOpacity: 1,
     shadowOffset: { width: 0, height: 0 },
   },
-});
+}));

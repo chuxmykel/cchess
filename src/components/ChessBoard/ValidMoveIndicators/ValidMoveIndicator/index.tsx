@@ -1,5 +1,6 @@
-import { Animated, StyleSheet } from 'react-native';
+import { Animated } from 'react-native';
 import { Position } from '../../../../domain/types';
+import { makeStyles } from '../../../../theme';
 
 interface ValidMoveIndicatorProps {
   position: Position;
@@ -14,6 +15,8 @@ const ValidMoveIndicator: React.FC<ValidMoveIndicatorProps> = ({
   opacity,
   testID,
 }) => {
+  const styles = useStyles();
+
   const indicatorDiameter = squareWidth / 3;
   const offsetToCenter = indicatorDiameter;
   return (
@@ -36,9 +39,9 @@ const ValidMoveIndicator: React.FC<ValidMoveIndicatorProps> = ({
 
 export default ValidMoveIndicator;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   container: {
     position: 'absolute',
-    backgroundColor: 'rgba(70, 70, 70, 0.4)',
+    backgroundColor: t.colors.board.moveHint,
   },
-});
+}));
