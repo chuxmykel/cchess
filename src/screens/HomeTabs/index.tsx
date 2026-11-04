@@ -2,6 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import Icon from '../../components/Icon';
 import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
+import AnalysisStack from '../AnalysisStack';
 import HomeTabStack from '../HomeTabStack';
 import Profile from '../Profile';
 
@@ -37,6 +38,17 @@ const HomeTabs: React.FC = () => {
                 color={color}
               />
             ),
+          }}
+        />
+        <Screen
+          name="AnalysisStack"
+          component={AnalysisStack}
+          options={{
+            tabBarLabel: 'Analysis',
+            tabBarIcon: ({ color, size }) => (
+              <Icon name="magnify-scan" size={size} color={color} />
+            ),
+            tabBarButtonTestID: 'analysis-tab',
           }}
         />
         <Screen

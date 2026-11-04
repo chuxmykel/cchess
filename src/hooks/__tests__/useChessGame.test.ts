@@ -203,6 +203,29 @@ describe('useChessGame', () => {
     expect(result.current.isGameOver).toBe(true);
   });
 
+  it('tells onMoveApplied of every move made, tapped or promoted, with the position reached', async () => {
+    const onMoveApplied = jest.fn();
+    const { result } = await renderHook(() =>
+      useChessGame('7k/4P3/8/8/8/8/8/4K3 w - - 0 1', { onMoveApplied }),
+    );
+
+    await act(() => {
+      result.current.handleSquareTap('e7');
+    });
+    await act(() => {
+      result.current.handleSquareTap('e8');
+    });
+    expect(onMoveApplied).not.toHaveBeenCalled();
+    await act(() => {
+      result.current.promoteTo('q');
+    });
+
+    expect(onMoveApplied).toHaveBeenCalledWith(
+      expect.objectContaining({ from: 'e7', to: 'e8', promotionPiece: 'q' }),
+      '4Q2k/8/8/8/8/8/8/4K3 b - - 0 1',
+    );
+  });
+
   it('ignores taps once the game is over', async () => {
     const { result } = await renderHook(() => useChessGame());
 

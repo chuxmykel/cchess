@@ -110,7 +110,13 @@ function initState(engine: ChessEngine): ChessGameState {
   };
 }
 
-export function useChessGame(fen?: string) {
+export type ChessGameOptions = {
+  // Every move the game makes - tapped, dragged, promoted or played for it -
+  // with the position it reached.
+  onMoveApplied?: (move: AppliedMove, fen: string) => void;
+};
+
+export function useChessGame(fen?: string, options: ChessGameOptions = {}) {
   // `engineRef` follows React's own documented lazy-ref-init pattern
   // (https://react.dev/reference/react/useRef#avoiding-recreating-the-ref-contents)
   // for constructing a stable instance exactly once. `stateRef` mirrors
@@ -132,6 +138,9 @@ export function useChessGame(fen?: string) {
 
   const stateRef = useRef(state);
   stateRef.current = state;
+  // Always the latest, so the handlers below needn't change with it.
+  const onMoveAppliedRef = useRef(options.onMoveApplied);
+  onMoveAppliedRef.current = options.onMoveApplied;
   /* eslint-enable react-hooks/refs */
 
   const applyResult = useCallback(
@@ -156,6 +165,7 @@ export function useChessGame(fen?: string) {
         legalTargets: engine.getLegalTargets(),
         isGameOver: engine.isGameOver(),
       });
+      onMoveAppliedRef.current?.(result.move, engine.getFen());
     },
     [engine],
   );

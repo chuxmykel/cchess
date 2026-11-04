@@ -1,0 +1,21 @@
+# Pasting a FEN into the Analysis tab analyses that position.
+appId: host.exp.Exponent
+---
+- runFlow: common/launch-fresh.yaml
+- tapOn:
+    id: "analysis-tab"
+- tapOn:
+    id: "analysis-paste"
+- tapOn:
+    id: "paste-game-input"
+- inputText: "6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1"
+- tapOn:
+    id: "paste-game-analyse"
+- assertVisible:
+    id: "analysis-board"
+- assertVisible:
+    id: "piece-a1"
+- assertVisible:
+    id: "piece-g8"
+- assertNotVisible:
+    id: "piece-e1"

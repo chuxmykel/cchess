@@ -37,7 +37,7 @@ interface ToolbarButtonProps {
   testID: string;
 }
 
-const ToolbarButton: React.FC<ToolbarButtonProps> = ({
+export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
   icon,
   label,
   onPress,

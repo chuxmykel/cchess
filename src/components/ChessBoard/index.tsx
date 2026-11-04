@@ -37,6 +37,9 @@ interface ChessboardProps {
   lastPlayedMove?: PlayedMove | null;
   // The side that lost the game, whose king falls.
   defeated?: Color | null;
+  // Slide the pieces into a position the game was put in without a move -
+  // stepping back through an analysis - rather than put them straight there.
+  slideOnReset?: boolean;
 }
 
 const Chessboard: React.FC<ChessboardProps> = ({
@@ -46,6 +49,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
   animate = true,
   lastPlayedMove = null,
   defeated = null,
+  slideOnReset = false,
 }) => {
   const {
     fen,
@@ -67,6 +71,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
     PIECE_WIDTH,
     pendingPromotion,
     animate,
+    slideOnReset,
   );
   const markedMove = lastMove ?? lastPlayedMove;
   const endangered = useMemo(
