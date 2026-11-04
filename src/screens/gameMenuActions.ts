@@ -11,6 +11,15 @@ export function flipBoardAction(flip: () => void): ActionSheetAction {
   };
 }
 
+/** The game, opened in the analysis board. */
+export function analyseAction(analyse: () => void): ActionSheetAction {
+  return {
+    label: 'Analyse',
+    onPress: analyse,
+    testID: 'analyse-action',
+  };
+}
+
 /** A game against someone new - "Play 5+0", say, for someone who only
  * watched. */
 export function newOpponentAction(

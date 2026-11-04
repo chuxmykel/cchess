@@ -265,4 +265,25 @@ describe('GameOverCard', () => {
 
     expect(onDismiss).toHaveBeenCalled();
   });
+
+  it('offers to analyse the game only when it can be', async () => {
+    const onAnalyse = jest.fn();
+    const props = {
+      result: 'white' as const,
+      myColor: 'w' as const,
+      resultReason: GAME_RESULT_REASON.CHECKMATE,
+      myRating: null,
+      myRatingDiff: null,
+      onNewOpponent: jest.fn(),
+    };
+    const without = await render(<GameOverCard {...props} />);
+    expect(without.queryByTestId('analyse-button')).toBeNull();
+
+    const screen = await render(
+      <GameOverCard {...props} onAnalyse={onAnalyse} />,
+    );
+    await fireEvent.press(screen.getByTestId('analyse-button'));
+
+    expect(onAnalyse).toHaveBeenCalled();
+  });
 });

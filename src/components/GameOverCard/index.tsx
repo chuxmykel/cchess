@@ -31,6 +31,8 @@ interface GameOverCardProps {
   };
   /** Shows a close button that hides the card. */
   onDismiss?: () => void;
+  /** Shows an Analyse button, to look through the game with the engine. */
+  onAnalyse?: () => void;
 }
 
 const WINNER_LABELS = { white: 'White won', black: 'Black won' } as const;
@@ -96,6 +98,7 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
   newGameLabel = 'New opponent',
   rematch,
   onDismiss,
+  onAnalyse,
 }) => {
   const myResult = myColor === null ? null : toMyResult(result, myColor);
   const wasAborted = resultReason === GAME_RESULT_REASON.ABORT;
@@ -147,6 +150,15 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
         testID="new-opponent-button"
       />
       {rematch && <RematchControls {...rematch} />}
+      {onAnalyse && (
+        <Button
+          label="Analyse"
+          onPress={onAnalyse}
+          variant="outline"
+          style={styles.newOpponentButton}
+          testID="analyse-button"
+        />
+      )}
     </View>
   );
 };
@@ -251,7 +263,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#333',
   },
+  // The card's buttons all as wide as it, so they line up the same size.
   newOpponentButton: {
+    alignSelf: 'stretch',
     minWidth: 180,
     marginTop: 8,
   },

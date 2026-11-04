@@ -662,6 +662,37 @@ describe('LiveGameContent', () => {
       );
     });
 
+    it('opens the game in the analysis board, from the card or the menu', async () => {
+      const { screen, snapshot, trigger, navigation } =
+        await renderContent('w');
+      await finishGame(trigger, snapshot);
+      const analysis = {
+        source: { kind: 'game', gameId: snapshot.id, ply: 0 },
+      };
+
+      await fireEvent.press(screen.getByTestId('analyse-button'));
+      expect(navigation.navigate).toHaveBeenLastCalledWith(
+        'AnalysisBoard',
+        analysis,
+      );
+
+      await openGameMenu(screen);
+      await chooseMenuAction(screen, 'analyse-action');
+      expect(navigation.navigate).toHaveBeenCalledTimes(2);
+      expect(navigation.navigate).toHaveBeenLastCalledWith(
+        'AnalysisBoard',
+        analysis,
+      );
+    });
+
+    it("doesn't offer analysis while the game is on", async () => {
+      const { screen } = await renderContent('w');
+
+      await openGameMenu(screen);
+
+      expect(screen.queryByTestId('analyse-action')).toBeNull();
+    });
+
     it('offers a new opponent from the menu once the game is over', async () => {
       const { screen, snapshot, trigger, onNewOpponent } =
         await renderContent('w');

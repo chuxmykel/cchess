@@ -40,7 +40,11 @@ import { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
 import { useOnlineChessGameContext } from '../../context/LiveGame/OnlineChessGameContext';
 import { RematchStatus } from '../../hooks/useRematch';
-import { flipBoardAction, newOpponentAction } from '../gameMenuActions';
+import {
+  analyseAction,
+  flipBoardAction,
+  newOpponentAction,
+} from '../gameMenuActions';
 import EarlierPositionOverlay from './EarlierPositionOverlay';
 
 export type LiveGameContentNavigation = Pick<
@@ -65,6 +69,7 @@ type GameMenuOptions = {
   confirmResign: () => void;
   offerDraw: () => void;
   findNewOpponent: () => void;
+  analyse: () => void;
   /** Brings the result card back; only while it's dismissed. */
   showResult?: () => void;
 };
@@ -78,6 +83,7 @@ function gameMenuActions({
   confirmResign,
   offerDraw,
   findNewOpponent,
+  analyse,
   showResult,
 }: GameMenuOptions): ActionSheetAction[] {
   const flipBoard = flipBoardAction(flip);
@@ -93,6 +99,7 @@ function gameMenuActions({
             },
           ]
         : []),
+      analyseAction(analyse),
       newOpponentAction(findNewOpponent),
     ];
   }
@@ -182,6 +189,18 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     onNewOpponent(timeControl);
   }
 
+  // The finished game in the analysis board, at the move shown; Back
+  // returns here.
+  function analyse() {
+    navigation.navigate('AnalysisBoard', {
+      source: {
+        kind: 'game',
+        gameId: snapshot.id,
+        ply: moveNavigation.currentPly,
+      },
+    });
+  }
+
   function confirmAbort() {
     Alert.alert('Abort game?', 'Are you sure you want to abort?', [
       { text: 'Cancel', style: 'cancel' },
@@ -207,6 +226,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     confirmResign,
     offerDraw,
     findNewOpponent,
+    analyse,
     showResult: isResultDismissed
       ? () => setResultDismissedAt(null)
       : undefined,
@@ -309,6 +329,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
                   : undefined
               }
               onDismiss={() => setResultDismissedAt(rematch.status)}
+              onAnalyse={analyse}
             />
           </GameOverOverlay>
         )}
