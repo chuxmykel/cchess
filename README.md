@@ -162,8 +162,12 @@ src/
 │       Conversation/, GamesList/,    conversation, a full game history, and a
 │       RatingStats/                  player's rating and results in a category
 │
-├── constants/                        Board size, piece image lookups, square list, board
-│                                     themes, time controls, error-message fallbacks
+├── theme/                            The style guide: spacing, radius, type and shadow
+│                                     scales, light and dark colors, board themes, and
+│                                     makeStyles for a component's themed StyleSheet
+│
+├── constants/                        Board size, piece image lookups, square list,
+│                                     time controls, error-message fallbacks
 │
 ├── utils/animation.ts                RN Animated helpers (castling animation, piece ids)
 │
@@ -245,6 +249,8 @@ actually work on a real device" questions belong in a Maestro flow.
 - This is an Expo managed-workflow project - there are no native `ios/`/
   `android/` directories checked in; `expo prebuild` would generate them on
   demand if a bare workflow is ever needed.
-- Board color themes live in `src/constants/boardThemes.ts` (`chess.com`,
-  `lichess.org`, `monochrome`, `powderblue`, `test`) - only `test` is
-  currently wired up as the active theme, in `src/screens/LiveGame/index.tsx`.
+- Every style comes from `src/theme/`: colors from the light or dark
+  theme (ESLint refuses color literals anywhere else), and spacing,
+  corners, type and shadows from its scales. Profile → Appearance picks
+  System, Light or Dark, and the board's colors from
+  `src/theme/boardThemes.ts`.

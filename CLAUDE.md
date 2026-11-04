@@ -65,6 +65,7 @@ blind to the ones above it:
 domain/        pure chess logic, zero React/RN imports, plain Jest-testable
 network/       pure networking infra (REST/socket clients, event types), same style
 engine/        the analysis engine's infra (UCI over a transport, its files), same style
+theme/         the style guide: scales, light/dark colors, makeStyles
   -> hooks/     React state, animation, and online-play orchestration layer
     -> context/   thin Providers wrapping a same-purpose hook, for prop-drilling
       -> components/   presentational only, consumes hooks/context above
@@ -159,8 +160,10 @@ engine/        the analysis engine's infra (UCI over a transport, its files), sa
   see that file's own header comment), and `tokenStorage.ts`
   (`expo-secure-store` wrapper for the refresh token - access tokens
   last 15 minutes, so every launch trades the stored refresh token for a
-  fresh pair instead of keeping one), and `analysisSettingsStorage.ts`
-  (the analysis board's settings in AsyncStorage, over their defaults).
+  fresh pair instead of keeping one), `analysisSettingsStorage.ts`
+  (the analysis board's settings in AsyncStorage, over their defaults),
+  and `appearanceSettingsStorage.ts` (Appearance's, the same way - a
+  value no longer offered falls back to its default).
 
 - **`src/engine/`** - the analysis engine: Stockfish 19, the lite
   single-threaded WASM build of stockfish.js (GPL-3.0), **downloaded on
@@ -318,7 +321,8 @@ engine/        the analysis engine's infra (UCI over a transport, its files), sa
     written as SAN once, 20 moves at most, through a cache of moves
     already written, since chess.js playing them out is costly; the lines'
     room stays the same once the game's over), `useAnalysisSettings`
-    (saved as they change), `usePositionEditor` (a piece, the eraser, or
+    (saved as they change), `useAppearanceSettings` (light or dark mode
+    and the board's colors, saved the same way - behind `ThemeProvider`), `usePositionEditor` (a piece, the eraser, or
     the hand, which drags pieces), `useAnalysisSounds` (in
     `useGameSounds.ts`) and `useAppIsActive` (searches pause in the
     background; iOS can say 'unknown' at first, counted as active).
@@ -379,6 +383,14 @@ engine/        the analysis engine's infra (UCI over a transport, its files), sa
   - `SocialContext.tsx` - wraps `useSocial`, mounted in `HomeStack` (inside
     navigation, so a game started from a challenge can open `LiveGame`
     from any screen).
+  - `ThemeContext.tsx` - `ThemeProvider`, mounted at the root of
+    `App.tsx`, wrapping `useAppearanceSettings`: the theme in use - dark
+    while iOS is (`app.json`'s `userInterfaceStyle` is `automatic`),
+    unless Appearance says always light or always dark - for `useTheme()`,
+    the settings for `useAppearance()`, and the chosen board's squares for
+    `useBoardColors()`. Outside a provider - a component rendered alone in
+    a test - `useTheme` and `useBoardColors` give the light theme and the
+    default board, so tests need no wrapper.
   - `AnalysisSettingsContext.tsx` - wraps `useAnalysisSettings`, mounted
     in `HomeStack`, so the analysis board and the settings screen over it
     share one set.
@@ -444,7 +456,9 @@ engine/        the analysis engine's infra (UCI over a transport, its files), sa
   where possible), `RadioRow` (a few choices as radio buttons in a row),
   `AnalysisSettingsForm` (the eval bar and its side, a 0-3 lines slider,
   a search time slider of 1-20 seconds then Unlimited, the arrows and
-  sounds - the `AnalysisSettings` screen), and `GameHistoryList` (a
+  sounds - the `AnalysisSettings` screen), `AppearanceSettingsForm`
+  (System/Light/Dark, and the board themes as swatches - the
+  `Appearance` screen), and `GameHistoryList` (a
   player's finished games, paged - `GamesList` and the analysis game
   picker share it).
 
@@ -501,7 +515,8 @@ engine/        the analysis engine's infra (UCI over a transport, its files), sa
   for how far below and above your rating an opponent may be, each with
   an "Open" checkbox that leaves that side unlimited, shown as "+∞"),
   `TextField`/`PasswordField`, and
-  `Icon` - every icon in the app goes through it, a thin wrapper over
+  `Icon` - every icon in the app goes through it, in the theme's text
+  color unless given one, a thin wrapper over
   `@react-native-vector-icons/material-design-icons`, its font loaded
   at runtime through `expo-font` so it works in Expo Go, and kept in one
   place so the set can be swapped), account UI
@@ -563,7 +578,9 @@ engine/        the analysis engine's infra (UCI over a transport, its files), sa
   the rating with what it gained or lost over the period, a 1W/1M/3M/1Y/All
   `SegmentedTabs`, the chart, and the two cards. Once a game is over,
   `GameOverCard` and the ☰ of `LiveGame` and `GameViewer` offer Analyse,
-  opening `AnalysisBoard` at the move shown. Profile's Licenses row
+  opening `AnalysisBoard` at the move shown. Profile's Appearance row
+  opens `Appearance` (anyone's, guests too: it's kept on the device), and
+  its Licenses row
   opens `Licenses`: the Stockfish build the app downloads, its GPL-3.0
   and where its source is, and credit for lichess's opening names.
 
@@ -573,7 +590,7 @@ engine/        the analysis engine's infra (UCI over a transport, its files), sa
   it's rendered, tests included) -> `HomeStack` (`HomeTabs`, `LiveGame`,
   `GameViewer`, `AnalysisBoard`, `AnalysisSettings`, `UserProfile`, `Conversation`, `GamesList`,
   `RatingStats`, `UserFriends`, `FindFriends`, `SignIn`, `CreateAccount`,
-  `Licenses`) ->
+  `Appearance`, `Licenses`) ->
   `HomeTabs` (bottom tabs: `HomeTabStack`, `AnalysisStack` - the
   Analysis tab, testID `analysis-tab` - and `Profile`) -> `HomeTabStack`
   (native-stack: `Home`, `NewGame`, `Friends`) and `AnalysisStack`
@@ -623,16 +640,33 @@ engine/        the analysis engine's infra (UCI over a transport, its files), sa
   pushed over the tabs, so nobody can sign in or out mid-game -
   `LiveGame` covers the tabs and locks swipe-back while playing.
 
+- **`src/theme/`** - the app's style guide, every color, space, corner,
+  type size and shadow its styles are drawn from. `tokens.ts`: the scales
+  that are the same in both modes - `spacing` (a 4pt grid, `xxs` 2 to
+  `xxl` 32), `radius`, `fontSize`, `fontWeight`, `fontFamily` (the system
+  font, in one place to swap), `typography` (ready-made text styles) and
+  `elevation` (three shadow tiers). `themes.ts`: `lightTheme` and
+  `darkTheme`, each a `Theme` - those scales plus `colors`, named for what
+  they're for (`background`, `surface`, `text`, `textMuted`, `accent`,
+  `danger`, `separator`, the `board`'s overlays, the `gameType`s, ...), not
+  what they look like, so each mode gives every role its own value.
+  `boardThemes.ts`: the boards' square colors, chosen apart from the mode.
+  `makeStyles((t) => ({...}))` returns a `useStyles()` hook giving the
+  component's StyleSheet for the theme in use, made once per theme; a
+  sheet with no colors stays a plain `StyleSheet.create` using the scales
+  imported directly. A color passed as a prop (an icon's, a slider's, an
+  SVG fill) comes from `useTheme().colors`. `navigationTheme(theme)` is
+  React Navigation's theme from ours (headers, tab bar).
+
 - **`src/constants/`** - board size, piece image lookups
   (`PIECES['wk' | 'bq' | ...]`), the board's animation timings and drag scale
-  (`animations.ts`), castling squares, time controls, board
-  themes (`boardThemes.ts`), seeks (`seek.ts`: the `Seek` that New Game
+  (`animations.ts`), castling squares, time controls, Appearance's
+  settings and their defaults (`appearance.ts`), seeks (`seek.ts`: the `Seek` that New Game
   hands to LiveGame, and the rating range's default, step and limit),
   the game's sounds (`sounds.ts`, `assets/sounds/*.wav` - synthesized by
   `node scripts/generate-sounds.js`; a recording saved under the same
   name replaces one),
-  the app's accent and muted colors
-  (`colors.ts`, a start on a fuller theme), account rules mirrored from
+  account rules mirrored from
   the server (`account.ts`) and the chat and direct message limits
   (`chat.ts`), the rating stats periods (`ratingPeriods.ts`), user-facing error-message fallbacks (`errorMessages.ts`),
   the analysis board's settings and their defaults (`analysis.ts`), the
@@ -641,8 +675,9 @@ engine/        the analysis engine's infra (UCI over a transport, its files), sa
 - **`src/utils/`** - RN `Animated` helpers (`animation.ts`: castling
   animation, piece ids), `dragLog.ts` (`logDrag`: with
   `EXPO_PUBLIC_DEBUG_DRAG=1`, a line in the Metro terminal for every drop -
-  how the board judged it, and what the game made of it), color helpers
-  (`color.ts`) and rating formatting
+  how the board judged it, and what the game made of it), color math
+  (`color.ts`: `tintColor`, a color mixed toward white or another) and
+  rating formatting
   (`rating.ts`: `formatRating` - "1520", or "1520?" while provisional -
   `formatRatingRange`, "1320–2020", `highestRating`, `formatScore`,
   "2½ - 3½", and `formatTimePlayed`) and presence (`presence.ts`:
@@ -734,9 +769,17 @@ Two deliberately separate layers - don't let one re-do the other's job:
 - This is an Expo managed-workflow project - no native `ios`/`android`
   directories are checked in. `expo prebuild` would generate them on demand
   if a bare workflow is ever needed.
-- Board color themes live in `src/constants/boardThemes.ts`
-  (`chess.com`, `lichess.org`, `monochrome`, `powderblue`, `test`) - only
-  `test` is currently wired up as active.
+- Styles come from `src/theme/`: no raw colors anywhere else (ESLint's
+  `no-restricted-syntax` refuses hex and `rgb()` literals outside it,
+  tests aside), and spacing, corners, type and shadows from its scales
+  rather than numbers of their own - a layout's own measurements (a
+  board's size, an avatar's) aside. A new color is a new role in
+  `ThemeColors`, given a value in both themes. Every text style sets a
+  color, since React Native's default black disappears in dark mode.
+- Board color themes live in `src/theme/boardThemes.ts`
+  (`chess.com`, `lichess.org`, `monochrome`, `powderblue`, `test` - shown
+  as Green, Wood, Monochrome, Powder blue and Blue), chosen in Appearance;
+  `test`, the blue, is the default.
 - `eslint-plugin-react-hooks`'s React-Compiler-readiness rules
   (`react-hooks/refs`, `react-hooks/set-state-in-effect`) are kept at their
   default `error` severity project-wide - this project doesn't have
