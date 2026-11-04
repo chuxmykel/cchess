@@ -58,6 +58,7 @@ describe('usePieceGesture', () => {
           width={width}
           orientation="w"
           disabled={false}
+          movable={makeMutable({ [square]: true })}
           legalTargets={makeMutable({ e2: ['e3', 'e4'] as Square[] })}
           onTap={jest.fn()}
           onDragStart={jest.fn()}

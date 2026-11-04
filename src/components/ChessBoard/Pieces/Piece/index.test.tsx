@@ -63,7 +63,8 @@ describe('Piece', () => {
           orientation={overrides.orientation ?? 'w'}
           x={x}
           y={y}
-          disabled={overrides.disabled ?? false}
+          disabled={false}
+          movable={makeMutable({ [square]: !(overrides.disabled ?? false) })}
           captured={captured}
           legalTargets={makeMutable(
             overrides.legalTargets ?? { e2: ['e3', 'e4'] },

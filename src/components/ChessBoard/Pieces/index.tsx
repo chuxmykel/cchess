@@ -3,6 +3,7 @@ import { Color, Square } from 'chess.js';
 
 import { AnimatedPieceView } from '../../../hooks/usePieceAnimations';
 import { DragGuide } from '../../../hooks/useDragGuide';
+import { MovableSquares } from '../../../hooks/usePieceGesture';
 import { KingInDanger, LegalTargets } from '../../../domain/types';
 import Piece from './Piece';
 
@@ -10,7 +11,8 @@ interface PiecesProps {
   pieces: AnimatedPieceView[];
   pieceWidth: number;
   orientation: Color;
-  isOwnPieceAt: (square: Square) => boolean;
+  // The squares whose pieces can be picked up now.
+  movable: SharedValue<MovableSquares>;
   locked: boolean;
   // The king in danger, if any, glowing red - and fallen, once beaten.
   kingInDanger: KingInDanger | null;
@@ -25,7 +27,7 @@ const Pieces: React.FC<PiecesProps> = ({
   pieces,
   pieceWidth,
   orientation,
-  isOwnPieceAt,
+  movable,
   locked,
   kingInDanger,
   legalTargets,
@@ -46,7 +48,8 @@ const Pieces: React.FC<PiecesProps> = ({
           orientation={orientation}
           x={piece.x}
           y={piece.y}
-          disabled={piece.captured || !isOwnPieceAt(piece.square) || locked}
+          disabled={piece.captured || locked}
+          movable={movable}
           captured={piece.captured ?? false}
           inDanger={inDanger}
           fallen={inDanger && kingInDanger.fallen}

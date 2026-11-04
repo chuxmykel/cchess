@@ -9,7 +9,10 @@ import { Color, Square } from 'chess.js';
 
 import { DragGuide } from '../../../../hooks/useDragGuide';
 import { LegalTargets } from '../../../../domain/types';
-import { usePieceGesture } from '../../../../hooks/usePieceGesture';
+import {
+  MovableSquares,
+  usePieceGesture,
+} from '../../../../hooks/usePieceGesture';
 import PieceImage from '../../PieceImage';
 
 interface PieceProps {
@@ -26,6 +29,7 @@ interface PieceProps {
   inDanger?: boolean;
   fallen?: boolean;
   legalTargets: SharedValue<LegalTargets>;
+  movable: SharedValue<MovableSquares>;
   dragGuide: DragGuide;
   onTap: (square: Square) => void;
   onDragRelease: (from: Square, to: Square) => void;

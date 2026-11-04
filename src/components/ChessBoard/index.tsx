@@ -6,6 +6,7 @@ import { Color, Square } from 'chess.js';
 
 import { NUMBER_OF_ROWS } from '../../constants';
 import { getXYFromSquare } from '../../domain/boardCoordinates';
+import { MovableSquares } from '../../hooks/usePieceGesture';
 import { usePieceAnimations } from '../../hooks/usePieceAnimations';
 import { useDragGuide } from '../../hooks/useDragGuide';
 import { lastMoveSquares, PlayedMove } from '../../domain/lastMoveSquares';
@@ -78,6 +79,16 @@ const Chessboard: React.FC<ChessboardProps> = ({
   useLayoutEffect(() => {
     legalTargetsOnUI.set(legalTargets);
   }, [legalTargetsOnUI, legalTargets]);
+  // Whose pieces can be picked up, for the pieces' gestures to read on the
+  // UI thread: as props, a move changing it would re-render all 32.
+  const movable = useSharedValue<MovableSquares>({});
+  useLayoutEffect(() => {
+    movable.set(
+      Object.fromEntries(
+        pieces.map(({ square }) => [square, isOwnPieceAt(square)]),
+      ),
+    );
+  }, [movable, pieces, fen, isOwnPieceAt]);
   const validMoveIndicators = useValidMoveIndicators(
     legalMoveSquares,
     getLegalMoveSquares,
@@ -189,7 +200,7 @@ const Chessboard: React.FC<ChessboardProps> = ({
           pieces={animatedPieces}
           pieceWidth={PIECE_WIDTH}
           orientation={orientation}
-          isOwnPieceAt={isOwnPieceAt}
+          movable={movable}
           locked={isGameOver}
           kingInDanger={endangered}
           legalTargets={legalTargetsOnUI}

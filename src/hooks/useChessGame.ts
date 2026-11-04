@@ -1,4 +1,4 @@
-import { useCallback, useReducer, useRef } from 'react';
+import { useCallback, useMemo, useReducer, useRef } from 'react';
 import { Color, PieceSymbol, Square } from 'chess.js';
 
 import { ChessEngine } from '../domain/ChessEngine';
@@ -253,27 +253,44 @@ export function useChessGame(fen?: string) {
     [engine, applyResult],
   );
 
-  return {
-    pieces: state.pieces,
-    // engine is engineRef.current (lazy-inited above) - safe under React's
-    // current non-compiled runtime, see the react-hooks/refs note above.
-    // eslint-disable-next-line react-hooks/refs
-    fen: engine.getFen(),
-    turn: state.turn,
-    legalTargets: state.legalTargets,
-    isGameOver: state.isGameOver,
-    selectedSquare: state.selectedSquare,
-    legalMoveSquares: state.legalMoveSquares,
-    pendingPromotion: state.pendingPromotion,
-    lastMove: state.lastMove,
-    isOwnPieceAt,
-    getLegalMoveSquares,
-    handleSquareTap,
-    attemptMove,
-    promoteTo,
-    cancelPromotion,
-    resetTo,
-  };
+  // The same object until the game changes, so a screen re-rendering for
+  // something else - an engine's lines - doesn't re-render the board under
+  // ChessGameContext.
+  return useMemo(
+    () => ({
+      pieces: state.pieces,
+      // engine is engineRef.current (lazy-inited above), and `state` changes
+      // whenever it does - safe under React's current non-compiled runtime,
+      // see the react-hooks/refs note above.
+      // eslint-disable-next-line react-hooks/refs
+      fen: engine.getFen(),
+      turn: state.turn,
+      legalTargets: state.legalTargets,
+      isGameOver: state.isGameOver,
+      selectedSquare: state.selectedSquare,
+      legalMoveSquares: state.legalMoveSquares,
+      pendingPromotion: state.pendingPromotion,
+      lastMove: state.lastMove,
+      isOwnPieceAt,
+      getLegalMoveSquares,
+      handleSquareTap,
+      attemptMove,
+      promoteTo,
+      cancelPromotion,
+      resetTo,
+    }),
+    [
+      state,
+      engine,
+      isOwnPieceAt,
+      getLegalMoveSquares,
+      handleSquareTap,
+      attemptMove,
+      promoteTo,
+      cancelPromotion,
+      resetTo,
+    ],
+  );
 }
 
 export type UseChessGameResult = ReturnType<typeof useChessGame>;

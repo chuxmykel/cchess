@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Color, Square } from 'chess.js';
 
 import { NUMBER_OF_ROWS } from '../../../constants';
@@ -30,4 +31,6 @@ const BoardSurface: React.FC<BoardSurfaceProps> = ({
   </>
 );
 
-export default BoardSurface;
+// Its 64 squares only change with the board's colours, its orientation or
+// the tap handler - not on every move, which re-renders the board above it.
+export default memo(BoardSurface);
