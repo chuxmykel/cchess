@@ -85,6 +85,7 @@ const SetUpPositionView: React.FC<SetUpPositionViewProps> = ({
           <ToolbarButton
             icon="magnify-scan"
             label="Analyse"
+            hint="Analyse this position"
             onPress={() => onAnalyse(editor.fen)}
             disabled={editor.errors.length > 0}
             testID="set-up-analyse"

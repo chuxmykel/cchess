@@ -1,9 +1,18 @@
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render, within } from '@testing-library/react-native';
 
-import GameToolbar, { MoveSteps } from '.';
+import * as Haptics from 'expo-haptics';
+
+import GameToolbar, { MoveSteps, ToolbarButton } from '.';
 import { REPEAT_INTERVAL_MS } from '../../hooks/usePressAndHoldRepeat';
 
+jest.mock('expo-haptics', () => ({
+  impactAsync: jest.fn(() => Promise.resolve()),
+  ImpactFeedbackStyle: { Light: 'light' },
+}));
+
 describe('GameToolbar', () => {
+  beforeEach(() => jest.mocked(Haptics.impactAsync).mockClear());
+
   type Overrides = Partial<
     Omit<Parameters<typeof GameToolbar>[0], 'moveSteps'>
   > & { moveSteps?: Partial<MoveSteps> };
@@ -125,5 +134,70 @@ describe('GameToolbar', () => {
     expect(screen.queryByTestId('toolbar-resign-button')).toBeNull();
     expect(screen.queryByTestId('chat-button')).toBeNull();
     expect(screen.getByTestId('previous-move-button')).toBeTruthy();
+  });
+
+  describe('tooltips', () => {
+    it("shows what a button does while it's held, without pressing it", async () => {
+      const { props, screenPromise } = renderToolbar();
+      const screen = await screenPromise;
+      const menu = screen.getByTestId('game-menu-button');
+
+      await fireEvent(menu, 'longPress');
+
+      expect(Haptics.impactAsync).toHaveBeenCalledWith(
+        Haptics.ImpactFeedbackStyle.Light,
+      );
+      expect(
+        within(
+          screen.getByTestId('toolbar-tooltip', {
+            includeHiddenElements: true,
+          }),
+        ).getByText('Menu', { includeHiddenElements: true }),
+      ).toBeTruthy();
+
+      await fireEvent(menu, 'pressOut');
+
+      expect(
+        screen.queryByTestId('toolbar-tooltip', {
+          includeHiddenElements: true,
+        }),
+      ).toBeNull();
+      expect(props.onOpenMenu).not.toHaveBeenCalled();
+    });
+
+    it('explains the button with its hint, when it has one', async () => {
+      const screen = await render(
+        <ToolbarButton
+          icon="magnify-scan"
+          label="Analyse"
+          hint="Analyse this position"
+          onPress={jest.fn()}
+          testID="analyse"
+        />,
+      );
+
+      await fireEvent(screen.getByTestId('analyse'), 'longPress');
+
+      expect(
+        screen.getByText('Analyse this position', {
+          includeHiddenElements: true,
+        }),
+      ).toBeTruthy();
+    });
+
+    it('has none for the buttons that repeat while held', async () => {
+      const { screenPromise } = renderToolbar();
+      const screen = await screenPromise;
+
+      await fireEvent(screen.getByTestId('previous-move-button'), 'longPress');
+      await fireEvent(screen.getByTestId('next-move-button'), 'longPress');
+
+      expect(
+        screen.queryByTestId('toolbar-tooltip', {
+          includeHiddenElements: true,
+        }),
+      ).toBeNull();
+      expect(Haptics.impactAsync).not.toHaveBeenCalled();
+    });
   });
 });
