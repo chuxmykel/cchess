@@ -36,6 +36,8 @@ export interface PlayerBarProps {
   onPressPlayer?: (player: GameUserSummary) => void;
   /** A rematch series' score, shown as this side's points. */
   series?: SeriesScore | null;
+  /** A daily game: the clock shows the days and hours left on the move. */
+  daily?: boolean;
 }
 
 const PlayerBar: React.FC<PlayerBarProps> = ({
@@ -51,6 +53,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   material,
   onPressPlayer,
   series = null,
+  daily = false,
 }) => {
   const styles = useStyles();
 
@@ -147,6 +150,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
         label={isWhite ? 'White' : 'Black'}
         ms={isWhite ? clock.whiteMs : clock.blackMs}
         isActive={!isGameOver && turn === color}
+        daily={daily}
       />
     </View>
   );

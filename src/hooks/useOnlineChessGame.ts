@@ -71,6 +71,9 @@ export function useOnlineChessGame(
   onRematchStarted?: (gameId: string) => void,
 ): UseOnlineChessGameResult {
   const game = useChessGame(snapshot.fen);
+  // Days apart, a daily game's moves take no pre-moves, nor start with the
+  // sound of a game beginning each time one not yet begun is opened.
+  const isDaily = snapshot.gameType === 'daily';
 
   const {
     gameStatus,
@@ -93,7 +96,7 @@ export function useOnlineChessGame(
     myColor,
     game.fen,
     game.turn,
-    gameStatus === 'active',
+    gameStatus === 'active' && !isDaily,
   );
   let drawOffer: DrawOfferStatus = 'none';
   if (drawOfferedBy === myColor) drawOffer = 'sent';
@@ -110,7 +113,7 @@ export function useOnlineChessGame(
     pliesPlayedIncludingOurUnconfirmedMove < SERVER_ABORT_PLY_LIMIT;
 
   useGameStartSound(
-    snapshot.status === 'active' && snapshot.moves.length === 0,
+    !isDaily && snapshot.status === 'active' && snapshot.moves.length === 0,
   );
   useMoveSounds(game.lastMove);
   useGameOverSound(gameStatus !== 'active', resultReason);

@@ -157,7 +157,7 @@ describe('useSocial', () => {
 
     await act(() => result.current.acceptChallenge(INCOMING_CHALLENGE.id));
 
-    expect(onGameStarted).toHaveBeenCalledWith('game-7');
+    expect(onGameStarted).toHaveBeenCalledWith('game-7', 'blitz');
     expect(result.current.challenges.incoming).toEqual([]);
   });
 
@@ -184,7 +184,28 @@ describe('useSocial', () => {
       }),
     );
 
-    expect(onGameStarted).toHaveBeenCalledWith('game-8');
+    expect(onGameStarted).toHaveBeenCalledWith('game-8', 'blitz');
+    expect(result.current.challenges.outgoing).toEqual([]);
+  });
+
+  it('leaves a daily game my challenge started to Your games, not opening it', async () => {
+    const { result } = await renderSocial();
+    const outgoing = makeChallenge({
+      id: 'challenge-3',
+      initialSeconds: 3 * 24 * 60 * 60,
+      incrementSeconds: 0,
+      gameType: 'daily',
+    });
+
+    await act(() =>
+      fake.trigger('challenge:accepted', {
+        ...outgoing,
+        status: 'accepted',
+        gameId: 'game-9',
+      }),
+    );
+
+    expect(onGameStarted).not.toHaveBeenCalled();
     expect(result.current.challenges.outgoing).toEqual([]);
   });
 

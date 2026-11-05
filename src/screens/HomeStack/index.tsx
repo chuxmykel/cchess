@@ -10,6 +10,7 @@ import { SocialProvider } from '../../context/SocialContext';
 import { useResumeActiveGame } from '../../hooks/useResumeActiveGame';
 import HomeTabs from '../HomeTabs';
 import LiveGame from '../LiveGame';
+import DailyGame from '../DailyGame';
 import GameViewer from '../GameViewer';
 import AnalysisBoard from '../AnalysisBoard';
 import AnalysisSettings from '../AnalysisSettings';
@@ -20,6 +21,7 @@ import UserFriends from '../UserFriends';
 import Friends from '../Friends';
 import RatingStats from '../RatingStats';
 import { GAME_TYPE_LABELS } from '../../constants/timeControls';
+import { GameType } from '../../domain/types';
 import SignIn from '../SignIn';
 import CreateAccount from '../CreateAccount';
 import Licenses from '../Licenses';
@@ -32,10 +34,11 @@ const { Navigator, Screen } = createNativeStackNavigator<HomeStackParamList>();
 const HomeStack: React.FC = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  // A game that's just started - or a live one still on, after a restart.
   const openGame = useCallback(
-    (gameId: string) =>
+    (gameId: string, gameType?: GameType) =>
       navigation.navigate('HomeStack', {
-        screen: 'LiveGame',
+        screen: gameType === 'daily' ? 'DailyGame' : 'LiveGame',
         params: { gameId },
       }),
     [navigation],
@@ -58,6 +61,7 @@ const HomeStack: React.FC = () => {
             component={LiveGame}
             options={{ gestureEnabled: false }}
           />
+          <Screen name="DailyGame" component={DailyGame} />
           <Screen name="GameViewer" component={GameViewer} />
           <Screen
             name="AnalysisBoard"

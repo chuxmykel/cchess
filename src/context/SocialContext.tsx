@@ -1,11 +1,12 @@
 import { createContext, useContext } from 'react';
 
+import { GameType } from '../domain/types';
 import { Social, useSocial } from '../hooks/useSocial';
 
 const SocialContext = createContext<Social | null>(null);
 
 export const SocialProvider: React.FC<{
-  onGameStarted: (gameId: string) => void;
+  onGameStarted: (gameId: string, gameType: GameType) => void;
   children: React.ReactNode;
 }> = ({ onGameStarted, children }) => {
   const social = useSocial(onGameStarted);

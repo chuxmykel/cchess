@@ -1,8 +1,9 @@
 import { AxiosError, create } from 'axios';
+import type { Color, Square } from 'chess.js';
 
 import { GameType } from '../domain/types';
 import { SERVER_URL } from './env';
-import type { ColorChoice, GameSnapshot } from './socketEvents';
+import type { ColorChoice, GameSnapshot, RatingRange } from './socketEvents';
 
 export class ApiError extends Error {
   status: number;
@@ -158,17 +159,107 @@ export async function getMyGames(
   ).data;
 }
 
-/** The game you're in the middle of, if any. */
+/** The live game you're in the middle of, if any - not a daily one, of
+ * which you may have many, played whenever. */
 export async function getMyActiveGame(
   accessToken: string,
 ): Promise<GameSummary | null> {
   const games = (
     await apiClient.get<GameSummary[]>('/games', {
       ...bearer(accessToken),
-      params: { status: 'active', limit: 1 },
+      params: { status: 'active', kind: 'live', limit: 1 },
     })
   ).data;
   return games[0] ?? null;
+}
+
+export type DailyGameOpponent = {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarColor: string;
+};
+
+/** A daily game in progress, as your list of them shows it. */
+export type DailyGame = {
+  id: string;
+  fen: string;
+  turn: Color;
+  lastMove: { from: Square; to: Square } | null;
+  playedAsWhite: boolean;
+  myTurn: boolean;
+  daysPerMove: number;
+  /** When the side to move runs out of time. */
+  moveDeadlineAt: string;
+  rated: boolean;
+  opponent: DailyGameOpponent;
+};
+
+/** A daily game sought: matched at once with a seek already waiting that
+ * agrees, or left waiting - however long - for one that will. */
+export type NewDailySeek = {
+  days: number;
+  rated: boolean;
+  ratingRange: RatingRange;
+  color: ColorChoice;
+};
+
+export type DailySeek = {
+  id: string;
+  days: number;
+  rated: boolean;
+  ratingRange: RatingRange | null;
+  color: ColorChoice;
+  createdAt: string;
+};
+
+export type DailySeekResult =
+  | { status: 'queued'; seek: DailySeek }
+  | { status: 'matched'; game: GameSnapshot };
+
+export async function createDailySeek(
+  seek: NewDailySeek,
+  accessToken: string,
+): Promise<DailySeekResult> {
+  return (
+    await apiClient.post<DailySeekResult>(
+      '/daily-seeks',
+      seek,
+      bearer(accessToken),
+    )
+  ).data;
+}
+
+/** Your daily seeks still waiting, oldest first. */
+export async function getMyDailySeeks(
+  accessToken: string,
+): Promise<DailySeek[]> {
+  return (await apiClient.get<DailySeek[]>('/daily-seeks', bearer(accessToken)))
+    .data;
+}
+
+export async function cancelDailySeek(
+  seekId: string,
+  accessToken: string,
+): Promise<void> {
+  await apiClient.delete(
+    `/daily-seeks/${encodeURIComponent(seekId)}`,
+    bearer(accessToken),
+  );
+}
+
+/** Your daily games in progress: those on your move first, then each by
+ * when its move runs out. */
+export async function getDailyGames(
+  accessToken: string,
+  limit?: number,
+): Promise<DailyGame[]> {
+  return (
+    await apiClient.get<DailyGame[]>('/games/daily', {
+      ...bearer(accessToken),
+      params: { limit },
+    })
+  ).data;
 }
 
 export async function getUserGames(

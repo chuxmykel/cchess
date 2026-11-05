@@ -15,6 +15,8 @@ export type ConversationPartner = {
 export type HomeStackParamList = {
   HomeTabs: undefined;
   LiveGame: { seek: Seek } | { gameId: string };
+  /** One of your daily games, to play a move in whenever you like. */
+  DailyGame: { gameId: string };
   /** watchedUserId: the player whose game this is being watched for -
    * shown at the bottom, and followed into their next game. */
   GameViewer: { gameId: string; watchedUserId?: string };

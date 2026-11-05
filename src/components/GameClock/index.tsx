@@ -1,11 +1,14 @@
 import { View, Text } from 'react-native';
 import { makeStyles } from '../../theme';
+import { DAILY_LOW_TIME_MS, formatTimeLeft } from '../../utils/timeLeft';
 
 interface GameClockProps {
   ms: number;
   isActive: boolean;
   /** Whose clock it is - read out by screen readers, not shown. */
   label: string;
+  /** A daily game's clock: the days and hours left on the move. */
+  daily?: boolean;
 }
 
 const LOW_TIME_THRESHOLD_MS = 10000;
@@ -32,18 +35,31 @@ function formatClock(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-const GameClock: React.FC<GameClockProps> = ({ ms, isActive, label }) => {
+const GameClock: React.FC<GameClockProps> = ({
+  ms,
+  isActive,
+  label,
+  daily = false,
+}) => {
   const styles = useStyles();
+  const time = daily ? formatTimeLeft(ms) : formatClock(ms);
+  const isLow = daily ? ms < DAILY_LOW_TIME_MS : isLowTime(ms);
 
   return (
     <View
       style={[styles.container, isActive && styles.active]}
       accessible
-      accessibilityLabel={`${label} clock, ${formatClock(ms)}`}
+      accessibilityLabel={`${label} clock, ${time}`}
       testID={`game-clock-${label}`}
     >
-      <Text style={[styles.time, isLowTime(ms) && styles.timeLow]}>
-        {formatClock(ms)}
+      <Text
+        style={[
+          styles.time,
+          daily && styles.timeDaily,
+          isLow && styles.timeLow,
+        ]}
+      >
+        {time}
       </Text>
     </View>
   );
@@ -68,6 +84,10 @@ const useStyles = makeStyles((t) => ({
     fontSize: t.fontSize.xxl,
     fontWeight: t.fontWeight.bold,
     fontVariant: ['tabular-nums'],
+  },
+  // "1 day 23h" is longer than any live clock.
+  timeDaily: {
+    fontSize: t.fontSize.lg,
   },
   timeLow: {
     color: t.colors.danger,

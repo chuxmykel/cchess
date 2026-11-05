@@ -47,11 +47,12 @@ const GameViewer: React.FC<GameViewerProps> = ({ navigation, route }) => {
     (nextGameId) => navigation.setParams({ gameId: nextGameId }),
   );
 
+  const isDaily = snapshot?.gameType === 'daily';
   useEffect(() => {
     if (isMyGameInPlay) {
-      navigation.replace('LiveGame', { gameId });
+      navigation.replace(isDaily ? 'DailyGame' : 'LiveGame', { gameId });
     }
-  }, [isMyGameInPlay, navigation, gameId]);
+  }, [isMyGameInPlay, isDaily, navigation, gameId]);
 
   function findNewOpponent(timeControl: TimeControl) {
     navigation.navigate('LiveGame', {

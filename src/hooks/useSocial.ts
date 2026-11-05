@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useAuthSession } from '../context/AuthSessionContext';
+import { GameType } from '../domain/types';
 import {
   acceptChallenge as acceptChallengeRequest,
   cancelChallenge as cancelChallengeRequest,
@@ -92,7 +93,12 @@ function withFriendStatus(
 
 // The signed-in player's friends, friend requests, challenges and unread
 // messages, kept current from the server's pushes.
-export function useSocial(onGameStarted: (gameId: string) => void): Social {
+// onGameStarted opens a game a challenge started: one you accepted, or a
+// live one of yours accepted - not a daily one, which waits for you in
+// Your games rather than pulling you away from what you're doing.
+export function useSocial(
+  onGameStarted: (gameId: string, gameType: GameType) => void,
+): Social {
   const session = useAuthSession();
   const { authorized } = session;
   const user = session.isReady ? session.user : null;
@@ -208,8 +214,8 @@ export function useSocial(onGameStarted: (gameId: string) => void): Social {
         ...current,
         challenges: withoutChallenge(current.challenges, challenge.id),
       }));
-      if (challenge.gameId) {
-        onGameStartedRef.current(challenge.gameId);
+      if (challenge.gameId && challenge.gameType !== 'daily') {
+        onGameStartedRef.current(challenge.gameId, challenge.gameType);
       }
     }
 
@@ -333,7 +339,7 @@ export function useSocial(onGameStarted: (gameId: string) => void): Social {
         const game = await authorized((token) =>
           acceptChallengeRequest(challengeId, token),
         );
-        onGameStartedRef.current(game.id);
+        onGameStartedRef.current(game.id, game.gameType);
       } finally {
         update((current) => ({
           ...current,

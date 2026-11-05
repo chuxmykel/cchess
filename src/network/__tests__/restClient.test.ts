@@ -8,7 +8,11 @@ import {
   getMe,
   isGameBookmarked,
   setGameBookmarked,
+  cancelDailySeek,
+  createDailySeek,
+  getDailyGames,
   getMyActiveGame,
+  getMyDailySeeks,
   getMyGames,
   isUsernameAvailable,
   refreshSession,
@@ -184,7 +188,7 @@ describe('restClient', () => {
       expect(request.headers.Authorization).toBe('Bearer access-123');
     });
 
-    it("finds the game you're in the middle of", async () => {
+    it("finds the live game you're in the middle of, not a daily one", async () => {
       const transport = stubTransport(respondWith([{ id: 'live-game' }]));
 
       await expect(getMyActiveGame('access-123')).resolves.toEqual({
@@ -193,7 +197,47 @@ describe('restClient', () => {
 
       const request = sentRequest(transport);
       expect(request.url).toBe('/games');
-      expect(request.params).toEqual({ status: 'active', limit: 1 });
+      expect(request.params).toEqual({
+        status: 'active',
+        kind: 'live',
+        limit: 1,
+      });
+    });
+
+    it('fetches your daily games in progress', async () => {
+      const transport = stubTransport(respondWith([{ id: 'daily-game' }]));
+
+      await expect(getDailyGames('access-123', 10)).resolves.toEqual([
+        { id: 'daily-game' },
+      ]);
+
+      const request = sentRequest(transport);
+      expect(request.url).toBe('/games/daily');
+      expect(request.params).toEqual({ limit: 10 });
+      expect(request.headers.Authorization).toBe('Bearer access-123');
+    });
+
+    it('posts, lists and withdraws daily seeks', async () => {
+      const seek = {
+        days: 3,
+        rated: true,
+        ratingRange: { below: 200, above: 200 },
+        color: 'random' as const,
+      };
+      const posting = stubTransport(respondWith({ status: 'queued' }));
+      await createDailySeek(seek, 'access-123');
+      expect(sentRequest(posting).method).toBe('post');
+      expect(sentRequest(posting).url).toBe('/daily-seeks');
+      expect(JSON.parse(sentRequest(posting).data)).toEqual(seek);
+
+      const listing = stubTransport(respondWith([]));
+      await getMyDailySeeks('access-123');
+      expect(sentRequest(listing).url).toBe('/daily-seeks');
+
+      const withdrawing = stubTransport(respondWith(null));
+      await cancelDailySeek('seek-1', 'access-123');
+      expect(sentRequest(withdrawing).method).toBe('delete');
+      expect(sentRequest(withdrawing).url).toBe('/daily-seeks/seek-1');
     });
 
     it('finds no game when none is in progress', async () => {
