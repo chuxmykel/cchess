@@ -4,6 +4,7 @@ import { Color } from 'chess.js';
 import { AppSocket } from '../../network/socketClient';
 import { GameSnapshot } from '../../network/socketEvents';
 import {
+  OnlineChessGameOptions,
   useOnlineChessGame,
   UseOnlineChessGameResult,
 } from '../../hooks/useOnlineChessGame';
@@ -30,6 +31,7 @@ export const OnlineChessGameProvider: React.FC<{
   onError?: (message: string) => void;
   /** A rematch of this game has started, as the game with this id. */
   onRematchStarted?: (gameId: string) => void;
+  options?: OnlineChessGameOptions;
   children: React.ReactNode;
 }> = ({
   socket,
@@ -38,6 +40,7 @@ export const OnlineChessGameProvider: React.FC<{
   snapshot,
   onError,
   onRematchStarted,
+  options,
   children,
 }) => {
   const chessGame = useOnlineChessGame(
@@ -47,6 +50,7 @@ export const OnlineChessGameProvider: React.FC<{
     snapshot,
     onError,
     onRematchStarted,
+    options,
   );
   return (
     <OnlineChessGameContext.Provider value={chessGame}>

@@ -10,6 +10,7 @@ import {
   useGameSnapshot,
 } from '../../hooks/useGameSnapshot';
 import { useAuthSession } from '../../context/AuthSessionContext';
+import { useDailyGameSettingsContext } from '../../context/DailyGameSettingsContext';
 import { OnlineChessGameProvider } from '../../context/LiveGame/OnlineChessGameContext';
 import { colorPlayedBy } from '../../domain/players';
 import { HomeStackParamList } from '../HomeStack/types';
@@ -27,6 +28,7 @@ const DailyGame: React.FC<DailyGameProps> = ({ navigation, route }) => {
   const socket = authSession.isReady ? authSession.socket : null;
   const toast = useToast();
   const snapshotResult = useGameSnapshot(socket, gameId);
+  const { settings } = useDailyGameSettingsContext();
 
   function renderContent() {
     if (
@@ -51,6 +53,7 @@ const DailyGame: React.FC<DailyGameProps> = ({ navigation, route }) => {
         onRematchStarted={(rematchId) =>
           navigation.replace('DailyGame', { gameId: rematchId })
         }
+        options={{ confirmMoves: settings.confirmMoves }}
       >
         <DailyGameContent
           width={width}

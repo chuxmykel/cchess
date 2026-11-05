@@ -13,6 +13,8 @@ import { makeDailyGame } from '../../testUtils/dailyGame';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { waitForSheetToClose } from '../../testUtils/modal';
 import { DailyGame } from '../../network/restClient';
+import { boardTester } from '../../components/Board/boardTester';
+import { settleAnimations } from '../../testUtils/pieceGestures';
 
 jest.mock('../../components/ConnectionStrengthIndicator', () =>
   jest.requireActual('../../testUtils/ConnectionStrengthIndicatorStub'),
@@ -100,6 +102,7 @@ describe('DailyGameContent', () => {
   async function renderContent(
     myColor: Color = 'w',
     overrides: Partial<ReturnType<typeof makeGameSnapshot>> = {},
+    { confirmMoves = false } = {},
   ) {
     const { socket, trigger } = createFakeSocket();
     const snapshot = dailySnapshot(overrides);
@@ -116,6 +119,7 @@ describe('DailyGameContent', () => {
           gameId={snapshot.id}
           myColor={myColor}
           snapshot={snapshot}
+          options={{ confirmMoves }}
         >
           <DailyGameContent
             width={400}
@@ -169,6 +173,7 @@ describe('DailyGameContent', () => {
       'next-game-action',
       'offer-draw-action',
       'resign-action',
+      'daily-game-settings-action',
       'flip-board-action',
     ]);
   });
@@ -181,8 +186,85 @@ describe('DailyGameContent', () => {
     expect(menuActionIds(screen)).toEqual([
       'next-game-action',
       'abort-game-action',
+      'daily-game-settings-action',
       'flip-board-action',
     ]);
+  });
+
+  it('opens the daily game settings', async () => {
+    const { screen, navigation } = await renderContent();
+
+    await chooseMenuAction(screen, 'daily-game-settings-action');
+
+    expect(navigation.navigate).toHaveBeenCalledWith('DailyGameSettings');
+  });
+
+  describe('with moves confirmed', () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    function sentMoves(socket: { emit: jest.Mock | unknown }) {
+      return (socket.emit as jest.Mock).mock.calls.filter(
+        ([event]) => event === 'game:move',
+      );
+    }
+
+    async function playE4(screen: Screen) {
+      await boardTester(screen).taps('e2', 'e4');
+      await settleAnimations();
+    }
+
+    it('holds a move on the board until it is confirmed, then sends it', async () => {
+      const { screen, socket } = await renderContent(
+        'w',
+        {},
+        {
+          confirmMoves: true,
+        },
+      );
+
+      await playE4(screen);
+
+      expect(boardTester(screen).pieceOn('e4')).toBe('wp');
+      expect(sentMoves(socket)).toEqual([]);
+      expect(screen.queryByTestId('game-toolbar')).toBeNull();
+
+      await fireEvent.press(screen.getByTestId('confirm-move-button'));
+
+      expect(sentMoves(socket)).toEqual([
+        ['game:move', { gameId: 'this-game', from: 'e2', to: 'e4' }],
+      ]);
+      expect(screen.queryByTestId('confirm-move-bar')).toBeNull();
+      expect(screen.getByTestId('game-toolbar')).toBeTruthy();
+    });
+
+    it('takes a move back when it is cancelled, sending nothing', async () => {
+      const { screen, socket } = await renderContent(
+        'w',
+        {},
+        {
+          confirmMoves: true,
+        },
+      );
+
+      await playE4(screen);
+      await fireEvent.press(screen.getByTestId('cancel-move-button'));
+      await settleAnimations();
+
+      expect(boardTester(screen).pieceOn('e2')).toBe('wp');
+      expect(boardTester(screen).pieceOn('e4')).toBeNull();
+      expect(sentMoves(socket)).toEqual([]);
+      expect(screen.getByTestId('game-toolbar')).toBeTruthy();
+    });
+
+    it('sends a move at once with moves not confirmed', async () => {
+      const { screen, socket } = await renderContent();
+
+      await playE4(screen);
+
+      expect(sentMoves(socket)).toHaveLength(1);
+      expect(screen.queryByTestId('confirm-move-bar')).toBeNull();
+    });
   });
 
   it('goes to the next game in the list', async () => {
@@ -289,6 +371,7 @@ describe('DailyGameContent', () => {
         'next-game-action',
         'show-result-action',
         'analyse-action',
+        'daily-game-settings-action',
         'flip-board-action',
       ]);
     });

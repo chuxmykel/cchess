@@ -17,6 +17,7 @@ import PlayerBarsFrame, {
 } from '../../components/PlayerBarsFrame';
 import GameScreenHeader from '../../components/GameScreenHeader';
 import GameToolbar from '../../components/GameToolbar';
+import ConfirmMoveBar from '../../components/ConfirmMoveBar';
 import BottomBar from '../../components/BottomBar';
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
 import ChatSheet from '../../components/ChatSheet';
@@ -70,6 +71,7 @@ type DailyGameMenuOptions = {
   acceptDraw: () => void;
   confirmAbort: () => void;
   confirmResign: () => void;
+  openSettings: () => void;
   flip: () => void;
   analyse: () => void;
   /** Brings the result card back; only while it's dismissed. */
@@ -85,10 +87,16 @@ export function dailyGameMenuActions({
   acceptDraw,
   confirmAbort,
   confirmResign,
+  openSettings,
   flip,
   analyse,
   showResult,
 }: DailyGameMenuOptions): ActionSheetAction[] {
+  const settings: ActionSheetAction = {
+    label: 'Settings',
+    onPress: openSettings,
+    testID: 'daily-game-settings-action',
+  };
   const nextGame: ActionSheetAction = {
     label: 'Next game',
     onPress: goToNextGame,
@@ -108,6 +116,7 @@ export function dailyGameMenuActions({
           ]
         : []),
       analyseAction(analyse),
+      settings,
       flipBoard,
     ];
   }
@@ -141,7 +150,7 @@ export function dailyGameMenuActions({
         destructive: true,
         testID: 'resign-action',
       };
-  return [nextGame, ...draw, leaveGame, flipBoard];
+  return [nextGame, ...draw, leaveGame, settings, flipBoard];
 }
 
 const DailyGameContent: React.FC<DailyGameContentProps> = ({
@@ -175,6 +184,9 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
     offerDraw,
     respondToDraw,
     abort,
+    hasPendingMove,
+    confirmMove,
+    cancelMove,
   } = useOnlineChessGameContext();
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
   const { orientation, flip } = useBoardOrientation(myColor);
@@ -260,6 +272,7 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
     acceptDraw: () => respondToDraw(true),
     confirmAbort,
     confirmResign,
+    openSettings: () => navigation.navigate('DailyGameSettings'),
     flip,
     analyse,
     showResult: isResultDismissed
@@ -371,12 +384,16 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
       )}
 
       <BottomBar>
-        <GameToolbar
-          onOpenMenu={() => setIsMenuOpen(true)}
-          onOpenChat={chat.open}
-          unreadChatCount={chat.unreadCount}
-          moveSteps={moveNavigation}
-        />
+        {hasPendingMove ? (
+          <ConfirmMoveBar onCancel={cancelMove} onConfirm={confirmMove} />
+        ) : (
+          <GameToolbar
+            onOpenMenu={() => setIsMenuOpen(true)}
+            onOpenChat={chat.open}
+            unreadChatCount={chat.unreadCount}
+            moveSteps={moveNavigation}
+          />
+        )}
       </BottomBar>
 
       <ActionSheet
