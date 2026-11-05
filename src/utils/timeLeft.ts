@@ -1,24 +1,23 @@
 const MINUTE_MS = 60_000;
-const MINUTES_PER_DAY = 24 * 60;
+const HOUR_MS = 60 * MINUTE_MS;
+const HOURS_PER_DAY = 24;
 
 /** Under this, a daily game's time left is shown as running out. */
-export const DAILY_LOW_TIME_MS = 60 * MINUTE_MS;
+export const DAILY_LOW_TIME_MS = HOUR_MS;
 
 /**
- * A daily game's time left on a move, in its two largest units: "3 days",
- * "1 day 4h", "5h 12m", "12m" - or seconds, in its last minute. Rounded
- * up, as the live clock is, so it never reads less than is left.
+ * Time left until a deadline, rounded up so it never reads less than is
+ * left: to the hour from an hour up - "3 days", "1 day 5h", "6h" - to the
+ * minute under an hour - "12m" - and to the second in the last minute.
  */
 export function formatTimeLeft(ms: number): string {
   if (ms < MINUTE_MS) return `${Math.max(Math.ceil(ms / 1000), 0)}s`;
-  const totalMinutes = Math.ceil(ms / MINUTE_MS);
-  const days = Math.floor(totalMinutes / MINUTES_PER_DAY);
-  const hours = Math.floor((totalMinutes % MINUTES_PER_DAY) / 60);
-  const minutes = totalMinutes % 60;
-  if (days > 0) {
-    const daysPart = `${days} ${days === 1 ? 'day' : 'days'}`;
-    return hours > 0 ? `${daysPart} ${hours}h` : daysPart;
-  }
-  if (hours > 0) return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
-  return `${minutes}m`;
+  const minutes = Math.ceil(ms / MINUTE_MS);
+  if (minutes < 60) return `${minutes}m`;
+  const totalHours = Math.ceil(ms / HOUR_MS);
+  const days = Math.floor(totalHours / HOURS_PER_DAY);
+  const hours = totalHours % HOURS_PER_DAY;
+  if (days === 0) return `${hours}h`;
+  const daysPart = `${days} ${days === 1 ? 'day' : 'days'}`;
+  return hours > 0 ? `${daysPart} ${hours}h` : daysPart;
 }
