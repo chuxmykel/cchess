@@ -17,17 +17,12 @@ type ChessGameState = {
   // Where each of the side to move's pieces can go - every legal move at
   // once, so a dropped piece can be judged where it lands, on the UI thread.
   legalTargets: LegalTargets;
-  selectedSquare: Square | null;
-  legalMoveSquares: Square[];
   isGameOver: boolean;
   pendingPromotion: PendingPromotion | null;
   lastMove: AppliedMove | null;
 };
 
 type Action =
-  | { type: 'SELECT_SQUARE'; square: Square; legalMoveSquares: Square[] }
-  | { type: 'DESELECT' }
-  | { type: 'MOVE_REJECTED' }
   | { type: 'PROMOTION_PENDING'; from: Square; to: Square }
   | { type: 'PROMOTION_CANCELLED' }
   | {
@@ -48,22 +43,10 @@ type Action =
 
 function reducer(state: ChessGameState, action: Action): ChessGameState {
   switch (action.type) {
-    case 'SELECT_SQUARE':
-      return {
-        ...state,
-        selectedSquare: action.square,
-        legalMoveSquares: action.legalMoveSquares,
-      };
-    case 'DESELECT':
-      return { ...state, selectedSquare: null, legalMoveSquares: [] };
-    case 'MOVE_REJECTED':
-      return { ...state, selectedSquare: null, legalMoveSquares: [] };
     case 'PROMOTION_PENDING':
       return {
         ...state,
         pendingPromotion: { from: action.from, to: action.to },
-        selectedSquare: null,
-        legalMoveSquares: [],
       };
     case 'PROMOTION_CANCELLED':
       return { ...state, pendingPromotion: null };
@@ -74,8 +57,6 @@ function reducer(state: ChessGameState, action: Action): ChessGameState {
         turn: action.turn,
         legalTargets: action.legalTargets,
         isGameOver: action.isGameOver,
-        selectedSquare: null,
-        legalMoveSquares: [],
         pendingPromotion: null,
         // No move took it here, so there's none to animate or send.
         lastMove: null,
@@ -86,8 +67,6 @@ function reducer(state: ChessGameState, action: Action): ChessGameState {
         pieces: action.pieces,
         turn: action.turn,
         legalTargets: action.legalTargets,
-        selectedSquare: null,
-        legalMoveSquares: [],
         isGameOver: action.isGameOver,
         pendingPromotion: null,
         lastMove: action.move,
@@ -102,8 +81,6 @@ function initState(engine: ChessEngine): ChessGameState {
     pieces: engine.getBoardSnapshot(),
     turn: engine.getTurn(),
     legalTargets: engine.getLegalTargets(),
-    selectedSquare: null,
-    legalMoveSquares: [],
     isGameOver: engine.isGameOver(),
     pendingPromotion: null,
     lastMove: null,
@@ -145,10 +122,7 @@ export function useChessGame(fen?: string, options: ChessGameOptions = {}) {
 
   const applyResult = useCallback(
     (result: MoveResult) => {
-      if (result.status === 'illegal') {
-        dispatch({ type: 'MOVE_REJECTED' });
-        return;
-      }
+      if (result.status === 'illegal') return;
       if (result.status === 'needs-promotion-choice') {
         dispatch({
           type: 'PROMOTION_PENDING',
@@ -180,55 +154,6 @@ export function useChessGame(fen?: string, options: ChessGameOptions = {}) {
       return result;
     },
     [engine, applyResult],
-  );
-
-  const getLegalMoveSquares = useCallback(
-    (square: Square): Square[] => {
-      return engine.getLegalMoveSquares(square);
-    },
-    [engine],
-  );
-
-  const isOwnPieceAt = useCallback((square: Square): boolean => {
-    const piece = stateRef.current.pieces.find(
-      (candidate) => candidate.square === square,
-    );
-    return Boolean(piece) && piece.color === stateRef.current.turn;
-  }, []);
-
-  const selectSquare = useCallback(
-    (square: Square) => {
-      dispatch({
-        type: 'SELECT_SQUARE',
-        square,
-        legalMoveSquares: engine.getLegalMoveSquares(square),
-      });
-    },
-    [engine],
-  );
-
-  const handleSquareTap = useCallback(
-    (square: Square) => {
-      const current = stateRef.current;
-      if (current.isGameOver) return;
-
-      if (!current.selectedSquare) {
-        if (isOwnPieceAt(square)) {
-          selectSquare(square);
-        }
-        return;
-      }
-
-      if (square === current.selectedSquare) return;
-
-      if (isOwnPieceAt(square)) {
-        selectSquare(square);
-        return;
-      }
-
-      attemptMove(current.selectedSquare, square);
-    },
-    [isOwnPieceAt, selectSquare, attemptMove],
   );
 
   /** Puts the pawn back: no promotion after all. */
@@ -277,29 +202,17 @@ export function useChessGame(fen?: string, options: ChessGameOptions = {}) {
       turn: state.turn,
       legalTargets: state.legalTargets,
       isGameOver: state.isGameOver,
-      selectedSquare: state.selectedSquare,
-      legalMoveSquares: state.legalMoveSquares,
+      // Whose pieces can be picked up: the side to move's, until the game's
+      // over.
+      movableColor: state.isGameOver ? null : state.turn,
       pendingPromotion: state.pendingPromotion,
       lastMove: state.lastMove,
-      isOwnPieceAt,
-      getLegalMoveSquares,
-      handleSquareTap,
       attemptMove,
       promoteTo,
       cancelPromotion,
       resetTo,
     }),
-    [
-      state,
-      engine,
-      isOwnPieceAt,
-      getLegalMoveSquares,
-      handleSquareTap,
-      attemptMove,
-      promoteTo,
-      cancelPromotion,
-      resetTo,
-    ],
+    [state, engine, attemptMove, promoteTo, cancelPromotion, resetTo],
   );
 }
 

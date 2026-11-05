@@ -1,0 +1,52 @@
+import { Easing, WithTimingConfig } from 'react-native-reanimated';
+
+import { Square } from './types';
+
+export const BOARD_SQUARES = 8;
+export const CHAR_CODE_FOR_LETTER_A = 97;
+
+// Every square, rank 8 first.
+export const SQUARES: Square[] = [8, 7, 6, 5, 4, 3, 2, 1].flatMap((rank) =>
+  [...'abcdefgh'].map((file) => `${file}${rank}` as Square),
+);
+
+// How far a finger moves before a touch is a drag rather than a tap.
+export const TAP_MOVEMENT_THRESHOLD = 10;
+
+// A piece travelling to its new square: a quick tween that eases out, so it
+// arrives fast and settles onto its square rather than stopping dead on it.
+// A dragged piece is lifted and set down at once instead, as on lichess (see
+// usePieceGesture).
+export const MOVE_TIMING: WithTimingConfig = {
+  duration: 50,
+  easing: Easing.out(Easing.cubic),
+};
+
+// How much bigger a piece is drawn while it's being dragged.
+export const DRAG_SCALE = 2;
+
+// How far above the finger a dragged piece is drawn, in squares: clear of the
+// finger, and clearly not on the square the drop counts for - the one under
+// the finger, which the guide marks.
+export const DRAG_LIFT = 1;
+
+// How long before the finger lifts a drop that's no move is judged again
+// from (see usePieceGesture): about two frames, what the guide was showing.
+export const DROP_LIFT_GRACE_MS = 35;
+
+// Drawn over every other piece while dragged.
+export const DRAGGED_Z_INDEX = 100;
+
+// A fallen king tipping over: slow enough to see it go, and gathering speed
+// as it falls.
+export const KING_FALL_TIMING: WithTimingConfig = {
+  duration: 400,
+  easing: Easing.in(Easing.quad),
+};
+
+// How far a fallen king tips over.
+export const KING_FALL_DEGREES = 45;
+
+// The coordinates in the squares' corners.
+export const COORDINATE_FONT_SIZE = 12;
+export const COORDINATE_PADDING = 4;

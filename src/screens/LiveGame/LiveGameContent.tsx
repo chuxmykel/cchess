@@ -8,7 +8,7 @@ import {
   timeControlOf,
   TimeControl,
 } from '../../constants/timeControls';
-import Chessboard from '../../components/ChessBoard';
+import { GameBoard } from '../../components/Board';
 import MoveList from '../../components/MoveList';
 import PromotionMenu from '../../components/PromotionMenu';
 import PlayerBarsFrame, {
@@ -45,7 +45,6 @@ import {
   newOpponentAction,
 } from '../gameMenuActions';
 import EarlierPositionOverlay from './EarlierPositionOverlay';
-import { useBoardColors } from '../../theme';
 
 export type LiveGameContentNavigation = Pick<
   NativeStackNavigationProp<HomeStackParamList, 'LiveGame'>,
@@ -129,7 +128,6 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   onNewOpponent,
   onError,
 }) => {
-  const boardColors = useBoardColors();
   const {
     fen,
     turn,
@@ -283,8 +281,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         isOnline={{ [opponentColor]: isOpponentOnline }}
         testID="game-board-area"
       >
-        <Chessboard
-          colors={boardColors}
+        <GameBoard
           width={width}
           orientation={orientation}
           animate={animatesMoves(snapshot.gameType)}

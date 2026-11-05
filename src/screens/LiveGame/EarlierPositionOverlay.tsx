@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Color } from 'chess.js';
 
-import StaticBoard from '../../components/ChessBoard/StaticBoard';
-import { useBoardColors } from '../../theme';
+import { PositionBoard } from '../../components/Board';
 import { MoveSquares } from '../../domain/types';
 
 interface EarlierPositionOverlayProps {
@@ -29,7 +28,6 @@ const EarlierPositionOverlay: React.FC<EarlierPositionOverlayProps> = ({
   lastMove,
   animate = false,
 }) => {
-  const boardColors = useBoardColors();
   const [shown, setShown] = useState({ visible, fen, lingering: false });
   // Hidden just now, while moving to a new position: shown until it's there.
   if (shown.visible !== visible || shown.fen !== fen) {
@@ -49,9 +47,8 @@ const EarlierPositionOverlay: React.FC<EarlierPositionOverlayProps> = ({
       importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
       testID={visible ? 'earlier-position' : undefined}
     >
-      <StaticBoard
+      <PositionBoard
         fen={fen}
-        colors={boardColors}
         width={width}
         orientation={orientation}
         lastMove={lastMove}

@@ -94,7 +94,7 @@ describe('LiveGameContent', () => {
   function pieceYOnScreen(screen: Screen, testID: string) {
     return piecePositionOnScreen(
       screen.getByTestId(testID),
-      screen.getByTestId('pieces-layer'),
+      screen.getByTestId('chessboard-pieces'),
       PIECE_WIDTH,
     ).y;
   }

@@ -1,4 +1,5 @@
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import AnalysisBoard from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
@@ -6,6 +7,7 @@ import { AnalysisSettingsProvider } from '../../context/AnalysisSettingsContext'
 import { EngineContext } from '../../context/EngineContext';
 import { AnalysisSource } from '../../hooks/useAnalysisSource';
 import { makeAuthSession } from '../../testUtils/authSession';
+import { piecePositionOnScreen } from '../../testUtils/boardPosition';
 import { waitForSheetToClose } from '../../testUtils/modal';
 import { withSafeArea } from '../../testUtils/safeArea';
 
@@ -81,7 +83,9 @@ describe('AnalysisBoard', () => {
     await fireEvent.press(screen.getByTestId('game-menu-button'));
     await fireEvent.press(screen.getByTestId('edit-position-action'));
     await waitForSheetToClose();
-    expect(screen.getByTestId('editor-piece-d2')).toBeTruthy();
+    expect(
+      within(screen.getByTestId('editor-board')).getByTestId('piece-d2'),
+    ).toBeTruthy();
 
     await fireEvent.press(screen.getByTestId('set-up-menu'));
     await fireEvent.press(screen.getByTestId('set-up-cancel'));
@@ -117,9 +121,15 @@ describe('AnalysisBoard', () => {
 
     await fireEvent.press(screen.getByTestId('set-up-flip'));
     // Black at the bottom: a8 drawn bottom right.
-    expect(screen.getByTestId('editor-piece-a8')).toHaveStyle({
-      left: 7 * (screen.getByTestId('editor-board').props.style.width / 8),
-    });
+    const editorBoard = screen.getByTestId('editor-board');
+    const square = StyleSheet.flatten(editorBoard.props.style).width / 8;
+    expect(
+      piecePositionOnScreen(
+        within(editorBoard).getByTestId('piece-a8'),
+        screen.getByTestId('editor-board-pieces'),
+        square,
+      ),
+    ).toEqual({ x: 7 * square, y: 7 * square });
 
     await fireEvent.press(screen.getByTestId('set-up-analyse'));
     expect(screen.getByTestId('analysis-board')).toBeTruthy();
