@@ -654,10 +654,65 @@ lib/chessboard/  the board, written as a package of its own: outside the
   opens `Licenses`: the Stockfish build the app downloads, its GPL-3.0
   and where its source is, and credit for lichess's opening names.
 
+- **Daily games** - chess.com's: 1, 2, 3, 5, 7 or 14 days a move, a game
+  type and rating category of their own (`daily`), played alongside live
+  games and each other (see cchess-be's README, "Daily games"). A daily
+  time control is its days in `initialSeconds`, no increment
+  (`constants/timeControls.ts`' `DAILY_DAYS`, `isDailyTimeControl`,
+  `daysPerMove`) - New Game's panel and the challenge sheet offer them,
+  their row wrapped into threes (`TimeControlSelector/optionRows.ts`).
+  - Starting one: New Game's Start posts a daily seek
+    (`useSeekDailyGame`) - the game opens if one was waiting for it,
+    otherwise it's back to Home to wait. A daily challenge you accept
+    opens its game; one you sent, once accepted, doesn't pull you away
+    (`useSocial`'s `onGameStarted` has the game type). `useResumeActiveGame`
+    resumes live games only (`kind=live`), and a daily game reaching
+    `LiveGame` or `GameViewer` (yours, still on) is sent to `DailyGame`.
+  - Home's `YourGamesList`, between Friends and Recent Games, shown only
+    with a game in progress or a seek waiting: `useDailyGames` (the
+    server's order - your move first, then by time left - reloaded on
+    focus and on any push touching one) and `useMyDailySeeks`, each game a
+    `DailyGameCard` - its board without coordinates (the board's
+    `coordinates` prop), faded while it's the opponent's move, ringed
+    when it's yours, the opponent and the time left (`useNow` ticking a
+    minute) - and each seek a `WaitingSeekCard` with ✕ to withdraw it.
+  - `DailyGame`: `useOnlineChessGame` with no pre-moves, its clocks the
+    time left on the move (`GameClock`'s `daily`, `utils/timeLeft.ts`'
+    `formatTimeLeft`: whole hours rounded up from an hour, minutes under
+    one, seconds in the last - the challenge card's countdown uses it
+    too), ticking once a second (`useGameClock`'s `tickMs`); Back always
+    works. Its toolbar: ☰, chat, Analysis (`GameToolbar`'s `onAnalyse`),
+    ‹ ›; ☰: Next game (`nextDailyGame`, through `useDailyGames`' order),
+    Offer/Accept draw, Resign or Abort, Settings, Flip board.
+  - Move confirmation: `DailyGameSettings` (`constants/dailyGame.ts`,
+    `network/dailyGameSettingsStorage.ts`, `useDailyGameSettings`,
+    `DailyGameSettingsContext` in `HomeStack`) - on, `useOnlineChessGame`'s
+    `confirmMoves` option holds a move on the board, unsent
+    (`hasPendingMove`, against the last position the server confirmed,
+    taken from its moves), until `confirmMove` sends it or `cancelMove`
+    puts it back; `ConfirmMoveBar` is drawn over the toolbar, which keeps
+    its place hidden so the screen doesn't move.
+  - `DailyAnalysis`: the analysis board with no engine -
+    `useAnalysisWorkspace` and `AnalysisView`, which `AnalysisBoardContent`
+    builds its engine onto too. Its toolbar: `OpeningExplorerSheet`
+    (`useOpeningExplorer`, the server's explorer of games finished here,
+    each position asked for once; also in the analysis board's ☰),
+    `NotesSheet` (`useGameNotes`, your own, saved once typing pauses and
+    on closing), flip, reset (the game fetched again) and ‹ ›.
+    `useAnalysisSource` refuses your own daily game in play
+    (`'in-play'`) unless `allowDailyInPlay`, which only this screen asks.
+  - Conditional moves: in `DailyAnalysis`, the opponent to move, a line
+    tried from the game's position (`domain/conditionalMoves.ts`:
+    `mainLineNodeId`, `conditionalLine` - cut to end on your reply -
+    `lineAsText`) is saved from `ConditionalMovePanel`
+    (`useConditionalMoves`, refetched with each move of the game); the
+    game shows `ConditionalMovesNote`, listing them to delete.
+
 - **Navigation** (React Navigation, nested stacks/tabs):
   `App.tsx` (root native-stack, inside a `GestureHandlerRootView` for
   the chart's gestures - the board brings its own, so it works wherever
   it's rendered, tests included) -> `HomeStack` (`HomeTabs`, `LiveGame`,
+  `DailyGame`, `DailyAnalysis`, `DailyGameSettings`,
   `GameViewer`, `AnalysisBoard`, `AnalysisSettings`, `UserProfile`, `Conversation`, `GamesList`,
   `RatingStats`, `UserFriends`, `FindFriends`, `SignIn`, `CreateAccount`,
   `Appearance`, `Licenses`) ->
