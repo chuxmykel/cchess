@@ -178,6 +178,32 @@ resign or abort from the app (see `examples/resign.yaml` /
   `decline-challenge-<id>` (✕) (or `cancel-challenge-<id>` for your
   own), and `friend-request-<id>` with `accept-friend-<id>` /
   `decline-friend-<id>`. Tap outside the popup to close it.
+- **Your games** (Home, between Friends and Recent Games - only with a
+  daily game in progress or a seek waiting): `your-games`,
+  `your-games-header-count`, `daily-game-<gameId>` (opens the game) with
+  `daily-game-<gameId>-board` (faded while it's the opponent's move) and
+  `daily-game-<gameId>-time-left`, and `daily-seek-<seekId>` with its
+  ✕ `daily-seek-<seekId>-cancel`. Daily time controls are
+  `time-control-option-daily-<n> day(s)` (e.g.
+  `time-control-option-daily-3 days`) in New Game, and
+  `challenge-time-<n> day(s)` in the challenge sheet.
+- **Daily game**: the LiveGame header, move list, player bars and board
+  testIDs below; the toolbar's `game-menu-button`, `chat-button`,
+  `toolbar-analysis-button`, ‹ ›. ☰ holds `next-game-action`,
+  `offer-draw-action` / `accept-draw-action`, `resign-action` (or
+  `abort-game-action`), `daily-game-settings-action` and
+  `flip-board-action`. With moves confirmed, a move shows
+  `confirm-move-bar` with `cancel-move-button` / `confirm-move-button`
+  over the toolbar. `conditional-moves-note` opens
+  `conditional-moves-sheet` with `delete-conditional-moves-button`.
+  Settings: `daily-game-settings`, `daily-setting-confirmMoves`.
+- **Daily analysis**: `daily-analysis`, `daily-analysis-toolbar` with
+  `opening-explorer-button` (→ `opening-explorer`, rows
+  `explorer-move-<uci>`, or `explorer-empty`), `notes-button` (→
+  `notes-sheet`, `notes-input`, `notes-status`), `flip-board-button`,
+  `reset-analysis-button`, ‹ ›; `conditional-move-panel` with
+  `save-conditional-moves-button`, then `conditional-move-saved`. The
+  main analysis board's ☰ has `opening-explorer-action` too.
 - **Challenge sheet**: `challenge-sheet`, `challenge-time-<label>` (e.g.
   `challenge-time-3+2`), `challenge-rated-switch`,
   `send-challenge-button`, `challenge-error`.
