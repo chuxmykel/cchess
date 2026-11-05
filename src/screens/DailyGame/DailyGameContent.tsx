@@ -33,6 +33,7 @@ import { useMoveNavigationSounds } from '../../hooks/useGameSounds';
 import { nextDailyGame, useDailyGames } from '../../hooks/useDailyGames';
 import { useSeekDailyGame } from '../../hooks/useSeekDailyGame';
 import { RematchStatus } from '../../hooks/useRematch';
+import { useDailyRematch } from '../../hooks/useDailyRematch';
 import { capturedMaterial } from '../../domain/material';
 import {
   defeatedColor,
@@ -178,7 +179,6 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
     moves,
     whiteRatingDiff,
     blackRatingDiff,
-    rematch,
     canAbort,
     isOpponentOnline,
     chat,
@@ -190,6 +190,13 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
     confirmMove,
     cancelMove,
   } = useOnlineChessGameContext();
+  const rematch = useDailyRematch({
+    opponent: playerOf(snapshot, otherColor(myColor)),
+    initialSeconds: snapshot.initialSeconds,
+    rated: snapshot.rated,
+    myColor,
+    onError: onMessage,
+  });
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
   const { orientation, flip } = useBoardOrientation(myColor);
   const moveNavigation = useMoveNavigation(moves);

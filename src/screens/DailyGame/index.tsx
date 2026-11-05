@@ -50,9 +50,6 @@ const DailyGame: React.FC<DailyGameProps> = ({ navigation, route }) => {
         myColor={myColor}
         snapshot={snapshot}
         onError={(message) => toast.show(message)}
-        onRematchStarted={(rematchId) =>
-          navigation.replace('DailyGame', { gameId: rematchId })
-        }
         options={{ confirmMoves: settings.confirmMoves }}
       >
         <DailyGameContent

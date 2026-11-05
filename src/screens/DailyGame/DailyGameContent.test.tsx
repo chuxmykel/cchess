@@ -15,6 +15,7 @@ import { waitForSheetToClose } from '../../testUtils/modal';
 import { DailyGame } from '../../network/restClient';
 import { boardTester } from '../../components/Board/boardTester';
 import { settleAnimations } from '../../testUtils/pieceGestures';
+import { makeChallenge, makeSocial } from '../../testUtils/social';
 
 jest.mock('../../components/ConnectionStrengthIndicator', () =>
   jest.requireActual('../../testUtils/ConnectionStrengthIndicatorStub'),
@@ -48,6 +49,10 @@ jest.mock('../../hooks/useConditionalMoves', () => ({
     add: jest.fn(),
     clear: mockClearConditionalMoves,
   }),
+}));
+let mockSocial = makeSocial();
+jest.mock('../../context/SocialContext', () => ({
+  useSocialContext: () => mockSocial,
 }));
 const mockSeekDailyGame = jest.fn();
 jest.mock('../../hooks/useSeekDailyGame', () => ({
@@ -110,6 +115,7 @@ describe('DailyGameContent', () => {
     jest.clearAllMocks();
     mockDailyGames = [];
     mockConditionalLines = { basePly: null, lines: [] };
+    mockSocial = makeSocial();
   });
 
   async function renderContent(
@@ -406,6 +412,82 @@ describe('DailyGameContent', () => {
       expect(navigation.replace).toHaveBeenCalledWith('DailyGame', {
         gameId: 'new-game',
       });
+    });
+
+    it('sends a rematch as a daily challenge of the same days, colors swapped', async () => {
+      const { screen, trigger } = await renderContent('w', UNDER_WAY);
+      await finish(trigger);
+
+      await fireEvent.press(screen.getByTestId('rematch-button'));
+
+      expect(mockSocial.challenge).toHaveBeenCalledWith({
+        opponentUsername: 'black',
+        initialSeconds: 3 * 24 * 60 * 60,
+        incrementSeconds: 0,
+        rated: true,
+        color: 'black',
+      });
+    });
+
+    it('shows the rematch sent while the challenge waits, to withdraw it', async () => {
+      mockSocial = makeSocial({
+        challenges: {
+          incoming: [],
+          outgoing: [
+            makeChallenge({
+              id: 'sent',
+              challenger: { ...makeChallenge().opponent, id: 'white-user' },
+              opponent: { ...makeChallenge().challenger, id: 'black-user' },
+              initialSeconds: 3 * 24 * 60 * 60,
+            }),
+          ],
+        },
+      });
+      const { screen, trigger } = await renderContent('w', UNDER_WAY);
+      await finish(trigger);
+
+      expect(screen.getByTestId('rematch-status')).toHaveTextContent(
+        'Rematch sent',
+      );
+      await fireEvent.press(screen.getByTestId('rematch-cancel-button'));
+      expect(mockSocial.cancelChallenge).toHaveBeenCalledWith('sent');
+    });
+
+    it("answers the opponent's rematch challenge from the result card", async () => {
+      const theirs = makeChallenge({
+        id: 'theirs',
+        challenger: { ...makeChallenge().challenger, id: 'black-user' },
+        initialSeconds: 3 * 24 * 60 * 60,
+      });
+      mockSocial = makeSocial({
+        challenges: { incoming: [theirs], outgoing: [] },
+      });
+      const { screen, trigger } = await renderContent('w', UNDER_WAY);
+      await finish(trigger);
+
+      expect(screen.getByTestId('rematch-status')).toHaveTextContent(
+        'Rematch offered',
+      );
+      await fireEvent.press(screen.getByTestId('rematch-accept-button'));
+      expect(mockSocial.acceptChallenge).toHaveBeenCalledWith('theirs');
+    });
+
+    it("doesn't count a challenge of other days as a rematch", async () => {
+      mockSocial = makeSocial({
+        challenges: {
+          incoming: [
+            makeChallenge({
+              challenger: { ...makeChallenge().challenger, id: 'black-user' },
+              initialSeconds: 7 * 24 * 60 * 60,
+            }),
+          ],
+          outgoing: [],
+        },
+      });
+      const { screen, trigger } = await renderContent('w', UNDER_WAY);
+      await finish(trigger);
+
+      expect(screen.getByTestId('rematch-button')).toBeTruthy();
     });
 
     it('offers the next game and the analysis board from the menu', async () => {
