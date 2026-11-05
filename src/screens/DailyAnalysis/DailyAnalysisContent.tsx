@@ -3,10 +3,17 @@ import { StyleSheet, View } from 'react-native';
 import { Color } from 'chess.js';
 
 import AnalysisView from '../../components/AnalysisView';
+import ConditionalMovePanel from '../../components/ConditionalMovePanel';
 import { ToolbarButton } from '../../components/GameToolbar';
 import NotesSheet from '../../components/NotesSheet';
 import OpeningExplorerSheet from '../../components/OpeningExplorerSheet';
 import { uciToMoveSpec } from '../../domain/analysisTree';
+import {
+  conditionalLine,
+  lineAsText,
+  mainLineNodeId,
+} from '../../domain/conditionalMoves';
+import { useConditionalMoves } from '../../hooks/useConditionalMoves';
 import { AnalysisStart } from '../../hooks/useAnalysisTree';
 import { useAnalysisWorkspace } from '../../hooks/useAnalysisWorkspace';
 import { useGameNotes } from '../../hooks/useGameNotes';
@@ -16,7 +23,11 @@ import { spacing } from '../../theme';
 interface DailyAnalysisContentProps {
   gameId: string;
   start: AnalysisStart;
+  /** The side you play. */
   initialOrientation: Color;
+  /** Whether the game's still being played - only then are conditional
+   * moves saved. */
+  isGameInPlay: boolean;
   width: number;
   /** Back to the game as it stands now, its latest moves and all. */
   onReset: () => void;
@@ -30,6 +41,7 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
   gameId,
   start,
   initialOrientation,
+  isGameInPlay,
   width,
   onReset,
 }) => {
@@ -42,6 +54,42 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
   );
   const notes = useGameNotes(gameId);
 
+  // The game's own position, its moves along the tree's main line - fixed
+  // at the start, before any variation's promoted over them.
+  const gamePly = start.uciMoves?.length ?? 0;
+  const [gameNodeId] = useState(() => mainLineNodeId(analysis.tree, gamePly));
+  const gameNode = gameNodeId ? analysis.tree.nodes[gameNodeId] : null;
+  const isOpponentToMove =
+    isGameInPlay &&
+    gameNode !== null &&
+    gameNode.fen.split(' ')[1] !== initialOrientation;
+  const line =
+    isOpponentToMove && gameNodeId
+      ? conditionalLine(analysis.tree, gameNodeId, analysis.current.id)
+      : null;
+  const conditional = useConditionalMoves(gameId);
+  const isLineSaved =
+    line !== null &&
+    conditional.saved?.basePly === gamePly &&
+    conditional.saved.lines.some((saved) =>
+      line.every((move, index) => saved[index] === move),
+    );
+  const [isSavingLine, setIsSavingLine] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  async function saveLine() {
+    if (!line) return;
+    setIsSavingLine(true);
+    setSaveError(null);
+    try {
+      await conditional.add(gamePly, [line]);
+    } catch (error) {
+      setSaveError((error as Error).message);
+    } finally {
+      setIsSavingLine(false);
+    }
+  }
+
   function playMove(uci: string) {
     const { from, to, promotion } = uciToMoveSpec(uci);
     game.attemptMove(from, to, promotion);
@@ -51,6 +99,18 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
     <AnalysisView
       workspace={workspace}
       boardWidth={width}
+      below={
+        line &&
+        gameNode && (
+          <ConditionalMovePanel
+            line={lineAsText(gameNode.fen, line)}
+            isSaved={isLineSaved}
+            isSaving={isSavingLine}
+            errorMessage={saveError}
+            onSave={saveLine}
+          />
+        )
+      }
       toolbar={
         <View style={styles.toolbar} testID="daily-analysis-toolbar">
           <ToolbarButton

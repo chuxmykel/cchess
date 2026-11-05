@@ -37,6 +37,18 @@ jest.mock('../../hooks/useDailyGames', () => ({
     reload: jest.fn(),
   }),
 }));
+let mockConditionalLines: { basePly: number | null; lines: string[][] } = {
+  basePly: null,
+  lines: [],
+};
+const mockClearConditionalMoves = jest.fn().mockResolvedValue(undefined);
+jest.mock('../../hooks/useConditionalMoves', () => ({
+  useConditionalMoves: () => ({
+    saved: mockConditionalLines,
+    add: jest.fn(),
+    clear: mockClearConditionalMoves,
+  }),
+}));
 const mockSeekDailyGame = jest.fn();
 jest.mock('../../hooks/useSeekDailyGame', () => ({
   useSeekDailyGame: () => mockSeekDailyGame,
@@ -97,6 +109,7 @@ describe('DailyGameContent', () => {
   afterEach(() => {
     jest.clearAllMocks();
     mockDailyGames = [];
+    mockConditionalLines = { basePly: null, lines: [] };
   });
 
   async function renderContent(
@@ -199,6 +212,27 @@ describe('DailyGameContent', () => {
     expect(navigation.navigate).toHaveBeenCalledWith('DailyAnalysis', {
       gameId: 'this-game',
     });
+  });
+
+  it('shows the conditional moves saved from the position as it stands, to delete', async () => {
+    mockConditionalLines = { basePly: 2, lines: [['g1f3', 'b8c6']] };
+    const { screen } = await renderContent('b', UNDER_WAY);
+
+    expect(screen.getByText('1 conditional line')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('conditional-moves-note'));
+    expect(screen.getByText('2. Nf3 Nc6')).toBeTruthy();
+    await fireEvent.press(
+      screen.getByTestId('delete-conditional-moves-button'),
+    );
+
+    expect(mockClearConditionalMoves).toHaveBeenCalled();
+  });
+
+  it('shows none saved from a position since moved on from', async () => {
+    mockConditionalLines = { basePly: 0, lines: [['e2e4', 'e7e5']] };
+    const { screen } = await renderContent('b', UNDER_WAY);
+
+    expect(screen.queryByTestId('conditional-moves-note')).toBeNull();
   });
 
   it('opens the daily game settings', async () => {

@@ -10,6 +10,9 @@ import {
   setGameBookmarked,
   cancelDailySeek,
   createDailySeek,
+  addConditionalMoves,
+  clearConditionalMoves,
+  getConditionalMoves,
   getDailyGames,
   getExplorer,
   getGameNotes,
@@ -231,6 +234,24 @@ describe('restClient', () => {
       expect(sentRequest(transport).params).toEqual({
         fen: '8/8/8/8/8/8/8/K6k w - - 0 1',
       });
+    });
+
+    it('reads, adds and drops conditional moves', async () => {
+      const reading = stubTransport(respondWith({ basePly: null, lines: [] }));
+      await getConditionalMoves('game-1', 'access-123');
+      expect(sentRequest(reading).url).toBe('/games/game-1/conditional-moves');
+
+      const adding = stubTransport(respondWith({ basePly: 3, lines: [] }));
+      await addConditionalMoves('game-1', 3, [['e7e5', 'g1f3']], 'access-123');
+      expect(sentRequest(adding).method).toBe('post');
+      expect(JSON.parse(sentRequest(adding).data)).toEqual({
+        basePly: 3,
+        lines: [['e7e5', 'g1f3']],
+      });
+
+      const dropping = stubTransport(respondWith(null));
+      await clearConditionalMoves('game-1', 'access-123');
+      expect(sentRequest(dropping).method).toBe('delete');
     });
 
     it('reads and saves your notes on a game', async () => {

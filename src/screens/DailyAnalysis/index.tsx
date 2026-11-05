@@ -58,6 +58,7 @@ const DailyAnalysis: React.FC<DailyAnalysisProps> = ({ navigation, route }) => {
       gameId={gameId}
       start={state.start}
       initialOrientation={state.orientation}
+      isGameInPlay={state.gameStatus === 'active'}
       width={width}
       onReset={reload}
     />

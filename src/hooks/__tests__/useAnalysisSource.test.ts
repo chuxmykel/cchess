@@ -112,6 +112,7 @@ describe('useAnalysisSource', () => {
         initialPly: 1,
       },
       orientation: 'b',
+      gameStatus: 'active',
     });
   });
 

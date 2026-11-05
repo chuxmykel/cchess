@@ -22,6 +22,8 @@ import BottomBar from '../../components/BottomBar';
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
 import ChatSheet from '../../components/ChatSheet';
 import DrawOfferPrompt from '../../components/DrawOfferPrompt';
+import ConditionalMovesNote from '../../components/ConditionalMovesNote';
+import { useConditionalMoves } from '../../hooks/useConditionalMoves';
 import GameOverCard from '../../components/GameOverCard';
 import GameOverOverlay from '../../components/GameOverOverlay';
 import { useGameClock } from '../../hooks/useGameClock';
@@ -212,6 +214,11 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
       ? nextDailyGame(dailyGames.games, snapshot.id)
       : null;
   const seekDailyGame = useSeekDailyGame();
+  const conditional = useConditionalMoves(snapshot.id);
+  const conditionalLines =
+    !isGameOver && conditional.saved?.basePly === moves.length
+      ? conditional.saved.lines
+      : [];
 
   const timeControl = timeControlOf(snapshot);
 
@@ -375,6 +382,18 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
           </GameOverOverlay>
         )}
       </PlayerBarsFrame>
+
+      {conditionalLines.length > 0 && (
+        <ConditionalMovesNote
+          fen={moves.at(-1)?.fenAfter ?? snapshot.fen}
+          lines={conditionalLines}
+          onDelete={() =>
+            conditional
+              .clear()
+              .catch((error: Error) => onMessage(error.message))
+          }
+        />
+      )}
 
       {!isGameOver && drawOffer === 'received' && (
         <DrawOfferPrompt

@@ -23,8 +23,14 @@ export type AnalysisSourceState =
   | { status: 'error' }
   // Your own daily game, still being played: not for an engine.
   | { status: 'in-play' }
-  // `orientation`: the side to look from - your own, in a game you played.
-  | { status: 'ready'; start: AnalysisStart; orientation: Color };
+  // `orientation`: the side to look from - your own, in a game you played;
+  // `gameStatus`, a game's, when it's one.
+  | {
+      status: 'ready';
+      start: AnalysisStart;
+      orientation: Color;
+      gameStatus?: GameSnapshot['status'];
+    };
 
 // A game's moves, from the usual start. A game that began somewhere else -
 // a server testing from GAME_START_FEN - doesn't say where, so its moves
@@ -85,6 +91,7 @@ export function useAnalysisSource(
                   status: 'ready',
                   start: startOfGame(snapshot, ply),
                   orientation: playedAs ?? 'w',
+                  gameStatus: snapshot.status,
                 },
         });
       })

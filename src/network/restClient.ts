@@ -279,6 +279,51 @@ export async function getExplorer(
   ).data;
 }
 
+/** Your conditional moves in a daily game: each line the opponent's move,
+ * your reply, theirs... in UCI, from the game's position after `basePly`
+ * moves - null, with no lines, when there are none. */
+export type ConditionalLines = { basePly: number | null; lines: string[][] };
+
+function conditionalMovesPath(gameId: string): string {
+  return `/games/${encodeURIComponent(gameId)}/conditional-moves`;
+}
+
+export async function getConditionalMoves(
+  gameId: string,
+  accessToken: string,
+): Promise<ConditionalLines> {
+  return (
+    await apiClient.get<ConditionalLines>(
+      conditionalMovesPath(gameId),
+      bearer(accessToken),
+    )
+  ).data;
+}
+
+/** Adds lines, from the game's position after `basePly` moves - the
+ * opponent to move - to any saved from there. */
+export async function addConditionalMoves(
+  gameId: string,
+  basePly: number,
+  lines: string[][],
+  accessToken: string,
+): Promise<ConditionalLines> {
+  return (
+    await apiClient.post<ConditionalLines>(
+      conditionalMovesPath(gameId),
+      { basePly, lines },
+      bearer(accessToken),
+    )
+  ).data;
+}
+
+export async function clearConditionalMoves(
+  gameId: string,
+  accessToken: string,
+): Promise<void> {
+  await apiClient.delete(conditionalMovesPath(gameId), bearer(accessToken));
+}
+
 /** Your own notes on a game, seen by nobody else. */
 export type GameNotes = { body: string; updatedAt: string | null };
 
