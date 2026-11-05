@@ -39,6 +39,24 @@ describe('ChallengeSheet', () => {
     expect(props.onClose).toHaveBeenCalled();
   });
 
+  it('sends a daily challenge, its days a move in seconds', async () => {
+    const { props, screenPromise } = renderSheet();
+    const screen = await screenPromise;
+
+    await fireEvent.press(screen.getByTestId('challenge-time-3 days'));
+    await fireEvent.press(screen.getByTestId('send-challenge-button'));
+
+    expect(props.onSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        timeControl: expect.objectContaining({
+          type: 'daily',
+          initialSeconds: 3 * 24 * 60 * 60,
+          incrementSeconds: 0,
+        }),
+      }),
+    );
+  });
+
   it('sends a casual challenge when Rated is switched off', async () => {
     const { props, screenPromise } = renderSheet();
     const screen = await screenPromise;

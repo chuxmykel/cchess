@@ -14,6 +14,7 @@ const GAME_TYPE_ICONS: Record<GameType, IconName> = {
   blitz: 'fire',
   rapid: 'clock-fast',
   classical: 'timer-sand',
+  daily: 'calendar-clock',
 };
 
 const GameTypeIcon: React.FC<GameTypeIconProps> = ({

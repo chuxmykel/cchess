@@ -64,7 +64,14 @@ export type GameSnapshot = {
   blackTimeRemainingMs: number;
   lastMoveAt: string | null;
   drawOfferedBy: Side | null;
+  /** A live game's first-move countdown; always null in a daily game,
+   * whose first moves have its days like any other. */
   firstMoveDeadline: string | null;
+  /** A daily game's days a move; null for a live game. */
+  daysPerMove: number | null;
+  /** When the side to move runs out of time, in a daily game still being
+   * played; null otherwise. */
+  moveDeadlineAt: string | null;
   moves: GameMoveSummary[];
   createdAt: string;
   endedAt: string | null;
@@ -134,6 +141,8 @@ export type GameMovePushPayload = {
   whiteTimeRemainingMs: number;
   blackTimeRemainingMs: number;
   firstMoveDeadline: string | null;
+  /** As in GameSnapshot. */
+  moveDeadlineAt: string | null;
 };
 
 /** A side as the server names it in draw and rematch offers - not the

@@ -91,7 +91,13 @@ export interface ThemeColors {
   ratingEven: string;
   // A category's results, in its stats and a player's activity.
   results: { win: string; draw: string; loss: string };
-  gameType: { bullet: string; blitz: string; rapid: string; classical: string };
+  gameType: {
+    bullet: string;
+    blitz: string;
+    rapid: string;
+    classical: string;
+    daily: string;
+  };
 
   chart: { selection: string; guide: string; grid: string };
   // EmptyState's drawings.
@@ -230,6 +236,7 @@ export const lightTheme: Theme = {
       blitz: '#E8601C',
       rapid: '#8E6E53',
       classical: '#3A3A3A',
+      daily: '#2E9C8F',
     },
 
     chart: { selection: '#A8C98A', guide: '#c4c4c4', grid: '#e0e0e0' },
@@ -313,6 +320,7 @@ export const darkTheme: Theme = {
       blitz: '#F0763A',
       rapid: '#B08F72',
       classical: '#bab7b2',
+      daily: '#4FB8AA',
     },
 
     chart: { selection: '#A8C98A', guide: '#5a5752', grid: '#33312d' },

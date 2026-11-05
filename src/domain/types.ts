@@ -71,7 +71,7 @@ export const PROMOTION_PIECE_TYPES: readonly PieceSymbol[] = [
   'n',
 ];
 
-export type GameType = 'bullet' | 'blitz' | 'rapid' | 'classical';
+export type GameType = 'bullet' | 'blitz' | 'rapid' | 'classical' | 'daily';
 
 export type GameResult = 'win' | 'loss' | 'draw';
 

@@ -13,7 +13,13 @@ interface RatingCategoryPickerProps {
   onSelect: (category: GameType) => void;
 }
 
-const CATEGORIES: GameType[] = ['bullet', 'blitz', 'rapid', 'classical'];
+const CATEGORIES: GameType[] = [
+  'bullet',
+  'blitz',
+  'rapid',
+  'classical',
+  'daily',
+];
 const MENU_WIDTH = 180;
 
 /** The rating stats header's title: the category shown, opening a

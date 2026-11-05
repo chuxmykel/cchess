@@ -14,6 +14,7 @@ import { CHALLENGE_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { ColorChoice } from '../../network/socketEvents';
 import { makeStyles, useTheme } from '../../theme';
+import { optionRows } from '../TimeControlSelector/optionRows';
 
 export type ChallengeOptions = {
   timeControl: TimeControl;
@@ -61,29 +62,33 @@ const ChallengeSheet: React.FC<ChallengeSheetProps> = ({
             <Text style={styles.groupLabel}>
               {GAME_TYPE_LABELS[group.type]}
             </Text>
-            <View style={styles.options}>
-              {group.options.map((option) => {
-                const isSelected = option === timeControl;
-                return (
-                  <Pressable
-                    key={option.label}
-                    style={[styles.option, isSelected && styles.selected]}
-                    onPress={() => setTimeControl(option)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
-                    testID={`challenge-time-${option.label}`}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        isSelected && styles.selectedText,
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+            <View style={styles.rows}>
+              {optionRows(group.options).map((row) => (
+                <View key={row[0].label} style={styles.options}>
+                  {row.map((option) => {
+                    const isSelected = option === timeControl;
+                    return (
+                      <Pressable
+                        key={option.label}
+                        style={[styles.option, isSelected && styles.selected]}
+                        onPress={() => setTimeControl(option)}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: isSelected }}
+                        testID={`challenge-time-${option.label}`}
+                      >
+                        <Text
+                          style={[
+                            styles.optionText,
+                            isSelected && styles.selectedText,
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ))}
             </View>
           </View>
         ))}
@@ -137,6 +142,9 @@ const useStyles = makeStyles((t) => ({
     fontSize: t.fontSize.md,
     color: t.colors.textMuted,
     marginBottom: t.spacing.sm,
+  },
+  rows: {
+    gap: t.spacing.sm,
   },
   options: {
     flexDirection: 'row',
