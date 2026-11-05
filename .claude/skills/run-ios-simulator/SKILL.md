@@ -244,16 +244,18 @@ resign or abort from the app (see `examples/resign.yaml` /
     `engine-line-count-slider` (0-3, shown in `engine-line-count`) and
     `search-time-slider` (1-20 s then Unlimited, shown in
     `search-time`).
-  - The position editor: `set-up-position` with `editor-tool-hand`
-    (drag pieces: swipe on `editor-board`, off it to remove),
-    `editor-tool-<wk…bp>`, `editor-tool-erase`, `editor-piece-<square>`,
+  - The position editor: `set-up-position` with `editor-tool-hand` (and
+    `editor-tool-hand-bottom`, the same tool in the lower row)
+    (drag a piece by swiping from its square, off the board to remove it),
+    `editor-tool-<wk…bp>`, `editor-tool-erase` (`-bottom` likewise), the board's own `piece-<square>`
+    inside `editor-board` (verified 2026-11-05),
     `editor-error-<code>`, and its toolbar: `set-up-menu` (an action
     sheet: `editor-start-position`, `editor-clear`, and `set-up-cancel`
     when opened over an analysis), `set-up-flip`, `set-up-analyse`, and
     `set-up-options` (a sheet: `editor-turn-<w|b>` radio buttons,
     `editor-castling-<KQkq>` checkboxes, `position-setup-done`). On iPhone 18 Pro the editor's board runs
-    y 172-574 (opened from the tab), 50.25pt a square: e2 is at
-    (226, 498).
+    y 247-649 (opened from the tab; measured 2026-11-05), 50.25pt a
+    square: e2 is at (226, 573).
   - From a finished game: `analyse-button` on the result card, or
     `analyse-action` in ☰.
   - The engine downloads the first time it's used. `clearState` wipes
@@ -269,7 +271,8 @@ resign or abort from the app (see `examples/resign.yaml` /
   `account-form-error` and `account-form-switch` (to the other form).
 - **Board**: `chessboard`, `square-<file><rank>`, `piece-<file><rank>`,
   `valid-move-<square>`, `drag-guide` - from
-  `src/components/ChessBoard/`. These are always named by the real
+  `src/lib/chessboard/` (the board library; the app's boards are in
+  `src/components/Board/`), the pieces layer `chessboard-pieces`. These are always named by the real
   square, whichever way the board faces.
 - **LiveGame while seeking**: `seeking-content`, `seek-card` (with
   `seek-card-rating-range` for signed-in players, and
@@ -408,6 +411,11 @@ see each file's header for how to start it):
 
 ## Gotchas
 
+- **Expo Go's floating ⚙ can sit right over the toolbar's `›`**
+  (bottom right), so tapping `next-move-button` opens the dev menu
+  instead (seen 2026-11-05 on the analysis board). Step forward by
+  tapping a move in the move list (`analysis-move-<n>`, `move-<ply>`)
+  instead, and close the menu with its ✕ if it opens.
 - **The software keyboard only shows with DeviceHub's hardware keyboard
   disconnected.** With it connected, a focused input takes Maestro's
   `inputText` but no keyboard appears, so nothing that moves with the
