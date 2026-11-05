@@ -8,6 +8,7 @@ import { animatedStyleOf } from '../../../testUtils/animatedValue';
 import { piecePositionOnScreen } from '../../../testUtils/boardPosition';
 import {
   dragPiece,
+  dragPieceWhile,
   settleAnimations,
   tapPiece,
   touchPiece,
@@ -265,6 +266,22 @@ describe('Chessboard', () => {
       await dragPiece('piece-e2', 0, -2 * SQUARE);
 
       expect(onScreen(screen, 'e2')).toEqual(getXYFromSquare('e2', SQUARE));
+    });
+
+    it("puts a piece down, at home and its own size, when it can't move any more by the time it's let go", async () => {
+      const onMove = jest.fn();
+      const screen = await render(board({ movable, onMove }));
+
+      // The game ends - a clock runs out - with the piece still held.
+      await dragPieceWhile('piece-e2', 0, -2 * SQUARE, async () => {
+        await screen.rerender(board({ movable: null, onMove }));
+      });
+
+      expect(onMove).not.toHaveBeenCalled();
+      expect(onScreen(screen, 'e2')).toEqual(getXYFromSquare('e2', SQUARE));
+      expect(animatedStyleOf(screen.getByTestId('piece-e2')).transform).toEqual(
+        expect.arrayContaining([{ scale: 1 }]),
+      );
     });
 
     it('logs each drop, when asked to', async () => {

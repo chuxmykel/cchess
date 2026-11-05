@@ -86,6 +86,27 @@ export async function holdDrag(testID: string, dx: number, dy: number) {
   await settleAnimations(16);
 }
 
+/** A drag by (dx, dy), held while `meanwhile` runs - the game moving on
+ * under the finger, say - then let go, and everything left to settle. */
+export async function dragPieceWhile(
+  testID: string,
+  dx: number,
+  dy: number,
+  meanwhile: () => Promise<void>,
+) {
+  const pan = panController(testID);
+  const events = dragEvents(dx, dy);
+  await act(() => {
+    pan.begin(events.begin);
+    pan.activate(events.activate);
+    pan.update(events.moved);
+  });
+  await settleAnimations(16);
+  await meanwhile();
+  await act(() => pan.end(events.moved));
+  await settleAnimations();
+}
+
 /** A drag by (dx, dy) and release, then everything left to settle - the
  * piece grabbed at `grab` on its view, its middle unless given. */
 export async function dragPiece(

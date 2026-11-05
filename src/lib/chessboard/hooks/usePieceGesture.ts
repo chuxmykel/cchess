@@ -185,6 +185,10 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
   // Whether a drag is under way: Gesture Handler can report one that has
   // ended as cancelled too, straight after - it's set down only once.
   const dragging = useSharedValue(false);
+  // Whether this drag picked the piece up. It's put down by that, not by
+  // whether it can still move: a game ending under the finger would leave
+  // it held up, twice its size, for good.
+  const lifted = useSharedValue(false);
 
   const piece = useSharedValue<PieceState>({
     square: props.square,
@@ -287,6 +291,7 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
           { t: Date.now(), moved: movedSinceTouchDown(touchDown.get(), event) },
         ]);
         if (isDisabled()) return;
+        lifted.set(true);
         // Lifted at once, as on lichess.
         zIndex.set(DRAGGED_Z_INDEX);
         scale.set(DRAG_SCALE);
@@ -294,14 +299,14 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
       onUpdate: (event) => {
         'worklet';
         const { square, width, orientation } = piece.get();
-        const disabled = isDisabled();
         const moved = movedSinceTouchDown(touchDown.get(), event);
         trail.set([
           ...trail.get().slice(1 - TRAIL_LENGTH),
           { t: Date.now(), moved },
         ]);
         // Opponent pieces get no drag affordance at all - they're tap-only.
-        if (disabled) return;
+        // One already lifted follows the finger until let go.
+        if (!lifted.get()) return;
         const finger = fingerOnBoard(
           square,
           width,
@@ -388,7 +393,8 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
           });
         }
 
-        if (!disabled) {
+        if (lifted.get()) {
+          lifted.set(false);
           // Set down at once on its square, or back home, as on lichess. On
           // a move it stays above the rest until JS has made it, which can
           // be a while after it's down (see the layout effect above):
@@ -425,6 +431,7 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
       grab,
       trail,
       dragging,
+      lifted,
       dragGuide,
       x,
       y,
