@@ -21,7 +21,8 @@ interface DailyGameCardProps {
 
 // A daily game in progress: its board from your side, and the opponent as a
 // player bar shows them - with the time left on the move under the name, and
-// no rating. Ringed in the accent when it's your move.
+// no rating. Ringed in the accent when it's your move; greyed out while it's
+// theirs.
 const DailyGameCard: React.FC<DailyGameCardProps> = ({
   game,
   now,
@@ -41,7 +42,11 @@ const DailyGameCard: React.FC<DailyGameCardProps> = ({
       }, ${timeLeft} left`}
       testID={`daily-game-${game.id}`}
     >
-      <View pointerEvents="none">
+      <View
+        style={!game.myTurn && styles.waiting}
+        pointerEvents="none"
+        testID={`daily-game-${game.id}-board`}
+      >
         <PositionBoard
           fen={game.fen}
           width={DAILY_GAME_BOARD_WIDTH}
@@ -92,6 +97,10 @@ const useStyles = makeStyles((t) => ({
   },
   myTurn: {
     borderColor: t.colors.accent,
+  },
+  // Nothing to do here until they've moved.
+  waiting: {
+    opacity: 0.45,
   },
   player: {
     flexDirection: 'row',

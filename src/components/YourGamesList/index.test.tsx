@@ -1,4 +1,5 @@
 import { fireEvent, render, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import YourGamesList from '.';
 import { boardTester } from '../Board/boardTester';
@@ -101,6 +102,18 @@ describe('YourGamesList', () => {
     const card = within(screen.getByTestId('daily-game-mine'));
     expect(card.queryByText('a')).toBeNull();
     expect(card.queryByText('8')).toBeNull();
+  });
+
+  it("greys out the board of a game on the opponent's move", async () => {
+    const { screenPromise } = renderList();
+    const screen = await screenPromise;
+
+    const opacity = (gameId: string) =>
+      StyleSheet.flatten(
+        screen.getByTestId(`daily-game-${gameId}-board`).props.style,
+      )?.opacity ?? 1;
+    expect(opacity('mine')).toBe(1);
+    expect(opacity('theirs')).toBeLessThan(1);
   });
 
   it('opens a game, and withdraws a seek', async () => {
