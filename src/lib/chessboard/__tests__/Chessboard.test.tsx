@@ -59,6 +59,19 @@ describe('Chessboard', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
+  it('names each piece for a screen reader', async () => {
+    const screen = await render(board());
+
+    expect(screen.getByTestId('piece-d1')).toHaveProp(
+      'accessibilityLabel',
+      'white queen',
+    );
+    expect(screen.getByTestId('piece-g8')).toHaveProp(
+      'accessibilityLabel',
+      'black knight',
+    );
+  });
+
   it('draws the pieces of a placement', async () => {
     const screen = await render(board());
 

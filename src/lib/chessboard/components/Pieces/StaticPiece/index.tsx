@@ -5,12 +5,14 @@ import Animated, {
   useAnimatedStyle,
 } from 'react-native-reanimated';
 
-import { Color, KingCheck, Square } from '../../../types';
+import { pieceLabel } from '../../../constants';
+import { Color, KingCheck, PieceCode, Square } from '../../../types';
 import PieceImage from '../../PieceImage';
 
 // Primitives and shared values, not the tracked piece itself: that's the same
 // object as it moves, so wouldn't re-render this for its new square.
 interface StaticPieceProps {
+  id: PieceCode;
   square: Square;
   x: SharedValue<number>;
   y: SharedValue<number>;
@@ -25,6 +27,7 @@ interface StaticPieceProps {
 
 // A piece on a view-only board: drawn where it's placed, with no gestures.
 const StaticPiece: React.FC<StaticPieceProps> = ({
+  id,
   square,
   x,
   y,
@@ -42,6 +45,7 @@ const StaticPiece: React.FC<StaticPieceProps> = ({
     <Animated.View
       style={[styles.piece, animatedStyle]}
       testID={captured ? `taken-piece-${square}` : `piece-${square}`}
+      accessibilityLabel={pieceLabel(id)}
     >
       <PieceImage
         source={source}

@@ -12,6 +12,7 @@ import {
   usePieceGesture,
 } from '../../../hooks/usePieceGesture';
 import { Color, Dests, PieceCode, Square } from '../../../types';
+import { pieceLabel } from '../../../constants';
 import PieceImage from '../../PieceImage';
 
 interface PieceProps {
@@ -64,6 +65,7 @@ const Piece: React.FC<PieceProps> = (props) => {
       <Animated.View
         style={[styles.container, animatedStyle]}
         testID={testID}
+        accessibilityLabel={pieceLabel(id)}
         pointerEvents={captured ? 'none' : 'auto'}
       >
         <PieceImage

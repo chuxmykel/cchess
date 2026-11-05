@@ -52,6 +52,7 @@ const Pieces: React.FC<PiecesProps> = ({
         return (
           <StaticPiece
             key={piece.id}
+            id={piece.spriteId}
             square={piece.square}
             x={piece.x}
             y={piece.y}

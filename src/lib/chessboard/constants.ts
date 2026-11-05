@@ -1,6 +1,6 @@
 import { Easing, WithTimingConfig } from 'react-native-reanimated';
 
-import { Square } from './types';
+import { PieceCode, Square } from './types';
 
 export const BOARD_SQUARES = 8;
 export const CHAR_CODE_FOR_LETTER_A = 97;
@@ -9,6 +9,20 @@ export const CHAR_CODE_FOR_LETTER_A = 97;
 export const SQUARES: Square[] = [8, 7, 6, 5, 4, 3, 2, 1].flatMap((rank) =>
   [...'abcdefgh'].map((file) => `${file}${rank}` as Square),
 );
+
+const PIECE_NAMES = {
+  p: 'pawn',
+  n: 'knight',
+  b: 'bishop',
+  r: 'rook',
+  q: 'queen',
+  k: 'king',
+} as const;
+
+// A piece as a screen reader names it: "white queen".
+export function pieceLabel(code: PieceCode): string {
+  return `${code[0] === 'w' ? 'white' : 'black'} ${PIECE_NAMES[code[1]]}`;
+}
 
 // How far a finger moves before a touch is a drag rather than a tap.
 export const TAP_MOVEMENT_THRESHOLD = 10;
