@@ -35,8 +35,9 @@ function isTool(tool: EditorTool, type: PieceSymbol, color: Color) {
 // Setting up a position: the board, and the palette around it - a piece to
 // put down where the board's tapped, the eraser, or the hand, to drag the
 // pieces already there to another square, or off the board - each side's
-// pieces by its own side of the board. Whose move it is and castling are set
-// apart (PositionSetupSheet).
+// pieces by its own side of the board, the hand and the eraser on both. Each
+// row is a light grey panel, so black pieces show on a dark screen. Whose
+// move it is and castling are set apart (PositionSetupSheet).
 const PositionEditor: React.FC<PositionEditorProps> = ({
   editor,
   width,
@@ -57,7 +58,11 @@ const PositionEditor: React.FC<PositionEditorProps> = ({
     <Pressable
       key={testID}
       onPress={() => editor.setTool(tool)}
-      style={[styles.tool, selected && styles.selectedTool]}
+      style={({ pressed }) => [
+        styles.tool,
+        pressed && styles.pressedTool,
+        selected && styles.selectedTool,
+      ]}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected }}
@@ -66,20 +71,28 @@ const PositionEditor: React.FC<PositionEditorProps> = ({
       {content}
     </Pressable>
   );
-  const iconTool = (tool: 'move' | 'erase', icon: IconName, label: string) =>
+  // The same tool in both rows, selected in both - the lower one's testID
+  // marked as such, so each stays unique.
+  const iconTool = (
+    tool: 'move' | 'erase',
+    icon: IconName,
+    label: string,
+    testIDSuffix: string,
+  ) =>
     toolButton(
       tool,
       editor.tool === tool,
       label,
-      `editor-tool-${tool === 'move' ? 'hand' : tool}`,
-      <Icon name={icon} size={26} color={colors.textSecondary} />,
+      `editor-tool-${tool === 'move' ? 'hand' : tool}${testIDSuffix}`,
+      <Icon name={icon} size={26} color={colors.board.paletteIcon} />,
     );
 
-  // Each colour's pieces, after a tool of the board's own: the hand above,
-  // the eraser below.
-  const paletteRow = (color: Color, first: React.ReactNode) => (
+  // Each colour's pieces, after the board's own tools: the hand, then the
+  // eraser.
+  const paletteRow = (color: Color, testIDSuffix: string) => (
     <View style={styles.palette}>
-      {first}
+      {iconTool('move', 'hand-back-right-outline', 'Move', testIDSuffix)}
+      {iconTool('erase', 'eraser', 'Eraser', testIDSuffix)}
       {PIECE_TYPES.map((type) =>
         toolButton(
           { type, color },
@@ -98,12 +111,9 @@ const PositionEditor: React.FC<PositionEditorProps> = ({
 
   return (
     <View testID="position-editor">
-      {paletteRow(
-        topColor,
-        iconTool('move', 'hand-back-right-outline', 'Move'),
-      )}
+      {paletteRow(topColor, '')}
       <SetupBoard editor={editor} width={width} orientation={orientation} />
-      {paletteRow(orientation, iconTool('erase', 'eraser', 'Eraser'))}
+      {paletteRow(orientation, '-bottom')}
       {editor.errors.map((error) => (
         <Text key={error} style={styles.error} testID={`editor-error-${error}`}>
           {SETUP_ERROR_TEXT[error]}
@@ -116,11 +126,17 @@ const PositionEditor: React.FC<PositionEditorProps> = ({
 export default PositionEditor;
 
 const useStyles = makeStyles((t) => ({
+  // One light grey panel per row - not a tile per tool, which looked like
+  // more squares of the board.
   palette: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: t.spacing.xs,
-    paddingVertical: t.spacing.sm,
+    gap: t.spacing.xxs,
+    marginHorizontal: t.spacing.sm,
+    marginVertical: t.spacing.sm,
+    padding: t.spacing.xs,
+    borderRadius: t.radius.lg,
+    backgroundColor: t.colors.board.palette,
   },
   tool: {
     width: 44,
@@ -128,15 +144,20 @@ const useStyles = makeStyles((t) => ({
     borderRadius: t.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  selectedTool: {
-    backgroundColor: t.colors.accentSoft,
+    // Always there, so a tool selected keeps its size.
     borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  pressedTool: {
+    opacity: 0.7,
+  },
+  // Its border alone: the panel stays light grey under a black piece.
+  selectedTool: {
     borderColor: t.colors.accent,
   },
   toolImage: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
   },
   error: {
     color: t.colors.danger,

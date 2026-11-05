@@ -68,6 +68,34 @@ describe('PositionEditor', () => {
     expect(board().queryByTestId('piece-d3')).toBeNull();
   });
 
+  it.each(['hand', 'erase'])(
+    'offers the %s in both rows, picked in both from either',
+    async (tool) => {
+      const { screen } = await renderEditor();
+
+      await fireEvent.press(screen.getByTestId(`editor-tool-${tool}-bottom`));
+
+      expect(screen.getByTestId(`editor-tool-${tool}`)).toBeSelected();
+      expect(screen.getByTestId(`editor-tool-${tool}-bottom`)).toBeSelected();
+
+      await fireEvent.press(screen.getByTestId('editor-tool-wq'));
+
+      expect(screen.getByTestId(`editor-tool-${tool}`)).not.toBeSelected();
+      expect(
+        screen.getByTestId(`editor-tool-${tool}-bottom`),
+      ).not.toBeSelected();
+    },
+  );
+
+  it("drags with the lower row's hand too", async () => {
+    const { screen, board } = await renderEditor();
+    await fireEvent.press(screen.getByTestId('editor-tool-hand-bottom'));
+
+    await dragPiece('piece-e1', -SQUARE, -2 * SQUARE);
+
+    expect(board().getByTestId('piece-d3')).toBeTruthy();
+  });
+
   it('places the picked piece where the board is tapped', async () => {
     const { screen, board } = await renderEditor();
 

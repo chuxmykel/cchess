@@ -104,6 +104,11 @@ export interface ThemeColors {
     check: string;
     promotionTile: string;
     promotionTilePressed: string;
+    // The position editor's palette: a light grey panel - the same in both
+    // modes, so black pieces show on a dark screen too - and its own tools'
+    // icons drawn on it.
+    palette: string;
+    paletteIcon: string;
     // An engine line's arrow, best first, and the threat's.
     arrows: readonly string[];
     threatArrow: string;
@@ -138,6 +143,8 @@ const sharedBoardColors = {
   lastMove: 'rgba(155, 199, 0, 0.41)',
   moveHint: 'rgba(70, 70, 70, 0.4)',
   dragOrigin: 'rgba(255, 210, 60, 0.5)',
+  palette: '#dcdfe3',
+  paletteIcon: '#4b4f55',
   arrows: [
     'rgba(98, 153, 88, 0.62)',
     'rgba(98, 153, 88, 0.42)',
