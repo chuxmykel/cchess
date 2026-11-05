@@ -56,8 +56,6 @@ src/
 │   ├── ChessEngine.ts                Facade over chess.js: attemptMove, legal moves,
 │   │                                 turn/check/game-over status
 │   │
-│   ├── boardCoordinates.ts           Square <-> pixel math
-│   │
 │   ├── castlingSquares.ts            Castling rook from/to squares
 │   │
 │   └── types.ts                      DomainPiece, AppliedMove, MoveResult, etc.
@@ -74,12 +72,6 @@ src/
 │   ├── useChessGame.ts               The single state machine for an in-progress game
 │   │                                 (a reducer owning a ChessEngine instance)
 │   │
-│   ├── usePieceAnimations.ts         Bridges domain pieces to stable Animated.Value objects for smooth tweening
-│   │
-│   ├── useDragGuide.ts               The drag-and-drop guide's Animated position/opacity
-│   │
-│   ├── useValidMoveIndicators.ts     Per-square legal-move indicator opacities
-│   │
 │   ├── useAuthSessionBootstrap.ts    Guest session + socket bootstrap (backs AuthSessionContext)
 │   │
 │   ├── useMatchmaking.ts             Seek/cancel + game:created, for the Matchmaking screen
@@ -92,29 +84,17 @@ src/
 │
 ├── context/                           Every React context, one top-level directory
 │   ├── ChessGameContext.tsx          Scoped Context (not global state) delivering
-│   │                                 useChessGame's state/handlers down to ChessBoard
+│   │                                 useChessGame's state/handlers down to GameBoard
 │   ├── AuthSessionContext.tsx        The one genuinely app-wide context - guest
 │   │                                 session + socket connection, mounted in App.tsx
 │   └── LiveGame/
 │       └── OnlineChessGameContext.tsx   The online counterpart, backed by useOnlineChessGame
 │
 ├── components/                       Presentational only - consumes the hooks/context above
-│   ├── ChessBoard/
-│   │   ├── index.tsx                 Composes the board from context + the hooks
-│   │   │
-│   │   ├── BoardSurface/             The checkered rows of squares
-│   │   │
-│   │   ├── Pieces/                   Renders each piece
-│   │   │   └── Piece/                Owns raw gesture capture (tap vs. drag)
-│   │   │
-│   │   ├── PieceDragAndDropGuide/    The circular guide shown while dragging
-│   │   │
-│   │   ├── ValidMoveIndicators/      Per-square legal-move highlight dots
-│   │   │   └── ValidMoveIndicator/   A single square's highlight dot
-│   │   │
-│   │   ├── Row/                      One rank of 8 squares
-│   │   │
-│   │   └── Square/                   One square, with coordinate labels
+│   ├── Board/                        The app's boards - the only code that uses
+│   │                                 lib/chessboard: GameBoard (a game, from
+│   │                                 ChessGameContext), PositionBoard (a FEN, read-only),
+│   │                                 EmptyBoard, SetupBoard (the position editor)
 │   │
 │   ├── GameHeader/, GameToolbar/,    In-game UI - header, toolbar, move list, player
 │   │   MoveList/, PlayerBar/,        bars with captured pieces, clocks, result card,
@@ -166,21 +146,26 @@ src/
 │                                     scales, light and dark colors, board themes, and
 │                                     makeStyles for a component's themed StyleSheet
 │
-├── constants/                        Board size, piece image lookups, square list,
+├── constants/                        Board size, piece image lookups,
 │                                     time controls, error-message fallbacks
 │
-├── utils/animation.ts                RN Animated helpers (castling animation, piece ids)
+├── lib/chessboard/                   The chessboard, written as a package of its own: draws
+│                                     a FEN and moves pieces by tap or drag where it's told
+│                                     they may go - no chess rules, nothing of the app's
+│                                     (ESLint keeps it that way); only components/Board/ uses it
 │
 └── testUtils/                        Jest/RNTL helpers: gesture simulation, Animated value
                                       reads, a text board visualizer, a fake AppSocket,
                                       a GameSnapshot fixture builder, a safe-area wrapper
 ```
 
-Business logic (chess rules, move legality, selection/turn state, and now
+Business logic (chess rules, move legality, turn state, and now
 online-game orchestration) is deliberately kept out of presentational
-components - see `src/domain/`, `src/network/`, and `src/hooks/`.
-Animated-value bookkeeping is kept separate too, in
-`usePieceAnimations`/`useDragGuide`/`useValidMoveIndicators`. That separation
+components - see `src/domain/`, `src/network/`, and `src/hooks/`. The board
+itself is a separate library, `src/lib/chessboard/`, that knows no chess: the
+app tells it the position and where pieces may go, and hears back the moves
+made, through the adapter in `src/components/Board/` - so swapping in another
+board library means changing that adapter alone. That separation
 is what makes the rules and state machines unit-testable without rendering
 anything, and keeps everything under `components/` purely presentational.
 
@@ -238,10 +223,11 @@ are unit-tested directly against `ChessEngine` with no rendering involved -
 see `src/domain/__tests__/`. `src/network/`'s pure infra (REST client,
 socket client, token storage) is tested the same way, in
 `src/network/__tests__/`. The gesture layer (tap/drag → the right move
-being attempted) is tested by simulating React Native's PanResponder
-protocol via RNTL - see `src/components/ChessBoard/index.spec.tsx`. Neither
+being attempted) is tested by firing Gesture Handler's gestures from Jest -
+see `src/lib/chessboard/` for the board on its own, and
+`src/components/Board/GameBoard.spec.tsx` for it playing a real game. Neither
 layer re-does the other's job: rules bugs belong in a `ChessEngine` test,
-gesture-translation bugs belong in a `ChessBoard` test, and "does this
+gesture-translation bugs belong in a board test, and "does this
 actually work on a real device" questions belong in a Maestro flow.
 
 ## Development notes

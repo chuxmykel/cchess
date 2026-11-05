@@ -70,6 +70,10 @@ theme/         the style guide: scales, light/dark colors, makeStyles
     -> context/   thin Providers wrapping a same-purpose hook, for prop-drilling
       -> components/   presentational only, consumes hooks/context above
         -> screens/     wires components + navigation together
+
+lib/chessboard/  the board, written as a package of its own: outside the
+                 layering, it uses nothing in src/ - only components/Board/
+                 uses it (ESLint's import/no-restricted-paths holds both ends)
 ```
 
 - **`src/domain/`** - framework-agnostic chess logic.
@@ -83,14 +87,11 @@ theme/         the style guide: scales, light/dark colors, makeStyles
     etc. `AppliedMove` carries everything the UI needs to animate a move
     (capture square, castling rook from/to, en passant/promotion flags)
     without re-deriving it from the engine.
-  - `boardCoordinates.ts` - square <-> pixel math, and `isOnBoard`; each
-    function is also a worklet (a `'worklet'` string directive, no import),
-    so a drag can work out squares on the UI thread.
   - `castlingSquares.ts` - castling rook from/to squares.
   - `kingInDanger.ts` - `kingInDanger(fen, defeated)`: the king a board
     marks in danger - the side that lost the game, however it lost,
     fallen; or else the side to move's king in check, fallen only on mate
-    - for the boards to make it glow red and tip over (`PieceImage`).
+    - for the boards to make it glow red and tip over (the board's `check`).
       `players.ts`' `defeatedColor(result)` gives the side that lost.
   - `material.ts` - `capturedMaterial(fen, moves)`: every piece each side
     has captured, from the moves, least valuable first, and the score - how far ahead in
@@ -197,44 +198,16 @@ theme/         the style guide: scales, light/dark colors, makeStyles
 - **`src/hooks/`** - two families, both consumed by `components/`/`screens/`
   above them:
   - The local chess state machine: `useChessGame.ts` (a reducer owning
-    one `ChessEngine` instance plus selection/turn/promotion UI state -
-    `handleSquareTap` encodes the select-then-move tap interaction,
-    drag-and-drop calls `attemptMove` directly, and a move already decided -
-    the opponent's, from the server - passes its promotion piece to
-    `attemptMove` rather than asking; it also keeps `legalTargets`, every
-    legal move of the side to move, for judging a drop; what it returns is
+    one `ChessEngine` instance plus turn/promotion state - a move, tapped or
+    dragged, comes from the board through `attemptMove`, and a move already
+    decided - the opponent's, from the server - passes its promotion piece
+    to `attemptMove` rather than asking; it also keeps `legalTargets`, every
+    legal move of the side to move, and `movableColor`, whose pieces can be
+    picked up - the board's `movable`; what it returns is
     the same object until the game changes, so a screen re-rendering for
-    something else - the engine's lines - doesn't re-render the board) plus the hooks that
-    bridge its state to the screen, none of which know chess rules
-    themselves: `usePieceAnimations` (each piece's position as Reanimated
-    shared values, always from white's side - `Chessboard` turns the whole
-    pieces layer round for black, with each piece's image turned back
-    upright, so a flip is drawn in the same frame as the squares - moved
-    by 50ms ease-out tweens from `constants/animations.ts` - or put there
-    at once in bullet, `animatesMoves(gameType)` in `timeControls.ts`,
-    anything under 3+0; the piece a
-    move takes stays drawn under the
-    one taking it until that lands, the pieces just moved are drawn over
-    the rest, and a pawn waiting on the promotion menu stands on its
-    promotion square; a position reached without a move is put straight
-    there (and put straight onto their squares at a new size when the
-    board's resized), or with `slideOnReset` - stepping back through an analysis -
-    each piece slides from where it stood, matched by `matchPieces`),
-    `usePieceGesture` (a piece's Gesture Handler pan
-    and tap, run on the UI thread, as on lichess: the piece is lifted at
-    once, twice its size, a square above the finger, its own square marked
-    while it's held, and a drop counts for the
-    square under the finger - where it last moved, not where a quick flick
-    lifts, or, when that's no move, the square next to it where it was
-    just before it lifted, as a finger slides leaving the glass - landing straight on it when
-    `legalTargets` has it - set down at once, the piece it
-    takes disappearing with it - or going straight home, before JS hears of
-    it - JS still judges the move),
-    `useDragGuide` (the guide's shared values - a circle two squares
-    across on the drop's square, which the drag moves, and the held piece's
-    own square - and the piece a drop has taken, hidden until the game
-    moves on) and
-    `useValidMoveIndicators` (`Animated.Value` opacities).
+    something else - the engine's lines - doesn't re-render the board).
+    Selecting a piece by tap, and everything that animates the pieces, is
+    the board library's (`src/lib/chessboard/`, below).
   - Online-play orchestration, each wrapping the `network/` layer:
     `useAuthSessionLifecycle` (backs `AuthSessionContext`: on launch
     resumes the stored account via `/auth/refresh`, falling back to a new
@@ -369,7 +342,7 @@ theme/         the style guide: scales, light/dark colors, makeStyles
   consume them.
   - `ChessGameContext.tsx` - wraps `useChessGame` in a Context scoped to a
     single game screen instance (not app-wide state) purely to avoid
-    prop-drilling into `ChessBoard` -> `Piece`. Shared by every game-type
+    prop-drilling into `GameBoard`. Shared by every game-type
     screen, not just one - `LiveGame/OnlineChessGameContext.tsx` also
     provides through it.
   - `LiveGame/OnlineChessGameContext.tsx` - the online counterpart, backed
@@ -403,38 +376,99 @@ theme/         the style guide: scales, light/dark colors, makeStyles
     `idle`/`downloading`/`starting`/`ready` (an engine per slot)/`error`,
     with `retry`.
 
-- **`src/components/ChessBoard/`** - composes the board from
-  `ChessGameContext` + the hooks above; everything under it
-  (`BoardSurface`, `Pieces/Piece`, `Row`, `Square`,
-  `PieceDragAndDropGuide`, `ValidMoveIndicators`, `PieceImage` - a piece's
-  image as both boards draw it, upright for black, a king in check
-  glowing red (an iOS shadow, which follows the piece's shape) and
-  tipping over 45° once its side has lost - `LastMoveHighlight` -
-  the last move's two squares tinted, as on lichess - for a castle, the
-  king's and rook's starting squares (`domain/lastMoveSquares.ts`): the move the game
-  just made, or the last one the server has on record while it has made
-  none, on a game resumed or a move refused) is purely presentational
-  and renders only what it's given as props/context. The board hands its
-  pieces callbacks that never change, though a game's own functions are new
-  on every render: re-rendering a piece makes Gesture Handler set its
-  gestures up again, which cancels a drag under way. Nor does a move
-  change their props: which pieces can be picked up is one shared value
-  for the whole board (`MovableSquares`), read by the gestures on the UI
-  thread - as props, whose turn it is flipping them re-rendered all 32 on
-  every move. `BoardSurface`'s 64 squares are memoised too. `StaticBoard` is a
-  separate read-only board drawn straight from a FEN (no game state or
-  gestures), used for viewing earlier positions: `usePositionPieces` keeps
-  its pieces the same pieces from one position to the next
-  (`domain/matchPieces.ts`), so stepping through a game moves them -
-  sliding, unless it's bullet - rather than drawing new images, which
-  flickered - marking the move that led to it. In `LiveGame` it's drawn over the live board while stepping
-  back (`EarlierPositionOverlay`), staying up when stepping onto the live
-  position until that last move has slid there. `BoardArrows` draws
-  arrows square centre to square centre in SVG (`react-native-svg`), over
-  a board's pieces and out of the way of touches - a sibling of the
-  memoised `Chessboard`, not inside it; `utils/analysisArrows.ts` picks
-  them (each engine line's first move in soft green, the best boldest, and
-  the threat in soft red).
+- **`src/lib/chessboard/`** - the board, written as if it were a
+  third-party package so another board library could take its place: it
+  imports only React Native and the libraries it draws and moves with
+  (Reanimated, Gesture Handler, worklets, SVG) - not chess.js, the theme or
+  anything else of the app's - and the app sees only its `index.ts`. Like
+  chessground, it knows no chess rules: `<Chessboard>` is given a `fen` (only
+  its placement is read - `fen.ts`, which draws any placement, kingless
+  setups included), `size`, `orientation`, `colors`, `pieceImages`,
+  `movable` (whose pieces can be picked up - a color, `'both'` or none -
+  their `dests`, or `free` to go anywhere, off the board too), `lastMove`
+  (the squares marked), `promotion` (a pawn held on its promotion square),
+  `check` (a king glowing red, tipped over once `fallen`), `arrows`,
+  `animation` and `viewOnly`, and calls back `onMove(from, to)` - return
+  false to refuse it - `onDropOff`, `onSquarePress`, `onSettled` and
+  `onDragLog`. Its own `types.ts` are the same strings as chess.js's, so
+  the app's values pass straight in.
+  - `Chessboard.tsx` - tap-to-move selection (a movable piece tapped shows
+    its dests, one of them tapped plays it, anything else lets go, and a
+    new position drops it), and what a drop does: a move goes to `onMove`,
+    one refused is sent home at once. The pieces get callbacks that never
+    change, though an app's are new on every render: re-rendering a piece
+    makes Gesture Handler set its gestures up again, which cancels a drag
+    under way. Nor does a move change their props: which pieces can be
+    picked up is one shared value for the whole board (`MovableSquares`),
+    read by the gestures on the UI thread - as props, whose turn it is
+    flipping them re-rendered all 32 on every move. Everything but the
+    arrows sits in a memoised core, so an engine's arrows changing don't
+    re-render the pieces; `BoardSurface`'s 64 squares are memoised too.
+    `viewOnly` draws the pieces with no gestures and lets touches through.
+  - `hooks/usePieceTracker.ts` - each piece's position as Reanimated shared
+    values, always from white's side - the board turns the whole pieces
+    layer round for black, with each piece's image turned back upright, so
+    a flip is drawn in the same frame as the squares - each piece kept the
+    same piece from one position to the next (`matchPieces.ts`). A new
+    position is a move when `lastMove` is new too and the piece on its
+    first square has left it: its pieces slide there in 50ms ease-out tweens
+    (`constants.ts`) - or are put there at once with `animation.enabled`
+    off, as `animatesMoves(gameType)` in `timeControls.ts` says for anything
+    under 3+0 - the piece it takes drawn under the one taking it until that
+    lands, the pieces just moved over the rest; so castling, en passant and
+    promotion need nothing more than the new position. Any other new
+    position - a move refused, taken back - is put straight there, or with
+    `animation.slideOnSet` - stepping back through an analysis or a game -
+    each piece slides from where it stood. A pawn waiting on a promotion
+    stands on its promotion square, and a board drawn at a new size puts
+    every piece straight onto its square at that size.
+  - `hooks/usePieceGesture.ts` - a piece's Gesture Handler pan and tap, run
+    on the UI thread, as on lichess: the piece is lifted at once, twice its
+    size, a square above the finger, its own square marked while it's held,
+    and a drop counts for the square under the finger - where it last
+    moved, not where a quick flick lifts, or, when that's no move, the
+    square next to it where it was just before it lifted, as a finger
+    slides leaving the glass - landing straight on it when it's one of the
+    piece's `dests` - set down at once, the piece it takes disappearing
+    with it - or going straight home, before JS hears of it.
+    `hooks/useDragGuide.ts` holds the guide's shared values - a circle two
+    squares across on the drop's square, and the held piece's own square -
+    and the piece a drop has taken, hidden until the position moves on;
+    `hooks/useValidMoveIndicators.ts`, the dots' `Animated.Value`
+    opacities.
+  - `components/` - `BoardSurface`/`Row`/`Square`, `LastMoveHighlight`,
+    `PieceDragAndDropGuide`, `ValidMoveIndicators`, `Pieces` (`Piece`, or
+    `StaticPiece` on a view-only board), `PieceImage` (upright for black, a
+    king in check glowing red - an iOS shadow, which follows the piece's
+    shape - and tipping over 45° once fallen) and `BoardArrows` (square
+    centre to square centre in SVG, over the pieces and out of the way of
+    touches). `coordinates.ts` is square <-> pixel math and `isOnBoard`,
+    each a worklet (a `'worklet'` string directive, no import), so a drag
+    can work out squares on the UI thread.
+
+- **`src/components/Board/`** - the app's boards, and the only app code
+  that uses the library, mapping the app's games, theme
+  (`useChessboardColors` - the squares from Appearance's board theme, the
+  rest from `colors.board`) and `PIECES` onto it - swapping board libraries
+  means changing this alone. `GameBoard` plays the game in
+  `ChessGameContext`: `movable` is its `movableColor` and `legalTargets`, a
+  move goes to `attemptMove`, the last move marked is the game's, or the
+  last one the server has on record while it has made none (on a game
+  resumed or a move refused) - for a castle, the king's and rook's starting
+  squares (`domain/lastMoveSquares.ts`) - and `check` is
+  `domain/kingInDanger.ts`; memoised, so a screen re-rendering around it -
+  a clock ticking - doesn't re-render it. `PositionBoard` is read-only,
+  drawn straight from a FEN, for viewing earlier positions: stepping
+  through a game moves its pieces - sliding, unless it's bullet - rather
+  than drawing new images, which flickered. In `LiveGame` it's drawn over
+  the live board while stepping back (`EarlierPositionOverlay`), staying up
+  when stepping onto the live position until that last move has slid
+  there (`onSettled`). `EmptyBoard` is the squares alone, while a game is
+  on its way; `SetupBoard` is the position editor's, tapped with its tool,
+  or with the hand its pieces dragged freely, off the board to take them
+  away. `utils/analysisArrows.ts` picks the analysis board's arrows (each
+  engine line's first move in soft green, the best boldest, and the threat
+  in soft red).
 
 - **Analysis components** - `EvalBar` (white's share, animated, with the
   score - across the board above or below it, or beside it from white's
@@ -448,10 +482,14 @@ theme/         the style guide: scales, light/dark colors, makeStyles
   text, variations bracketed in smaller type, scrolled to keep the current
   move in view; a tap goes there, a long
   press opens Promote variation / Delete from here), `PositionEditor`
-  (the board tapped with a piece from the palette or the eraser - or,
-  with the hand, pieces dragged on its own pan gesture, off the board to
-  take them away - and why it can't be analysed yet; it brings its own
-  `GestureHandlerRootView`, as it's also shown in a modal),
+  (`SetupBoard` tapped with a piece from the palette or the eraser - or,
+  with the hand, its pieces dragged anywhere, off the board to take them
+  away - the palette a row of each side's pieces, by its side of the
+  board, each row with the hand and the eraser too, on one light grey
+  panel (`colors.board.palette`, the same in both modes so black pieces
+  show on a dark screen - one panel, not a tile per tool, which looked
+  like more squares), and why it can't be analysed yet; the board brings its own
+  `GestureHandlerRootView`, so it works in the modal it's also shown in),
   `PositionSetupSheet` (side to move, castling checkboxes offered only
   where possible), `RadioRow` (a few choices as radio buttons in a row),
   `AnalysisSettingsForm` (the eval bar and its side, a 0-3 lines slider,
@@ -659,8 +697,7 @@ theme/         the style guide: scales, light/dark colors, makeStyles
   React Navigation's theme from ours (headers, tab bar).
 
 - **`src/constants/`** - board size, piece image lookups
-  (`PIECES['wk' | 'bq' | ...]`), the board's animation timings and drag scale
-  (`animations.ts`), castling squares, time controls, Appearance's
+  (`PIECES['wk' | 'bq' | ...]`), castling squares, time controls, Appearance's
   settings and their defaults (`appearance.ts`), seeks (`seek.ts`: the `Seek` that New Game
   hands to LiveGame, and the rating range's default, step and limit),
   the game's sounds (`sounds.ts`, `assets/sounds/*.wav` - synthesized by
@@ -672,10 +709,10 @@ theme/         the style guide: scales, light/dark colors, makeStyles
   the analysis board's settings and their defaults (`analysis.ts`), the
   pinned engine download (`engine.ts`), etc.
 
-- **`src/utils/`** - RN `Animated` helpers (`animation.ts`: castling
-  animation, piece ids), `dragLog.ts` (`logDrag`: with
+- **`src/utils/`** - `dragLog.ts` (`logDrag`: with
   `EXPO_PUBLIC_DEBUG_DRAG=1`, a line in the Metro terminal for every drop -
-  how the board judged it, and what the game made of it), color math
+  how the board judged it, through its `onDragLog`, and what the game made
+  of it), color math
   (`color.ts`: `tintColor`, a color mixed toward white or another) and
   rating formatting
   (`rating.ts`: `formatRating` - "1520", or "1520?" while provisional -
@@ -695,8 +732,8 @@ theme/         the style guide: scales, light/dark colors, makeStyles
   PanResponder gestures for the bottom sheet (`panResponderGesture.ts`),
   `Animated.Value` read helpers and `animatedStyleOf` for a Reanimated
   view's drawn style (`animatedValue.ts`), `piecePositionOnScreen` - where
-  a board piece is drawn, the pieces layer's turn for black included
-  (`boardPosition.ts`), a text-based
+  a board piece is drawn, the pieces layer (`<board testID>-pieces`) turned
+  for black included (`boardPosition.ts`), a text-based
   board visualizer for debugging board state in test failures, a fake
   `AppSocket` for hooks that talk to the server (`fakeSocket.ts`), a
   `GameSnapshot` fixture builder (`gameSnapshot.ts`), `makeAuthSession`/
@@ -746,8 +783,9 @@ Two deliberately separate layers - don't let one re-do the other's job:
   `src/network/__tests__/`.
 - The gesture layer (tap/drag -> the right move being attempted) is tested
   by firing Gesture Handler's gestures from Jest - `jest.config.js` loads
-  its `jestSetup` - see `src/components/ChessBoard/index.spec.tsx` and
-  `testUtils/pieceGestures.ts`. Those tests use fake timers: the gestures'
+  its `jestSetup` - see `src/lib/chessboard/` for the board on its own,
+  props in and callbacks out, `src/components/Board/GameBoard.spec.tsx`
+  for it playing a real `useChessGame`, and `testUtils/pieceGestures.ts`. Those tests use fake timers: the gestures'
   worklets reach JS through `scheduleOnRN`, and pieces move by timed
   animations.
 - "Does this actually work on a real device" questions belong in a Maestro
@@ -758,10 +796,15 @@ Two deliberately separate layers - don't let one re-do the other's job:
 - Business/chess logic never lives in a component or screen - it belongs in
   `src/domain/` (rules) or `src/hooks/` (state machines, both the local
   `useChessGame.ts` and the online-play hooks). Raw server communication
-  belongs in `src/network/`, not inlined into a hook. Keep
-  `components/ChessBoard/` purely presentational when adding to it.
+  belongs in `src/network/`, not inlined into a hook.
+- The board library (`src/lib/chessboard/`) stays a package: it knows no
+  chess rules and imports nothing from the app - what it needs comes in as
+  props - and the app reaches it only through `src/components/Board/`, by
+  its `index.ts`. ESLint refuses anything else (tests and `testUtils` may
+  reach in). A board feature the app needs is a new prop there, mapped from
+  the app in the adapter.
 - Animated-value and shared-value bookkeeping is kept in its own hooks
-  (`usePieceAnimations`/`usePieceGesture`/`useDragGuide`/
+  (the library's `usePieceTracker`/`usePieceGesture`/`useDragGuide`/
   `useValidMoveIndicators`), separate from game-state logic. Shared values
   are read and written with `.get()`/`.set()`, not `.value`, which the
   React-Compiler-readiness lint (`react-hooks/immutability`) refuses on a
