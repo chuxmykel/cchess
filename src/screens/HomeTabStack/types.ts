@@ -7,7 +7,8 @@ import { HomeTabsParamList } from '../HomeTabs/types';
 
 export type HomeTabStackParamList = {
   Home: undefined;
-  NewGame: undefined;
+  /** daily opens it with a daily time control chosen. */
+  NewGame: { daily?: boolean } | undefined;
   /** focusSearch opens it ready to type in the player search. */
   Friends: { focusSearch?: boolean } | undefined;
 };

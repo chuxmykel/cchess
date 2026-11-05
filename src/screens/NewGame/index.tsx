@@ -8,24 +8,36 @@ import Toast from '../../components/Toast';
 import { useToast } from '../../hooks/useToast';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { DEFAULT_RATING_RANGE, Seek } from '../../constants/seek';
+import { DAILY_SEEK_FAILED_MESSAGE } from '../../constants/errorMessages';
+import { useSeekDailyGame } from '../../hooks/useSeekDailyGame';
 import { ColorChoice } from '../../network/socketEvents';
 import {
   TimeControl,
   DEFAULT_TIME_CONTROL,
+  daysPerMove,
+  isDailyTimeControl,
+  TIME_CONTROL_GROUPS,
 } from '../../constants/timeControls';
 import { makeStyles } from '../../theme';
+
+// What a daily game starts at, when New Game is opened to start one.
+const DEFAULT_DAILY_TIME_CONTROL = TIME_CONTROL_GROUPS.find(
+  (group) => group.type === 'daily',
+)!.options[2];
 
 interface NewGameProps {
   navigation: {
     navigate: (route: string, params?: object) => any;
   };
+  route?: { params?: { daily?: boolean } };
 }
 
-const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
+const NewGame: React.FC<NewGameProps> = ({ navigation, route }) => {
   const styles = useStyles();
 
-  const [timeControl, setTimeControl] =
-    useState<TimeControl>(DEFAULT_TIME_CONTROL);
+  const [timeControl, setTimeControl] = useState<TimeControl>(
+    route?.params?.daily ? DEFAULT_DAILY_TIME_CONTROL : DEFAULT_TIME_CONTROL,
+  );
   const [chosenRated, setChosenRated] = useState(true);
   const [ratingRange, setRatingRange] = useState(DEFAULT_RATING_RANGE);
   const [color, setColor] = useState<ColorChoice>('random');
@@ -33,10 +45,40 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
   const authSession = useAuthSession();
   const isGuest = !authSession.isReady || authSession.user.isGuest;
   const rated = !isGuest && chosenRated;
+  const seekDailyGame = useSeekDailyGame();
+  const [isSeekingDaily, setIsSeekingDaily] = useState(false);
 
   function startNewGame() {
+    if (isDailyTimeControl(timeControl)) {
+      startDailyGame();
+      return;
+    }
     const seek: Seek = { timeControl, rated, ratingRange, color };
     navigation.navigate('LiveGame', { seek });
+  }
+
+  // A daily seek is posted and left: matched at once, the game opens;
+  // otherwise it waits on Home, under Your games, for an opponent.
+  async function startDailyGame() {
+    if (isSeekingDaily) return;
+    setIsSeekingDaily(true);
+    try {
+      const outcome = await seekDailyGame({
+        days: daysPerMove(timeControl),
+        rated,
+        ratingRange,
+        color,
+      });
+      if (outcome.status === 'matched') {
+        navigation.navigate('DailyGame', { gameId: outcome.gameId });
+      } else {
+        navigation.navigate('Home');
+      }
+    } catch (error) {
+      toast.show((error as Error).message || DAILY_SEEK_FAILED_MESSAGE);
+    } finally {
+      setIsSeekingDaily(false);
+    }
   }
 
   function challengeFriend() {
@@ -71,6 +113,7 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
         <Button
           label="Start New Game"
           onPress={startNewGame}
+          disabled={isSeekingDaily}
           variant="primary"
           style={styles.startButton}
           testID="start-new-game-button"

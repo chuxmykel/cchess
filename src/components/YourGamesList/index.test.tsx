@@ -1,0 +1,141 @@
+import { fireEvent, render, within } from '@testing-library/react-native';
+
+import YourGamesList from '.';
+import { boardTester } from '../Board/boardTester';
+import { DAILY_GAMES_STATUS } from '../../hooks/useDailyGames';
+import { DailySeek } from '../../network/restClient';
+import { makeDailyGame } from '../../testUtils/dailyGame';
+
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
+
+const SEEK: DailySeek = {
+  id: 'seek-1',
+  days: 7,
+  rated: false,
+  ratingRange: null,
+  color: 'random',
+  createdAt: '2026-01-01T00:00:00.000Z',
+};
+
+describe('YourGamesList', () => {
+  function renderList(
+    overrides: Partial<React.ComponentProps<typeof YourGamesList>> = {},
+  ) {
+    const props = {
+      dailyGames: {
+        status: DAILY_GAMES_STATUS.READY,
+        games: [
+          makeDailyGame({
+            id: 'mine',
+            moveDeadlineAt: new Date(Date.now() + DAY + 4 * HOUR).toISOString(),
+          }),
+          makeDailyGame({
+            id: 'theirs',
+            myTurn: false,
+            playedAsWhite: false,
+            opponent: {
+              id: 'p2',
+              username: 'hikaru',
+              displayName: 'Hikaru',
+              avatarColor: '#E8601C',
+            },
+            moveDeadlineAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+          }),
+        ],
+      },
+      seeks: [SEEK],
+      onPressGame: jest.fn(),
+      onCancelSeek: jest.fn(),
+      onStartDailyGame: jest.fn(),
+      ...overrides,
+    } as React.ComponentProps<typeof YourGamesList>;
+    return { props, screenPromise: render(<YourGamesList {...props} />) };
+  }
+
+  it('shows each game, in the order given, then the seeks still waiting', async () => {
+    const { screenPromise } = renderList();
+    const screen = await screenPromise;
+
+    expect(
+      screen
+        .getAllByTestId(/^daily-(game-(mine|theirs)|seek-seek-1)$/)
+        .map((card) => card.props.testID),
+    ).toEqual(['daily-game-mine', 'daily-game-theirs', 'daily-seek-seek-1']);
+    expect(screen.getByTestId('your-games-header-count')).toHaveTextContent(
+      '2',
+    );
+  });
+
+  it('names each opponent with the time left on the move under it, and no rating', async () => {
+    const { screenPromise } = renderList();
+    const screen = await screenPromise;
+
+    const mine = within(screen.getByTestId('daily-game-mine'));
+    expect(mine.getByText('Judit')).toBeTruthy();
+    expect(mine.getByTestId('daily-game-mine-time-left')).toHaveTextContent(
+      '1 day 4h',
+    );
+    expect(mine.queryByText(/\d{4}/)).toBeNull();
+    expect(screen.getByTestId('daily-game-theirs-time-left')).toHaveTextContent(
+      '30m',
+    );
+  });
+
+  it('draws each board from your side', async () => {
+    const { screenPromise } = renderList();
+    const screen = await screenPromise;
+
+    const sideAtBottom = (gameId: string) =>
+      boardTester(
+        within(screen.getByTestId(`daily-game-${gameId}`)),
+        'position',
+      ).orientation();
+    expect(sideAtBottom('mine')).toBe('w');
+    expect(sideAtBottom('theirs')).toBe('b');
+  });
+
+  it('opens a game, and withdraws a seek', async () => {
+    const { props, screenPromise } = renderList();
+    const screen = await screenPromise;
+
+    await fireEvent.press(screen.getByTestId('daily-game-theirs'));
+    await fireEvent.press(screen.getByTestId('daily-seek-seek-1-cancel'));
+
+    expect(props.onPressGame).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'theirs' }),
+    );
+    expect(props.onCancelSeek).toHaveBeenCalledWith(SEEK);
+  });
+
+  it('says what a seek is for', async () => {
+    const { screenPromise } = renderList();
+    const screen = await screenPromise;
+
+    const seek = within(screen.getByTestId('daily-seek-seek-1'));
+    expect(seek.getByText('Finding opponent')).toBeTruthy();
+    expect(seek.getByText('7 days · Casual')).toBeTruthy();
+  });
+
+  it('offers to start one when there are none', async () => {
+    const { props, screenPromise } = renderList({
+      dailyGames: { status: DAILY_GAMES_STATUS.READY, games: [] },
+      seeks: [],
+    });
+    const screen = await screenPromise;
+
+    await fireEvent.press(screen.getByTestId('start-daily-game'));
+
+    expect(screen.getByText('No daily games')).toBeTruthy();
+    expect(props.onStartDailyGame).toHaveBeenCalled();
+  });
+
+  it('shows nothing until the games have loaded', async () => {
+    const { screenPromise } = renderList({
+      dailyGames: { status: DAILY_GAMES_STATUS.LOADING },
+    });
+    const screen = await screenPromise;
+
+    expect(screen.queryByTestId('your-games')).toBeNull();
+  });
+});

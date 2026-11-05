@@ -3,7 +3,14 @@ import { act, fireEvent, render, within } from '@testing-library/react-native';
 import Home from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { useSocialContext } from '../../context/SocialContext';
-import { getMyGames } from '../../network/restClient';
+import {
+  cancelDailySeek,
+  getDailyGames,
+  getMyDailySeeks,
+  getMyGames,
+} from '../../network/restClient';
+import { makeDailyGame } from '../../testUtils/dailyGame';
+import { createFakeSocket } from '../../testUtils/fakeSocket';
 import {
   makeAuthSession,
   makeBootstrappingAuthSession,
@@ -26,6 +33,9 @@ jest.mock('../../context/SocialContext', () => ({
 jest.mock('../../network/restClient', () => ({
   ...jest.requireActual('../../network/restClient'),
   getMyGames: jest.fn(),
+  getDailyGames: jest.fn(),
+  getMyDailySeeks: jest.fn(),
+  cancelDailySeek: jest.fn(),
 }));
 jest.mock('@react-navigation/native', () =>
   jest.requireActual('../../testUtils/focusEffectRunsOnMount'),
@@ -42,7 +52,12 @@ const MAGNUS = {
 
 describe('Home', () => {
   async function renderScreen(session = makeAuthSession()) {
-    (useAuthSession as jest.Mock).mockReturnValue(session);
+    // Your games listens for the server's pushes.
+    (useAuthSession as jest.Mock).mockReturnValue(
+      session.isReady && !('on' in session.socket)
+        ? { ...session, socket: createFakeSocket().socket }
+        : session,
+    );
     const navigation = { navigate: jest.fn() };
     const screen = await render(withSafeArea(<Home navigation={navigation} />));
     await act(async () => {});
@@ -51,6 +66,8 @@ describe('Home', () => {
 
   beforeEach(() => {
     (getMyGames as jest.Mock).mockResolvedValue([]);
+    (getDailyGames as jest.Mock).mockResolvedValue([]);
+    (getMyDailySeeks as jest.Mock).mockResolvedValue([]);
     (useSocialContext as jest.Mock).mockReturnValue(makeSocial());
   });
 
@@ -116,6 +133,58 @@ describe('Home', () => {
 
     expect(getMyGames).toHaveBeenCalledWith('token-a', 10);
     expect(screen.getByTestId('game-row-game-1')).toBeTruthy();
+  });
+
+  describe('your daily games', () => {
+    it('lists them below friends and above recent games, opening one', async () => {
+      (getDailyGames as jest.Mock).mockResolvedValue([
+        makeDailyGame({ id: 'daily-1' }),
+      ]);
+      const { screen, navigation } = await renderScreen(
+        makeAuthSession({ user: MAGNUS, accessToken: 'token-a' }),
+      );
+
+      expect(getDailyGames).toHaveBeenCalledWith('token-a', 10);
+      const sections = screen
+        .getAllByText(/^(Friends|Your games|Recent Games)/)
+        // A title, and any count beside it.
+        .map((title) => [title.props.children].flat()[0]);
+      expect(sections).toEqual(['Friends', 'Your games', 'Recent Games']);
+      await fireEvent.press(screen.getByTestId('daily-game-daily-1'));
+      expect(navigation.navigate).toHaveBeenCalledWith('DailyGame', {
+        gameId: 'daily-1',
+      });
+    });
+
+    it('withdraws a waiting seek', async () => {
+      (getMyDailySeeks as jest.Mock).mockResolvedValue([
+        {
+          id: 'seek-1',
+          days: 3,
+          rated: true,
+          ratingRange: null,
+          color: 'random',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ]);
+      (cancelDailySeek as jest.Mock).mockResolvedValue(undefined);
+      const { screen } = await renderScreen(makeAuthSession({ user: MAGNUS }));
+
+      await fireEvent.press(screen.getByTestId('daily-seek-seek-1-cancel'));
+
+      expect(cancelDailySeek).toHaveBeenCalledWith('seek-1', 'access-token');
+      expect(screen.queryByTestId('daily-seek-seek-1')).toBeNull();
+    });
+
+    it('offers to start one when there are none', async () => {
+      const { screen, navigation } = await renderScreen();
+
+      await fireEvent.press(screen.getByTestId('start-daily-game'));
+
+      expect(navigation.navigate).toHaveBeenCalledWith('NewGame', {
+        daily: true,
+      });
+    });
   });
 
   it('shows neither the prompt nor friends while the session is starting', async () => {

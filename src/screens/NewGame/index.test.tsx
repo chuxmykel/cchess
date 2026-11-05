@@ -11,18 +11,94 @@ import { makeAuthSession } from '../../testUtils/authSession';
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
 }));
+const mockSeekDailyGame = jest.fn();
+jest.mock('../../hooks/useSeekDailyGame', () => ({
+  useSeekDailyGame: () => mockSeekDailyGame,
+}));
 
 describe('NewGame', () => {
-  function renderScreen({ isGuest }: { isGuest: boolean }) {
+  function renderScreen({
+    isGuest,
+    daily,
+  }: {
+    isGuest: boolean;
+    daily?: boolean;
+  }) {
     (useAuthSession as jest.Mock).mockReturnValue(
       makeAuthSession({ user: { isGuest } }),
     );
     const navigation = { navigate: jest.fn() };
     return {
-      screenPromise: render(withSafeArea(<NewGame navigation={navigation} />)),
+      screenPromise: render(
+        withSafeArea(
+          <NewGame navigation={navigation} route={{ params: { daily } }} />,
+        ),
+      ),
       navigation,
     };
   }
+
+  describe('a daily game', () => {
+    afterEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('posts a seek and returns home to wait for an opponent there', async () => {
+      mockSeekDailyGame.mockResolvedValue({ status: 'queued' });
+      const { screenPromise, navigation } = renderScreen({
+        isGuest: false,
+        daily: true,
+      });
+      const screen = await screenPromise;
+
+      expect(screen.getByText('Daily · 3 days')).toBeTruthy();
+      await fireEvent.press(screen.getByTestId('start-new-game-button'));
+
+      expect(mockSeekDailyGame).toHaveBeenCalledWith({
+        days: 3,
+        rated: true,
+        ratingRange: DEFAULT_RATING_RANGE,
+        color: 'random',
+      });
+      expect(navigation.navigate).toHaveBeenCalledWith('Home');
+    });
+
+    it('opens the game when a seek was already waiting for it', async () => {
+      mockSeekDailyGame.mockResolvedValue({
+        status: 'matched',
+        gameId: 'game-5',
+      });
+      const { screenPromise, navigation } = renderScreen({
+        isGuest: false,
+        daily: true,
+      });
+      const screen = await screenPromise;
+
+      await fireEvent.press(screen.getByTestId('start-new-game-button'));
+
+      expect(navigation.navigate).toHaveBeenCalledWith('DailyGame', {
+        gameId: 'game-5',
+      });
+    });
+
+    it("says why when the seek couldn't be posted", async () => {
+      mockSeekDailyGame.mockRejectedValue(
+        new Error('You can have at most 10 daily seeks waiting'),
+      );
+      const { screenPromise, navigation } = renderScreen({
+        isGuest: false,
+        daily: true,
+      });
+      const screen = await screenPromise;
+
+      await fireEvent.press(screen.getByTestId('start-new-game-button'));
+
+      expect(navigation.navigate).not.toHaveBeenCalled();
+      expect(
+        screen.getByText('You can have at most 10 daily seeks waiting'),
+      ).toBeTruthy();
+    });
+  });
 
   it('seeks a rated game with the default range when signed in', async () => {
     const { screenPromise, navigation } = renderScreen({ isGuest: false });
