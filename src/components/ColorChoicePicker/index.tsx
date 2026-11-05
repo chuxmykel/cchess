@@ -43,7 +43,11 @@ const ColorChoicePicker: React.FC<ColorChoicePickerProps> = ({
               <Icon
                 name="shuffle-variant"
                 size={ICON_SIZE - 4}
-                color={isSelected ? colors.accent : colors.textMuted}
+                color={
+                  isSelected
+                    ? colors.pieceChoiceLabelSelected
+                    : colors.pieceChoiceLabel
+                }
               />
             ) : (
               <BoardPieceIcon
@@ -77,18 +81,18 @@ const useStyles = makeStyles((t) => ({
     borderRadius: t.radius.md,
     borderWidth: 1.5,
     borderColor: t.colors.divider,
-    backgroundColor: t.colors.surfaceSubtle,
+    backgroundColor: t.colors.pieceChoice,
   },
   selected: {
     borderColor: t.colors.accent,
-    backgroundColor: t.colors.accentSubtle,
+    backgroundColor: t.colors.pieceChoiceSelected,
   },
   label: {
     fontSize: t.fontSize.md,
-    color: t.colors.textMuted,
+    color: t.colors.pieceChoiceLabel,
   },
   selectedLabel: {
     fontWeight: t.fontWeight.semibold,
-    color: t.colors.accent,
+    color: t.colors.pieceChoiceLabelSelected,
   },
 }));
