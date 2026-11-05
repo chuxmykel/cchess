@@ -391,6 +391,9 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
             onOpenMenu={() => setIsMenuOpen(true)}
             onOpenChat={chat.open}
             unreadChatCount={chat.unreadCount}
+            onAnalyse={() =>
+              navigation.navigate('DailyAnalysis', { gameId: snapshot.id })
+            }
             moveSteps={moveNavigation}
           />
         )}

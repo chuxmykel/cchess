@@ -12,6 +12,7 @@ import { useResumeActiveGame } from '../../hooks/useResumeActiveGame';
 import HomeTabs from '../HomeTabs';
 import LiveGame from '../LiveGame';
 import DailyGame from '../DailyGame';
+import DailyAnalysis from '../DailyAnalysis';
 import GameViewer from '../GameViewer';
 import AnalysisBoard from '../AnalysisBoard';
 import AnalysisSettings from '../AnalysisSettings';
@@ -65,6 +66,14 @@ const HomeStack: React.FC = () => {
               options={{ gestureEnabled: false }}
             />
             <Screen name="DailyGame" component={DailyGame} />
+            <Screen
+              name="DailyAnalysis"
+              component={DailyAnalysis}
+              options={({ navigation }) => ({
+                ...plainHeaderOptions(navigation),
+                title: 'Analysis',
+              })}
+            />
             <Screen name="GameViewer" component={GameViewer} />
             <Screen
               name="AnalysisBoard"

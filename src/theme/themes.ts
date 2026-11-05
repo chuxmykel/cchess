@@ -100,6 +100,9 @@ export interface ThemeColors {
   };
 
   chart: { selection: string; guide: string; grid: string };
+  // The opening explorer's bar of how a move's games ended: white's wins,
+  // draws, black's - as lichess draws it.
+  explorer: { white: string; draw: string; black: string };
   // EmptyState's drawings.
   illustration: { light: string; pale: string; grey: string; dark: string };
 
@@ -240,6 +243,7 @@ export const lightTheme: Theme = {
     },
 
     chart: { selection: '#A8C98A', guide: '#c4c4c4', grid: '#e0e0e0' },
+    explorer: { white: '#f5f5f5', draw: '#a3a3a3', black: '#3a3a3a' },
     illustration: {
       light: '#dfe8d3',
       pale: '#eef3e8',
@@ -324,6 +328,7 @@ export const darkTheme: Theme = {
     },
 
     chart: { selection: '#A8C98A', guide: '#5a5752', grid: '#33312d' },
+    explorer: { white: '#e8e6e3', draw: '#7a7772', black: '#161512' },
     illustration: {
       light: '#33402a',
       pale: '#232b1c',

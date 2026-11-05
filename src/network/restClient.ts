@@ -248,6 +248,67 @@ export async function cancelDailySeek(
   );
 }
 
+/** A move played from a position in finished games here, and how those
+ * games ended. */
+export type ExplorerMove = {
+  san: string;
+  uci: string;
+  games: number;
+  whiteWins: number;
+  draws: number;
+  blackWins: number;
+};
+
+export type ExplorerPosition = {
+  totalGames: number;
+  /** The most played first. */
+  moves: ExplorerMove[];
+};
+
+/** The opening explorer, from the games finished here - games still being
+ * played aren't in it. */
+export async function getExplorer(
+  fen: string,
+  accessToken: string,
+): Promise<ExplorerPosition> {
+  return (
+    await apiClient.get<ExplorerPosition>('/explorer', {
+      ...bearer(accessToken),
+      params: { fen },
+    })
+  ).data;
+}
+
+/** Your own notes on a game, seen by nobody else. */
+export type GameNotes = { body: string; updatedAt: string | null };
+
+export async function getGameNotes(
+  gameId: string,
+  accessToken: string,
+): Promise<GameNotes> {
+  return (
+    await apiClient.get<GameNotes>(
+      `/games/${encodeURIComponent(gameId)}/notes`,
+      bearer(accessToken),
+    )
+  ).data;
+}
+
+/** Replaces your notes on a game; none clears them. */
+export async function saveGameNotes(
+  gameId: string,
+  body: string,
+  accessToken: string,
+): Promise<GameNotes> {
+  return (
+    await apiClient.put<GameNotes>(
+      `/games/${encodeURIComponent(gameId)}/notes`,
+      { body },
+      bearer(accessToken),
+    )
+  ).data;
+}
+
 /** Your daily games in progress: those on your move first, then each by
  * when its move runs out. */
 export async function getDailyGames(

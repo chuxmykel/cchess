@@ -191,6 +191,16 @@ describe('DailyGameContent', () => {
     ]);
   });
 
+  it('opens the game in its analysis board from the toolbar', async () => {
+    const { screen, navigation } = await renderContent();
+
+    await fireEvent.press(screen.getByTestId('toolbar-analysis-button'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('DailyAnalysis', {
+      gameId: 'this-game',
+    });
+  });
+
   it('opens the daily game settings', async () => {
     const { screen, navigation } = await renderContent();
 

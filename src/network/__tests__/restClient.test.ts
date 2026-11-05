@@ -11,6 +11,9 @@ import {
   cancelDailySeek,
   createDailySeek,
   getDailyGames,
+  getExplorer,
+  getGameNotes,
+  saveGameNotes,
   getMyActiveGame,
   getMyDailySeeks,
   getMyGames,
@@ -215,6 +218,30 @@ describe('restClient', () => {
       expect(request.url).toBe('/games/daily');
       expect(request.params).toEqual({ limit: 10 });
       expect(request.headers.Authorization).toBe('Bearer access-123');
+    });
+
+    it('asks the explorer about a position', async () => {
+      const transport = stubTransport(
+        respondWith({ totalGames: 0, moves: [] }),
+      );
+
+      await getExplorer('8/8/8/8/8/8/8/K6k w - - 0 1', 'access-123');
+
+      expect(sentRequest(transport).url).toBe('/explorer');
+      expect(sentRequest(transport).params).toEqual({
+        fen: '8/8/8/8/8/8/8/K6k w - - 0 1',
+      });
+    });
+
+    it('reads and saves your notes on a game', async () => {
+      const reading = stubTransport(respondWith({ body: '', updatedAt: null }));
+      await getGameNotes('game-1', 'access-123');
+      expect(sentRequest(reading).url).toBe('/games/game-1/notes');
+
+      const saving = stubTransport(respondWith({ body: 'x', updatedAt: null }));
+      await saveGameNotes('game-1', 'x', 'access-123');
+      expect(sentRequest(saving).method).toBe('put');
+      expect(JSON.parse(sentRequest(saving).data)).toEqual({ body: 'x' });
     });
 
     it('posts, lists and withdraws daily seeks', async () => {

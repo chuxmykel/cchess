@@ -33,6 +33,8 @@ interface GameToolbarProps {
   /** Leave out to hide the chat button. */
   onOpenChat?: () => void;
   unreadChatCount?: number;
+  /** Leave out to hide the analysis button. */
+  onAnalyse?: () => void;
   moveSteps: MoveSteps;
 }
 
@@ -129,6 +131,7 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
   canResign = false,
   onOpenChat,
   unreadChatCount = 0,
+  onAnalyse,
   moveSteps,
 }) => {
   const styles = useStyles();
@@ -158,6 +161,14 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
           onPress={onOpenChat}
           badgeCount={unreadChatCount}
           testID="chat-button"
+        />
+      )}
+      {onAnalyse && (
+        <ToolbarButton
+          icon="magnify"
+          label="Analysis"
+          onPress={onAnalyse}
+          testID="toolbar-analysis-button"
         />
       )}
       <ToolbarButton
