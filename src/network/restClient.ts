@@ -140,6 +140,11 @@ export type GameSummary = {
   endedAt: string | null;
 };
 
+// A history lists games played to an end: one in progress, a daily game
+// say, would take a place in the page and push a finished one out. (Aborted
+// games are left out of a history unless asked for.)
+const FINISHED = 'completed';
+
 export type GamesPage = {
   limit: number;
   /** Only games created before this ISO date. */
@@ -154,7 +159,7 @@ export async function getMyGames(
   return (
     await apiClient.get<GameSummary[]>('/games', {
       ...bearer(accessToken),
-      params: { limit, before },
+      params: { limit, before, status: FINISHED },
     })
   ).data;
 }
@@ -376,7 +381,7 @@ export async function getUserGames(
   return (
     await apiClient.get<GameSummary[]>(`${userPath(username)}/games`, {
       ...bearer(accessToken),
-      params: page,
+      params: { ...page, status: FINISHED },
     })
   ).data;
 }

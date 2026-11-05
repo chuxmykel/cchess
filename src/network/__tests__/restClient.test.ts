@@ -20,6 +20,7 @@ import {
   getMyActiveGame,
   getMyDailySeeks,
   getMyGames,
+  getUserGames,
   isUsernameAvailable,
   refreshSession,
   register,
@@ -183,15 +184,33 @@ describe('restClient', () => {
       });
     });
 
-    it('fetches my most recent games, limited to the given count', async () => {
+    it('fetches my most recent finished games, limited to the given count', async () => {
       const transport = stubTransport(respondWith([]));
 
       await getMyGames('access-123', 10);
 
       const request = sentRequest(transport);
       expect(request.url).toBe('/games');
-      expect(request.params).toEqual({ limit: 10 });
+      expect(request.params).toEqual({ limit: 10, status: 'completed' });
       expect(request.headers.Authorization).toBe('Bearer access-123');
+    });
+
+    it("fetches a player's finished games, a page at a time", async () => {
+      const transport = stubTransport(respondWith([]));
+
+      await getUserGames(
+        'magnus',
+        { limit: 20, before: '2026-01-01T00:00:00.000Z' },
+        'access-123',
+      );
+
+      const request = sentRequest(transport);
+      expect(request.url).toBe('/users/magnus/games');
+      expect(request.params).toEqual({
+        limit: 20,
+        before: '2026-01-01T00:00:00.000Z',
+        status: 'completed',
+      });
     });
 
     it("finds the live game you're in the middle of, not a daily one", async () => {
