@@ -6,6 +6,7 @@ import {
   MoveSpec,
   addMove,
   deleteFrom,
+  keepOnlyChild,
   lineThrough,
   pathTo,
   promoteVariation,
@@ -19,6 +20,8 @@ type State = {
   // The line being followed: Forward goes along it, so going back and then
   // forward again returns the way you came, variation or not.
   line: string[];
+  // One line only: a move other than the one that followed replaces it.
+  singleLine: boolean;
 };
 
 // A step to another position in the tree, without a move.
@@ -50,7 +53,10 @@ function reducer(state: State, action: Action): State {
     case 'MOVE': {
       const added = addMove(tree, currentId, action.move);
       if (!added) return state;
-      return goTo({ ...state, tree: added.tree }, added.nodeId);
+      const next = state.singleLine
+        ? keepOnlyChild(added.tree, currentId, added.nodeId)
+        : added.tree;
+      return goTo({ ...state, tree: next }, added.nodeId);
     }
     case 'GO_TO':
       return goTo(state, action.id);
@@ -77,6 +83,7 @@ function reducer(state: State, action: Action): State {
         ? (tree.nodes[action.id].parentId as string)
         : currentId;
       return {
+        ...state,
         tree: pruned,
         currentId: at,
         line: line.every((id) => pruned.nodes[id])
@@ -97,20 +104,33 @@ export type AnalysisStart = {
   initialPly?: number;
 };
 
-function init({ startFen, uciMoves = [], initialPly }: AnalysisStart): State {
+export type AnalysisTreeOptions = {
+  /** Keep one line, no variations: a different move from a position
+   * replaces the moves that followed it. */
+  singleLine?: boolean;
+};
+
+function init({
+  start: { startFen, uciMoves = [], initialPly },
+  singleLine = false,
+}: { start: AnalysisStart } & AnalysisTreeOptions): State {
   const { tree, line } = treeFromMoves(startFen, uciMoves);
   const at = Math.min(initialPly ?? line.length, line.length);
   return {
     tree,
     currentId: at > 0 ? line[at - 1] : tree.rootId,
     line: [tree.rootId, ...line],
+    singleLine,
   };
 }
 
 // An analysis's moves as a tree - its main line and every variation tried -
 // and the position being looked at in it.
-export function useAnalysisTree(start: AnalysisStart) {
-  const [state, dispatch] = useReducer(reducer, start, init);
+export function useAnalysisTree(
+  start: AnalysisStart,
+  options: AnalysisTreeOptions = {},
+) {
+  const [state, dispatch] = useReducer(reducer, { start, ...options }, init);
   const { tree, currentId, line } = state;
   const current: AnalysisNode = tree.nodes[currentId];
   // The state as it is now, for `peek` - which a press calls before React
@@ -164,6 +184,9 @@ export function useAnalysisTree(start: AnalysisStart) {
     current,
     pathFens,
     tokens,
+    // The line followed, from the start - the whole analysis, with
+    // `singleLine`.
+    line,
     canGoBack: current.parentId !== null,
     canGoForward: line.indexOf(currentId) < line.length - 1,
     recordMove,

@@ -4,7 +4,7 @@ import { Color, DEFAULT_POSITION } from 'chess.js';
 import { useAuthSession } from '../context/AuthSessionContext';
 import { treeFromMoves, uciOf } from '../domain/analysisTree';
 import { colorPlayedBy } from '../domain/players';
-import { GameSnapshot } from '../network/socketEvents';
+import { GameSnapshot, GameUserSummary } from '../network/socketEvents';
 import { getGame } from '../network/restClient';
 import { AnalysisStart } from './useAnalysisTree';
 
@@ -24,18 +24,22 @@ export type AnalysisSourceState =
   // Your own daily game, still being played: not for an engine.
   | { status: 'in-play' }
   // `orientation`: the side to look from - your own, in a game you played;
-  // `gameStatus`, a game's, when it's one.
+  // `gameStatus` and `players`, a game's, when it's one.
   | {
       status: 'ready';
       start: AnalysisStart;
       orientation: Color;
       gameStatus?: GameSnapshot['status'];
+      players?: { white: GameUserSummary; black: GameUserSummary };
     };
 
 // A game's moves, from the usual start. A game that began somewhere else -
 // a server testing from GAME_START_FEN - doesn't say where, so its moves
 // can't be replayed; it's analysed from where it ended instead.
-function startOfGame(snapshot: GameSnapshot, ply?: number): AnalysisStart {
+export function startOfGame(
+  snapshot: Pick<GameSnapshot, 'moves' | 'fen'>,
+  ply?: number,
+): AnalysisStart {
   const uciMoves = snapshot.moves.map((move) =>
     uciOf({
       from: move.from,
@@ -53,9 +57,14 @@ function startOfGame(snapshot: GameSnapshot, ply?: number): AnalysisStart {
 // are ready at once. (A position being set up has no start yet.) Your own
 // daily game still being played is refused - the engine would play it for
 // you - unless allowDailyInPlay, for its own analysis board, which has none.
+// `skip` fetches nothing - the game's at hand already. Fetching again keeps
+// what was fetched shown until the game comes, unless that failed.
 export function useAnalysisSource(
   source: AnalysisSource,
-  { allowDailyInPlay = false }: { allowDailyInPlay?: boolean } = {},
+  {
+    allowDailyInPlay = false,
+    skip = false,
+  }: { allowDailyInPlay?: boolean; skip?: boolean } = {},
 ): {
   state: AnalysisSourceState;
   reload: () => void;
@@ -72,7 +81,7 @@ export function useAnalysisSource(
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!gameId) return;
+    if (!gameId || skip) return;
     let current = true;
     authorized((token) => getGame(gameId, token))
       .then((snapshot) => {
@@ -92,6 +101,7 @@ export function useAnalysisSource(
                   start: startOfGame(snapshot, ply),
                   orientation: playedAs ?? 'w',
                   gameStatus: snapshot.status,
+                  players: { white: snapshot.white, black: snapshot.black },
                 },
         });
       })
@@ -101,10 +111,12 @@ export function useAnalysisSource(
     return () => {
       current = false;
     };
-  }, [authorized, gameId, ply, userId, attempt, allowDailyInPlay]);
+  }, [authorized, gameId, ply, userId, attempt, allowDailyInPlay, skip]);
 
   const reload = useCallback(() => {
-    setFetched(null);
+    setFetched((previous) =>
+      previous?.state.status === 'error' ? null : previous,
+    );
     setAttempt((count) => count + 1);
   }, []);
 

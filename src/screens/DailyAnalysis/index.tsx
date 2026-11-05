@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Text,
@@ -6,12 +6,17 @@ import {
   View,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Color } from 'chess.js';
 
 import Button from '../../components/Button';
+import { useDailyGamePosition } from '../../context/DailyGamePositionsContext';
 import {
   AnalysisSource,
+  startOfGame,
   useAnalysisSource,
 } from '../../hooks/useAnalysisSource';
+import { AnalysisStart } from '../../hooks/useAnalysisTree';
+import { GameUserSummary } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
 import { makeStyles } from '../../theme';
 import DailyAnalysisContent from './DailyAnalysisContent';
@@ -21,21 +26,86 @@ type DailyAnalysisProps = NativeStackScreenProps<
   'DailyAnalysis'
 >;
 
+// The game an analysis starts from.
+type AnalysedGame = {
+  start: AnalysisStart;
+  orientation: Color;
+  isGameInPlay: boolean;
+  players: { white: GameUserSummary; black: GameUserSummary };
+};
+
 // A daily game in the analysis board, at the position it's at: its moves to
-// look through and lines to try, apart from the game. Reset fetches the game
-// again, so the board starts afresh from it as it now stands.
+// look through and lines to try, apart from the game. The game comes from
+// its screen, open under this one, as it stands - fetched only when it
+// isn't - and Reset starts the board afresh from it, the opponent's latest
+// move included, with nothing to wait for.
 const DailyAnalysis: React.FC<DailyAnalysisProps> = ({ navigation, route }) => {
   const styles = useStyles();
   const { gameId } = route.params;
   const { width } = useWindowDimensions();
+  const live = useDailyGamePosition(gameId);
   const source = useMemo<AnalysisSource>(
     () => ({ kind: 'game', gameId }),
     [gameId],
   );
   const { state, reload } = useAnalysisSource(source, {
     allowDailyInPlay: true,
+    skip: live !== null,
   });
 
+  const latest = useMemo<AnalysedGame | null>(() => {
+    if (live) {
+      return {
+        start: startOfGame(live),
+        orientation: live.myColor,
+        isGameInPlay: live.status === 'active',
+        players: { white: live.white, black: live.black },
+      };
+    }
+    if (state.status === 'ready' && state.players) {
+      return {
+        start: state.start,
+        orientation: state.orientation,
+        isGameInPlay: state.gameStatus === 'active',
+        players: state.players,
+      };
+    }
+    return null;
+  }, [live, state]);
+
+  // The game as the board started from it - kept while the game moves on,
+  // until Reset.
+  const [shown, setShown] = useState<{
+    game: AnalysedGame;
+    resets: number;
+  } | null>(null);
+  if (shown === null && latest) setShown({ game: latest, resets: 0 });
+
+  function reset() {
+    if (latest) {
+      setShown((previous) => ({
+        game: latest,
+        resets: (previous?.resets ?? 0) + 1,
+      }));
+    }
+    // Fetched, not open on its screen: fetched again, for the next reset.
+    if (!live) reload();
+  }
+
+  if (shown) {
+    return (
+      <DailyAnalysisContent
+        key={shown.resets}
+        gameId={gameId}
+        start={shown.game.start}
+        players={shown.game.players}
+        initialOrientation={shown.game.orientation}
+        isGameInPlay={shown.game.isGameInPlay}
+        width={width}
+        onReset={reset}
+      />
+    );
+  }
   if (state.status === 'error') {
     return (
       <View style={styles.centred} testID="analysis-error">
@@ -45,23 +115,10 @@ const DailyAnalysis: React.FC<DailyAnalysisProps> = ({ navigation, route }) => {
       </View>
     );
   }
-  // It allows a daily game in play, so this never comes.
-  if (state.status === 'loading' || state.status === 'in-play') {
-    return (
-      <View style={styles.centred} testID="analysis-loading">
-        <ActivityIndicator />
-      </View>
-    );
-  }
   return (
-    <DailyAnalysisContent
-      gameId={gameId}
-      start={state.start}
-      initialOrientation={state.orientation}
-      isGameInPlay={state.gameStatus === 'active'}
-      width={width}
-      onReset={reload}
-    />
+    <View style={styles.centred} testID="analysis-loading">
+      <ActivityIndicator />
+    </View>
   );
 };
 

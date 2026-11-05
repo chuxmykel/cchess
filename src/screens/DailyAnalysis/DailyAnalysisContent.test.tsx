@@ -19,6 +19,7 @@ import { makeAuthSession } from '../../testUtils/authSession';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
 import { settleAnimations } from '../../testUtils/pieceGestures';
 import { withSafeArea } from '../../testUtils/safeArea';
+import { makeGameSnapshot } from '../../testUtils/gameSnapshot';
 
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
@@ -31,6 +32,11 @@ jest.mock('../../network/restClient', () => ({
   getConditionalMoves: jest.fn(),
   addConditionalMoves: jest.fn(),
 }));
+
+const PLAYERS = {
+  white: makeGameSnapshot().white,
+  black: makeGameSnapshot().black,
+};
 
 describe('DailyAnalysisContent', () => {
   beforeEach(() => {
@@ -88,6 +94,7 @@ describe('DailyAnalysisContent', () => {
             <DailyAnalysisContent
               gameId="game-1"
               start={{ startFen: DEFAULT_POSITION, uciMoves }}
+              players={PLAYERS}
               initialOrientation="w"
               isGameInPlay={isGameInPlay}
               width={400}
@@ -107,6 +114,30 @@ describe('DailyAnalysisContent', () => {
     expect(acquire).not.toHaveBeenCalled();
     expect(screen.queryByTestId('engine-lines-area')).toBeNull();
     expect(screen.queryByTestId('eval-bar')).toBeNull();
+  });
+
+  it('shows the game as it is played, the players either side and no clocks', async () => {
+    const { screen } = await renderAnalysis();
+
+    expect(screen.getByTestId('player-name-w')).toHaveTextContent('White');
+    expect(screen.getByTestId('player-name-b')).toHaveTextContent('Black');
+    expect(screen.queryByTestId(/^game-clock/)).toBeNull();
+    expect(screen.getByTestId('move-1')).toHaveTextContent('e4');
+    expect(screen.getByTestId('move-2')).toHaveTextContent('e5');
+    expect(screen.queryByTestId('opening-name')).toBeNull();
+  });
+
+  it('keeps one line, a different move replacing the moves after it', async () => {
+    const { screen } = await renderAnalysis();
+
+    await fireEvent.press(screen.getByTestId('previous-move-button'));
+    await settleAnimations();
+    await boardTester(screen).taps('c7', 'c5');
+    await settleAnimations();
+
+    expect(screen.getByTestId('move-2')).toHaveTextContent('c5');
+    expect(screen.queryByTestId('move-3')).toBeNull();
+    expect(screen.queryByText('e5')).toBeNull();
   });
 
   it('has the explorer, notes, flip, reset and the steps in its toolbar', async () => {

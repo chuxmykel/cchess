@@ -4,7 +4,11 @@ import { Color } from 'chess.js';
 import { useAnalysisSettingsContext } from '../context/AnalysisSettingsContext';
 import { openingAt } from '../domain/openings';
 import { useAnalysisBoard } from './useAnalysisBoard';
-import { AnalysisStart, useAnalysisTree } from './useAnalysisTree';
+import {
+  AnalysisStart,
+  AnalysisTreeOptions,
+  useAnalysisTree,
+} from './useAnalysisTree';
 import { useBoardOrientation } from './useBoardOrientation';
 import { useAnalysisSounds } from './useGameSounds';
 
@@ -17,8 +21,9 @@ import { useAnalysisSounds } from './useGameSounds';
 export function useAnalysisWorkspace(
   start: AnalysisStart,
   initialOrientation: Color,
+  options: AnalysisTreeOptions = {},
 ) {
-  const analysis = useAnalysisTree(start);
+  const analysis = useAnalysisTree(start, options);
   const { game, lastPlayedMove, navigation } = useAnalysisBoard(
     start.startFen,
     analysis,

@@ -5,6 +5,7 @@ import {
   addMove,
   createTree,
   deleteFrom,
+  keepOnlyChild,
   lineThrough,
   pathTo,
   promoteVariation,
@@ -78,6 +79,18 @@ describe('analysisTree', () => {
     expect(
       addMove(createTree(DEFAULT_POSITION), '0', { from: 'e2', to: 'e5' }),
     ).toBeNull();
+  });
+
+  it('keeps the piece a move takes', () => {
+    const { tree, at } = play(
+      createTree(DEFAULT_POSITION),
+      '0',
+      'e2e4',
+      'd7d5',
+      'e4d5',
+    );
+
+    expect(tree.nodes[at].move?.captured).toBe('p');
   });
 
   it('keeps a promotion in the move', () => {
@@ -180,6 +193,14 @@ describe('analysisTree', () => {
       expect(moveListText(pruned)).toBe('1.e4 e5 2.Nf3');
       expect(pruned.nodes[c5]).toBeUndefined();
       expect(pruned.nodes[sideEnd]).toBeUndefined();
+    });
+
+    it("keeps only one of a position's continuations", () => {
+      const { tree, sideEnd } = sicilianAside();
+      const c5 = tree.nodes[sideEnd].parentId as string;
+      const e4 = tree.nodes[c5].parentId as string;
+
+      expect(moveListText(keepOnlyChild(tree, e4, c5))).toBe('1.e4 c5 2.Nf3');
     });
 
     it('never deletes the start', () => {

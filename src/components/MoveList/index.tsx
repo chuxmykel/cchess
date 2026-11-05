@@ -9,8 +9,11 @@ import {
 import { GameMoveSummary } from '../../network/socketEvents';
 import { makeStyles } from '../../theme';
 
+/** What the list shows of each move. */
+export type MoveListMove = Pick<GameMoveSummary, 'ply' | 'color' | 'san'>;
+
 interface MoveListProps {
-  moves: GameMoveSummary[];
+  moves: readonly MoveListMove[];
   currentPly: number;
   onSelectPly: (ply: number) => void;
 }

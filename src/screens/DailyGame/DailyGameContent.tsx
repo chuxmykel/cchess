@@ -34,6 +34,7 @@ import { nextDailyGame, useDailyGames } from '../../hooks/useDailyGames';
 import { useSeekDailyGame } from '../../hooks/useSeekDailyGame';
 import { RematchStatus } from '../../hooks/useRematch';
 import { useDailyRematch } from '../../hooks/useDailyRematch';
+import { usePublishDailyGamePosition } from '../../context/DailyGamePositionsContext';
 import { capturedMaterial } from '../../domain/material';
 import {
   defeatedColor,
@@ -196,6 +197,14 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
     rated: snapshot.rated,
     myColor,
     onError: onMessage,
+  });
+  usePublishDailyGamePosition(snapshot.id, {
+    white: snapshot.white,
+    black: snapshot.black,
+    myColor,
+    fen,
+    moves,
+    status: gameStatus,
   });
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
   const { orientation, flip } = useBoardOrientation(myColor);

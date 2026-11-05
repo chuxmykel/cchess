@@ -23,7 +23,9 @@ export interface PlayerBarProps {
   color: Color;
   white: GameUserSummary;
   black: GameUserSummary;
-  clock: GameClockResult;
+  /** Each side's time left - no clock shown without one, as on an
+   * analysis board. */
+  clock?: GameClockResult;
   turn: Color;
   isGameOver: boolean;
   /** Dims the bar - behind the result card. Defaults to once the game is
@@ -146,12 +148,14 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           )}
         </View>
       </View>
-      <GameClock
-        label={isWhite ? 'White' : 'Black'}
-        ms={isWhite ? clock.whiteMs : clock.blackMs}
-        isActive={!isGameOver && turn === color}
-        daily={daily}
-      />
+      {clock && (
+        <GameClock
+          label={isWhite ? 'White' : 'Black'}
+          ms={isWhite ? clock.whiteMs : clock.blackMs}
+          isActive={!isGameOver && turn === color}
+          daily={daily}
+        />
+      )}
     </View>
   );
 };
