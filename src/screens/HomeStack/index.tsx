@@ -18,6 +18,7 @@ import GameViewer from '../GameViewer';
 import AnalysisBoard from '../AnalysisBoard';
 import AnalysisSettings from '../AnalysisSettings';
 import DailyGameSettings from '../DailyGameSettings';
+import GameNotes from '../GameNotes';
 import UserProfile from '../UserProfile';
 import Conversation from '../Conversation';
 import GamesList from '../GamesList';
@@ -151,6 +152,14 @@ const HomeStack: React.FC = () => {
                 options={({ navigation }) => ({
                   ...plainHeaderOptions(navigation),
                   title: 'Analysis Settings',
+                })}
+              />
+              <Screen
+                name="GameNotes"
+                component={GameNotes}
+                options={({ navigation }) => ({
+                  ...plainHeaderOptions(navigation),
+                  title: 'Notes',
                 })}
               />
               <Screen

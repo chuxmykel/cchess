@@ -7,7 +7,6 @@ import { GameBoard } from '../../components/Board';
 import ConditionalMovePanel from '../../components/ConditionalMovePanel';
 import { ToolbarButton } from '../../components/GameToolbar';
 import MoveList, { MoveListMove } from '../../components/MoveList';
-import NotesSheet from '../../components/NotesSheet';
 import OpeningExplorerSheet from '../../components/OpeningExplorerSheet';
 import PlayerBarsFrame from '../../components/PlayerBarsFrame';
 import PromotionMenu from '../../components/PromotionMenu';
@@ -22,7 +21,6 @@ import { capturedMaterial } from '../../domain/material';
 import { useConditionalMoves } from '../../hooks/useConditionalMoves';
 import { AnalysisStart } from '../../hooks/useAnalysisTree';
 import { useAnalysisWorkspace } from '../../hooks/useAnalysisWorkspace';
-import { useGameNotes } from '../../hooks/useGameNotes';
 import { useOpeningExplorer } from '../../hooks/useOpeningExplorer';
 import { GameUserSummary } from '../../network/socketEvents';
 import { makeStyles, spacing } from '../../theme';
@@ -39,6 +37,8 @@ interface DailyAnalysisContentProps {
   width: number;
   /** Back to the game as it stands now, its latest moves and all. */
   onReset: () => void;
+  /** Your notes on the game. */
+  onOpenNotes: () => void;
 }
 
 // A daily game's analysis board, laid out as the game is - its moves along
@@ -56,6 +56,7 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
   isGameInPlay,
   width,
   onReset,
+  onOpenNotes,
 }) => {
   const themed = useStyles();
   const workspace = useAnalysisWorkspace(start, initialOrientation, {
@@ -63,12 +64,11 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
   });
   const { analysis, game, lastPlayedMove, steps, orientation, flip } =
     workspace;
-  const [sheet, setSheet] = useState<'explorer' | 'notes' | null>(null);
+  const [sheet, setSheet] = useState<'explorer' | null>(null);
   const explorer = useOpeningExplorer(
     analysis.current.fen,
     sheet === 'explorer',
   );
-  const notes = useGameNotes(gameId);
 
   const lineMoves = useMemo(
     () =>
@@ -191,7 +191,7 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
           <ToolbarButton
             icon="note-edit-outline"
             label="Notes"
-            onPress={() => setSheet('notes')}
+            onPress={onOpenNotes}
             testID="notes-button"
           />
           <ToolbarButton
@@ -231,11 +231,6 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
         explorer={explorer}
         onClose={() => setSheet(null)}
         onPlayMove={playMove}
-      />
-      <NotesSheet
-        visible={sheet === 'notes'}
-        notes={notes}
-        onClose={() => setSheet(null)}
       />
     </View>
   );

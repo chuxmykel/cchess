@@ -20,6 +20,8 @@ export type HomeStackParamList = {
   /** A daily game in an analysis board of its own - no engine - apart
    * from the game. */
   DailyAnalysis: { gameId: string };
+  /** Your own notes on a game. */
+  GameNotes: { gameId: string };
   /** watchedUserId: the player whose game this is being watched for -
    * shown at the bottom, and followed into their next game. */
   GameViewer: { gameId: string; watchedUserId?: string };

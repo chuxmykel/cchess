@@ -7,13 +7,10 @@ import { boardTester } from '../../components/Board/boardTester';
 import { AnalysisSettingsProvider } from '../../context/AnalysisSettingsContext';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { EngineContext } from '../../context/EngineContext';
-import { NOTES_SAVE_DELAY_MS } from '../../hooks/useGameNotes';
 import {
   addConditionalMoves,
   getConditionalMoves,
   getExplorer,
-  getGameNotes,
-  saveGameNotes,
 } from '../../network/restClient';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
@@ -27,8 +24,6 @@ jest.mock('../../context/AuthSessionContext', () => ({
 jest.mock('../../network/restClient', () => ({
   ...jest.requireActual('../../network/restClient'),
   getExplorer: jest.fn(),
-  getGameNotes: jest.fn(),
-  saveGameNotes: jest.fn(),
   getConditionalMoves: jest.fn(),
   addConditionalMoves: jest.fn(),
 }));
@@ -47,14 +42,6 @@ describe('DailyAnalysisContent', () => {
         socket: createFakeSocket().socket,
       }),
     );
-    (getGameNotes as jest.Mock).mockResolvedValue({
-      body: 'Push the h-pawn',
-      updatedAt: null,
-    });
-    (saveGameNotes as jest.Mock).mockResolvedValue({
-      body: '',
-      updatedAt: null,
-    });
     (getConditionalMoves as jest.Mock).mockResolvedValue({
       basePly: null,
       lines: [],
@@ -85,6 +72,7 @@ describe('DailyAnalysisContent', () => {
   }: { uciMoves?: string[]; isGameInPlay?: boolean } = {}) {
     const acquire = jest.fn(() => () => {});
     const onReset = jest.fn();
+    const onOpenNotes = jest.fn();
     const screen = await render(
       withSafeArea(
         <AnalysisSettingsProvider>
@@ -99,13 +87,14 @@ describe('DailyAnalysisContent', () => {
               isGameInPlay={isGameInPlay}
               width={400}
               onReset={onReset}
+              onOpenNotes={onOpenNotes}
             />
           </EngineContext.Provider>
         </AnalysisSettingsProvider>,
       ),
     );
     await act(async () => {});
-    return { screen, acquire, onReset };
+    return { screen, acquire, onReset, onOpenNotes };
   }
 
   it('analyses with no engine at all', async () => {
@@ -248,42 +237,11 @@ describe('DailyAnalysisContent', () => {
     });
   });
 
-  it('keeps your notes, saving them once you stop typing', async () => {
-    const { screen } = await renderAnalysis();
+  it('opens your notes on the game', async () => {
+    const { screen, onOpenNotes } = await renderAnalysis();
 
     await fireEvent.press(screen.getByTestId('notes-button'));
-    expect(screen.getByTestId('notes-input').props.value).toBe(
-      'Push the h-pawn',
-    );
-    await fireEvent.changeText(
-      screen.getByTestId('notes-input'),
-      'Push the h-pawn, then castle long',
-    );
-    expect(saveGameNotes).not.toHaveBeenCalled();
 
-    await act(async () => jest.advanceTimersByTime(NOTES_SAVE_DELAY_MS));
-
-    expect(saveGameNotes).toHaveBeenCalledWith(
-      'game-1',
-      'Push the h-pawn, then castle long',
-      'token-a',
-    );
-  });
-
-  it('saves what was typed as the notes close', async () => {
-    const { screen } = await renderAnalysis();
-
-    await fireEvent.press(screen.getByTestId('notes-button'));
-    await fireEvent.changeText(
-      screen.getByTestId('notes-input'),
-      'Trade queens',
-    );
-    await fireEvent.press(screen.getByTestId('bottom-sheet-backdrop'));
-
-    expect(saveGameNotes).toHaveBeenCalledWith(
-      'game-1',
-      'Trade queens',
-      'token-a',
-    );
+    expect(onOpenNotes).toHaveBeenCalled();
   });
 });

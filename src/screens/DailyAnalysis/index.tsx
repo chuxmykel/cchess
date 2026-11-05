@@ -103,6 +103,7 @@ const DailyAnalysis: React.FC<DailyAnalysisProps> = ({ navigation, route }) => {
         isGameInPlay={shown.game.isGameInPlay}
         width={width}
         onReset={reset}
+        onOpenNotes={() => navigation.navigate('GameNotes', { gameId })}
       />
     );
   }
