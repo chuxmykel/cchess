@@ -403,19 +403,33 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
       )}
 
       <BottomBar>
-        {hasPendingMove ? (
-          <ConfirmMoveBar onCancel={cancelMove} onConfirm={confirmMove} />
-        ) : (
-          <GameToolbar
-            onOpenMenu={() => setIsMenuOpen(true)}
-            onOpenChat={chat.open}
-            unreadChatCount={chat.unreadCount}
-            onAnalyse={() =>
-              navigation.navigate('DailyAnalysis', { gameId: snapshot.id })
+        {/* The toolbar keeps its place while a move waits, hidden under the
+            confirm bar, so nothing on the screen moves. */}
+        <View style={styles.toolbarSlot}>
+          <View
+            style={hasPendingMove && styles.hidden}
+            pointerEvents={hasPendingMove ? 'none' : 'auto'}
+            accessibilityElementsHidden={hasPendingMove}
+            importantForAccessibility={
+              hasPendingMove ? 'no-hide-descendants' : 'auto'
             }
-            moveSteps={moveNavigation}
-          />
-        )}
+          >
+            <GameToolbar
+              onOpenMenu={() => setIsMenuOpen(true)}
+              onOpenChat={chat.open}
+              unreadChatCount={chat.unreadCount}
+              onAnalyse={() =>
+                navigation.navigate('DailyAnalysis', { gameId: snapshot.id })
+              }
+              moveSteps={moveNavigation}
+            />
+          </View>
+          {hasPendingMove && (
+            <View style={styles.confirmBar}>
+              <ConfirmMoveBar onCancel={cancelMove} onConfirm={confirmMove} />
+            </View>
+          )}
+        </View>
       </BottomBar>
 
       <ActionSheet
@@ -435,5 +449,15 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     width: '100%',
+  },
+  toolbarSlot: {
+    width: '100%',
+  },
+  hidden: {
+    opacity: 0,
+  },
+  confirmBar: {
+    ...StyleSheet.absoluteFill,
+    justifyContent: 'center',
   },
 });

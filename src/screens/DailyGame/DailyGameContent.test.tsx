@@ -271,6 +271,10 @@ describe('DailyGameContent', () => {
 
       expect(boardTester(screen).pieceOn('e4')).toBe('wp');
       expect(sentMoves(socket)).toEqual([]);
+      // Kept in its place, hidden, so the screen doesn't move.
+      expect(
+        screen.getByTestId('game-toolbar', { includeHiddenElements: true }),
+      ).toBeTruthy();
       expect(screen.queryByTestId('game-toolbar')).toBeNull();
 
       await fireEvent.press(screen.getByTestId('confirm-move-button'));
