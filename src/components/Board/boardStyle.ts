@@ -18,6 +18,7 @@ export function useChessboardColors(): BoardColors {
       moveHint: board.moveHint,
       dragOrigin: board.dragOrigin,
       check: board.check,
+      premove: board.premove,
     }),
     [squares, board],
   );

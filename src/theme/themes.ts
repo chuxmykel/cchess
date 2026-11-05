@@ -109,6 +109,10 @@ export interface ThemeColors {
     dragOrigin: string;
     // A king in check.
     check: string;
+    // A queued pre-move's two squares: apart from lastMove's green, and
+    // from the default board's blue - lichess's dark blue would vanish on
+    // it - so a red, as chess.com marks them.
+    premove: string;
     promotionTile: string;
     promotionTilePressed: string;
     // The position editor's palette: a light grey panel - the same in both
@@ -150,6 +154,7 @@ const sharedBoardColors = {
   lastMove: 'rgba(155, 199, 0, 0.41)',
   moveHint: 'rgba(70, 70, 70, 0.4)',
   dragOrigin: 'rgba(255, 210, 60, 0.5)',
+  premove: 'rgba(214, 64, 64, 0.5)',
   palette: '#dcdfe3',
   paletteIcon: '#4b4f55',
   arrows: [

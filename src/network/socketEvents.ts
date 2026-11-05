@@ -118,6 +118,11 @@ export type SubmitMovePayload = {
   promotion?: PieceSymbol;
 };
 
+// A move queued on the opponent's turn, for the server to play the moment
+// theirs lands - charged a fixed 0.1s, not the time it took to get here.
+// Only the player who queued it hears of it: never broadcast.
+export type SubmitPremovePayload = SubmitMovePayload;
+
 // What the server pushes to both players after a move is applied - distinct
 // from `SubmitMovePayload` (this is not an echo
 // of the submitted payload, it's a full move+clock update).
@@ -196,6 +201,8 @@ export interface ClientToServerEvents {
   'game:join': (payload: { gameId: string }) => void;
   'game:leave': (payload: { gameId: string }) => void;
   'game:move': (payload: SubmitMovePayload) => void;
+  'game:premove': (payload: SubmitPremovePayload) => void;
+  'game:premoveCancel': (payload: { gameId: string }) => void;
   'game:resign': (payload: { gameId: string }) => void;
   'game:abort': (payload: { gameId: string }) => void;
   'game:drawOffer': (payload: { gameId: string }) => void;

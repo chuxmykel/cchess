@@ -38,6 +38,17 @@ export type Movable = {
   free?: boolean;
 };
 
+// Pieces that can be picked up to queue a move while `movable`'s can't -
+// the side waiting on the other's move. A queued move goes to the app,
+// which plays it once it's that side's turn; the board only marks it.
+export type Premovable = {
+  color: Color | null;
+  // Where each may be queued to go.
+  dests?: Dests;
+  // The move queued, marked until the app drops it.
+  current?: MoveSquares | null;
+};
+
 // A king the board marks in danger: glowing red, and tipped over once
 // fallen.
 export type KingCheck = {
@@ -56,6 +67,8 @@ export type BoardColors = {
   dragOrigin: string;
   // A king in danger's glow.
   check: string;
+  // A queued move's two squares.
+  premove: string;
 };
 
 // A set of pieces to draw: each piece an SVG document, drawn to fill its

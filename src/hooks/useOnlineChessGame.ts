@@ -20,6 +20,7 @@ import {
   useMoveSounds,
 } from './useGameSounds';
 import { useRematch, UseRematchResult } from './useRematch';
+import { PremoveControls, usePremove } from './usePremove';
 
 export type { GameStatus };
 
@@ -55,7 +56,7 @@ export type UseOnlineChessGameResult = Omit<
   offerDraw: () => void;
   respondToDraw: (accept: boolean) => void;
   abort: () => void;
-};
+} & PremoveControls;
 
 export type DrawOfferStatus = 'none' | 'sent' | 'received';
 
@@ -84,7 +85,16 @@ export function useOnlineChessGame(
     blackRatingDiff,
     series,
     clearDrawOffer,
+    isConfirmed,
   } = useGameServerEvents(socket, gameId, snapshot, game, onError);
+  const { premovable, setPremove, cancelPremove } = usePremove(
+    socket,
+    gameId,
+    myColor,
+    game.fen,
+    game.turn,
+    gameStatus === 'active',
+  );
   let drawOffer: DrawOfferStatus = 'none';
   if (drawOfferedBy === myColor) drawOffer = 'sent';
   else if (drawOfferedBy) drawOffer = 'received';
@@ -106,7 +116,12 @@ export function useOnlineChessGame(
   useGameOverSound(gameStatus !== 'active', resultReason);
 
   useEffect(() => {
-    if (game.lastMove && game.lastMove.color === myColor) {
+    // Not one the server played for us - a pre-move - and sent back.
+    if (
+      game.lastMove &&
+      game.lastMove.color === myColor &&
+      !isConfirmed(game.fen)
+    ) {
       socket.emit('game:move', {
         gameId,
         from: game.lastMove.from,
@@ -176,5 +191,8 @@ export function useOnlineChessGame(
     offerDraw,
     respondToDraw,
     abort,
+    premovable,
+    setPremove,
+    cancelPremove,
   };
 }

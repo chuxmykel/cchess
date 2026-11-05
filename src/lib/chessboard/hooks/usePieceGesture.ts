@@ -25,7 +25,9 @@ import {
 import { Color, Dests, Square } from '../types';
 import { DragGuide } from './useDragGuide';
 
-export type MovableSquares = Partial<Record<Square, boolean>>;
+// Whether each square's piece can be picked up: to move, or to queue a
+// move ('premove'), which a drop doesn't play - it goes back home.
+export type MovableSquares = Partial<Record<Square, boolean | 'premove'>>;
 
 export type PieceGestureInput = {
   square: Square;
@@ -382,10 +384,13 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
         const { to } = drop;
         // A piece that can't be picked up makes no move, wherever it's let go.
         const isMove = !event.canceled && drop.legal && !disabled;
+        // Queued, not played: the piece goes home, taking nothing.
+        const isPremove = movable.get()[square] === 'premove';
+        const landed = isMove && !isPremove;
         // A piece standing there is taken: gone now, not once JS has made
         // the move. Not when setting up a position, where a piece put on
         // its own side's goes too, and no move follows to bring it back.
-        if (isMove && !free) {
+        if (landed && !free) {
           dragGuide.taken.set({
             from: square,
             to,
@@ -401,10 +406,10 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
           // lowered sooner, the piece it takes - drawn later, if it was the
           // last to move - would show on top of it in the meantime.
           scale.set(1);
-          const target = getXYFromSquare(isMove ? to : square, width);
+          const target = getXYFromSquare(landed ? to : square, width);
           x.set(target.x);
           y.set(target.y);
-          if (!isMove) zIndex.set(0);
+          if (!landed) zIndex.set(0);
         }
         if (logging.get()) {
           scheduleOnRN(
@@ -438,6 +443,7 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
       scale,
       zIndex,
       dests,
+      movable,
       isDisabled,
       report,
       logging,

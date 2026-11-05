@@ -330,4 +330,199 @@ describe('useOnlineChessGame', () => {
       expect(result.current.canAbort).toBe(false);
     });
   });
+
+  describe('pre-moves', () => {
+    /** The server's push of a move played from `chess`'s position. */
+    function pushOf(chess: Chess, from: string, to: string) {
+      const move = chess.move({ from, to, promotion: 'q' });
+      const fen = chess.fen();
+      return {
+        gameId: GAME_ID,
+        move: {
+          ply: chess.history().length,
+          from: move.from,
+          to: move.to,
+          piece: move.piece,
+          color: move.color,
+          san: move.san,
+          captured: move.captured ?? null,
+          promotion: move.promotion ?? null,
+          fenAfter: fen,
+          clockAfterMs: 299000,
+        },
+        fen,
+        turn: chess.turn(),
+        whiteTimeRemainingMs: 299000,
+        blackTimeRemainingMs: 299900,
+        firstMoveDeadline: null,
+      };
+    }
+
+    function emitted(socket: { emit: unknown }, event: string) {
+      return (socket.emit as jest.Mock).mock.calls.filter(
+        ([name]) => name === event,
+      );
+    }
+
+    async function asBlack(onError?: (message: string) => void) {
+      const fake = createFakeSocket();
+      const snapshot = makeGameSnapshot();
+      const hook = await renderHook(() =>
+        useOnlineChessGame(fake.socket, GAME_ID, 'b', snapshot, onError),
+      );
+      return { ...fake, ...hook, snapshot };
+    }
+
+    it("offers my pieces' premoves on the opponent's turn only", async () => {
+      const { result } = await asBlack();
+      expect(result.current.premovable?.color).toBe('b');
+      expect(result.current.premovable?.dests.e7).toEqual(
+        expect.arrayContaining(['e6', 'e5', 'd6', 'f6']),
+      );
+
+      const { socket } = createFakeSocket();
+      const asWhite = await renderHook(() =>
+        useOnlineChessGame(socket, GAME_ID, 'w', makeGameSnapshot()),
+      );
+      expect(asWhite.result.current.premovable).toBeNull();
+    });
+
+    it('sends a premove to the server, and marks it', async () => {
+      const { socket, result } = await asBlack();
+
+      await act(() => {
+        result.current.setPremove('e7', 'e5');
+      });
+
+      expect(socket.emit).toHaveBeenCalledWith('game:premove', {
+        gameId: GAME_ID,
+        from: 'e7',
+        to: 'e5',
+        promotion: undefined,
+      });
+      expect(result.current.premovable?.current).toEqual({
+        from: 'e7',
+        to: 'e5',
+      });
+    });
+
+    it('queues a queen for a pawn premoved to its last rank', async () => {
+      const { socket } = createFakeSocket();
+      const snapshot = makeGameSnapshot({
+        fen: '4k3/P7/8/8/8/8/8/4K2r b - - 0 1',
+        turn: 'b',
+      });
+      const { result } = await renderHook(() =>
+        useOnlineChessGame(socket, GAME_ID, 'w', snapshot),
+      );
+
+      await act(() => {
+        result.current.setPremove('a7', 'a8');
+      });
+
+      expect(socket.emit).toHaveBeenCalledWith(
+        'game:premove',
+        expect.objectContaining({ promotion: 'q' }),
+      );
+    });
+
+    it("plays the server's pushes - the opponent's move, then mine - sending neither back", async () => {
+      const onError = jest.fn();
+      const { socket, trigger, result } = await asBlack(onError);
+      await act(() => {
+        result.current.setPremove('e7', 'e5');
+      });
+      const chess = new Chess();
+
+      await act(() => {
+        trigger('game:move', pushOf(chess, 'e2', 'e4'));
+      });
+      expect(result.current.premovable).toBeNull();
+      await act(() => {
+        trigger('game:move', pushOf(chess, 'e7', 'e5'));
+      });
+
+      expect(result.current.fen).toBe(chess.fen());
+      expect(result.current.premovable?.current).toBeNull();
+      expect(emitted(socket, 'game:move')).toHaveLength(0);
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it('plays both when they come in before a render', async () => {
+      const { socket, trigger, result } = await asBlack();
+      const chess = new Chess();
+
+      await act(() => {
+        trigger('game:move', pushOf(chess, 'e2', 'e4'));
+        trigger('game:move', pushOf(chess, 'e7', 'e5'));
+      });
+
+      expect(result.current.fen).toBe(chess.fen());
+      expect(emitted(socket, 'game:move')).toHaveLength(0);
+    });
+
+    it("drops the mark once the opponent's move is in, played or not", async () => {
+      const { trigger, result } = await asBlack();
+      await act(() => {
+        result.current.setPremove('e5', 'd4');
+      });
+
+      await act(() => {
+        trigger('game:move', pushOf(new Chess(), 'e2', 'e4'));
+      });
+      // White's turn again some time later: nothing still queued.
+      expect(result.current.premovable).toBeNull();
+    });
+
+    it('cancels a premove', async () => {
+      const { socket, result } = await asBlack();
+      await act(() => {
+        result.current.setPremove('e7', 'e5');
+      });
+
+      await act(() => {
+        result.current.cancelPremove();
+      });
+
+      expect(socket.emit).toHaveBeenCalledWith('game:premoveCancel', {
+        gameId: GAME_ID,
+      });
+      expect(result.current.premovable?.current).toBeNull();
+    });
+
+    it('drops a premove the server refuses, without a word', async () => {
+      const onError = jest.fn();
+      const { trigger, result } = await asBlack(onError);
+      await act(() => {
+        result.current.setPremove('e7', 'e5');
+      });
+
+      await act(() => {
+        trigger('game:error', {
+          gameId: GAME_ID,
+          event: 'game:premove',
+          message: 'Game is not active',
+        });
+      });
+
+      expect(result.current.premovable?.current).toBeNull();
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it('cancels a premove the server still holds, back after a reconnect', async () => {
+      const { socket, trigger, result, snapshot } = await asBlack();
+      await act(() => {
+        result.current.setPremove('e7', 'e5');
+      });
+
+      await act(() => {
+        trigger('game:state', snapshot);
+      });
+
+      expect(socket.emit).toHaveBeenCalledWith('game:premoveCancel', {
+        gameId: GAME_ID,
+      });
+      expect(result.current.premovable?.current).toBeNull();
+    });
+  });
 });

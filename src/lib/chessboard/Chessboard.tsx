@@ -26,6 +26,7 @@ import {
   Movable,
   MoveSquares,
   PieceSet,
+  Premovable,
   Square,
 } from './types';
 import { defaultPieceSet } from './defaultPieceSet';
@@ -55,6 +56,14 @@ export interface ChessboardProps {
   // when `free`. Return false to refuse it: a dragged piece goes straight
   // back home.
   onMove?: (from: Square, to: Square) => boolean | void;
+  // Pieces to queue a move with, while `movable`'s can't move: the side
+  // waiting on the other. None, when left out.
+  premovable?: Premovable | null;
+  // A move queued - dragged or tapped to one of `premovable.dests`. The
+  // piece stays home; `premovable.current` marks it.
+  onPremove?: (from: Square, to: Square) => void;
+  // Anything else touched while a move's queued: it's dropped.
+  onPremoveCancel?: () => void;
   // With `free`, a piece dragged off the board.
   onDropOff?: (square: Square) => void;
   // Any square tapped, a piece on it or not.
@@ -98,6 +107,9 @@ const BoardCore = memo(function BoardCore({
   pieceSet = defaultPieceSet,
   movable = null,
   onMove,
+  premovable = null,
+  onPremove,
+  onPremoveCancel,
   onDropOff,
   onSquarePress,
   lastMove = null,
@@ -137,22 +149,50 @@ const BoardCore = memo(function BoardCore({
     },
     [pieces, movableColor],
   );
+  const premoveColor = viewOnly ? null : (premovable?.color ?? null);
+  const premoveDests = premovable?.dests ?? NO_DESTS;
+  const currentPremove = premovable?.current ?? null;
+  // A piece that can't move now, but can queue one.
+  const canPremoveAt = useCallback(
+    (square: Square) => {
+      const piece = pieces.find((candidate) => candidate.square === square);
+      return (
+        Boolean(piece) &&
+        premoveColor !== null &&
+        piece.color === premoveColor &&
+        !isMovableAt(square)
+      );
+    },
+    [pieces, premoveColor, isMovableAt],
+  );
+  const canPickUpAt = useCallback(
+    (square: Square) => isMovableAt(square) || canPremoveAt(square),
+    [isMovableAt, canPremoveAt],
+  );
+  // Where each piece that can be picked up may go, to move or to queue one.
+  const pickUpDests = useMemo(
+    () => (premoveColor === null ? dests : { ...premoveDests, ...dests }),
+    [premoveColor, premoveDests, dests],
+  );
 
   // For a drop to be judged where it lands, on the UI thread.
-  const destsOnUI = useSharedValue(dests);
+  const destsOnUI = useSharedValue(pickUpDests);
   useLayoutEffect(() => {
-    destsOnUI.set(dests);
-  }, [destsOnUI, dests]);
+    destsOnUI.set(pickUpDests);
+  }, [destsOnUI, pickUpDests]);
   // Whose pieces can be picked up, for the pieces' gestures to read on the
   // UI thread: as props, a move changing it would re-render all 32.
   const movableOnUI = useSharedValue<MovableSquares>({});
   useLayoutEffect(() => {
     movableOnUI.set(
       Object.fromEntries(
-        pieces.map(({ square }) => [square, isMovableAt(square)]),
+        pieces.map(({ square }) => [
+          square,
+          isMovableAt(square) || (canPremoveAt(square) && 'premove'),
+        ]),
       ),
     );
-  }, [movableOnUI, pieces, isMovableAt]);
+  }, [movableOnUI, pieces, isMovableAt, canPremoveAt]);
 
   // The piece tapped to show its moves - only while the position it was
   // tapped in stands, and it can still move.
@@ -163,12 +203,12 @@ const BoardCore = memo(function BoardCore({
   const selected =
     selection &&
     selection.placement === placement &&
-    isMovableAt(selection.square)
+    canPickUpAt(selection.square)
       ? selection.square
       : null;
   const selectedDests = useMemo(
-    () => (selected && dests[selected]) ?? NO_SQUARES,
-    [selected, dests],
+    () => (selected && pickUpDests[selected]) ?? NO_SQUARES,
+    [selected, pickUpDests],
   );
   const validMoveIndicators = useValidMoveIndicators(selectedDests);
   const { showFor } = validMoveIndicators;
@@ -180,11 +220,17 @@ const BoardCore = memo(function BoardCore({
   const latest = useRef({
     placement,
     selected,
-    dests,
+    dests: pickUpDests,
     free,
     movableColor,
+    premoveColor,
+    currentPremove,
     isMovableAt,
+    canPremoveAt,
+    canPickUpAt,
     onMove,
+    onPremove,
+    onPremoveCancel,
     onDropOff,
     onSquarePress,
     onDragLog,
@@ -196,11 +242,17 @@ const BoardCore = memo(function BoardCore({
     latest.current = {
       placement,
       selected,
-      dests,
+      dests: pickUpDests,
       free,
       movableColor,
+      premoveColor,
+      currentPremove,
       isMovableAt,
+      canPremoveAt,
+      canPickUpAt,
       onMove,
+      onPremove,
+      onPremoveCancel,
       onDropOff,
       onSquarePress,
       onDragLog,
@@ -211,25 +263,31 @@ const BoardCore = memo(function BoardCore({
   });
 
   // Tap-to-move: a tap on a piece that can move selects it, showing its
-  // moves; a tap on one of them then plays it; any other tap lets go.
+  // moves; a tap on one of them then plays it - or queues it, for a piece
+  // that can only premove; any other tap lets go, dropping a queued move.
   const handleTap = useCallback((square: Square) => {
     const now = latest.current;
     now.onSquarePress?.(square);
-    if (now.movableColor === null) return;
+    if (now.movableColor === null && now.premoveColor === null) return;
     const select = (at: Square | null) =>
       setSelection(at && { placement: now.placement, square: at });
+    const cancelPremove = () => {
+      if (now.currentPremove) now.onPremoveCancel?.();
+    };
     if (!now.selected) {
-      if (now.isMovableAt(square)) select(square);
+      cancelPremove();
+      if (now.canPickUpAt(square)) select(square);
       return;
     }
     if (square === now.selected) return;
-    if (now.isMovableAt(square)) {
+    if (now.canPickUpAt(square)) {
       select(square);
       return;
     }
     if (now.free || now.dests[now.selected]?.includes(square)) {
-      now.onMove?.(now.selected, square);
-    }
+      if (now.canPremoveAt(now.selected)) now.onPremove?.(now.selected, square);
+      else now.onMove?.(now.selected, square);
+    } else cancelPremove();
     select(null);
   }, []);
 
@@ -260,6 +318,12 @@ const BoardCore = memo(function BoardCore({
       setSelection(null);
       if (!isMove || !to) {
         if (!to && now.free) now.onDropOff?.(from);
+        if (now.currentPremove) now.onPremoveCancel?.();
+        return;
+      }
+      // The piece went home already, on the UI thread.
+      if (now.canPremoveAt(from)) {
+        now.onPremove?.(from, to);
         return;
       }
       if (now.onMove?.(from, to) !== false) return;
@@ -294,6 +358,15 @@ const BoardCore = memo(function BoardCore({
         orientation={orientation}
         color={colors.lastMove}
       />
+      {!viewOnly && (
+        <LastMoveHighlight
+          move={currentPremove}
+          squareWidth={squareSize}
+          orientation={orientation}
+          color={colors.premove}
+          testID="premove"
+        />
+      )}
 
       {!viewOnly && (
         <>

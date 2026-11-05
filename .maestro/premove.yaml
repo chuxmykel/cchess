@@ -1,0 +1,32 @@
+appId: host.exp.Exponent
+tags:
+  - needs-live-server
+---
+# A pre-move, queued by tap while the opponent thinks, played by the server
+# the moment the opponent's move lands. Needs the app playing black against
+# a slow scripted opponent, started alongside:
+#   npm run opponent -- --guest --color w --delay 10000 --level easy
+# (a guest app; for a signed-in one on Rated, drop --guest). Taps by testID,
+# so it works whichever way the board faces. Resign afterwards - the
+# opponent leaves the game open otherwise.
+- runFlow: common/to-board.yaml
+- extendedWaitUntil:
+    visible:
+      id: "game-toolbar"
+    timeout: 30000
+# White hasn't moved yet: queue e7-e5, marked, the pawn still home.
+- tapOn: { id: "piece-e7" }
+- tapOn: { id: "square-e5" }
+- assertVisible:
+    id: "premove-to"
+- assertVisible:
+    id: "piece-e7"
+# Played by itself once white's move is in, and no longer marked.
+- extendedWaitUntil:
+    visible:
+      id: "piece-e5"
+    timeout: 15000
+- assertNotVisible:
+    id: "piece-e7"
+- assertNotVisible:
+    id: "premove-to"

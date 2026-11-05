@@ -36,6 +36,9 @@ export type GameServerEventsResult = {
   /** The rematch series score, updated when the game ends. */
   series: SeriesScore | null;
   clearDrawOffer: () => void;
+  /** Whether this is the position the server last confirmed - a move that
+   * reached it came from the server, so isn't ours to send. */
+  isConfirmed: (fen: string) => boolean;
 };
 
 function withMoveAdded(
@@ -181,6 +184,9 @@ export function useGameServerEvents(
       ) {
         gameRef.current.resetTo(confirmedFenRef.current);
       }
+      // A pre-move refused - the game over, or one played on our own turn
+      // no longer legal - just isn't played: nothing to tell.
+      if (payload.event.startsWith('game:premove')) return;
       onError?.(payload.message);
     }
 
@@ -206,6 +212,10 @@ export function useGameServerEvents(
     setDrawOfferedBy(null);
   }
 
+  function isConfirmed(fen: string): boolean {
+    return fen === confirmedFenRef.current;
+  }
+
   return {
     gameStatus,
     result,
@@ -218,5 +228,6 @@ export function useGameServerEvents(
     ...ratingDiffs,
     series,
     clearDrawOffer,
+    isConfirmed,
   };
 }

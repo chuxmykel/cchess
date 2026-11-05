@@ -8,6 +8,8 @@ interface LastMoveHighlightProps {
   squareWidth: number;
   orientation?: Color;
   color: string;
+  // Each square's testID is `${testID}-from`/`-to`.
+  testID?: string;
 }
 
 // The last move's two squares, tinted as on lichess: where the piece came
@@ -17,6 +19,7 @@ const LastMoveHighlight: React.FC<LastMoveHighlightProps> = ({
   squareWidth,
   orientation = 'w',
   color,
+  testID = 'last-move',
 }) => {
   if (!move) return null;
   return (
@@ -27,7 +30,7 @@ const LastMoveHighlight: React.FC<LastMoveHighlightProps> = ({
           <View
             key={end}
             pointerEvents="none"
-            testID={`last-move-${end}`}
+            testID={`${testID}-${end}`}
             style={[
               styles.square,
               {
