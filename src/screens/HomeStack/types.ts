@@ -38,6 +38,7 @@ export type HomeStackParamList = {
   AnalysisSettings: undefined;
   /** Credit and licences for what the app uses, the engine's above all. */
   Licenses: undefined;
+  Appearance: undefined;
 };
 
 export type RootStackParamList = {

@@ -1,11 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import Avatar from '../../Avatar';
 import Icon from '../../Icon';
 import PopoverMenu from '../../PopoverMenu';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../../constants/colors';
 import { Friend } from '../../../network/restClient';
 import { presenceLabel } from '../../../utils/presence';
+import { makeStyles, useTheme } from '../../../theme';
 
 export interface FriendCardProps {
   friend: Friend;
@@ -24,6 +24,9 @@ const FriendCard: React.FC<FriendCardProps> = ({
   onChallenge,
   onWatch,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const { playingGameId } = friend;
   return (
     <Pressable
@@ -72,7 +75,7 @@ const FriendCard: React.FC<FriendCardProps> = ({
       </Text>
       {unreadCount > 0 && (
         <View style={styles.unread} testID={`friend-unread-${friend.id}`}>
-          <Icon name="message-text" size={12} color="white" />
+          <Icon name="message-text" size={12} color={colors.textOnAccent} />
           <Text style={styles.unreadText}>{unreadCount}</Text>
         </View>
       )}
@@ -85,7 +88,7 @@ const FriendCard: React.FC<FriendCardProps> = ({
           accessibilityLabel={`Watch ${friend.displayName}'s game`}
           testID={`friend-watch-${friend.id}`}
         >
-          <Icon name="television-play" size={18} color={ACCENT_COLOR} />
+          <Icon name="television-play" size={18} color={colors.accent} />
         </Pressable>
       )}
     </Pressable>
@@ -94,18 +97,15 @@ const FriendCard: React.FC<FriendCardProps> = ({
 
 export default FriendCard;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   card: {
     width: 120,
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    padding: t.spacing.md,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    ...t.elevation.sm,
+    shadowColor: t.colors.shadow,
   },
   menuButton: {
     position: 'absolute',
@@ -120,19 +120,20 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: '#f0f0f0',
-    backgroundColor: ACCENT_COLOR,
+    borderColor: t.colors.surface,
+    backgroundColor: t.colors.accent,
   },
   name: {
-    marginTop: 8,
-    fontSize: 13,
-    fontWeight: '600',
+    color: t.colors.text,
+    marginTop: t.spacing.sm,
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.semibold,
     textAlign: 'center',
   },
   status: {
-    marginTop: 2,
-    fontSize: 11,
-    color: MUTED_COLOR,
+    marginTop: t.spacing.xxs,
+    fontSize: t.fontSize.xs,
+    color: t.colors.textMuted,
     textAlign: 'center',
   },
   unread: {
@@ -141,18 +142,18 @@ const styles = StyleSheet.create({
     left: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-    paddingHorizontal: 5,
+    gap: t.spacing.xxs,
+    paddingHorizontal: t.spacing.xs,
     paddingVertical: 1,
-    borderRadius: 8,
-    backgroundColor: '#d33',
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.badge,
   },
   unreadText: {
-    color: 'white',
-    fontSize: 11,
-    fontWeight: '700',
+    color: t.colors.textOnAccent,
+    fontSize: t.fontSize.xs,
+    fontWeight: t.fontWeight.bold,
   },
   watch: {
-    marginTop: 6,
+    marginTop: t.spacing.sm,
   },
-});
+}));

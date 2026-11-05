@@ -1,13 +1,13 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Color } from 'chess.js';
 
 import BottomSheet from '../BottomSheet';
 import Button from '../Button';
 import Icon from '../Icon';
 import RadioRow from '../RadioRow';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { CastlingRights } from '../../domain/positionSetup';
 import { PositionEditor } from '../../hooks/usePositionEditor';
+import { makeStyles, useTheme } from '../../theme';
 
 interface PositionSetupSheetProps {
   visible: boolean;
@@ -33,89 +33,98 @@ const PositionSetupSheet: React.FC<PositionSetupSheetProps> = ({
   visible,
   editor,
   onClose,
-}) => (
-  <BottomSheet visible={visible} onClose={onClose}>
-    <View testID="position-setup-sheet" style={styles.content}>
-      <Text style={styles.title}>Position Settings</Text>
-      <RadioRow
-        options={TURNS}
-        selected={editor.setup.turn}
-        onSelect={editor.setTurn}
-        testIDPrefix="editor-turn-"
-      />
-      <Text style={styles.heading}>Castling</Text>
-      <View style={styles.castling}>
-        {CASTLING.map(({ right, label }) => {
-          const available = editor.availableCastling[right];
-          const checked = editor.setup.castling[right] && available;
-          return (
-            <Pressable
-              key={right}
-              onPress={() => editor.toggleCastling(right)}
-              disabled={!available}
-              style={styles.checkbox}
-              hitSlop={6}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked, disabled: !available }}
-              accessibilityLabel={label}
-              testID={`editor-castling-${right}`}
-            >
-              <Icon
-                name={checked ? 'checkbox-marked' : 'checkbox-blank-outline'}
-                size={22}
-                color={
-                  !available ? '#ccc' : checked ? ACCENT_COLOR : MUTED_COLOR
-                }
-              />
-              <Text style={[styles.label, !available && styles.unavailable]}>
-                {label}
-              </Text>
-            </Pressable>
-          );
-        })}
+}) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+  return (
+    <BottomSheet visible={visible} onClose={onClose}>
+      <View testID="position-setup-sheet" style={styles.content}>
+        <Text style={styles.title}>Position Settings</Text>
+        <RadioRow
+          options={TURNS}
+          selected={editor.setup.turn}
+          onSelect={editor.setTurn}
+          testIDPrefix="editor-turn-"
+        />
+        <Text style={styles.heading}>Castling</Text>
+        <View style={styles.castling}>
+          {CASTLING.map(({ right, label }) => {
+            const available = editor.availableCastling[right];
+            const checked = editor.setup.castling[right] && available;
+            return (
+              <Pressable
+                key={right}
+                onPress={() => editor.toggleCastling(right)}
+                disabled={!available}
+                style={styles.checkbox}
+                hitSlop={6}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked, disabled: !available }}
+                accessibilityLabel={label}
+                testID={`editor-castling-${right}`}
+              >
+                <Icon
+                  name={checked ? 'checkbox-marked' : 'checkbox-blank-outline'}
+                  size={22}
+                  color={
+                    !available
+                      ? colors.disabled
+                      : checked
+                        ? colors.accent
+                        : colors.textMuted
+                  }
+                />
+                <Text style={[styles.label, !available && styles.unavailable]}>
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Button
+          label="Done"
+          onPress={onClose}
+          variant="primary"
+          testID="position-setup-done"
+        />
       </View>
-      <Button
-        label="Done"
-        onPress={onClose}
-        variant="primary"
-        testID="position-setup-done"
-      />
-    </View>
-  </BottomSheet>
-);
+    </BottomSheet>
+  );
+};
 
 export default PositionSetupSheet;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   content: {
-    gap: 16,
+    gap: t.spacing.lg,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 4,
+    color: t.colors.text,
+    fontSize: t.fontSize.xxl,
+    fontWeight: t.fontWeight.bold,
+    marginTop: t.spacing.xs,
   },
   heading: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.base,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.textMuted,
   },
   castling: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    rowGap: 12,
+    rowGap: t.spacing.md,
   },
   checkbox: {
     width: '50%',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: t.spacing.sm,
   },
   label: {
-    fontSize: 15,
-    color: '#222',
+    fontSize: t.fontSize.lg,
+    color: t.colors.text,
   },
   unavailable: {
-    color: MUTED_COLOR,
+    color: t.colors.textMuted,
   },
-});
+}));

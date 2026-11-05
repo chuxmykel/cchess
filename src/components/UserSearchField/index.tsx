@@ -2,7 +2,7 @@ import { Pressable } from 'react-native';
 
 import Icon from '../Icon';
 import TextField from '../TextField';
-import { MUTED_COLOR } from '../../constants/colors';
+import { useTheme } from '../../theme';
 
 interface UserSearchFieldProps {
   query: string;
@@ -16,6 +16,8 @@ const UserSearchField: React.FC<UserSearchFieldProps> = ({
   onChangeQuery,
   autoFocus,
 }) => {
+  const { colors } = useTheme();
+
   return (
     <TextField
       label="Find players"
@@ -34,10 +36,10 @@ const UserSearchField: React.FC<UserSearchFieldProps> = ({
             accessibilityLabel="Clear search"
             testID="user-search-clear"
           >
-            <Icon name="close-circle" size={18} color={MUTED_COLOR} />
+            <Icon name="close-circle" size={18} color={colors.textMuted} />
           </Pressable>
         ) : (
-          <Icon name="magnify" size={20} color={MUTED_COLOR} />
+          <Icon name="magnify" size={20} color={colors.textMuted} />
         )
       }
     />

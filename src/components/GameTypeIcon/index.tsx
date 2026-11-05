@@ -1,6 +1,6 @@
 import Icon, { IconName } from '../Icon';
-import { GAME_TYPE_COLORS } from '../../constants/timeControls';
 import { GameType } from '../../domain/types';
+import { useTheme } from '../../theme';
 
 interface GameTypeIconProps {
   type: GameType;
@@ -19,13 +19,16 @@ const GAME_TYPE_ICONS: Record<GameType, IconName> = {
 const GameTypeIcon: React.FC<GameTypeIconProps> = ({
   type,
   size = DEFAULT_SIZE,
-}) => (
-  <Icon
-    name={GAME_TYPE_ICONS[type]}
-    size={size}
-    color={GAME_TYPE_COLORS[type]}
-    testID={`game-type-icon-${type}`}
-  />
-);
+}) => {
+  const { colors } = useTheme();
+  return (
+    <Icon
+      name={GAME_TYPE_ICONS[type]}
+      size={size}
+      color={colors.gameType[type]}
+      testID={`game-type-icon-${type}`}
+    />
+  );
+};
 
 export default GameTypeIcon;

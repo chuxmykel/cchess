@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import Icon, { IconName } from '../Icon';
+import { makeStyles, useTheme } from '../../theme';
 
 export type ActionListItem = {
   label: string;
@@ -14,56 +15,60 @@ export type ActionListItem = {
   testID?: string;
 };
 
-const ActionList: React.FC<{ items: ActionListItem[] }> = ({ items }) => (
-  <View style={styles.card}>
-    {items.map((item, index) => {
-      const isPressable = Boolean(item.onPress) && !item.disabled;
-      return (
-        <Fragment key={item.label}>
-          {index > 0 && <View style={styles.divider} />}
-          <Pressable
-            style={({ pressed }) => [
-              styles.row,
-              pressed && isPressable && styles.pressed,
-              item.disabled && styles.disabled,
-            ]}
-            onPress={item.onPress}
-            disabled={!isPressable}
-            accessibilityRole={item.onPress ? 'button' : 'text'}
-            accessibilityState={{ disabled: Boolean(item.disabled) }}
-            testID={item.testID}
-          >
-            <Icon
-              name={item.icon}
-              size={22}
-              color={item.destructive ? '#d33' : '#444'}
-            />
-            <Text
-              style={[styles.label, item.destructive && styles.destructive]}
+const ActionList: React.FC<{ items: ActionListItem[] }> = ({ items }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+  return (
+    <View style={styles.card}>
+      {items.map((item, index) => {
+        const isPressable = Boolean(item.onPress) && !item.disabled;
+        return (
+          <Fragment key={item.label}>
+            {index > 0 && <View style={styles.divider} />}
+            <Pressable
+              style={({ pressed }) => [
+                styles.row,
+                pressed && isPressable && styles.pressed,
+                item.disabled && styles.disabled,
+              ]}
+              onPress={item.onPress}
+              disabled={!isPressable}
+              accessibilityRole={item.onPress ? 'button' : 'text'}
+              accessibilityState={{ disabled: Boolean(item.disabled) }}
+              testID={item.testID}
             >
-              {item.label}
-            </Text>
-          </Pressable>
-        </Fragment>
-      );
-    })}
-  </View>
-);
+              <Icon
+                name={item.icon}
+                size={22}
+                color={item.destructive ? colors.danger : colors.textSecondary}
+              />
+              <Text
+                style={[styles.label, item.destructive && styles.destructive]}
+              >
+                {item.label}
+              </Text>
+            </Pressable>
+          </Fragment>
+        );
+      })}
+    </View>
+  );
+};
 
 export default ActionList;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   card: {
-    marginHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    marginHorizontal: t.spacing.lg,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    gap: t.spacing.lg,
+    paddingHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.md,
   },
   pressed: {
     opacity: 0.6,
@@ -72,14 +77,15 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   label: {
-    fontSize: 15,
+    color: t.colors.text,
+    fontSize: t.fontSize.lg,
   },
   destructive: {
-    color: '#d33',
+    color: t.colors.danger,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#c8c8c8',
+    backgroundColor: t.colors.separator,
     marginLeft: 52,
   },
-});
+}));

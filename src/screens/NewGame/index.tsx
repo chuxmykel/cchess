@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 
 import Button from '../../components/Button';
 import GameSettings from '../../components/GameSettings';
@@ -13,6 +13,7 @@ import {
   TimeControl,
   DEFAULT_TIME_CONTROL,
 } from '../../constants/timeControls';
+import { makeStyles } from '../../theme';
 
 interface NewGameProps {
   navigation: {
@@ -21,6 +22,8 @@ interface NewGameProps {
 }
 
 const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
+  const styles = useStyles();
+
   const [timeControl, setTimeControl] =
     useState<TimeControl>(DEFAULT_TIME_CONTROL);
   const [chosenRated, setChosenRated] = useState(true);
@@ -101,36 +104,37 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
 
 export default NewGame;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   screen: {
     flex: 1,
   },
   content: {
     flex: 1,
     // Under the header, which keeps clear of the status bar itself.
-    paddingTop: 8,
-    paddingHorizontal: 20,
+    paddingTop: t.spacing.sm,
+    paddingHorizontal: t.spacing.xl,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 28,
+    color: t.colors.text,
+    fontSize: t.fontSize.h1,
+    fontWeight: t.fontWeight.bold,
+    marginBottom: t.spacing.xxl,
   },
   sectionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#888',
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 12,
+    marginBottom: t.spacing.md,
   },
   startButton: {
-    marginTop: 24,
+    marginTop: t.spacing.xl,
   },
   secondaryRow: {
-    marginTop: 12,
+    marginTop: t.spacing.md,
   },
   secondaryButtonSpacing: {
-    marginBottom: 12,
+    marginBottom: t.spacing.md,
   },
-});
+}));

@@ -6,18 +6,14 @@ import {
   StyleProp,
   ViewStyle,
   TextStyle,
-  StyleSheet,
 } from 'react-native';
 
 import GameTypeIcon from '../GameTypeIcon';
 import Icon from '../Icon';
 import { tintColor } from '../../utils/color';
 import { useCaretRotation } from '../../hooks/useCaretRotation';
-import {
-  TimeControl,
-  GAME_TYPE_LABELS,
-  GAME_TYPE_COLORS,
-} from '../../constants/timeControls';
+import { TimeControl, GAME_TYPE_LABELS } from '../../constants/timeControls';
+import { makeStyles, Theme, useTheme } from '../../theme';
 
 export type TriggerStyleVariant =
   | 'tintedAccentBar'
@@ -52,10 +48,17 @@ const TimeControlTrigger: React.FC<TimeControlTriggerProps> = ({
   triggerStyleVariant = 'tintedAccentBar',
   showTypeName = true,
 }) => {
+  const theme = useTheme();
+  const styles = useStyles();
+
   const { rotateTransform, pulseDipOpacity } = useCaretRotation(sheetOpen);
 
-  const accentColor = GAME_TYPE_COLORS[selected.type];
-  const variant = TRIGGER_VARIANT_STYLES[triggerStyleVariant](accentColor);
+  // The tint fades the type's color toward the background, in either mode.
+  const accentColor = theme.colors.gameType[selected.type];
+  const variant = TRIGGER_VARIANT_STYLES[triggerStyleVariant](
+    accentColor,
+    theme,
+  );
 
   return (
     <Pressable
@@ -71,7 +74,7 @@ const TimeControlTrigger: React.FC<TimeControlTriggerProps> = ({
       </Text>
       <View style={styles.caretContainer}>
         <Animated.View style={[rotateTransform, pulseDipOpacity]}>
-          <Icon name="chevron-down" size={24} color="#888" />
+          <Icon name="chevron-down" size={24} color={theme.colors.textMuted} />
         </Animated.View>
       </View>
     </Pressable>
@@ -87,30 +90,30 @@ interface TriggerVariantStyle {
 
 const TRIGGER_VARIANT_STYLES: Record<
   TriggerStyleVariant,
-  (accentColor: string) => TriggerVariantStyle
+  (accentColor: string, theme: Theme) => TriggerVariantStyle
 > = {
-  tintedAccentBar: (accent) => ({
+  tintedAccentBar: (accent, t) => ({
     container: {
-      backgroundColor: tintColor(accent, 0.88),
-      borderRadius: 14,
+      backgroundColor: tintColor(accent, 0.88, t.colors.background),
+      borderRadius: t.radius.lg,
       borderLeftWidth: 5,
       borderLeftColor: accent,
     },
     label: { color: accent },
   }),
-  tintedOutline: (accent) => ({
+  tintedOutline: (accent, t) => ({
     container: {
-      backgroundColor: tintColor(accent, 0.88),
-      borderRadius: 14,
+      backgroundColor: tintColor(accent, 0.88, t.colors.background),
+      borderRadius: t.radius.lg,
       borderWidth: 1.5,
       borderColor: accent,
     },
     label: { color: accent },
   }),
-  accentGlow: (accent) => ({
+  accentGlow: (accent, t) => ({
     container: {
-      backgroundColor: tintColor(accent, 0.85),
-      borderRadius: 16,
+      backgroundColor: tintColor(accent, 0.85, t.colors.background),
+      borderRadius: t.radius.xl,
       shadowColor: accent,
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.35,
@@ -119,44 +122,42 @@ const TRIGGER_VARIANT_STYLES: Record<
     },
     label: { color: accent },
   }),
-  boldTint: (accent) => ({
+  boldTint: (accent, t) => ({
     container: {
-      backgroundColor: tintColor(accent, 0.7),
-      borderRadius: 14,
+      backgroundColor: tintColor(accent, 0.7, t.colors.background),
+      borderRadius: t.radius.lg,
       borderLeftWidth: 6,
       borderLeftColor: accent,
     },
-    label: { color: accent, fontWeight: '700' },
+    label: { color: accent, fontWeight: t.fontWeight.bold },
   }),
-  tintedUnderline: (accent) => ({
+  tintedUnderline: (accent, t) => ({
     container: {
-      backgroundColor: tintColor(accent, 0.88),
-      borderRadius: 14,
+      backgroundColor: tintColor(accent, 0.88, t.colors.background),
+      borderRadius: t.radius.lg,
       borderBottomWidth: 3,
       borderBottomColor: accent,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
+      ...t.elevation.sm,
+      shadowColor: t.colors.shadow,
       shadowOpacity: 0.08,
-      shadowRadius: 6,
-      elevation: 2,
     },
     label: { color: accent },
   }),
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   trigger: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    gap: 8,
+    paddingVertical: t.spacing.lg,
+    paddingHorizontal: t.spacing.lg,
+    gap: t.spacing.sm,
   },
   triggerLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#222',
+    fontSize: t.fontSize.xl,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.text,
   },
   caretContainer: {
     position: 'absolute',
@@ -166,4 +167,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-});
+}));

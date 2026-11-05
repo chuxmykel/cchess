@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CHAR_CODE_FOR_LETTER_A } from '../../../constants';
+import { fontSize, spacing } from '../../../theme';
 
 const Square = ({
   colors,
@@ -59,12 +60,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   coordinateContainer: {
-    padding: 4,
+    padding: spacing.xs,
     flex: 1,
     justifyContent: 'space-between',
   },
   coordinateText: {
-    fontSize: 12,
+    fontSize: fontSize.sm,
   },
   file: {
     alignItems: 'flex-end',

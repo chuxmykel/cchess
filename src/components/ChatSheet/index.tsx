@@ -3,7 +3,6 @@ import {
   Pressable,
   ScrollView,
   type ScrollViewInstance,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -12,10 +11,10 @@ import {
 import BottomSheet from '../BottomSheet';
 import EmptyState from '../EmptyState';
 import Icon from '../Icon';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { MAX_CHAT_MESSAGE_LENGTH } from '../../constants/chat';
 import { GameChat } from '../../hooks/useGameChat';
 import { ChatMessage, GameUserSummary } from '../../network/socketEvents';
+import { makeStyles, useTheme } from '../../theme';
 
 const SHEET_HEIGHT_RATIO = 0.8;
 
@@ -46,6 +45,9 @@ interface ChatSheetProps {
 }
 
 const ChatSheet: React.FC<ChatSheetProps> = ({ chat, players }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const { messages, myUserId, isClosed } = chat;
   const [draft, setDraft] = useState('');
   const messagesRef = useRef<ScrollViewInstance>(null);
@@ -146,7 +148,7 @@ const ChatSheet: React.FC<ChatSheetProps> = ({ chat, players }) => {
               <Icon
                 name="send"
                 size={24}
-                color={canSend ? ACCENT_COLOR : '#c4c4c4'}
+                color={canSend ? colors.accent : colors.disabled}
               />
             </Pressable>
           </View>
@@ -158,12 +160,13 @@ const ChatSheet: React.FC<ChatSheetProps> = ({ chat, players }) => {
 
 export default ChatSheet;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   title: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 4,
-    marginBottom: 12,
+    color: t.colors.text,
+    fontSize: t.fontSize.xxl,
+    fontWeight: t.fontWeight.bold,
+    marginTop: t.spacing.xs,
+    marginBottom: t.spacing.md,
   },
   container: {
     flex: 1,
@@ -172,56 +175,57 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messagesContent: {
-    gap: 6,
-    paddingBottom: 8,
+    gap: t.spacing.sm,
+    paddingBottom: t.spacing.sm,
   },
   bubble: {
     maxWidth: '80%',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 14,
+    paddingVertical: t.spacing.sm,
+    paddingHorizontal: t.spacing.md,
+    borderRadius: t.radius.lg,
   },
   mine: {
     alignSelf: 'flex-end',
-    backgroundColor: ACCENT_COLOR,
+    backgroundColor: t.colors.accent,
   },
   theirs: {
     alignSelf: 'flex-start',
-    backgroundColor: '#eee',
+    backgroundColor: t.colors.surfaceStrong,
   },
   mineText: {
-    color: '#fff',
-    fontSize: 15,
+    color: t.colors.textOnAccent,
+    fontSize: t.fontSize.lg,
   },
   theirsText: {
-    color: '#222',
-    fontSize: 15,
+    color: t.colors.text,
+    fontSize: t.fontSize.lg,
   },
   // A line from the game, not a player: faint, between the bubbles.
   notice: {
     alignSelf: 'center',
-    paddingVertical: 2,
-    fontSize: 13,
-    color: '#aaa',
+    paddingVertical: t.spacing.xxs,
+    fontSize: t.fontSize.md,
+    color: t.colors.textFaint,
   },
   closed: {
-    marginTop: 8,
-    paddingVertical: 10,
+    marginTop: t.spacing.sm,
+    paddingVertical: t.spacing.md,
     textAlign: 'center',
-    color: MUTED_COLOR,
+    color: t.colors.textMuted,
   },
   composer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginTop: 8,
+    gap: t.spacing.md,
+    marginTop: t.spacing.sm,
   },
   input: {
+    color: t.colors.text,
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: '#f2f2f2',
-    fontSize: 15,
+    paddingVertical: t.spacing.md,
+    paddingHorizontal: t.spacing.lg,
+    borderRadius: t.radius.xl,
+    backgroundColor: t.colors.surface,
+    fontSize: t.fontSize.lg,
   },
-});
+}));

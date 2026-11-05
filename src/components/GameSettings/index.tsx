@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Pressable, Switch, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Switch } from 'react-native';
 
 import BottomSheet from '../BottomSheet';
 import Button from '../Button';
@@ -8,8 +8,8 @@ import ColorChoicePicker from '../ColorChoicePicker';
 import RatingRangeSelector from '../RatingRangeSelector';
 import Toast from '../Toast';
 import { useToast } from '../../hooks/useToast';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { ColorChoice, RatingRange } from '../../network/socketEvents';
+import { makeStyles, useTheme } from '../../theme';
 
 const SIGN_IN_TO_PLAY_RATED = 'Sign in to play rated games.';
 
@@ -32,6 +32,9 @@ const GameSettings: React.FC<GameSettingsProps> = ({
   onChangeRated,
   onChangeRatingRange,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const [sheetOpen, setSheetOpen] = useState(false);
   const toast = useToast();
 
@@ -52,7 +55,7 @@ const GameSettings: React.FC<GameSettingsProps> = ({
         accessibilityRole="button"
         testID="game-settings-trigger"
       >
-        <Icon name="cog-outline" size={18} color={MUTED_COLOR} />
+        <Icon name="cog-outline" size={18} color={colors.textMuted} />
         <Text style={styles.triggerLabel}>Game Settings</Text>
       </Pressable>
 
@@ -72,7 +75,7 @@ const GameSettings: React.FC<GameSettingsProps> = ({
           <Switch
             value={rated}
             onValueChange={changeRated}
-            trackColor={{ true: ACCENT_COLOR }}
+            trackColor={{ true: colors.accent }}
             accessibilityLabel="Rated"
             testID="rated-switch"
           />
@@ -104,24 +107,25 @@ const GameSettings: React.FC<GameSettingsProps> = ({
 
 export default GameSettings;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   trigger: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    gap: 6,
-    marginTop: 12,
+    gap: t.spacing.sm,
+    marginTop: t.spacing.md,
   },
   triggerLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.base,
+    fontWeight: t.fontWeight.medium,
+    color: t.colors.textMuted,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 4,
-    marginBottom: 16,
+    color: t.colors.text,
+    fontSize: t.fontSize.xxl,
+    fontWeight: t.fontWeight.bold,
+    marginTop: t.spacing.xs,
+    marginBottom: t.spacing.lg,
   },
   switchRow: {
     flexDirection: 'row',
@@ -129,18 +133,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   switchLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#222',
+    fontSize: t.fontSize.xl,
+    fontWeight: t.fontWeight.medium,
+    color: t.colors.text,
   },
   sectionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginTop: 24,
-    marginBottom: 12,
+    marginTop: t.spacing.xl,
+    marginBottom: t.spacing.md,
   },
   firstSection: {
     marginTop: 0,
@@ -149,11 +153,11 @@ const styles = StyleSheet.create({
     height: 20,
   },
   hint: {
-    marginTop: 8,
-    fontSize: 13,
-    color: MUTED_COLOR,
+    marginTop: t.spacing.sm,
+    fontSize: t.fontSize.md,
+    color: t.colors.textMuted,
   },
   doneButton: {
-    marginTop: 28,
+    marginTop: t.spacing.xxl,
   },
-});
+}));

@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 
 import Button from '../Button';
-import { MUTED_COLOR } from '../../constants/colors';
+import { makeStyles } from '../../theme';
 
 interface SectionHeaderProps {
   title: string;
@@ -19,6 +19,8 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
   onActionPress,
   testID,
 }) => {
+  const styles = useStyles();
+
   return (
     <View style={styles.row}>
       <Text style={styles.title}>
@@ -44,21 +46,22 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
 
 export default SectionHeader;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     minHeight: 44,
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    paddingHorizontal: t.spacing.lg,
+    marginBottom: t.spacing.md,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
+    color: t.colors.text,
+    fontSize: t.fontSize.xxl,
+    fontWeight: t.fontWeight.semibold,
   },
   count: {
-    fontWeight: '400',
-    color: MUTED_COLOR,
+    fontWeight: t.fontWeight.regular,
+    color: t.colors.textMuted,
   },
-});
+}));

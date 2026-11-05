@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import HomeHeader from '../../components/HomeHeader';
@@ -18,6 +18,7 @@ import { useFriendActions } from '../../hooks/useFriendActions';
 import { useRecentGames } from '../../hooks/useRecentGames';
 import { useToast } from '../../hooks/useToast';
 import { HomeTabStackScreenProps } from '../HomeTabStack/types';
+import { makeStyles } from '../../theme';
 
 const HOME_SCREEN_GAME_LIMIT = 10;
 
@@ -26,6 +27,8 @@ type HomeProps = {
 };
 
 const Home: React.FC<HomeProps> = ({ navigation }) => {
+  const styles = useStyles();
+
   const session = useAuthSession();
   const social = useSocialContext();
   const toast = useToast();
@@ -171,7 +174,7 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
 
 export default Home;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   screen: {
     flex: 1,
   },
@@ -179,17 +182,17 @@ const styles = StyleSheet.create({
     paddingBottom: 96,
   },
   signInPrompt: {
-    paddingTop: 16,
+    paddingTop: t.spacing.lg,
   },
   playButtonContainer: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.md,
     // Matches the tab bar's background so this reads as one
     // continuous section rather than a separate floating bar.
-    backgroundColor: 'white',
+    backgroundColor: t.colors.background,
   },
-});
+}));

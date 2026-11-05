@@ -28,7 +28,6 @@ import RatingsList from '../../components/RatingsList';
 import GameRow from '../../components/RecentGamesList/GameRow';
 import SectionHeader from '../../components/SectionHeader';
 import Toast from '../../components/Toast';
-import { MUTED_COLOR } from '../../constants/colors';
 import { useSocialContext } from '../../context/SocialContext';
 import { useFriendActions } from '../../hooks/useFriendActions';
 import { usePagedGames } from '../../hooks/usePagedGames';
@@ -39,6 +38,7 @@ import { getUserGames, GamesPage, UserProfile } from '../../network/restClient';
 import { presenceLabel } from '../../utils/presence';
 import { formatScore, formatTimePlayed } from '../../utils/rating';
 import { HomeStackScreenProps } from '../HomeStack/types';
+import { makeStyles } from '../../theme';
 
 const RECENT_GAMES_SHOWN = 5;
 const TITLE_FADE_MS = 200;
@@ -52,6 +52,8 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
   navigation,
   route,
 }) => {
+  const styles = useStyles();
+
   const { username } = route.params;
   const social = useSocialContext();
   const toast = useToast();
@@ -89,7 +91,7 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
         </Animated.Text>
       ),
     });
-  }, [navigation, username, titleOpacity]);
+  }, [navigation, username, titleOpacity, styles.headerTitle]);
   useEffect(() => {
     Animated.timing(titleOpacity, {
       toValue: isIdentityHidden ? 1 : 0,
@@ -383,75 +385,78 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
 
 export default UserProfileScreen;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
+    color: t.colors.text,
+    fontSize: t.fontSize.xl,
+    fontWeight: t.fontWeight.semibold,
   },
   screen: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: t.colors.background,
   },
   content: {
-    paddingBottom: 32,
+    paddingBottom: t.spacing.xxl,
   },
   loading: {
     flex: 1,
     alignItems: 'center',
-    gap: 16,
-    paddingTop: 32,
-    backgroundColor: 'white',
+    gap: t.spacing.lg,
+    paddingTop: t.spacing.xxl,
+    backgroundColor: t.colors.background,
   },
   error: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    backgroundColor: 'white',
+    gap: t.spacing.md,
+    backgroundColor: t.colors.background,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    padding: 16,
+    gap: t.spacing.lg,
+    padding: t.spacing.lg,
   },
   identity: {
     flex: 1,
   },
   name: {
-    fontSize: 20,
-    fontWeight: '700',
+    color: t.colors.text,
+    fontSize: t.fontSize.h3,
+    fontWeight: t.fontWeight.bold,
   },
   username: {
-    fontSize: 14,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.base,
+    color: t.colors.textMuted,
   },
   presence: {
-    marginTop: 2,
-    fontSize: 13,
-    color: MUTED_COLOR,
+    marginTop: t.spacing.xxs,
+    fontSize: t.fontSize.md,
+    color: t.colors.textMuted,
   },
   card: {
-    marginHorizontal: 16,
-    padding: 14,
-    gap: 4,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    marginHorizontal: t.spacing.lg,
+    padding: t.spacing.lg,
+    gap: t.spacing.xs,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
   },
   cardLine: {
-    fontSize: 14,
+    color: t.colors.text,
+    fontSize: t.fontSize.base,
   },
   section: {
-    marginTop: 16,
+    marginTop: t.spacing.lg,
   },
   gamesCard: {
-    marginHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    marginHorizontal: t.spacing.lg,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#c8c8c8',
-    marginHorizontal: 16,
+    backgroundColor: t.colors.separator,
+    marginHorizontal: t.spacing.lg,
   },
-});
+}));

@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useBottomSheet } from '../../hooks/useBottomSheet';
 import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
+import { makeStyles } from '../../theme';
 
 interface BottomSheetProps {
   visible: boolean;
@@ -36,6 +37,8 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   overlay,
   heightRatio,
 }) => {
+  const styles = useStyles();
+
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
   const keyboardHeight = useKeyboardHeight(visible);
@@ -143,7 +146,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
 
 export default BottomSheet;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   container: {
     flex: 1,
   },
@@ -153,27 +156,27 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: t.colors.scrim,
   },
   sheetWrapper: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'white',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: t.colors.background,
+    borderTopLeftRadius: t.radius.xl,
+    borderTopRightRadius: t.radius.xl,
     maxHeight: '75%',
   },
   handleArea: {
-    paddingVertical: 12,
+    paddingVertical: t.spacing.md,
     alignItems: 'center',
   },
   handle: {
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#d8d8d8',
+    backgroundColor: t.colors.border,
   },
   keyboardFrame: {
     position: 'absolute',
@@ -186,9 +189,9 @@ const styles = StyleSheet.create({
     maxHeight: undefined,
   },
   sheet: {
-    paddingHorizontal: 16,
+    paddingHorizontal: t.spacing.lg,
   },
   filled: {
     flex: 1,
   },
-});
+}));

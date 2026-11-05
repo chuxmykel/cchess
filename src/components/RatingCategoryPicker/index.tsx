@@ -3,10 +3,10 @@ import { Pressable, StyleSheet, Text, useWindowDimensions } from 'react-native';
 import GameTypeIcon from '../GameTypeIcon';
 import Icon from '../Icon';
 import Popover, { POPOVER_TRIGGER_HIT_SLOP } from '../Popover';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import { GameType } from '../../domain/types';
 import { usePopoverMenu } from '../../hooks/usePopoverMenu';
+import { makeStyles, useTheme } from '../../theme';
 
 interface RatingCategoryPickerProps {
   category: GameType;
@@ -22,6 +22,9 @@ const RatingCategoryPicker: React.FC<RatingCategoryPickerProps> = ({
   category,
   onSelect,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const { triggerRef, visible, position, open, close } =
     usePopoverMenu(MENU_WIDTH);
   const { width: windowWidth } = useWindowDimensions();
@@ -50,7 +53,7 @@ const RatingCategoryPicker: React.FC<RatingCategoryPickerProps> = ({
       >
         <GameTypeIcon type={category} />
         <Text style={styles.title}>{GAME_TYPE_LABELS[category]} rating</Text>
-        <Icon name="chevron-down" size={18} color={MUTED_COLOR} />
+        <Icon name="chevron-down" size={18} color={colors.textMuted} />
       </Pressable>
       <Popover
         visible={visible}
@@ -78,7 +81,7 @@ const RatingCategoryPicker: React.FC<RatingCategoryPickerProps> = ({
                 {GAME_TYPE_LABELS[each]}
               </Text>
               {isSelected && (
-                <Icon name="check" size={18} color={ACCENT_COLOR} />
+                <Icon name="check" size={18} color={colors.accent} />
               )}
             </Pressable>
           );
@@ -90,42 +93,41 @@ const RatingCategoryPicker: React.FC<RatingCategoryPickerProps> = ({
 
 export default RatingCategoryPicker;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   trigger: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: t.spacing.sm,
   },
   title: {
-    fontSize: 17,
-    fontWeight: '600',
+    color: t.colors.text,
+    fontSize: t.fontSize.xl,
+    fontWeight: t.fontWeight.semibold,
   },
   // A visible edge and a lift off the page, so it reads as a dropdown -
   // safe here, since this popover has no caret for an edge to cross.
   menu: {
-    paddingVertical: 4,
+    paddingVertical: t.spacing.xs,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#cfcfcf',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 14,
-    elevation: 8,
+    borderColor: t.colors.border,
+    borderRadius: t.radius.lg,
+    ...t.elevation.lg,
+    shadowColor: t.colors.shadow,
   },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    gap: t.spacing.md,
+    paddingHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.md,
   },
   optionLabel: {
+    color: t.colors.text,
     flex: 1,
-    fontSize: 15,
+    fontSize: t.fontSize.lg,
   },
   selectedLabel: {
-    fontWeight: '600',
-    color: ACCENT_COLOR,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.accent,
   },
-});
+}));

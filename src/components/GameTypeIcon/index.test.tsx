@@ -1,8 +1,8 @@
 import { render } from '@testing-library/react-native';
 
 import GameTypeIcon from '.';
-import { GAME_TYPE_COLORS } from '../../constants/timeControls';
 import { GameType } from '../../domain/types';
+import { lightTheme } from '../../theme';
 
 describe('GameTypeIcon', () => {
   it.each<[GameType, string]>([
@@ -15,6 +15,6 @@ describe('GameTypeIcon', () => {
 
     const icon = screen.getByTestId(`game-type-icon-${type}`);
     expect(icon).toHaveProp('name', name);
-    expect(icon).toHaveProp('color', GAME_TYPE_COLORS[type]);
+    expect(icon).toHaveProp('color', lightTheme.colors.gameType[type]);
   });
 });

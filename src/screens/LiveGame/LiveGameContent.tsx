@@ -3,7 +3,6 @@ import { Alert, View, StyleSheet } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { NUMBER_OF_ROWS } from '../../constants';
-import { BOARD_THEMES } from '../../constants/boardThemes';
 import {
   animatesMoves,
   timeControlOf,
@@ -46,6 +45,7 @@ import {
   newOpponentAction,
 } from '../gameMenuActions';
 import EarlierPositionOverlay from './EarlierPositionOverlay';
+import { useBoardColors } from '../../theme';
 
 export type LiveGameContentNavigation = Pick<
   NativeStackNavigationProp<HomeStackParamList, 'LiveGame'>,
@@ -129,6 +129,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   onNewOpponent,
   onError,
 }) => {
+  const boardColors = useBoardColors();
   const {
     fen,
     turn,
@@ -283,7 +284,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         testID="game-board-area"
       >
         <Chessboard
-          colors={BOARD_THEMES.test}
+          colors={boardColors}
           width={width}
           orientation={orientation}
           animate={animatesMoves(snapshot.gameType)}

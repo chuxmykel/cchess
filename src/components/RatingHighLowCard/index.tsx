@@ -1,8 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { format, parseISO } from 'date-fns';
 
-import { MUTED_COLOR } from '../../constants/colors';
 import { RatingPoint } from '../../network/restClient';
+import { makeStyles } from '../../theme';
 
 interface RatingHighLowCardProps {
   highest: RatingPoint | null;
@@ -13,57 +13,64 @@ const HighLow: React.FC<{
   label: string;
   point: RatingPoint | null;
   testID: string;
-}> = ({ label, point, testID }) => (
-  <View style={styles.half} testID={testID}>
-    <Text style={styles.label}>{label}</Text>
-    <Text style={styles.rating}>{point ? point.rating : '—'}</Text>
-    <Text style={styles.date}>
-      {point ? format(parseISO(point.at), 'MMM d, yyyy') : 'No rated games'}
-    </Text>
-  </View>
-);
+}> = ({ label, point, testID }) => {
+  const styles = useStyles();
+  return (
+    <View style={styles.half} testID={testID}>
+      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.rating}>{point ? point.rating : '—'}</Text>
+      <Text style={styles.date}>
+        {point ? format(parseISO(point.at), 'MMM d, yyyy') : 'No rated games'}
+      </Text>
+    </View>
+  );
+};
 
 /** The highest and lowest the rating went over a period, and when. */
 const RatingHighLowCard: React.FC<RatingHighLowCardProps> = ({
   highest,
   lowest,
-}) => (
-  <View style={styles.card}>
-    <HighLow label="Highest rating" point={highest} testID="rating-highest" />
-    <View style={styles.divider} />
-    <HighLow label="Lowest rating" point={lowest} testID="rating-lowest" />
-  </View>
-);
+}) => {
+  const styles = useStyles();
+  return (
+    <View style={styles.card}>
+      <HighLow label="Highest rating" point={highest} testID="rating-highest" />
+      <View style={styles.divider} />
+      <HighLow label="Lowest rating" point={lowest} testID="rating-lowest" />
+    </View>
+  );
+};
 
 export default RatingHighLowCard;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   card: {
     flexDirection: 'row',
-    marginHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    marginHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.lg,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
   },
   half: {
     flex: 1,
     alignItems: 'center',
-    gap: 2,
+    gap: t.spacing.xxs,
   },
   divider: {
     width: StyleSheet.hairlineWidth,
-    backgroundColor: '#c8c8c8',
+    backgroundColor: t.colors.separator,
   },
   label: {
-    fontSize: 13,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.md,
+    color: t.colors.textMuted,
   },
   rating: {
-    fontSize: 22,
-    fontWeight: '700',
+    color: t.colors.text,
+    fontSize: t.fontSize.h2,
+    fontWeight: t.fontWeight.bold,
   },
   date: {
-    fontSize: 12,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.sm,
+    color: t.colors.textMuted,
   },
-});
+}));

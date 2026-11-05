@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -12,6 +12,7 @@ import {
   evalBarFraction,
   formatScore,
 } from '../../domain/evalScore';
+import { makeStyles } from '../../theme';
 
 interface EvalBarProps {
   // Null while the engine has no score for the position yet.
@@ -36,6 +37,8 @@ const EvalBar: React.FC<EvalBarProps> = ({
   direction = 'horizontal',
   orientation = 'w',
 }) => {
+  const styles = useStyles();
+
   const [shown, setShown] = useState(score);
   if (score && score !== shown) setShown(score);
 
@@ -101,9 +104,9 @@ function scorePosition(whiteEnd: End, whiteAhead: boolean): object {
   return whiteAhead ? atWhiteEnd : atBlackEnd;
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   bar: {
-    backgroundColor: '#3a3a3a',
+    backgroundColor: t.colors.evalBar.black,
     justifyContent: 'center',
     overflow: 'hidden',
   },
@@ -116,21 +119,23 @@ const styles = StyleSheet.create({
   },
   white: {
     position: 'absolute',
-    backgroundColor: '#f2f2f2',
+    backgroundColor: t.colors.evalBar.white,
   },
   score: {
+    color: t.colors.text,
     position: 'absolute',
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: t.fontSize.xs,
+    fontWeight: t.fontWeight.bold,
     fontVariant: ['tabular-nums'],
   },
   verticalScore: {
+    color: t.colors.text,
     left: 0,
     right: 0,
-    fontSize: 8,
+    fontSize: t.fontSize.micro,
     textAlign: 'center',
   },
   // In the colour that shows on the side that's ahead.
-  onWhite: { color: '#222' },
-  onBlack: { color: '#eee' },
-});
+  onWhite: { color: t.colors.evalBar.onWhite },
+  onBlack: { color: t.colors.evalBar.onBlack },
+}));

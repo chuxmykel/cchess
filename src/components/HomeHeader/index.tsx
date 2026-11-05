@@ -2,6 +2,7 @@ import { View, Pressable, Image, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Avatar from '../Avatar';
+import { radius, spacing } from '../../theme';
 
 interface HomeHeaderProps {
   avatarName?: string;
@@ -42,17 +43,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
   },
   trailing: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: spacing.lg,
   },
   logo: {
     width: 36,
     height: 36,
-    borderRadius: 8,
+    borderRadius: radius.md,
   },
 });

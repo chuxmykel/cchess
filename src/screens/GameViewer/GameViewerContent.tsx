@@ -15,7 +15,6 @@ import MoveList from '../../components/MoveList';
 import PlayerBarsFrame, {
   SharedPlayerBarProps,
 } from '../../components/PlayerBarsFrame';
-import { BOARD_THEMES } from '../../constants/boardThemes';
 import {
   animatesMoves,
   timeControlOf,
@@ -38,6 +37,7 @@ import {
   useMoveNavigationSounds,
 } from '../../hooks/useGameSounds';
 import { GameSnapshot } from '../../network/socketEvents';
+import { useBoardColors } from '../../theme';
 import {
   analyseAction,
   flipBoardAction,
@@ -80,6 +80,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   onAnalyse,
   onError,
 }) => {
+  const boardColors = useBoardColors();
   // From your own side, or else that of the player being watched.
   const watchedPlayedAs = watchedUserId
     ? colorPlayedBy(snapshot, watchedUserId)
@@ -170,7 +171,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
       >
         <StaticBoard
           fen={viewedFen}
-          colors={BOARD_THEMES.test}
+          colors={boardColors}
           width={width}
           orientation={orientation}
           lastMove={moveNavigation.lastMove}

@@ -1,5 +1,8 @@
 import { analysisArrows } from '../analysisArrows';
 import { EngineLineView } from '../../hooks/useEngineAnalysis';
+import { lightTheme } from '../../theme/themes';
+
+const BOARD = lightTheme.colors.board;
 
 function line(...pv: string[]): EngineLineView {
   return {
@@ -16,6 +19,7 @@ describe('analysisArrows', () => {
     const arrows = analysisArrows(
       [line('e2e4', 'e7e5'), line('d2d4')],
       undefined,
+      BOARD,
     );
 
     expect(arrows.map(({ from, to }) => `${from}${to}`)).toEqual([
@@ -26,14 +30,14 @@ describe('analysisArrows', () => {
   });
 
   it('adds the threat, in its own colour', () => {
-    const arrows = analysisArrows([line('e2e4')], line('d8h4'));
+    const arrows = analysisArrows([line('e2e4')], line('d8h4'), BOARD);
 
     expect(arrows[1]).toMatchObject({ from: 'd8', to: 'h4' });
     expect(arrows[1].color).not.toBe(arrows[0].color);
   });
 
   it('draws nothing without lines', () => {
-    expect(analysisArrows([], undefined)).toEqual([]);
-    expect(analysisArrows([line()], line())).toEqual([]);
+    expect(analysisArrows([], undefined, BOARD)).toEqual([]);
+    expect(analysisArrows([line()], line(), BOARD)).toEqual([]);
   });
 });

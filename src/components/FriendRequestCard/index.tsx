@@ -1,9 +1,9 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import Avatar from '../Avatar';
 import CircleIconButton from '../CircleIconButton';
-import { MUTED_COLOR } from '../../constants/colors';
 import { FriendRequest } from '../../network/restClient';
+import { makeStyles } from '../../theme';
 
 type FriendRequestCardProps =
   | {
@@ -15,6 +15,8 @@ type FriendRequestCardProps =
   | { request: FriendRequest; direction: 'outgoing'; onCancel: () => void };
 
 const FriendRequestCard: React.FC<FriendRequestCardProps> = (props) => {
+  const styles = useStyles();
+
   const { request } = props;
   const { user } = request;
   return (
@@ -60,30 +62,31 @@ const FriendRequestCard: React.FC<FriendRequestCardProps> = (props) => {
 
 export default FriendRequestCard;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    gap: t.spacing.md,
+    padding: t.spacing.md,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
   },
   details: {
     flex: 1,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '600',
+    color: t.colors.text,
+    fontSize: t.fontSize.base,
+    fontWeight: t.fontWeight.semibold,
   },
   subtitle: {
-    marginTop: 2,
-    fontSize: 12,
-    color: MUTED_COLOR,
+    marginTop: t.spacing.xxs,
+    fontSize: t.fontSize.sm,
+    color: t.colors.textMuted,
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: t.spacing.sm,
   },
-});
+}));

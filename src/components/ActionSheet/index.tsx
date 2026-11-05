@@ -2,6 +2,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 
 import BottomSheet from '../BottomSheet';
 import { useRunAfterDismiss } from '../../hooks/useRunAfterDismiss';
+import { makeStyles } from '../../theme';
 
 export interface ActionSheetAction {
   label: string;
@@ -26,6 +27,8 @@ const ActionSheet: React.FC<ActionSheetProps> = ({
   onClose,
   actions,
 }) => {
+  const styles = useStyles();
+
   const { runAfterDismiss, handleDismiss } = useRunAfterDismiss();
 
   function chooseAction(action: ActionSheetAction) {
@@ -67,31 +70,32 @@ const ActionSheet: React.FC<ActionSheetProps> = ({
 
 export default ActionSheet;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   group: {
-    borderRadius: 12,
-    backgroundColor: '#f2f2f2',
+    borderRadius: t.radius.lg,
+    backgroundColor: t.colors.surface,
     overflow: 'hidden',
   },
   row: {
-    paddingVertical: 14,
+    paddingVertical: t.spacing.lg,
     alignItems: 'center',
   },
   separator: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#d0d0d0',
+    borderTopColor: t.colors.border,
   },
   label: {
-    fontSize: 17,
-    color: '#2f6f3e',
+    fontSize: t.fontSize.xl,
+    color: t.colors.accentText,
   },
   destructive: {
-    color: '#e53935',
+    color: t.colors.danger,
   },
   cancel: {
-    marginTop: 8,
+    marginTop: t.spacing.sm,
   },
   cancelLabel: {
-    fontWeight: '600',
+    color: t.colors.text,
+    fontWeight: t.fontWeight.semibold,
   },
-});
+}));

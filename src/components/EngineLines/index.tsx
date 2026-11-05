@@ -1,8 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { MUTED_COLOR } from '../../constants/colors';
 import { EngineStatus } from '../../context/EngineContext';
 import { EngineAnalysis, EngineLineView } from '../../hooks/useEngineAnalysis';
+import { makeStyles } from '../../theme';
 
 interface EngineLinesProps {
   status: EngineStatus['kind'];
@@ -30,6 +30,8 @@ const EngineLines: React.FC<EngineLinesProps> = ({
   onRetry,
   onPlayLine,
 }) => {
+  const styles = useStyles();
+
   if (status === 'error') {
     return (
       <View style={styles.message} testID="engine-error">
@@ -110,61 +112,61 @@ const EngineLines: React.FC<EngineLinesProps> = ({
 
 export default EngineLines;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   line: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
+    gap: t.spacing.sm,
+    paddingHorizontal: t.spacing.md,
     height: LINE_HEIGHT,
   },
   // Lighter than the moves, so they stand out from them.
   number: {
-    color: MUTED_COLOR,
+    color: t.colors.textMuted,
   },
   stale: {
     opacity: 0.4,
   },
   chip: {
     minWidth: 52,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    backgroundColor: '#ececec',
+    paddingHorizontal: t.spacing.sm,
+    paddingVertical: t.spacing.xxs,
+    borderRadius: t.radius.xs,
+    backgroundColor: t.colors.surfaceStrong,
     alignItems: 'center',
   },
   chipText: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.bold,
     fontVariant: ['tabular-nums'],
-    color: '#222',
+    color: t.colors.text,
   },
   moves: {
     flex: 1,
-    fontSize: 13,
-    color: '#333',
+    fontSize: t.fontSize.md,
+    color: t.colors.text,
   },
   depth: {
     alignSelf: 'flex-end',
-    paddingRight: 12,
+    paddingRight: t.spacing.md,
     height: DEPTH_HEIGHT,
-    fontSize: 10,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.xxs,
+    color: t.colors.textMuted,
   },
   message: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 12,
+    gap: t.spacing.md,
+    paddingHorizontal: t.spacing.md,
     height: LINE_HEIGHT + DEPTH_HEIGHT,
   },
   messageText: {
-    fontSize: 13,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.md,
+    color: t.colors.textMuted,
   },
   retry: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#2a7ae2',
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.link,
   },
-});
+}));

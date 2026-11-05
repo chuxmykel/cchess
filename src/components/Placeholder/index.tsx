@@ -1,4 +1,5 @@
-import { View, StyleSheet, DimensionValue } from 'react-native';
+import { View, DimensionValue } from 'react-native';
+import { makeStyles } from '../../theme';
 
 interface PlaceholderProps {
   width: DimensionValue;
@@ -6,15 +7,18 @@ interface PlaceholderProps {
   testID?: string;
 }
 
-const Placeholder: React.FC<PlaceholderProps> = ({ width, height, testID }) => (
-  <View style={[styles.placeholder, { width, height }]} testID={testID} />
-);
+const Placeholder: React.FC<PlaceholderProps> = ({ width, height, testID }) => {
+  const styles = useStyles();
+  return (
+    <View style={[styles.placeholder, { width, height }]} testID={testID} />
+  );
+};
 
 export default Placeholder;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   placeholder: {
-    borderRadius: 6,
-    backgroundColor: '#e6e6e6',
+    borderRadius: t.radius.sm,
+    backgroundColor: t.colors.skeleton,
   },
-});
+}));

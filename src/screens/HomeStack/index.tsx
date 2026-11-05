@@ -23,6 +23,7 @@ import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import SignIn from '../SignIn';
 import CreateAccount from '../CreateAccount';
 import Licenses from '../Licenses';
+import Appearance from '../Appearance';
 import { plainHeaderOptions } from '../plainHeaderOptions';
 import { HomeStackParamList, RootStackParamList } from './types';
 
@@ -132,6 +133,14 @@ const HomeStack: React.FC = () => {
             options={({ navigation }) => ({
               ...plainHeaderOptions(navigation),
               title: 'Analysis Settings',
+            })}
+          />
+          <Screen
+            name="Appearance"
+            component={Appearance}
+            options={({ navigation }) => ({
+              ...plainHeaderOptions(navigation),
+              title: 'Appearance',
             })}
           />
           <Screen

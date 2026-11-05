@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 
 import Button from '../Button';
+import { fontSize, fontWeight, spacing, makeStyles } from '../../theme';
 
 interface DrawOfferPromptProps {
   onAccept: () => void;
@@ -10,46 +11,50 @@ interface DrawOfferPromptProps {
 const DrawOfferPrompt: React.FC<DrawOfferPromptProps> = ({
   onAccept,
   onDecline,
-}) => (
-  <View style={styles.container} testID="draw-offer-prompt">
-    <Text style={styles.message}>Your opponent offers a draw</Text>
-    <View style={styles.buttons}>
-      <Button
-        label="Decline"
-        variant="outline"
-        onPress={onDecline}
-        style={styles.button}
-        testID="decline-draw-button"
-      />
-      <Button
-        label="Accept"
-        variant="primary"
-        onPress={onAccept}
-        style={styles.button}
-        testID="accept-draw-button"
-      />
+}) => {
+  const styles = useStyles();
+  return (
+    <View style={styles.container} testID="draw-offer-prompt">
+      <Text style={styles.message}>Your opponent offers a draw</Text>
+      <View style={styles.buttons}>
+        <Button
+          label="Decline"
+          variant="outline"
+          onPress={onDecline}
+          style={styles.button}
+          testID="decline-draw-button"
+        />
+        <Button
+          label="Accept"
+          variant="primary"
+          onPress={onAccept}
+          style={styles.button}
+          testID="accept-draw-button"
+        />
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 export default DrawOfferPrompt;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   container: {
     width: '100%',
-    paddingHorizontal: 16,
-    gap: 8,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
   },
   message: {
-    fontSize: 14,
-    fontWeight: '600',
+    color: t.colors.text,
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
     textAlign: 'center',
   },
   buttons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing.md,
   },
   button: {
     flex: 1,
   },
-});
+}));

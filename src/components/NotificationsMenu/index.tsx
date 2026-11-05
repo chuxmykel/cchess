@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import {
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   useWindowDimensions,
   View,
@@ -13,6 +12,7 @@ import EmptyState from '../EmptyState';
 import Icon from '../Icon';
 import Popover, { POPOVER_TRIGGER_HIT_SLOP } from '../Popover';
 import { MenuPosition, SCREEN_EDGE_MARGIN } from '../../hooks/usePopoverMenu';
+import { makeStyles, useTheme } from '../../theme';
 
 interface NotificationsMenuProps {
   /** Shown on the bell's badge: what's waiting for an answer. */
@@ -37,6 +37,9 @@ const NotificationsMenu: React.FC<NotificationsMenuProps> = ({
   children,
   isEmpty,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const bellRef = useRef<ViewInstance>(null);
   const [position, setPosition] = useState<MenuPosition | null>(null);
   const { width: windowWidth } = useWindowDimensions();
@@ -63,7 +66,7 @@ const NotificationsMenu: React.FC<NotificationsMenuProps> = ({
         accessibilityLabel="Notifications"
         testID="notifications-button"
       >
-        <Icon name="bell-outline" size={26} color="#333" />
+        <Icon name="bell-outline" size={26} color={colors.text} />
         {count > 0 && (
           <View style={styles.badge} testID="notifications-badge">
             <Text style={styles.badgeText}>
@@ -104,9 +107,9 @@ const NotificationsMenu: React.FC<NotificationsMenuProps> = ({
 
 export default NotificationsMenu;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   bell: {
-    padding: 4,
+    padding: t.spacing.xs,
   },
   badge: {
     position: 'absolute',
@@ -114,36 +117,34 @@ const styles = StyleSheet.create({
     right: 0,
     minWidth: 18,
     height: 18,
-    paddingHorizontal: 4,
+    paddingHorizontal: t.spacing.xs,
     borderRadius: 9,
-    backgroundColor: '#d33',
+    backgroundColor: t.colors.badge,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badgeText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
+    color: t.colors.textOnAccent,
+    fontSize: t.fontSize.xs,
+    fontWeight: t.fontWeight.bold,
   },
   content: {
-    paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+    paddingVertical: t.spacing.md,
+    ...t.elevation.lg,
+    shadowColor: t.colors.shadow,
   },
   title: {
-    paddingHorizontal: 12,
-    marginBottom: 8,
-    fontSize: 16,
-    fontWeight: '600',
+    color: t.colors.text,
+    paddingHorizontal: t.spacing.md,
+    marginBottom: t.spacing.sm,
+    fontSize: t.fontSize.xl,
+    fontWeight: t.fontWeight.semibold,
   },
   list: {
     maxHeight: MAX_HEIGHT,
   },
   listContent: {
-    paddingHorizontal: 12,
-    gap: 8,
+    paddingHorizontal: t.spacing.md,
+    gap: t.spacing.sm,
   },
-});
+}));

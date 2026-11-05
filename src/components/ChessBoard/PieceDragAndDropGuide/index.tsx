@@ -1,7 +1,8 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
 import { DragGuide } from '../../../hooks/useDragGuide';
+import { makeStyles } from '../../../theme';
 
 interface PieceDragAndDropGuideProps {
   boardWidth: number;
@@ -20,6 +21,8 @@ const PieceDragAndDropGuide: React.FC<PieceDragAndDropGuideProps> = ({
   squareWidth,
   guide,
 }) => {
+  const styles = useStyles();
+
   const dragGuideDiameter = squareWidth * GUIDE_SQUARES;
   const offsetToCenter = -(dragGuideDiameter - squareWidth) / 2;
   const animatedStyle = useAnimatedStyle(() => ({
@@ -72,15 +75,15 @@ const PieceDragAndDropGuide: React.FC<PieceDragAndDropGuideProps> = ({
 
 export default PieceDragAndDropGuide;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   container: {
     position: 'absolute',
-    backgroundColor: 'rgba(70, 70, 70, 0.4)',
+    backgroundColor: t.colors.board.moveHint,
   },
   origin: {
     position: 'absolute',
     top: 0,
     left: 0,
-    backgroundColor: 'rgba(255, 210, 60, 0.5)',
+    backgroundColor: t.colors.board.dragOrigin,
   },
-});
+}));

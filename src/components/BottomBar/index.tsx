@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { makeStyles } from '../../theme';
 
 interface BottomBarProps {
   children?: ReactNode;
@@ -8,6 +9,8 @@ interface BottomBarProps {
 }
 
 const BottomBar: React.FC<BottomBarProps> = ({ children, testID }) => {
+  const styles = useStyles();
+
   const insets = useSafeAreaInsets();
 
   return (
@@ -22,15 +25,15 @@ const BottomBar: React.FC<BottomBarProps> = ({ children, testID }) => {
 
 export default BottomBar;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   bar: {
     width: '100%',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#d0d0d0',
-    backgroundColor: 'white',
+    borderTopColor: t.colors.border,
+    backgroundColor: t.colors.background,
   },
   content: {
     minHeight: 60,
     justifyContent: 'center',
   },
-});
+}));

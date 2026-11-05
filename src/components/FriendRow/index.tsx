@@ -1,12 +1,12 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import Avatar from '../Avatar';
 import GameTypeIcon from '../GameTypeIcon';
 import PopoverMenu, { PopoverMenuItem } from '../PopoverMenu';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { Friend } from '../../network/restClient';
 import { presenceLabel } from '../../utils/presence';
 import { highestRating, formatRating } from '../../utils/rating';
+import { makeStyles } from '../../theme';
 
 interface FriendRowProps {
   friend: Friend;
@@ -20,6 +20,8 @@ const FriendRow: React.FC<FriendRowProps> = ({
   onPress,
   menuItems,
 }) => {
+  const styles = useStyles();
+
   const rating = highestRating(friend.ratings);
   const isAround = friend.online || friend.playingGameId !== null;
   return (
@@ -65,13 +67,13 @@ const FriendRow: React.FC<FriendRowProps> = ({
 
 export default FriendRow;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    gap: t.spacing.md,
+    paddingHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.md,
   },
   pressed: {
     opacity: 0.6,
@@ -82,30 +84,31 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: 11,
     height: 11,
-    borderRadius: 6,
+    borderRadius: t.radius.sm,
     borderWidth: 2,
-    borderColor: 'white',
-    backgroundColor: ACCENT_COLOR,
+    borderColor: t.colors.background,
+    backgroundColor: t.colors.accent,
   },
   details: {
     flex: 1,
   },
   name: {
-    fontSize: 15,
-    fontWeight: '600',
+    color: t.colors.text,
+    fontSize: t.fontSize.lg,
+    fontWeight: t.fontWeight.semibold,
   },
   status: {
-    marginTop: 2,
-    fontSize: 12,
-    color: MUTED_COLOR,
+    marginTop: t.spacing.xxs,
+    fontSize: t.fontSize.sm,
+    color: t.colors.textMuted,
   },
   rating: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: t.spacing.xs,
   },
   ratingText: {
-    fontSize: 13,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.md,
+    color: t.colors.textMuted,
   },
-});
+}));

@@ -1,7 +1,7 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable } from 'react-native';
 
 import Icon, { IconName } from '../Icon';
-import { ACCENT_COLOR } from '../../constants/colors';
+import { makeStyles, useTheme } from '../../theme';
 
 interface CircleIconButtonProps {
   icon: IconName;
@@ -21,6 +21,9 @@ const CircleIconButton: React.FC<CircleIconButtonProps> = ({
   variant = 'secondary',
   testID,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const isPrimary = variant === 'primary';
   return (
     <Pressable
@@ -35,14 +38,18 @@ const CircleIconButton: React.FC<CircleIconButtonProps> = ({
       accessibilityLabel={label}
       testID={testID}
     >
-      <Icon name={icon} size={20} color={isPrimary ? 'white' : '#555'} />
+      <Icon
+        name={icon}
+        size={20}
+        color={isPrimary ? colors.textOnAccent : colors.textSecondary}
+      />
     </Pressable>
   );
 };
 
 export default CircleIconButton;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   button: {
     width: SIZE,
     height: SIZE,
@@ -51,12 +58,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primary: {
-    backgroundColor: ACCENT_COLOR,
+    backgroundColor: t.colors.accent,
   },
   secondary: {
-    backgroundColor: '#ddd',
+    backgroundColor: t.colors.surfaceStrong,
   },
   pressed: {
     opacity: 0.6,
   },
-});
+}));

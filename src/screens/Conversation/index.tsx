@@ -14,7 +14,6 @@ import Icon from '../../components/Icon';
 import MessageList from '../../components/MessageList';
 import Toast from '../../components/Toast';
 import { MAX_DIRECT_MESSAGE_LENGTH } from '../../constants/chat';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { MESSAGE_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { useSocialContext } from '../../context/SocialContext';
@@ -25,6 +24,7 @@ import { ApiError } from '../../network/restClient';
 import { presenceLabel } from '../../utils/presence';
 import { HomeStackScreenProps } from '../HomeStack/types';
 import { plainHeaderItem } from '../plainHeaderOptions';
+import { makeStyles, useTheme } from '../../theme';
 
 type ConversationProps = Pick<
   HomeStackScreenProps<'Conversation'>,
@@ -32,6 +32,9 @@ type ConversationProps = Pick<
 >;
 
 const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const { userId, username, displayName } = route.params;
   const session = useAuthSession();
   const social = useSocialContext();
@@ -158,7 +161,7 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
           <Icon
             name="send"
             size={24}
-            color={canSend ? ACCENT_COLOR : '#c4c4c4'}
+            color={canSend ? colors.accent : colors.disabled}
           />
         </Pressable>
       </Animated.View>
@@ -169,38 +172,39 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
 
 export default Conversation;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   screen: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: t.colors.background,
   },
   presence: {
-    paddingVertical: 6,
+    paddingVertical: t.spacing.sm,
     textAlign: 'center',
-    fontSize: 12,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.sm,
+    color: t.colors.textMuted,
   },
   error: {
     flex: 1,
-    marginTop: 24,
+    marginTop: t.spacing.xl,
     textAlign: 'center',
-    color: MUTED_COLOR,
+    color: t.colors.textMuted,
   },
   composer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    gap: t.spacing.md,
+    paddingHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#ddd',
+    borderTopColor: t.colors.border,
   },
   input: {
+    color: t.colors.text,
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: '#f2f2f2',
-    fontSize: 15,
+    paddingVertical: t.spacing.md,
+    paddingHorizontal: t.spacing.lg,
+    borderRadius: t.radius.xl,
+    backgroundColor: t.colors.surface,
+    fontSize: t.fontSize.lg,
   },
-});
+}));

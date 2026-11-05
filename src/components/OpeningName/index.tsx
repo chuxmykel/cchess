@@ -1,25 +1,28 @@
-import { StyleSheet, Text } from 'react-native';
+import { Text } from 'react-native';
 
-import { MUTED_COLOR } from '../../constants/colors';
 import { Opening } from '../../domain/openings';
+import { makeStyles } from '../../theme';
 
 // The opening the moves are in, under the board - or the starting position,
 // before it has a name.
-const OpeningName: React.FC<{ opening: Opening | null }> = ({ opening }) => (
-  <Text style={styles.name} numberOfLines={1} testID="opening-name">
-    {opening ? `${opening.eco} · ${opening.name}` : ' '}
-  </Text>
-);
+const OpeningName: React.FC<{ opening: Opening | null }> = ({ opening }) => {
+  const styles = useStyles();
+  return (
+    <Text style={styles.name} numberOfLines={1} testID="opening-name">
+      {opening ? `${opening.eco} · ${opening.name}` : ' '}
+    </Text>
+  );
+};
 
 export default OpeningName;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   name: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.medium,
+    color: t.colors.textMuted,
     textAlign: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: t.spacing.md,
+    paddingVertical: t.spacing.sm,
   },
-});
+}));

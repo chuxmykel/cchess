@@ -9,9 +9,9 @@ import {
 import Button from '../Button';
 import EmptyState from '../EmptyState';
 import GameRow from '../RecentGamesList/GameRow';
-import { MUTED_COLOR } from '../../constants/colors';
 import { FetchGamesPage, usePagedGames } from '../../hooks/usePagedGames';
 import { GameSummary } from '../../network/restClient';
+import { makeStyles } from '../../theme';
 
 const PAGE_SIZE = 20;
 
@@ -28,6 +28,8 @@ const GameHistoryList: React.FC<GameHistoryListProps> = ({
   onSelectGame,
   emptyMessage,
 }) => {
+  const styles = useStyles();
+
   const games = usePagedGames(fetchPage, PAGE_SIZE);
 
   if (games.status === 'loading') {
@@ -71,29 +73,29 @@ const GameHistoryList: React.FC<GameHistoryListProps> = ({
 
 export default GameHistoryList;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   list: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: t.colors.background,
   },
   loading: {
-    marginTop: 32,
+    marginTop: t.spacing.xxl,
   },
   message: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: t.spacing.md,
   },
   messageText: {
-    color: MUTED_COLOR,
+    color: t.colors.textMuted,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#c8c8c8',
-    marginHorizontal: 16,
+    backgroundColor: t.colors.separator,
+    marginHorizontal: t.spacing.lg,
   },
   more: {
-    marginVertical: 16,
+    marginVertical: t.spacing.lg,
   },
-});
+}));

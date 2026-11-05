@@ -1,12 +1,12 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import Avatar from '../Avatar';
 import CircleIconButton from '../CircleIconButton';
 import GameTypeIcon from '../GameTypeIcon';
-import { MUTED_COLOR } from '../../constants/colors';
 import { timeControlOf } from '../../constants/timeControls';
 import { useFirstMoveCountdown } from '../../hooks/useFirstMoveCountdown';
 import { Challenge } from '../../network/restClient';
+import { makeStyles } from '../../theme';
 
 type ChallengeCardProps =
   | {
@@ -18,6 +18,8 @@ type ChallengeCardProps =
   | { challenge: Challenge; direction: 'outgoing'; onCancel: () => void };
 
 const ChallengeCard: React.FC<ChallengeCardProps> = (props) => {
+  const styles = useStyles();
+
   const { challenge, direction } = props;
   const secondsLeft = useFirstMoveCountdown(challenge.expiresAt);
   if (secondsLeft === 0) {
@@ -74,35 +76,36 @@ const ChallengeCard: React.FC<ChallengeCardProps> = (props) => {
 
 export default ChallengeCard;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    gap: t.spacing.md,
+    padding: t.spacing.md,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
   },
   details: {
     flex: 1,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '600',
+    color: t.colors.text,
+    fontSize: t.fontSize.base,
+    fontWeight: t.fontWeight.semibold,
   },
   subtitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
+    gap: t.spacing.xs,
+    marginTop: t.spacing.xxs,
   },
   subtitle: {
-    fontSize: 12,
-    color: MUTED_COLOR,
+    fontSize: t.fontSize.sm,
+    color: t.colors.textMuted,
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: t.spacing.sm,
   },
-});
+}));

@@ -5,6 +5,7 @@ import {
   USERNAME_AVAILABILITY,
   UsernameAvailability,
 } from '../../hooks/useUsernameAvailability';
+import { useTheme } from '../../theme';
 
 interface UsernameAvailabilityIndicatorProps {
   availability: UsernameAvailability;
@@ -15,6 +16,8 @@ const ICON_SIZE = 22;
 const UsernameAvailabilityIndicator: React.FC<
   UsernameAvailabilityIndicatorProps
 > = ({ availability }) => {
+  const { colors } = useTheme();
+
   switch (availability) {
     case USERNAME_AVAILABILITY.CHECKING:
       return (
@@ -30,7 +33,7 @@ const UsernameAvailabilityIndicator: React.FC<
           <Icon
             name="check-circle"
             size={ICON_SIZE}
-            color="#4caf50"
+            color={colors.success}
             testID="username-available"
           />
         </View>
@@ -41,7 +44,7 @@ const UsernameAvailabilityIndicator: React.FC<
           <Icon
             name="close-circle"
             size={ICON_SIZE}
-            color="#e53935"
+            color={colors.danger}
             testID="username-taken"
           />
         </View>

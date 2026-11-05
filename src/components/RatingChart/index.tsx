@@ -3,7 +3,6 @@ import {
   GestureResponderEvent,
   Platform,
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -25,9 +24,9 @@ import {
 } from 'victory-native';
 import { format } from 'date-fns';
 
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import { RatingPoint } from '../../network/restClient';
 import { nearestDatumIndex, ratingChartData } from '../../utils/ratingChart';
+import { fontSize, makeStyles, useTheme } from '../../theme';
 
 interface RatingChartProps {
   history: RatingPoint[];
@@ -38,17 +37,16 @@ interface RatingChartProps {
 }
 
 const CHART_HEIGHT = 180;
-// The picked point is a lighter shade of the line's green, ringed in white
-// to stand off it; a quiet grey guide marks its time down the whole chart.
-const SELECTION_COLOR = '#A8C98A';
-const GUIDE_COLOR = '#C4C4C4';
+// The picked point is a lighter shade of the line's green, ringed in the
+// background's color to stand off it; a quiet grey guide marks its time down
+// the whole chart (colors.chart).
 const MINUTE_MS = 60 * 1000;
 // victory-native rounds the rating axis to "nice" values and picks about
 // this many ticks across it.
 const Y_TICK_COUNT = 3;
 const AXIS_FONT = matchFont({
   fontFamily: Platform.select({ ios: 'Helvetica', default: 'sans-serif' }),
-  fontSize: 11,
+  fontSize: fontSize.xs,
 });
 
 function dateLabel(time: number, from: Date, to: Date): string {
@@ -65,6 +63,9 @@ const RatingChart: React.FC<RatingChartProps> = ({
   to,
   testID,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   // victory-native resets its press state whenever `data` changes, so the
   // data is only rebuilt when what it plots does - to the minute, since
   // the period's end is "now" and moves on every render.
@@ -142,7 +143,7 @@ const RatingChart: React.FC<RatingChartProps> = ({
             font: AXIS_FONT,
             tickValues: [fromMs, toMs],
             formatXLabel: (time) => dateLabel(time, from, to),
-            labelColor: MUTED_COLOR,
+            labelColor: colors.textMuted,
             lineWidth: 0,
           }}
           yAxis={[
@@ -150,8 +151,8 @@ const RatingChart: React.FC<RatingChartProps> = ({
               font: AXIS_FONT,
               axisSide: 'right',
               tickCount: Y_TICK_COUNT,
-              labelColor: MUTED_COLOR,
-              lineColor: '#e0e0e0',
+              labelColor: colors.textMuted,
+              lineColor: colors.chart.grid,
             },
           ]}
         >
@@ -165,12 +166,12 @@ const RatingChart: React.FC<RatingChartProps> = ({
                 <LinearGradient
                   start={vec(0, bounds.top)}
                   end={vec(0, bounds.bottom)}
-                  colors={[`${ACCENT_COLOR}55`, `${ACCENT_COLOR}00`]}
+                  colors={[`${colors.accent}55`, `${colors.accent}00`]}
                 />
               </Area>
               <Line
                 points={points.rating}
-                color={ACCENT_COLOR}
+                color={colors.accent}
                 strokeWidth={2}
                 curveType="linear"
               />
@@ -180,20 +181,20 @@ const RatingChart: React.FC<RatingChartProps> = ({
                     <SkiaLine
                       p1={vec(points.rating[selectedIndex].x, bounds.top)}
                       p2={vec(points.rating[selectedIndex].x, bounds.bottom)}
-                      color={GUIDE_COLOR}
+                      color={colors.chart.guide}
                       strokeWidth={1}
                     />
                     <Circle
                       cx={points.rating[selectedIndex].x}
                       cy={points.rating[selectedIndex].y}
                       r={7}
-                      color="white"
+                      color={colors.background}
                     />
                     <Circle
                       cx={points.rating[selectedIndex].x}
                       cy={points.rating[selectedIndex].y}
                       r={5}
-                      color={SELECTION_COLOR}
+                      color={colors.chart.selection}
                     />
                   </>
                 )}
@@ -207,14 +208,14 @@ const RatingChart: React.FC<RatingChartProps> = ({
 
 export default RatingChart;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   pressed: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: MUTED_COLOR,
-    marginBottom: 4,
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.textMuted,
+    marginBottom: t.spacing.xs,
   },
   chart: {
     height: CHART_HEIGHT,
   },
-});
+}));

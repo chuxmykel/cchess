@@ -1,7 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import Icon from '../Icon';
-import { MUTED_COLOR } from '../../constants/colors';
+import { makeStyles, useTheme } from '../../theme';
 
 interface RatingChangeProps {
   /** Points gained, or lost below zero. */
@@ -9,12 +9,12 @@ interface RatingChangeProps {
   testID?: string;
 }
 
-const GAIN_COLOR = '#4caf50';
-const LOSS_COLOR = '#e53935';
-
 /** A green ▲ and the points gained, or a red ▼ and the points lost, in
  * italics. */
 const RatingChange: React.FC<RatingChangeProps> = ({ change, testID }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   if (change === 0) {
     return (
       <Text
@@ -26,7 +26,7 @@ const RatingChange: React.FC<RatingChangeProps> = ({ change, testID }) => {
     );
   }
   const gained = change > 0;
-  const color = gained ? GAIN_COLOR : LOSS_COLOR;
+  const color = gained ? colors.ratingUp : colors.ratingDown;
   return (
     <View
       style={[styles.row, styles.italic]}
@@ -46,7 +46,7 @@ const RatingChange: React.FC<RatingChangeProps> = ({ change, testID }) => {
 
 export default RatingChange;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -57,10 +57,11 @@ const styles = StyleSheet.create({
     transform: [{ skewX: '-12deg' }],
   },
   points: {
-    fontSize: 16,
-    fontWeight: '700',
+    color: t.colors.text,
+    fontSize: t.fontSize.xl,
+    fontWeight: t.fontWeight.bold,
   },
   unchanged: {
-    color: MUTED_COLOR,
+    color: t.colors.textMuted,
   },
-});
+}));

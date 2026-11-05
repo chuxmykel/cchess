@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, Switch, Text, View } from 'react-native';
 
 import BottomSheet from '../BottomSheet';
 import Button from '../Button';
 import ColorChoicePicker from '../ColorChoicePicker';
-import { ACCENT_COLOR, MUTED_COLOR } from '../../constants/colors';
 import {
   DEFAULT_TIME_CONTROL,
   GAME_TYPE_LABELS,
@@ -14,6 +13,7 @@ import {
 import { CHALLENGE_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
 import { ColorChoice } from '../../network/socketEvents';
+import { makeStyles, useTheme } from '../../theme';
 
 export type ChallengeOptions = {
   timeControl: TimeControl;
@@ -35,6 +35,9 @@ const ChallengeSheet: React.FC<ChallengeSheetProps> = ({
   onClose,
   onSend,
 }) => {
+  const styles = useStyles();
+  const { colors } = useTheme();
+
   const [timeControl, setTimeControl] = useState(DEFAULT_TIME_CONTROL);
   const [rated, setRated] = useState(canPlayRated);
   const [color, setColor] = useState<ColorChoice>('random');
@@ -94,7 +97,7 @@ const ChallengeSheet: React.FC<ChallengeSheetProps> = ({
             <Switch
               value={rated}
               onValueChange={setRated}
-              trackColor={{ true: ACCENT_COLOR }}
+              trackColor={{ true: colors.accent }}
               accessibilityLabel="Rated"
               testID="challenge-rated-switch"
             />
@@ -119,57 +122,59 @@ const ChallengeSheet: React.FC<ChallengeSheetProps> = ({
 
 export default ChallengeSheet;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   title: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 4,
-    marginBottom: 12,
+    color: t.colors.text,
+    fontSize: t.fontSize.xxl,
+    fontWeight: t.fontWeight.bold,
+    marginTop: t.spacing.xs,
+    marginBottom: t.spacing.md,
   },
   group: {
-    marginBottom: 10,
+    marginBottom: t.spacing.md,
   },
   groupLabel: {
-    fontSize: 13,
-    color: MUTED_COLOR,
-    marginBottom: 6,
+    fontSize: t.fontSize.md,
+    color: t.colors.textMuted,
+    marginBottom: t.spacing.sm,
   },
   options: {
     flexDirection: 'row',
-    gap: 8,
+    gap: t.spacing.sm,
   },
   option: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#f2f2f2',
+    paddingVertical: t.spacing.sm,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
     alignItems: 'center',
   },
   selected: {
-    backgroundColor: ACCENT_COLOR,
+    backgroundColor: t.colors.accent,
   },
   optionText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: t.fontSize.base,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.text,
   },
   selectedText: {
-    color: 'white',
+    color: t.colors.textOnAccent,
   },
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: t.spacing.sm,
   },
   switchLabel: {
-    fontSize: 16,
+    color: t.colors.text,
+    fontSize: t.fontSize.xl,
   },
   error: {
-    marginTop: 10,
-    color: '#d33',
+    marginTop: t.spacing.md,
+    color: t.colors.danger,
   },
   send: {
-    marginTop: 16,
+    marginTop: t.spacing.lg,
   },
-});
+}));

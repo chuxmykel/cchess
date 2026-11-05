@@ -9,9 +9,9 @@ import {
 } from 'react-native';
 
 import Avatar from '../Avatar';
-import { MUTED_COLOR } from '../../constants/colors';
 import { UserSearch } from '../../hooks/useUserSearch';
 import { UserSearchResult } from '../../network/restClient';
+import { makeStyles } from '../../theme';
 
 interface UserSearchResultsProps {
   /** What was searched for, to say when nothing matched. */
@@ -28,6 +28,8 @@ const UserSearchResults: React.FC<UserSearchResultsProps> = ({
   search,
   onSelect,
 }) => {
+  const styles = useStyles();
+
   if (search.status === 'searching') {
     return (
       <ActivityIndicator style={styles.loading} testID="user-search-loading" />
@@ -91,43 +93,44 @@ const UserSearchResults: React.FC<UserSearchResultsProps> = ({
 
 export default UserSearchResults;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   loading: {
-    marginTop: 24,
+    marginTop: t.spacing.xl,
   },
   message: {
-    padding: 24,
+    padding: t.spacing.xl,
     textAlign: 'center',
-    color: MUTED_COLOR,
+    color: t.colors.textMuted,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    gap: t.spacing.md,
+    paddingHorizontal: t.spacing.lg,
+    paddingVertical: t.spacing.md,
   },
   pressed: {
-    backgroundColor: '#f2f2f2',
+    backgroundColor: t.colors.surface,
   },
   names: {
     flex: 1,
   },
   displayName: {
-    fontSize: 15,
-    fontWeight: '600',
+    color: t.colors.text,
+    fontSize: t.fontSize.lg,
+    fontWeight: t.fontWeight.semibold,
   },
   username: {
-    marginTop: 2,
-    fontSize: 12,
-    color: MUTED_COLOR,
+    marginTop: t.spacing.xxs,
+    fontSize: t.fontSize.sm,
+    color: t.colors.textMuted,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#c8c8c8',
-    marginHorizontal: 16,
+    backgroundColor: t.colors.separator,
+    marginHorizontal: t.spacing.lg,
   },
   more: {
-    marginVertical: 16,
+    marginVertical: t.spacing.lg,
   },
-});
+}));

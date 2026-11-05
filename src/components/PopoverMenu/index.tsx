@@ -1,18 +1,12 @@
-import {
-  Text,
-  Pressable,
-  StyleSheet,
-  StyleProp,
-  ViewStyle,
-} from 'react-native';
+import { Text, Pressable, StyleProp, ViewStyle } from 'react-native';
 
 import { usePopoverMenu } from '../../hooks/usePopoverMenu';
 import { useRunAfterDismiss } from '../../hooks/useRunAfterDismiss';
 import Icon, { IconName } from '../Icon';
 import Popover, { POPOVER_TRIGGER_HIT_SLOP } from '../Popover';
+import { fontSize, spacing, useTheme, makeStyles } from '../../theme';
 
 const DEFAULT_MENU_WIDTH = 160;
-const MUTED_COLOR = '#666';
 
 export interface PopoverMenuItem {
   label: string;
@@ -36,6 +30,10 @@ const PopoverMenu: React.FC<PopoverMenuProps> = ({
   style,
   testID,
 }) => {
+  const styles = useStyles();
+
+  const { colors } = useTheme();
+
   const { triggerRef, visible, position, open, close } = usePopoverMenu(width);
   const { runAfterDismiss, handleDismiss } = useRunAfterDismiss();
 
@@ -56,7 +54,7 @@ const PopoverMenu: React.FC<PopoverMenuProps> = ({
         <Icon
           name={triggerIcon}
           size={20}
-          color={MUTED_COLOR}
+          color={colors.textSecondary}
           testID="popover-menu-trigger-icon"
         />
       </Pressable>
@@ -80,7 +78,7 @@ const PopoverMenu: React.FC<PopoverMenuProps> = ({
               <Icon
                 name={item.icon}
                 size={18}
-                color={MUTED_COLOR}
+                color={colors.textSecondary}
                 testID="popover-menu-item-icon"
               />
             )}
@@ -93,21 +91,22 @@ const PopoverMenu: React.FC<PopoverMenuProps> = ({
 
 export default PopoverMenu;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   trigger: {
-    padding: 4,
+    padding: spacing.xs,
   },
   menuContent: {
-    paddingVertical: 4,
+    paddingVertical: spacing.xs,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
   menuItemText: {
-    fontSize: 15,
+    color: t.colors.text,
+    fontSize: fontSize.lg,
   },
-});
+}));

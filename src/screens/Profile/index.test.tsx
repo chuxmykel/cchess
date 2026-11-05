@@ -53,6 +53,15 @@ describe('Profile', () => {
     jest.clearAllMocks();
   });
 
+  it('opens Appearance, signed in or not', async () => {
+    const { screenPromise, navigation } = renderScreen();
+    const screen = await screenPromise;
+
+    await fireEvent.press(screen.getByTestId('appearance-row'));
+
+    expect(navigation.navigate).toHaveBeenCalledWith('Appearance');
+  });
+
   describe('as a guest', () => {
     it('offers to sign in instead of showing ratings', async () => {
       const { screenPromise } = renderScreen();

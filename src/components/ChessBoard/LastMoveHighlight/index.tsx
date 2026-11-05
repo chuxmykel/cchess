@@ -1,8 +1,9 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { Color } from 'chess.js';
 
 import { getXYFromSquare } from '../../../domain/boardCoordinates';
 import { MoveSquares } from '../../../domain/types';
+import { makeStyles } from '../../../theme';
 
 interface LastMoveHighlightProps {
   move: MoveSquares | null;
@@ -17,6 +18,8 @@ const LastMoveHighlight: React.FC<LastMoveHighlightProps> = ({
   squareWidth,
   orientation = 'w',
 }) => {
+  const styles = useStyles();
+
   if (!move) return null;
   return (
     <>
@@ -40,9 +43,9 @@ const LastMoveHighlight: React.FC<LastMoveHighlightProps> = ({
 
 export default LastMoveHighlight;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   square: {
     position: 'absolute',
-    backgroundColor: 'rgba(155, 199, 0, 0.41)',
+    backgroundColor: t.colors.board.lastMove,
   },
-});
+}));

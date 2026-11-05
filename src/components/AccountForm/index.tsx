@@ -4,11 +4,11 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Button from '../Button';
+import { makeStyles } from '../../theme';
 
 interface AccountFormProps {
   children: React.ReactNode;
@@ -33,6 +33,8 @@ const AccountForm: React.FC<AccountFormProps> = ({
   onSwitch,
   testID,
 }) => {
+  const styles = useStyles();
+
   const insets = useSafeAreaInsets();
 
   return (
@@ -81,30 +83,30 @@ const AccountForm: React.FC<AccountFormProps> = ({
 
 export default AccountForm;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   screen: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: t.colors.background,
   },
   content: {
-    padding: 16,
-    gap: 16,
+    padding: t.spacing.lg,
+    gap: t.spacing.lg,
   },
   fields: {
-    gap: 16,
+    gap: t.spacing.lg,
   },
   error: {
-    color: '#e53935',
-    fontSize: 14,
+    color: t.colors.danger,
+    fontSize: t.fontSize.base,
   },
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
+    gap: t.spacing.sm,
   },
   switchPrompt: {
-    color: '#555',
-    fontSize: 14,
+    color: t.colors.textSecondary,
+    fontSize: t.fontSize.base,
   },
-});
+}));

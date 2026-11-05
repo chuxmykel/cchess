@@ -1,4 +1,4 @@
-import { Pressable, View, Text, StyleSheet } from 'react-native';
+import { Pressable, View, Text } from 'react-native';
 import { Color } from 'chess.js';
 
 import { GameUserSummary, SeriesScore } from '../../network/socketEvents';
@@ -8,7 +8,7 @@ import GameClock from '../GameClock';
 import CapturedPieces from '../CapturedPieces';
 import { SideMaterial } from '../../domain/material';
 import { formatRating } from '../../utils/rating';
-import { ACCENT_COLOR } from '../../constants/colors';
+import { makeStyles } from '../../theme';
 
 export const PLAYER_BAR_HEIGHT = 40;
 const FIRST_MOVE_WARNING_SECONDS = 10;
@@ -52,6 +52,8 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   onPressPlayer,
   series = null,
 }) => {
+  const styles = useStyles();
+
   const isWhite = color === 'w';
   const player = isWhite ? white : black;
   // Decimal, so it reads at a glance in the avatar's small segment: "1.5".
@@ -152,14 +154,14 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
 
 export default PlayerBar;
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((t) => ({
   container: {
     width: '100%',
     height: PLAYER_BAR_HEIGHT,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: t.spacing.lg,
   },
   faded: {
     opacity: 0.5,
@@ -167,7 +169,7 @@ const styles = StyleSheet.create({
   avatarSlot: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
-    marginRight: 10,
+    marginRight: t.spacing.md,
   },
   avatar: {
     overflow: 'hidden',
@@ -182,18 +184,18 @@ const styles = StyleSheet.create({
     height: SERIES_BAND_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: t.colors.overlay,
   },
   details: {
     flex: 1,
     flexShrink: 1,
-    marginRight: 12,
+    marginRight: t.spacing.md,
   },
   identity: {
     height: NAME_LINE_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: t.spacing.sm,
   },
   subline: {
     height: SUBLINE_HEIGHT,
@@ -206,34 +208,35 @@ const styles = StyleSheet.create({
     right: -3,
     width: 11,
     height: 11,
-    borderRadius: 6,
+    borderRadius: t.radius.sm,
     borderWidth: 2,
-    borderColor: 'white',
-    backgroundColor: ACCENT_COLOR,
+    borderColor: t.colors.background,
+    backgroundColor: t.colors.accent,
   },
   offline: {
-    backgroundColor: '#bbb',
+    backgroundColor: t.colors.presenceOffline,
   },
   firstMoveCountdown: {
-    fontSize: 12,
-    color: '#888',
+    fontSize: t.fontSize.sm,
+    color: t.colors.textMuted,
   },
   firstMoveWarning: {
-    color: '#d33',
-    fontWeight: '600',
+    color: t.colors.danger,
+    fontWeight: t.fontWeight.semibold,
   },
   name: {
+    color: t.colors.text,
     flexShrink: 1,
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: t.fontSize.lg,
+    fontWeight: t.fontWeight.semibold,
   },
   rating: {
-    fontSize: 15,
-    color: '#888',
+    fontSize: t.fontSize.lg,
+    color: t.colors.textMuted,
   },
   seriesPoints: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: 'white',
+    fontSize: t.fontSize.micro,
+    fontWeight: t.fontWeight.bold,
+    color: t.colors.textOnAccent,
   },
-});
+}));
