@@ -72,8 +72,9 @@ the opponent while it waits, or before it - either order matches.
 
 ### The scripted opponent: `npm run opponent`
 
-`scripts/opponent.js` signs in as the `real_user_bot` account (password
-`password`), seeks, plays a random legal move whenever it's its turn,
+`scripts/opponent.js` signs in as the `bot_1` account (or `--user`; password
+`password`), seeks, plays the move `scripts/opponent-ai.js` picks at
+`--level` (default `hard`) whenever it's its turn,
 accepts draw offers half the time (a coin flip) and declines the rest,
 and exits once the game is over - or after
 `--games N`, offering a rematch between games and accepting the app's
@@ -86,8 +87,14 @@ game):
 nohup npm run opponent --silent -- --color w > /tmp/opponent.log 2>&1 &
 ```
 
-- `--guest` - play as a fresh guest instead of `real_user_bot`.
-- `--casual` - seek a casual game as `real_user_bot`.
+- `--guest` - play as a fresh guest instead of an account.
+- `--casual` - seek a casual game as the bot's account.
+- `--user bot_2` - sign in as another account instead (password
+  `password`); cchess-be's `npm run seed:run` creates `bot_1`-`bot_5`,
+  one per bot when running several at once.
+- `--level easy|medium|hard` - `hard` can take ~4s a move in a busy
+  middlegame, on top of `--delay`; use `easy` (well under 100ms) when a
+  flow is waiting on the bot's replies.
 - **Rated or casual**: seeks pair only when both are rated or both
   casual. New Game defaults to Rated when signed in (`rated-switch` on),
   and a guest app can only seek casual. So a signed-in app on the default
@@ -95,7 +102,7 @@ nohup npm run opponent --silent -- --color w > /tmp/opponent.log 2>&1 &
   switched off, needs `--casual` or `--guest`. A mismatch
   just leaves both seeking. The bot accepts any opponent rating, but the
   app's own rating range (default ±500) still has to include the bot's
-  rating. The app must not be signed in as `real_user_bot` itself, or both
+  rating. The app must not be signed in as the bot's account itself, or both
   sides are the same account - sign out (`examples/sign-out.yaml`) or use
   another account.
 - `--time 3+2` - seek a different time control (must match the app's
@@ -120,7 +127,7 @@ nohup npm run opponent --silent -- --color w > /tmp/opponent.log 2>&1 &
   should leave "Play as" on Random, or pick the other color.) Rematches
   swap colors as usual.
 - Exit codes: 0 when the game ends, 1 for connection/auth/matchmaking
-  errors (including `real_user_bot` not existing on that server).
+  errors (including the bot's account not existing on that server).
 
 To try a particular position - a promotion, an endgame - set
 `GAME_START_FEN` in `cchess-be`'s `.env` and restart it: every new game
@@ -391,8 +398,8 @@ Account flows (no opponent needed, just the backend):
 - `sign-out.yaml` - from either tab, signs out to a new guest.
 - `sign-in.yaml` - from a guest's prompt, signs back in
   (`-e USERNAME=...`, password `password` unless `-e PASSWORD=...`).
-  Every test account uses `password`, including `real_user_bot` and
-  `glicko_65163`.
+  Every test account uses `password`, including the seeded `bot_1`-`bot_5`,
+  `real_user_bot` and `glicko_65163`.
 - `dismiss-save-password.yaml` - used by the two above (see Gotchas).
 
 Run them as create-account → sign-out → sign-in with the same USERNAME.

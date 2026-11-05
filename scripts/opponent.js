@@ -4,6 +4,7 @@
 const { parseArgs } = require('node:util');
 const { io } = require('socket.io-client');
 const { Chess } = require('chess.js');
+const { LEVELS, findBestMove } = require('./opponent-ai');
 
 const HELP = `OPPONENT(1)                    cchess scripts                   OPPONENT(1)
 
@@ -11,18 +12,20 @@ NAME
        opponent - a scripted chess opponent for driving cchess's LiveGame
 
 SYNOPSIS
-       npm run opponent -- [--guest | --casual] [--color w|b] [--time M+I]
+       npm run opponent -- [--user USERNAME | --guest] [--casual]
+                           [--level LEVEL] [--color w|b] [--time M+I]
                            [--games N] [--delay MS] [--chat] [--idle]
-       npm run opponent -- --friend USERNAME [--challenge] [--time M+I]
-                           [--games N]
+       npm run opponent -- --friend USERNAME [--user USERNAME] [--challenge]
+                           [--level LEVEL] [--time M+I] [--games N]
        npm run opponent -- -h | --help
 
 DESCRIPTION
        Reaching a real game through matchmaking needs a second player. This
        script is that player: it signs in to a local cchess-be as the
-       real_user_bot account (or a fresh guest), seeks a game, and plays a
-       random legal move whenever it's its turn. It answers a draw offer
-       after 2 seconds, accepting half the time, at random.
+       bot_1 account (or --user, or a fresh guest), seeks a game,
+       and plays the move its engine (scripts/opponent-ai.js) picks at
+       --level whenever it's its turn. It answers a draw offer after 2
+       seconds, accepting half the time, at random.
 
        It plays one game and exits, or --games N of them. Between games it
        offers a rematch and accepts one offered to it, so the series score
@@ -30,11 +33,14 @@ DESCRIPTION
        within 15 seconds, it seeks (or challenges) again instead. An
        aborted game doesn't count, and isn't rematched.
 
-       real_user_bot seeks a rated game unless --casual is given; a guest
+       An account seeks a rated game unless --casual is given; a guest
        always seeks a casual one. Seeks only pair when both are rated or
        both casual, so match the choice made on the app's New Game screen.
-       Any opponent rating is accepted. The app can't be signed in as
-       real_user_bot itself - that would put one account on both sides.
+       Any opponent rating is accepted. The app can't be signed in as the
+       bot's account itself - that would put one account on both sides.
+
+       cchess-be's \`npm run seed:run\` creates bot_1 to bot_5 (password
+       "password"), for --user - one per bot, to run several at once.
 
        Requires Node 22 (see .nvmrc).
 
@@ -50,7 +56,14 @@ OPTIONS
               stopped unless --games is given.
 
        --delay MS
-              Milliseconds to wait before each move. Default: 800.
+              Milliseconds to wait before each move, on top of the time the
+              engine takes to choose it. Default: 800.
+
+       --level easy|medium|hard
+              How strongly the bot plays: easy looks one move ahead with
+              some randomness, medium two, hard three. Hard can think for a
+              few seconds in a busy middlegame - mind it in bullet.
+              Default: hard.
 
        --color w|b
               The color the bot asks for when it seeks or challenges - the
@@ -59,8 +72,12 @@ OPTIONS
               the app play black. Rematches swap colors, as usual, and a
               challenge from the app plays the colors the app chose.
 
+       --user USERNAME
+              Sign in as USERNAME (password "password") instead of
+              bot_1 - one of the seeded bots, say.
+
        --guest
-              Play as a new guest instead of real_user_bot (always casual).
+              Play as a new guest instead of an account (always casual).
 
        --casual
               Seek a casual game instead of a rated one.
@@ -86,8 +103,8 @@ EXIT STATUS
        stopped. Otherwise:
 
        0      Its games are over.
-       1      A connection, sign-in or matchmaking error, including
-              real_user_bot not existing on this server.
+       1      A connection, sign-in or matchmaking error, including the
+              bot's account not existing on this server.
 
 ENVIRONMENT
        EXPO_PUBLIC_SERVER_URL
@@ -104,6 +121,9 @@ EXAMPLES
        A quick casual 3+2 opponent:
               npm run opponent -- --casual --time 3+2 --delay 300
 
+       An easy opponent, signed in as a seeded bot:
+              npm run opponent -- --user bot_2 --level easy
+
        Play a best-of-three against the app, rematching between games:
               npm run opponent -- --games 3
 
@@ -113,7 +133,8 @@ EXAMPLES
 
 const SERVER_URL =
   process.env.EXPO_PUBLIC_SERVER_URL ?? 'http://localhost:3000';
-const BOT_ACCOUNT = { usernameOrEmail: 'real_user_bot', password: 'password' };
+const DEFAULT_USER = 'bot_1';
+const BOT_PASSWORD = 'password';
 
 const { values: args } = parseArgs({
   options: {
@@ -124,6 +145,8 @@ const { values: args } = parseArgs({
     casual: { type: 'boolean', default: false },
     chat: { type: 'boolean', default: false },
     idle: { type: 'boolean', default: false },
+    level: { type: 'string', default: 'hard' },
+    user: { type: 'string' },
     friend: { type: 'string' },
     challenge: { type: 'boolean', default: false },
     games: { type: 'string' },
@@ -158,6 +181,16 @@ if (!(gamesToPlay >= 1) || (args.games && !Number.isInteger(gamesToPlay))) {
 // How long to wait for a rematch to start before looking for a new game.
 const DRAW_REPLY_DELAY_MS = 2000;
 const REMATCH_WAIT_MS = 15_000;
+if (!Object.hasOwn(LEVELS, args.level)) {
+  console.error(`--level must be one of: ${Object.keys(LEVELS).join(', ')}`);
+  process.exit(1);
+}
+const level = LEVELS[args.level];
+if (args.user && args.guest) {
+  console.error('--user and --guest are alternatives - pass one');
+  process.exit(1);
+}
+const username = args.user ?? DEFAULT_USER;
 if (args.color && !['w', 'b'].includes(args.color)) {
   console.error('--color must be "w" or "b"');
   process.exit(1);
@@ -226,11 +259,15 @@ async function befriend(token) {
 
 async function signInAsBot() {
   try {
-    return await postJson('/auth/login', BOT_ACCOUNT);
+    return await postJson('/auth/login', {
+      usernameOrEmail: username,
+      password: BOT_PASSWORD,
+    });
   } catch (error) {
     throw new Error(
-      `${error.message} - create the ${BOT_ACCOUNT.usernameOrEmail} account ` +
-        'on this server (password "password"), or pass --guest',
+      `${error.message} - create the ${username} account on this server ` +
+        `(password "${BOT_PASSWORD}"; cchess-be's \`npm run seed:run\` ` +
+        'makes bot_1 to bot_5), or pass --guest',
     );
   }
 }
@@ -240,7 +277,11 @@ async function main() {
     ? await postJson('/auth/guest')
     : await signInAsBot();
   const myUserId = session.user.id;
-  log(args.guest ? 'guest' : 'signed in as', session.user.username);
+  log(
+    args.guest ? 'guest' : 'signed in as',
+    session.user.username,
+    `- playing ${args.level}`,
+  );
 
   const socket = io(SERVER_URL, {
     auth: { token: session.accessToken },
@@ -262,9 +303,8 @@ async function main() {
 
   function playIfMyTurn(fen, turn) {
     if (!gameId || turn !== myColor || args.idle) return;
-    const moves = new Chess(fen).moves({ verbose: true });
-    if (moves.length === 0) return;
-    const move = moves[Math.floor(Math.random() * moves.length)];
+    const move = findBestMove(new Chess(fen), level);
+    if (!move) return;
     setTimeout(() => {
       log('plays', move.san);
       socket.emit('game:move', {
