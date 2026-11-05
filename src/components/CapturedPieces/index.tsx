@@ -31,6 +31,7 @@ const CapturedPieces: React.FC<CapturedPiecesProps> = ({ color, material }) => {
           source={PIECES[`${capturedColor}${type}`]}
           style={[
             styles.piece,
+            capturedColor === 'b' && styles.outlined,
             index > 0 &&
               material.pieces[index - 1] === type && {
                 marginLeft: SAME_PIECE_OVERLAP,
@@ -60,6 +61,13 @@ const useStyles = makeStyles((t) => ({
   piece: {
     width: PIECE_SIZE,
     height: PIECE_SIZE,
+  },
+  // A tight shadow, which on iOS follows the piece's shape: an outline.
+  outlined: {
+    shadowColor: t.colors.pieceOutline,
+    shadowOpacity: 1,
+    shadowRadius: 0.75,
+    shadowOffset: { width: 0, height: 0 },
   },
   score: {
     marginLeft: t.spacing.xs,
