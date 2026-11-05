@@ -102,6 +102,12 @@ lib/chessboard/  the board, written as a package of its own: outside the
     drag), and `playerOf`, `ratingDiffOf` and `colorPlayedBy` (the side a
     user played, or null), for anything shaped like a game - a snapshot,
     or the live game's own fields.
+  - `premoveTargets.ts` - `premoveTargets(fen, color)`: where each of a
+    side's pieces might be queued to go while the opponent thinks - every
+    square it could reach on an empty board, a pawn's captures and
+    castling (while the FEN allows) included, as lichess's board offers;
+    whether it's a move is only known once the opponent's is in. And
+    `isPromotionPremove`, a pawn queued to its last rank (made a queen).
   - `moveSound.ts` - `moveSound(san)`: the sound a move makes - checkmate,
     check, castle, capture or a plain move, the first that applies - read
     off its SAN (`AppliedMove` carries it); `stepSound`, that of stepping
@@ -259,6 +265,15 @@ lib/chessboard/  the board, written as a package of its own: outside the
     stepping through a game's moves, in `LiveGame` and `GameViewer`, plus a
     watched game's moves as they arrive; `useGameStartSound`, a new game
     opening; and `useGameOverSound`, a game ending while it's shown),
+    `usePremove` (a move queued on the opponent's turn - by drag or tap,
+    marked on the board - sent with `game:premove` for the server to hold
+    and play the moment their move lands, charged a fixed 0.1s rather than
+    a round trip, or drop if no longer legal; one at a time, gone here once
+    their move arrives, cancelled with `game:premoveCancel` - by a tap
+    anywhere else, or on rejoining after a reconnect. The move the server
+    plays comes back as a push like the opponent's, so
+    `useOnlineChessGame` sends no move that reaches the position the server
+    last confirmed),
     `useGameClock` (client-side ticking
     between authoritative server clock updates; paused until both sides
     have moved), `useFirstMoveCountdown` (seconds left to play the first
@@ -387,11 +402,15 @@ lib/chessboard/  the board, written as a package of its own: outside the
   setups included), `size`, `orientation`, `colors`, `pieceSet` (each
   piece an SVG document, drawn with `react-native-svg`'s `SvgXml`; its own
   `defaultPieceSet` when left out), `movable` (whose pieces can be picked up - a color, `'both'` or none -
-  their `dests`, or `free` to go anywhere, off the board too), `lastMove`
+  their `dests`, or `free` to go anywhere, off the board too),
+  `premovable` (the side waiting on the other's move, whose pieces can be
+  picked up to queue one - its `dests`, and the `current` one, marked in
+  `colors.premove`), `lastMove`
   (the squares marked), `promotion` (a pawn held on its promotion square),
   `check` (a king glowing red, tipped over once `fallen`), `arrows`,
   `animation` and `viewOnly`, and calls back `onMove(from, to)` - return
-  false to refuse it - `onDropOff`, `onSquarePress`, `onSettled` and
+  false to refuse it - `onPremove(from, to)` (the piece stays home),
+  `onPremoveCancel` (anything else touched while one's queued), `onDropOff`, `onSquarePress`, `onSettled` and
   `onDragLog`. Its own `types.ts` are the same strings as chess.js's, so
   the app's values pass straight in.
   - `Chessboard.tsx` - tap-to-move selection (a movable piece tapped shows
@@ -461,7 +480,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
   only the library's own) onto it - swapping board libraries
   means changing this alone. `GameBoard` plays the game in
   `ChessGameContext`: `movable` is its `movableColor` and `legalTargets`, a
-  move goes to `attemptMove`, the last move marked is the game's, or the
+  move goes to `attemptMove`, `premovable` is the online game's (none
+  for a local one), the last move marked is the game's, or the
   last one the server has on record while it has made none (on a game
   resumed or a move refused) - for a castle, the king's and rook's starting
   squares (`domain/lastMoveSquares.ts`) - and `check` is

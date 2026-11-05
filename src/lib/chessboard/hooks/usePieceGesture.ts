@@ -25,7 +25,9 @@ import {
 import { Color, Dests, Square } from '../types';
 import { DragGuide } from './useDragGuide';
 
-export type MovableSquares = Partial<Record<Square, boolean>>;
+// Whether each square's piece can be picked up: to move, or to queue a
+// move ('premove'), which a drop doesn't play - it goes back home.
+export type MovableSquares = Partial<Record<Square, boolean | 'premove'>>;
 
 export type PieceGestureInput = {
   square: Square;
@@ -185,6 +187,10 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
   // Whether a drag is under way: Gesture Handler can report one that has
   // ended as cancelled too, straight after - it's set down only once.
   const dragging = useSharedValue(false);
+  // Whether this drag picked the piece up. It's put down by that, not by
+  // whether it can still move: a game ending under the finger would leave
+  // it held up, twice its size, for good.
+  const lifted = useSharedValue(false);
 
   const piece = useSharedValue<PieceState>({
     square: props.square,
@@ -287,6 +293,7 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
           { t: Date.now(), moved: movedSinceTouchDown(touchDown.get(), event) },
         ]);
         if (isDisabled()) return;
+        lifted.set(true);
         // Lifted at once, as on lichess.
         zIndex.set(DRAGGED_Z_INDEX);
         scale.set(DRAG_SCALE);
@@ -294,14 +301,14 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
       onUpdate: (event) => {
         'worklet';
         const { square, width, orientation } = piece.get();
-        const disabled = isDisabled();
         const moved = movedSinceTouchDown(touchDown.get(), event);
         trail.set([
           ...trail.get().slice(1 - TRAIL_LENGTH),
           { t: Date.now(), moved },
         ]);
         // Opponent pieces get no drag affordance at all - they're tap-only.
-        if (disabled) return;
+        // One already lifted follows the finger until let go.
+        if (!lifted.get()) return;
         const finger = fingerOnBoard(
           square,
           width,
@@ -377,10 +384,13 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
         const { to } = drop;
         // A piece that can't be picked up makes no move, wherever it's let go.
         const isMove = !event.canceled && drop.legal && !disabled;
+        // Queued, not played: the piece goes home, taking nothing.
+        const isPremove = movable.get()[square] === 'premove';
+        const landed = isMove && !isPremove;
         // A piece standing there is taken: gone now, not once JS has made
         // the move. Not when setting up a position, where a piece put on
         // its own side's goes too, and no move follows to bring it back.
-        if (isMove && !free) {
+        if (landed && !free) {
           dragGuide.taken.set({
             from: square,
             to,
@@ -388,17 +398,18 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
           });
         }
 
-        if (!disabled) {
+        if (lifted.get()) {
+          lifted.set(false);
           // Set down at once on its square, or back home, as on lichess. On
           // a move it stays above the rest until JS has made it, which can
           // be a while after it's down (see the layout effect above):
           // lowered sooner, the piece it takes - drawn later, if it was the
           // last to move - would show on top of it in the meantime.
           scale.set(1);
-          const target = getXYFromSquare(isMove ? to : square, width);
+          const target = getXYFromSquare(landed ? to : square, width);
           x.set(target.x);
           y.set(target.y);
-          if (!isMove) zIndex.set(0);
+          if (!landed) zIndex.set(0);
         }
         if (logging.get()) {
           scheduleOnRN(
@@ -425,12 +436,14 @@ export function usePieceGesture(props: PieceGestureInput): PieceGesture {
       grab,
       trail,
       dragging,
+      lifted,
       dragGuide,
       x,
       y,
       scale,
       zIndex,
       dests,
+      movable,
       isDisabled,
       report,
       logging,

@@ -277,7 +277,10 @@ resign or abort from the app (see `examples/resign.yaml` /
   `account-form-submit`,
   `account-form-error` and `account-form-switch` (to the other form).
 - **Board**: `chessboard`, `square-<file><rank>`, `piece-<file><rank>`,
-  `valid-move-<square>`, `drag-guide` - from
+  `valid-move-<square>`, `drag-guide`, `last-move-from`/`-to`, and
+  `premove-from`/`-to` (a move queued on the opponent's turn; give the
+  bot `--delay 10000` so there's time to queue one - Maestro's own steps
+  take seconds; `.maestro/premove.yaml`) - from
   `src/lib/chessboard/` (the board library; the app's boards are in
   `src/components/Board/`), the pieces layer `chessboard-pieces`. These are always named by the real
   square, whichever way the board faces.

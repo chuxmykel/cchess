@@ -19,5 +19,6 @@ export type {
   PieceCode,
   PieceSet,
   PieceSymbol,
+  Premovable,
   Square,
 } from './types';

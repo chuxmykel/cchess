@@ -305,10 +305,14 @@ async function main() {
     if (!gameId || turn !== myColor || args.idle) return;
     const move = findBestMove(new Chess(fen), level);
     if (!move) return;
+    const playingIn = gameId;
     setTimeout(() => {
+      // The game may have ended - on time, say - or a rematch begun, while
+      // it waited.
+      if (gameId !== playingIn) return;
       log('plays', move.san);
       socket.emit('game:move', {
-        gameId,
+        gameId: playingIn,
         from: move.from,
         to: move.to,
         promotion: move.promotion,

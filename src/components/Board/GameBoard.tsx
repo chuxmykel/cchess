@@ -29,6 +29,8 @@ interface GameBoardProps {
 
 // The board for a game being played, from ChessGameContext: the side that
 // can move picks up its pieces, and a move goes to the game, which judges it.
+// One played online also queues a move on the opponent's turn, which the
+// game's premovable marks.
 const GameBoard: React.FC<GameBoardProps> = ({
   width,
   orientation = 'w',
@@ -45,6 +47,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
     pendingPromotion,
     lastMove,
     attemptMove,
+    premovable,
+    setPremove,
+    cancelPremove,
   } = useChessGameContext();
   const colors = useChessboardColors();
   const pieceSet = usePieceSet();
@@ -79,6 +84,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
       pieceSet={pieceSet}
       movable={movable}
       onMove={handleMove}
+      premovable={premovable}
+      onPremove={setPremove}
+      onPremoveCancel={cancelPremove}
       lastMove={markedMove}
       promotion={pendingPromotion}
       check={check}

@@ -8,6 +8,7 @@ import { animatedStyleOf } from '../../../testUtils/animatedValue';
 import { piecePositionOnScreen } from '../../../testUtils/boardPosition';
 import {
   dragPiece,
+  dragPieceWhile,
   settleAnimations,
   tapPiece,
   touchPiece,
@@ -29,6 +30,7 @@ const COLORS = {
   moveHint: 'grey',
   dragOrigin: 'orange',
   check: 'red',
+  premove: 'purple',
 };
 // Only what the board's told: no rules of its own.
 const E2_MOVES = { e2: ['e3', 'e4'] } as ChessboardProps['movable']['dests'];
@@ -267,6 +269,22 @@ describe('Chessboard', () => {
       expect(onScreen(screen, 'e2')).toEqual(getXYFromSquare('e2', SQUARE));
     });
 
+    it("puts a piece down, at home and its own size, when it can't move any more by the time it's let go", async () => {
+      const onMove = jest.fn();
+      const screen = await render(board({ movable, onMove }));
+
+      // The game ends - a clock runs out - with the piece still held.
+      await dragPieceWhile('piece-e2', 0, -2 * SQUARE, async () => {
+        await screen.rerender(board({ movable: null, onMove }));
+      });
+
+      expect(onMove).not.toHaveBeenCalled();
+      expect(onScreen(screen, 'e2')).toEqual(getXYFromSquare('e2', SQUARE));
+      expect(animatedStyleOf(screen.getByTestId('piece-e2')).transform).toEqual(
+        expect.arrayContaining([{ scale: 1 }]),
+      );
+    });
+
     it('logs each drop, when asked to', async () => {
       const onDragLog = jest.fn();
       await render(board({ movable, onDragLog }));
@@ -310,6 +328,109 @@ describe('Chessboard', () => {
 
       expect(onDropOff).toHaveBeenCalledWith('e8');
       expect(onMove).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('premove', () => {
+    // Black to move: white waits, and can queue e2-e4.
+    const movable: ChessboardProps['movable'] = {
+      color: 'b',
+      dests: { e7: ['e5'] },
+    };
+    const premovable = { color: 'w' as const, dests: E2_MOVES };
+
+    it('queues a move dropped on a premove dest, the piece staying home', async () => {
+      const onMove = jest.fn();
+      const onPremove = jest.fn();
+      const screen = await render(
+        board({ movable, premovable, onMove, onPremove }),
+      );
+
+      await dragPiece('piece-e2', 0, -2 * SQUARE);
+
+      expect(onPremove).toHaveBeenCalledWith('e2', 'e4');
+      expect(onMove).not.toHaveBeenCalled();
+      expect(onScreen(screen, 'e2')).toEqual(getXYFromSquare('e2', SQUARE));
+    });
+
+    it("takes nothing where it's queued to go", async () => {
+      const screen = await render(
+        board({
+          movable,
+          premovable: { color: 'w', dests: { d1: ['d7'] } },
+          onPremove: jest.fn(),
+        }),
+      );
+
+      await dragPiece('piece-d1', 0, -6 * SQUARE);
+
+      expect(animatedStyleOf(screen.getByTestId('piece-d7')).opacity).toBe(1);
+    });
+
+    it('queues a move tapped, showing its dests first', async () => {
+      const onPremove = jest.fn();
+      const screen = await render(board({ movable, premovable, onPremove }));
+
+      await tapPiece('piece-e2');
+      expect(dotShown(screen, 'e4')).toBe(true);
+      await fireEvent.press(screen.getByTestId('square-e4'));
+
+      expect(onPremove).toHaveBeenCalledWith('e2', 'e4');
+    });
+
+    it('marks the move queued', async () => {
+      const screen = await render(
+        board({
+          movable,
+          premovable: { ...premovable, current: { from: 'e2', to: 'e4' } },
+        }),
+      );
+
+      expect(screen.getByTestId('premove-to')).toHaveStyle({
+        ...{ left: 4 * SQUARE, top: 4 * SQUARE },
+        backgroundColor: 'purple',
+      });
+    });
+
+    it('drops the move queued on a tap anywhere else, or a drop on no dest', async () => {
+      const onPremoveCancel = jest.fn();
+      const screen = await render(
+        board({
+          movable,
+          premovable: { ...premovable, current: { from: 'e2', to: 'e4' } },
+          onPremoveCancel,
+        }),
+      );
+
+      await fireEvent.press(screen.getByTestId('square-d5'));
+      expect(onPremoveCancel).toHaveBeenCalledTimes(1);
+
+      await dragPiece('piece-e2', 0, -3 * SQUARE);
+      expect(onPremoveCancel).toHaveBeenCalledTimes(2);
+    });
+
+    it('still moves the side whose turn it is', async () => {
+      const onMove = jest.fn();
+      const onPremove = jest.fn();
+      await render(board({ movable, premovable, onMove, onPremove }));
+
+      await dragPiece('piece-e7', 0, 2 * SQUARE);
+
+      expect(onMove).toHaveBeenCalledWith('e7', 'e5');
+      expect(onPremove).not.toHaveBeenCalled();
+    });
+
+    it('marks nothing, and queues nothing, on a view-only board', async () => {
+      const onPremove = jest.fn();
+      const screen = await render(
+        board({
+          viewOnly: true,
+          premovable: { ...premovable, current: { from: 'e2', to: 'e4' } },
+          onPremove,
+        }),
+      );
+
+      expect(screen.queryByTestId('premove-to')).toBeNull();
     });
   });
 

@@ -37,7 +37,8 @@ started by hand from the Actions tab - not on every push or PR.
 reaching an actual game needs a live `cchess-be` connection (and a real
 opponent) that CI doesn't have. `common/to-board.yaml` itself and every
 flow that depends on it (`tap-to-move`, `drag-and-drop`, `capture`,
-`off-board-drag`, `new-game-renders`, `time-control-selection`) is
+`off-board-drag`, `new-game-renders`, `time-control-selection`, and
+`premove`, which also needs a slow scripted opponent - see its header) is
 tagged accordingly - still worth running locally against a live server
 (`maestro test .maestro --include-tags=needs-live-server`), just not
 gating CI until there's a self-contained way to run a backend inside
