@@ -4,37 +4,33 @@ import * as ReactNative from 'react-native';
 
 import CapturedPieces from '.';
 import { ThemeProvider } from '../../context/ThemeContext';
-import { darkTheme } from '../../theme';
+import { darkTheme, lightTheme } from '../../theme';
 
 describe('CapturedPieces', () => {
   beforeEach(() => AsyncStorage.clear());
   afterEach(() => jest.restoreAllMocks());
 
-  async function renderInDarkMode(color: 'w' | 'b') {
-    jest.spyOn(ReactNative, 'useColorScheme').mockReturnValue('dark');
-    const screen = await render(
-      <ThemeProvider>
-        <CapturedPieces color={color} material={{ pieces: ['p'], score: 1 }} />
-      </ThemeProvider>,
-    );
-    await act(async () => {});
-    return screen;
-  }
+  it.each([
+    ['light', lightTheme],
+    ['dark', darkTheme],
+  ] as const)(
+    "draws either side's pieces in the same grey in %s mode",
+    async (scheme, theme) => {
+      jest.spyOn(ReactNative, 'useColorScheme').mockReturnValue(scheme);
+      const material = { pieces: ['p' as const], score: 1 };
+      const screen = await render(
+        <ThemeProvider>
+          <CapturedPieces color="w" material={material} />
+          <CapturedPieces color="b" material={material} />
+        </ThemeProvider>,
+      );
+      await act(async () => {});
 
-  it('outlines black pieces in dark mode, so they show on its background', async () => {
-    const screen = await renderInDarkMode('w');
-
-    expect(screen.getByTestId('captured-piece-w')).toHaveStyle({
-      shadowColor: darkTheme.colors.pieceOutline,
-      shadowOpacity: 1,
-    });
-  });
-
-  it("doesn't outline white pieces", async () => {
-    const screen = await renderInDarkMode('b');
-
-    expect(screen.getByTestId('captured-piece-b')).not.toHaveStyle({
-      shadowColor: darkTheme.colors.pieceOutline,
-    });
-  });
+      for (const id of ['captured-piece-w', 'captured-piece-b']) {
+        expect(screen.getByTestId(id)).toHaveStyle({
+          tintColor: theme.colors.capturedPiece,
+        });
+      }
+    },
+  );
 });

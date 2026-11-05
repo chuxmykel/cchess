@@ -64,9 +64,9 @@ export interface ThemeColors {
   badge: string;
   // A friend who isn't online.
   presenceOffline: string;
-  // Outlines a black piece drawn off the board - a captured one - where a
-  // dark background would swallow it. None where the background is light.
-  pieceOutline: string;
+  // Captured pieces under a player's name, either side's, as lichess draws
+  // them: one grey that reads on any background.
+  capturedPiece: string;
 
   // A tooltip: the reverse of the screen around it.
   inverseSurface: string;
@@ -188,7 +188,7 @@ export const lightTheme: Theme = {
     warning: '#c99a1c',
     badge: '#e53935',
     presenceOffline: '#bbb',
-    pieceOutline: 'transparent',
+    capturedPiece: '#888',
 
     inverseSurface: '#333',
     inverseText: '#fff',
@@ -267,7 +267,7 @@ export const darkTheme: Theme = {
     warning: '#d6a930',
     badge: '#e53935',
     presenceOffline: '#6d6a65',
-    pieceOutline: '#bab7b2',
+    capturedPiece: '#888',
 
     inverseSurface: '#e8e6e3',
     inverseText: '#161512',
