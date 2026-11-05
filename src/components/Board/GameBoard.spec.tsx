@@ -1,63 +1,33 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
-import { Color, Square } from 'chess.js';
+import { Color } from 'chess.js';
 
 import GameBoard from './GameBoard';
+import { boardTester } from './boardTester';
 import PromotionMenu from '../PromotionMenu';
 import {
-  ChessGameContext,
   ChessGameProvider,
   useChessGameContext,
 } from '../../context/ChessGameContext';
-import { useChessGame } from '../../hooks/useChessGame';
-import { getXYFromSquare } from '../../lib/chessboard/coordinates';
-import { NUMBER_OF_ROWS } from '../../constants';
-import {
-  dragPiece,
-  settleAnimations,
-  tapPiece,
-  touchPiece,
-} from '../../testUtils/pieceGestures';
-import { animatedStyleOf } from '../../testUtils/animatedValue';
-import { piecePositionOnScreen } from '../../testUtils/boardPosition';
-import { usePieceGesture } from '../../lib/chessboard/hooks/usePieceGesture';
+import { settleAnimations } from '../../testUtils/pieceGestures';
 
-// Passed straight through, only so a test can count the pieces' renders.
-jest.mock('../../lib/chessboard/hooks/usePieceGesture', () => {
-  const actual = jest.requireActual(
-    '../../lib/chessboard/hooks/usePieceGesture',
-  );
-  return { ...actual, usePieceGesture: jest.fn(actual.usePieceGesture) };
-});
-
+// The board playing a real game (useChessGame), driven and read through
+// boardTester - in the board's own terms, so these hold whatever library
+// draws it. How the library itself draws and moves pieces is tested in
+// src/lib/chessboard.
 describe('GameBoard', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
   const width = 400;
-  const PIECE_WIDTH = width / NUMBER_OF_ROWS;
 
   // Every gameplay behavior below is run from both sides of the board:
-  // orientation only changes where squares are drawn, so taps (by testID)
-  // and drags (by pixel delta) must land on the same squares either way.
+  // orientation only changes where squares are drawn, so taps and drags must
+  // land on the same squares either way.
   const PERSPECTIVES = [
     { name: 'white', orientation: 'w' },
     { name: 'black', orientation: 'b' },
   ] as const;
-
-  function dragDeltaBetween(
-    from: string,
-    to: string,
-    orientation: Color = 'w',
-  ) {
-    const fromPosition = getXYFromSquare(from, PIECE_WIDTH, orientation);
-    const toPosition = getXYFromSquare(to, PIECE_WIDTH, orientation);
-    return {
-      dx: toPosition.x - fromPosition.x,
-      dy: toPosition.y - fromPosition.y,
-    };
-  }
 
   function PromotionMenuForTest() {
     const { turn, pendingPromotion, promoteTo } = useChessGameContext();
@@ -66,165 +36,98 @@ describe('GameBoard', () => {
       <PromotionMenu
         promotingColor={turn}
         boardWidth={width}
-        pieceWidth={PIECE_WIDTH}
+        pieceWidth={width / 8}
         handlePromotion={promoteTo}
       />
     );
   }
 
-  function chessBoardTree(fen?: string, orientation?: Color) {
+  function boardTree(
+    fen?: string,
+    orientation?: Color,
+    props: Partial<React.ComponentProps<typeof GameBoard>> = {},
+  ) {
     return (
       <GestureHandlerRootView>
         <ChessGameProvider fen={fen}>
-          <GameBoard width={width} orientation={orientation} />
+          <GameBoard width={width} orientation={orientation} {...props} />
           <PromotionMenuForTest />
         </ChessGameProvider>
       </GestureHandlerRootView>
     );
   }
 
-  async function renderChessBoard(fen?: string, orientation?: Color) {
-    return render(chessBoardTree(fen, orientation));
-  }
-
-  function translateOf(element: { props: Record<string, unknown> }) {
-    const [{ translateX }, { translateY }] = animatedStyleOf(element).transform;
-    return { x: translateX, y: translateY };
-  }
-
-  // Where the piece with this testID is drawn on screen.
-  function pieceOnScreen(
-    screen: Awaited<ReturnType<typeof renderChessBoard>>,
-    testID: string,
+  async function renderBoard(
+    fen?: string,
+    orientation?: Color,
+    props?: Partial<React.ComponentProps<typeof GameBoard>>,
   ) {
-    return piecePositionOnScreen(
-      screen.getByTestId(testID),
-      screen.getByTestId('chessboard-pieces'),
-      PIECE_WIDTH,
-    );
+    const screen = await render(boardTree(fen, orientation, props));
+    return { screen, board: boardTester(screen) };
   }
 
-  it('should exist', () => {
-    expect(GameBoard).toBeDefined();
-  });
+  it('draws the game at the size given', async () => {
+    const { board } = await renderBoard();
 
-  it('should be a perfect square', async () => {
-    const screen = await renderChessBoard();
-    const result = screen.getByTestId('chessboard');
-    expect(result.props.style.width).toEqual(result.props.style.height);
-  });
-
-  it("doesn't re-render a piece when the screen around it re-renders, as a game's clock does every tick", async () => {
-    const screen = await renderChessBoard();
-    jest.mocked(usePieceGesture).mockClear();
-
-    await screen.rerender(chessBoardTree());
-
-    expect(usePieceGesture).not.toHaveBeenCalled();
-  });
-
-  it("doesn't re-render a piece when the game hands it new functions, as an online game does on every server push - it would cancel a drag", async () => {
-    // A game whose functions are new every time it renders.
-    function FreshFunctionsGame() {
-      const game = useChessGame();
-      const value = {
-        ...game,
-        attemptMove: (from: Square, to: Square) => game.attemptMove(from, to),
-      };
-      return (
-        <GestureHandlerRootView>
-          <ChessGameContext.Provider value={value}>
-            <GameBoard width={width} />
-          </ChessGameContext.Provider>
-        </GestureHandlerRootView>
-      );
-    }
-    const screen = await render(<FreshFunctionsGame />);
-    jest.mocked(usePieceGesture).mockClear();
-
-    await screen.rerender(<FreshFunctionsGame />);
-
-    expect(usePieceGesture).not.toHaveBeenCalled();
-  });
-
-  it('should not render the drag-and-drop guide visibly before any gesture', async () => {
-    const screen = await renderChessBoard();
-
-    expect(animatedStyleOf(screen.getByTestId('drag-guide')).opacity).toBe(0);
+    expect(board.size()).toBe(width);
+    expect(Object.keys(board.pieces())).toHaveLength(32);
+    expect(board.pieceOn('e1')).toBe('wk');
+    expect(board.pieceOn('d8')).toBe('bq');
   });
 
   describe('last move', () => {
-    function squareOf(
-      screen: Awaited<ReturnType<typeof renderChessBoard>>,
-      end: 'from' | 'to',
-    ) {
-      const { left, top } = StyleSheet.flatten(
-        screen.getByTestId(`last-move-${end}`).props.style,
-      );
-      return { x: left, y: top };
-    }
-
     it('marks no move before one is played', async () => {
-      const screen = await renderChessBoard();
+      const { board } = await renderBoard();
 
-      expect(screen.queryByTestId('last-move-from')).toBeNull();
+      expect(board.lastMove()).toBeNull();
     });
 
     it('marks the move just made', async () => {
-      const screen = await renderChessBoard();
+      const { board } = await renderBoard();
 
-      await fireEvent.press(screen.getByTestId('square-e2'));
-      await fireEvent.press(screen.getByTestId('square-e4'));
+      await board.taps('e2', 'e4');
 
-      expect(squareOf(screen, 'from')).toEqual(
-        getXYFromSquare('e2', PIECE_WIDTH),
-      );
-      expect(squareOf(screen, 'to')).toEqual(
-        getXYFromSquare('e4', PIECE_WIDTH),
-      );
+      expect(board.lastMove()).toEqual({ from: 'e2', to: 'e4' });
     });
 
     it("marks the game's last move until the board makes one, as on a game resumed", async () => {
-      const screen = await render(
-        <GestureHandlerRootView>
-          <ChessGameProvider fen="rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1">
-            <GameBoard
-              width={width}
-              lastPlayedMove={{ from: 'e2', to: 'e4', piece: 'p' }}
-            />
-          </ChessGameProvider>
-        </GestureHandlerRootView>,
+      const { board } = await renderBoard(
+        'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+        'w',
+        { lastPlayedMove: { from: 'e2', to: 'e4', piece: 'p' } },
       );
-      expect(squareOf(screen, 'to')).toEqual(
-        getXYFromSquare('e4', PIECE_WIDTH),
+      expect(board.lastMove()).toEqual({ from: 'e2', to: 'e4' });
+
+      await board.taps('e7', 'e5');
+
+      expect(board.lastMove()).toEqual({ from: 'e7', to: 'e5' });
+    });
+
+    it("marks the king's and rook's starting squares for a castle", async () => {
+      const { board } = await renderBoard(
+        'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1',
       );
 
-      await fireEvent.press(screen.getByTestId('square-e7'));
-      await fireEvent.press(screen.getByTestId('square-e5'));
+      await board.taps('e1', 'c1');
 
-      expect(squareOf(screen, 'from')).toEqual(
-        getXYFromSquare('e7', PIECE_WIDTH),
-      );
+      expect(board.lastMove()).toEqual({ from: 'e1', to: 'a1' });
     });
   });
 
-  it("marks the king's and rook's starting squares for a castle", async () => {
-    const screen = await renderChessBoard(
-      'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1',
-    );
+  describe('a king in danger', () => {
+    it('marks the king in check', async () => {
+      const { board } = await renderBoard('4k3/8/8/8/8/8/8/R3K3 w - - 0 1');
 
-    await fireEvent.press(screen.getByTestId('square-e1'));
-    await fireEvent.press(screen.getByTestId('square-c1'));
+      await board.taps('a1', 'a8');
 
-    const marked = (end: string) =>
-      StyleSheet.flatten(screen.getByTestId(`last-move-${end}`).props.style);
-    expect(marked('from')).toMatchObject({
-      left: getXYFromSquare('e1', PIECE_WIDTH).x,
-      top: getXYFromSquare('e1', PIECE_WIDTH).y,
+      expect(board.kingInDanger()).toEqual({ square: 'e8', fallen: false });
     });
-    expect(marked('to')).toMatchObject({
-      left: getXYFromSquare('a1', PIECE_WIDTH).x,
-      top: getXYFromSquare('a1', PIECE_WIDTH).y,
+
+    it('tips over the king of the side that lost', async () => {
+      const { board } = await renderBoard(undefined, 'w', { defeated: 'b' });
+      await settleAnimations();
+
+      expect(board.kingInDanger()).toEqual({ square: 'e8', fallen: true });
     });
   });
 
@@ -232,77 +135,72 @@ describe('GameBoard', () => {
     describe.each(PERSPECTIVES)(
       "from $name's perspective",
       ({ orientation }) => {
-        it('should move a piece when its square then an empty target square are tapped', async () => {
-          const screen = await renderChessBoard(undefined, orientation);
+        it('moves a piece when its square then an empty target square are tapped', async () => {
+          const { board } = await renderBoard(undefined, orientation);
 
-          await fireEvent.press(screen.getByTestId('square-e2'));
-          await fireEvent.press(screen.getByTestId('square-e4'));
+          await board.taps('e2', 'e4');
 
-          expect(screen.queryByTestId('piece-e2')).toBeNull();
-          expect(screen.getByTestId('piece-e4')).toBeTruthy();
+          expect(board.pieceOn('e2')).toBeNull();
+          expect(board.pieceOn('e4')).toBe('wp');
         });
 
-        it('should keep the selection (no-op) when the same square is tapped twice', async () => {
-          const screen = await renderChessBoard(undefined, orientation);
+        it("shows a selected piece's moves", async () => {
+          const { board } = await renderBoard(undefined, orientation);
 
-          await fireEvent.press(screen.getByTestId('square-e2'));
-          await fireEvent.press(screen.getByTestId('square-e2'));
-          expect(screen.getByTestId('piece-e2')).toBeTruthy();
+          await board.tap('g1');
 
-          await fireEvent.press(screen.getByTestId('square-e4'));
-
-          expect(screen.getByTestId('piece-e4')).toBeTruthy();
+          expect(board.movesShown().sort()).toEqual(['f3', 'h3']);
         });
 
-        it('should switch selection when a different own piece is tapped', async () => {
-          const screen = await renderChessBoard(undefined, orientation);
+        it('keeps the selection when the same square is tapped twice', async () => {
+          const { board } = await renderBoard(undefined, orientation);
 
-          await fireEvent.press(screen.getByTestId('square-e2')); // select the pawn
-          await fireEvent.press(screen.getByTestId('square-b1')); // switch to the knight
-          await fireEvent.press(screen.getByTestId('square-a3')); // legal knight move
+          await board.taps('e2', 'e2', 'e4');
 
-          expect(screen.getByTestId('piece-a3')).toBeTruthy();
-          expect(screen.getByTestId('piece-e2')).toBeTruthy(); // the pawn never moved
+          expect(board.pieceOn('e4')).toBe('wp');
         });
 
-        it("should treat tapping an opponent-occupied square as the move's target", async () => {
-          const screen = await renderChessBoard(undefined, orientation);
-          await fireEvent.press(screen.getByTestId('square-e2'));
-          await fireEvent.press(screen.getByTestId('square-e4'));
-          await fireEvent.press(screen.getByTestId('square-d7'));
-          await fireEvent.press(screen.getByTestId('square-d5'));
+        it('switches selection when a different own piece is tapped', async () => {
+          const { board } = await renderBoard(undefined, orientation);
 
-          await fireEvent.press(screen.getByTestId('square-e4'));
-          await fireEvent.press(screen.getByTestId('square-d5'));
+          await board.taps('e2', 'b1', 'a3');
 
-          expect(screen.queryByTestId('piece-e4')).toBeNull();
-          expect(screen.getByTestId('piece-d5')).toBeTruthy();
+          expect(board.pieceOn('a3')).toBe('wn');
+          expect(board.pieceOn('e2')).toBe('wp');
         });
 
-        it('should do nothing when an empty square is tapped with no selection', async () => {
-          const screen = await renderChessBoard(undefined, orientation);
+        it("treats tapping an opponent-occupied square as the move's target", async () => {
+          const { board } = await renderBoard(undefined, orientation);
+          await board.taps('e2', 'e4', 'd7', 'd5');
 
-          await fireEvent.press(screen.getByTestId('square-e4'));
+          await board.taps('e4', 'd5');
 
-          // Prove the tap didn't leave anything armed: a normal tap-to-move
-          // sequence right after should behave exactly as it would on a fresh
-          // board, not be affected by the earlier no-op tap in any way.
-          await fireEvent.press(screen.getByTestId('square-e2'));
-          await fireEvent.press(screen.getByTestId('square-e4'));
-
-          expect(screen.getByTestId('piece-e4')).toBeTruthy();
+          expect(board.pieceOn('e4')).toBeNull();
+          expect(board.pieceOn('d5')).toBe('wp');
         });
 
-        it('should remove the captured piece from the board once the move is applied', async () => {
-          const screen = await renderChessBoard(
+        it('does nothing when an empty square is tapped with no selection', async () => {
+          const { board } = await renderBoard(undefined, orientation);
+
+          await board.tap('e4');
+          // Nothing left armed: a tap-to-move right after works as on a
+          // fresh board.
+          await board.taps('e2', 'e4');
+
+          expect(board.pieceOn('e4')).toBe('wp');
+        });
+
+        it('takes the piece captured off the board', async () => {
+          const { board } = await renderBoard(
             'r3k3/8/8/8/8/8/8/R3K3 w - - 0 1',
             orientation,
           );
 
-          await fireEvent.press(screen.getByTestId('square-a1'));
-          await fireEvent.press(screen.getByTestId('square-a8'));
+          await board.taps('a1', 'a8');
+          await settleAnimations();
 
-          expect(screen.getByTestId('piece-a8')).toBeTruthy();
+          expect(board.pieceOn('a8')).toBe('wr');
+          expect(Object.keys(board.pieces())).toHaveLength(3);
         });
       },
     );
@@ -312,98 +210,54 @@ describe('GameBoard', () => {
     describe.each(PERSPECTIVES)(
       "from $name's perspective",
       ({ orientation }) => {
-        it('should move a piece when dragged to an empty target square', async () => {
-          const screen = await renderChessBoard(undefined, orientation);
-          const { dx, dy } = dragDeltaBetween('e2', 'e4', orientation);
+        it('moves a piece dragged to an empty target square', async () => {
+          const { board } = await renderBoard(undefined, orientation);
 
-          await dragPiece('piece-e2', dx, dy);
+          await board.drag('e2', 'e4');
 
-          expect(screen.queryByTestId('piece-e2')).toBeNull();
-          expect(screen.getByTestId('piece-e4')).toBeTruthy();
+          expect(board.pieceOn('e2')).toBeNull();
+          expect(board.pieceOn('e4')).toBe('wp');
         });
 
-        it('should show a piece that later lands where a drop took one', async () => {
+        it('shows a piece that later lands where a drop took one', async () => {
           // d4xe5 dropped, then d6xe5 back.
-          const screen = await renderChessBoard(
+          const { board } = await renderBoard(
             '4k3/8/3p4/4p3/3P4/8/8/4K3 w - - 0 1',
             orientation,
           );
 
-          const capture = dragDeltaBetween('d4', 'e5', orientation);
-          await dragPiece('piece-d4', capture.dx, capture.dy);
-          // Not dropped - as the opponent's move comes, from the server.
-          await fireEvent.press(screen.getByTestId('square-d6'));
-          await fireEvent.press(screen.getByTestId('square-e5'));
+          await board.drag('d4', 'e5');
+          await board.taps('d6', 'e5');
           await settleAnimations();
 
-          expect(screen.queryByTestId('piece-d6')).toBeNull();
-          expect(animatedStyleOf(screen.getByTestId('piece-e5')).opacity).toBe(
-            1,
-          );
+          expect(board.pieceOn('d6')).toBeNull();
+          expect(board.pieceOn('e5')).toBe('bp');
         });
 
-        it("should not move an opponent's piece even if dragged", async () => {
-          const screen = await renderChessBoard(undefined, orientation); // white to move
-          const { dx, dy } = dragDeltaBetween('e7', 'e5', orientation);
+        it("doesn't move an opponent's piece, even dragged", async () => {
+          const { board } = await renderBoard(undefined, orientation);
 
-          await dragPiece('piece-e7', dx, dy);
+          await board.drag('e7', 'e5');
 
-          expect(screen.getByTestId('piece-e7')).toBeTruthy();
-          expect(screen.queryByTestId('piece-e5')).toBeNull();
+          expect(board.pieceOn('e7')).toBe('bp');
+          expect(board.pieceOn('e5')).toBeNull();
         });
 
-        it('should select the square (not move) when a piece is tapped through the drag responder without real movement', async () => {
-          const screen = await renderChessBoard(undefined, orientation);
+        it('puts a piece back on its square when dragged off the board', async () => {
+          const { board } = await renderBoard(undefined, orientation);
 
-          await tapPiece('piece-e2');
-          await fireEvent.press(screen.getByTestId('square-e4'));
+          await board.dragOff('g1');
 
-          expect(screen.getByTestId('piece-e4')).toBeTruthy();
+          expect(board.pieceOn('g1')).toBe('wn');
+          expect(board.pieceDrawnAt('g1')).toEqual(board.squareAt('g1'));
         });
 
-        it('should snap a piece back to its square when dragged off the board entirely', async () => {
-          const screen = await renderChessBoard(undefined, orientation);
+        it("shows a piece's moves as soon as it's touched", async () => {
+          const { board } = await renderBoard(undefined, orientation);
 
-          // Drag the g1 knight far off the board's right edge - off the board
-          // from either side, well past any legal target. onPanResponderMove
-          // follows the finger live (outside React state), so a rejected drop
-          // must be explicitly sent back (it slides home) or the sprite is
-          // left stranded wherever the gesture ended, even though the piece
-          // is still legitimately on g1.
+          await board.touch('e2');
 
-          await dragPiece('piece-g1', 2 * width, 0);
-
-          expect(pieceOnScreen(screen, 'piece-g1')).toEqual(
-            getXYFromSquare('g1', PIECE_WIDTH, orientation),
-          );
-        });
-
-        it('should show the correct legal-move indicators as soon as a piece is touched', async () => {
-          const screen = await renderChessBoard(undefined, orientation);
-
-          await touchPiece('piece-e2');
-
-          expect(screen.getByTestId('valid-move-e3').props.style.opacity).toBe(
-            1,
-          );
-          expect(screen.getByTestId('valid-move-e4').props.style.opacity).toBe(
-            1,
-          );
-          expect(screen.getByTestId('valid-move-e5').props.style.opacity).toBe(
-            0,
-          );
-        });
-
-        it("should show the drag guide at the touched piece's own square, not a stale position, on touch-down", async () => {
-          const screen = await renderChessBoard(undefined, orientation);
-
-          await touchPiece('piece-e2');
-
-          const guide = screen.getByTestId('drag-guide');
-          expect(animatedStyleOf(guide).opacity).toBe(1);
-          expect(translateOf(guide)).toEqual(
-            getXYFromSquare('e2', PIECE_WIDTH, orientation),
-          );
+          expect(board.movesShown().sort()).toEqual(['e3', 'e4']);
         });
       },
     );
@@ -413,35 +267,26 @@ describe('GameBoard', () => {
     describe.each(PERSPECTIVES)(
       "from $name's perspective",
       ({ orientation }) => {
-        it('should not leave a stale tap-selection armed after an unrelated illegal drag', async () => {
-          const screen = await renderChessBoard(undefined, orientation);
+        it("doesn't leave a tap selection armed after an unrelated illegal drag", async () => {
+          const { board } = await renderBoard(undefined, orientation);
 
-          await fireEvent.press(screen.getByTestId('square-e2'));
+          await board.tap('e2');
+          await board.drag('c1', 'c2');
+          // Nothing selected now: no move.
+          await board.tap('e4');
 
-          const { dx, dy } = dragDeltaBetween('c1', 'c2', orientation);
-          await dragPiece('piece-c1', dx, dy);
-
-          // Tapping an empty square now, with nothing actually selected anymore,
-          // must be a no-op - NOT silently move the e2 pawn there.
-          await fireEvent.press(screen.getByTestId('square-e4'));
-
-          expect(screen.getByTestId('piece-e2')).toBeTruthy();
-          expect(screen.queryByTestId('piece-e4')).toBeNull();
+          expect(board.pieceOn('e2')).toBe('wp');
+          expect(board.pieceOn('e4')).toBeNull();
         });
 
-        it('should let a fresh tap select a new piece after an unrelated illegal drag', async () => {
-          const screen = await renderChessBoard(undefined, orientation);
+        it('lets a fresh tap select a new piece after an unrelated illegal drag', async () => {
+          const { board } = await renderBoard(undefined, orientation);
 
-          await fireEvent.press(screen.getByTestId('square-e2'));
+          await board.tap('e2');
+          await board.drag('c1', 'c2');
+          await board.taps('d2', 'd4');
 
-          const { dx, dy } = dragDeltaBetween('c1', 'c2', orientation);
-          await dragPiece('piece-c1', dx, dy);
-
-          // A fresh, deliberate tap-to-move sequence afterward should work normally.
-          await fireEvent.press(screen.getByTestId('square-d2'));
-          await fireEvent.press(screen.getByTestId('square-d4'));
-
-          expect(screen.getByTestId('piece-d4')).toBeTruthy();
+          expect(board.pieceOn('d4')).toBe('wp');
         });
       },
     );
@@ -451,32 +296,30 @@ describe('GameBoard', () => {
     describe.each(PERSPECTIVES)(
       "from $name's perspective",
       ({ orientation }) => {
-        it('should castle kingside for white, moving the rook too', async () => {
-          const screen = await renderChessBoard(
+        it('castles kingside for white, moving the rook too', async () => {
+          const { board } = await renderBoard(
             'r1bqk2r/pppp1ppp/2n2n2/2b1p1N1/2B1P3/8/PPPP1PPP/RNBQK2R w KQkq - 6 5',
             orientation,
           );
 
-          await fireEvent.press(screen.getByTestId('square-e1'));
-          await fireEvent.press(screen.getByTestId('square-g1'));
+          await board.taps('e1', 'g1');
 
-          expect(screen.getByTestId('piece-g1')).toBeTruthy();
-          expect(screen.getByTestId('piece-f1')).toBeTruthy();
-          expect(screen.queryByTestId('piece-h1')).toBeNull();
+          expect(board.pieceOn('g1')).toBe('wk');
+          expect(board.pieceOn('f1')).toBe('wr');
+          expect(board.pieceOn('h1')).toBeNull();
         });
 
-        it('should castle queenside for black, moving the rook too', async () => {
-          const screen = await renderChessBoard(
+        it('castles queenside for black by drag, moving the rook too', async () => {
+          const { board } = await renderBoard(
             'r3kbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1',
             orientation,
           );
 
-          await fireEvent.press(screen.getByTestId('square-e8'));
-          await fireEvent.press(screen.getByTestId('square-c8'));
+          await board.drag('e8', 'c8');
 
-          expect(screen.getByTestId('piece-c8')).toBeTruthy();
-          expect(screen.getByTestId('piece-d8')).toBeTruthy();
-          expect(screen.queryByTestId('piece-a8')).toBeNull();
+          expect(board.pieceOn('c8')).toBe('bk');
+          expect(board.pieceOn('d8')).toBe('br');
+          expect(board.pieceOn('a8')).toBeNull();
         });
       },
     );
@@ -486,23 +329,15 @@ describe('GameBoard', () => {
     describe.each(PERSPECTIVES)(
       "from $name's perspective",
       ({ orientation }) => {
-        it('should capture en passant and remove the captured pawn', async () => {
-          const screen = await renderChessBoard(undefined, orientation);
+        it('captures en passant, taking the pawn passed', async () => {
+          const { board } = await renderBoard(undefined, orientation);
+          await board.taps('e2', 'e4', 'a7', 'a6', 'e4', 'e5', 'd7', 'd5');
 
-          await fireEvent.press(screen.getByTestId('square-e2'));
-          await fireEvent.press(screen.getByTestId('square-e4'));
-          await fireEvent.press(screen.getByTestId('square-a7'));
-          await fireEvent.press(screen.getByTestId('square-a6'));
-          await fireEvent.press(screen.getByTestId('square-e4'));
-          await fireEvent.press(screen.getByTestId('square-e5'));
-          await fireEvent.press(screen.getByTestId('square-d7'));
-          await fireEvent.press(screen.getByTestId('square-d5'));
+          await board.taps('e5', 'd6');
+          await settleAnimations();
 
-          await fireEvent.press(screen.getByTestId('square-e5'));
-          await fireEvent.press(screen.getByTestId('square-d6'));
-
-          expect(screen.getByTestId('piece-d6')).toBeTruthy();
-          expect(screen.queryByTestId('piece-d5')).toBeNull();
+          expect(board.pieceOn('d6')).toBe('wp');
+          expect(board.pieceOn('d5')).toBeNull();
         });
       },
     );
@@ -512,24 +347,22 @@ describe('GameBoard', () => {
     describe.each(PERSPECTIVES)(
       "from $name's perspective",
       ({ orientation }) => {
-        it('should show the promotion menu without moving the pawn yet, then complete the move on a choice', async () => {
-          const screen = await renderChessBoard(
+        it('asks for the piece, then promotes to it', async () => {
+          const { screen, board } = await renderBoard(
             '8/4P3/8/2k5/8/4K3/8/8 w - - 0 1',
             orientation,
           );
 
-          await fireEvent.press(screen.getByTestId('square-e7'));
-          await fireEvent.press(screen.getByTestId('square-e8'));
+          await board.taps('e7', 'e8');
 
-          expect(screen.getByTestId('piece-e7')).toBeTruthy();
-          expect(screen.queryByTestId('piece-e8')).toBeNull();
-          const promotionChoice = screen.getByTestId('promote-q');
+          expect(board.pieceOn('e7')).toBe('wp');
+          expect(board.pieceOn('e8')).toBeNull();
 
-          await fireEvent.press(promotionChoice);
+          await fireEvent.press(screen.getByTestId('promote-n'));
 
-          expect(screen.queryByTestId('piece-e7')).toBeNull();
-          expect(screen.getByTestId('piece-e8')).toBeTruthy();
-          expect(screen.queryByTestId('promote-q')).toBeNull();
+          expect(board.pieceOn('e7')).toBeNull();
+          expect(board.pieceOn('e8')).toBe('wn');
+          expect(screen.queryByTestId('promote-n')).toBeNull();
         });
       },
     );
@@ -539,40 +372,26 @@ describe('GameBoard', () => {
     describe.each(PERSPECTIVES)(
       "from $name's perspective",
       ({ orientation }) => {
-        it('should not allow moves once the game is already over', async () => {
-          const screen = await renderChessBoard(undefined, orientation);
+        it('allows no moves once the game is over', async () => {
+          const { board } = await renderBoard(undefined, orientation);
+          // Fool's mate.
+          await board.taps('f2', 'f3', 'e7', 'e5', 'g2', 'g4', 'd8', 'h4');
 
-          await fireEvent.press(screen.getByTestId('square-f2'));
-          await fireEvent.press(screen.getByTestId('square-f3'));
-          await fireEvent.press(screen.getByTestId('square-e7'));
-          await fireEvent.press(screen.getByTestId('square-e5'));
-          await fireEvent.press(screen.getByTestId('square-g2'));
-          await fireEvent.press(screen.getByTestId('square-g4'));
-          await fireEvent.press(screen.getByTestId('square-d8'));
-          await fireEvent.press(screen.getByTestId('square-h4')); // checkmate
+          await board.taps('e8', 'e7');
 
-          await fireEvent.press(screen.getByTestId('square-e8'));
-          await fireEvent.press(screen.getByTestId('square-e7'));
-
-          expect(screen.getByTestId('piece-e8')).toBeTruthy();
-          expect(screen.queryByTestId('piece-e7')).toBeNull();
+          expect(board.pieceOn('e8')).toBe('bk');
+          expect(board.pieceOn('e7')).toBeNull();
         });
 
-        it('should not crash through a chain of select/re-tap(no-op)/reselect taps', async () => {
-          const screen = await renderChessBoard(undefined, orientation);
+        it('survives a chain of select, re-tap and reselect taps', async () => {
+          const { board } = await renderBoard(undefined, orientation);
 
-          await fireEvent.press(screen.getByTestId('square-e2')); // select pawn
-          await fireEvent.press(screen.getByTestId('square-e2')); // re-tap, no-op
-          await fireEvent.press(screen.getByTestId('square-d2')); // select another pawn
-          await fireEvent.press(screen.getByTestId('square-b1')); // switch to knight
-          await fireEvent.press(screen.getByTestId('square-b1')); // re-tap, no-op
-          await fireEvent.press(screen.getByTestId('square-g1')); // select other knight
-          await fireEvent.press(screen.getByTestId('square-f3')); // legal move
+          await board.taps('e2', 'e2', 'd2', 'b1', 'b1', 'g1', 'f3');
 
-          expect(screen.getByTestId('piece-f3')).toBeTruthy();
-          expect(screen.getByTestId('piece-e2')).toBeTruthy();
-          expect(screen.getByTestId('piece-d2')).toBeTruthy();
-          expect(screen.getByTestId('piece-b1')).toBeTruthy();
+          expect(board.pieceOn('f3')).toBe('wn');
+          expect(board.pieceOn('e2')).toBe('wp');
+          expect(board.pieceOn('d2')).toBe('wp');
+          expect(board.pieceOn('b1')).toBe('wn');
         });
       },
     );
@@ -585,32 +404,26 @@ describe('GameBoard', () => {
     ] as const)(
       "from $name's perspective",
       ({ orientation, bottomLeft, topRight }) => {
-        it(`renders ${bottomLeft} at the bottom-left and ${topRight} at the top-right`, async () => {
-          const screen = await renderChessBoard(undefined, orientation);
+        it(`draws ${bottomLeft} at the bottom-left and ${topRight} at the top-right`, async () => {
+          const { board } = await renderBoard(undefined, orientation);
+          const square = width / 8;
 
-          expect(pieceOnScreen(screen, `piece-${bottomLeft}`)).toEqual({
+          expect(board.pieceDrawnAt(bottomLeft)).toEqual({
             x: 0,
-            y: 7 * PIECE_WIDTH,
+            y: 7 * square,
           });
-          expect(pieceOnScreen(screen, `piece-${topRight}`)).toEqual({
-            x: 7 * PIECE_WIDTH,
-            y: 0,
-          });
+          expect(board.pieceDrawnAt(topRight)).toEqual({ x: 7 * square, y: 0 });
         });
 
-        it('repositions every piece when flipped to this perspective', async () => {
+        it('turns every piece round at once when flipped to this side', async () => {
           const other = orientation === 'w' ? 'b' : 'w';
-          const screen = await renderChessBoard(undefined, other);
-          expect(pieceOnScreen(screen, 'piece-e2')).toEqual(
-            getXYFromSquare('e2', PIECE_WIDTH, other),
-          );
+          const { screen, board } = await renderBoard(undefined, other);
 
-          await screen.rerender(chessBoardTree(undefined, orientation));
+          await screen.rerender(boardTree(undefined, orientation));
 
           // In the same render as the squares - not a frame later.
-          expect(pieceOnScreen(screen, 'piece-e2')).toEqual(
-            getXYFromSquare('e2', PIECE_WIDTH, orientation),
-          );
+          expect(board.orientation()).toBe(orientation);
+          expect(board.pieceDrawnAt('e2')).toEqual(board.squareAt('e2'));
         });
       },
     );

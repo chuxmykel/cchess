@@ -1,8 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, within } from '@testing-library/react-native';
-import { DEFAULT_POSITION } from 'chess.js';
+import { DEFAULT_POSITION, Square } from 'chess.js';
 
 import AnalysisBoardContent from './AnalysisBoardContent';
+import { boardTester } from '../../components/Board/boardTester';
 import { AnalysisSettingsProvider } from '../../context/AnalysisSettingsContext';
 import { EngineContext, EngineStatus } from '../../context/EngineContext';
 import { AnalysisSettings } from '../../constants/analysis';
@@ -72,11 +73,10 @@ describe('AnalysisBoardContent', () => {
 
   async function play(
     screen: Awaited<ReturnType<typeof render>>,
-    from: string,
-    to: string,
+    from: Square,
+    to: Square,
   ) {
-    await fireEvent.press(screen.getByTestId(`square-${from}`));
-    await fireEvent.press(screen.getByTestId(`square-${to}`));
+    await boardTester(screen).taps(from, to);
     await settleAnimations();
   }
 
@@ -86,8 +86,9 @@ describe('AnalysisBoardContent', () => {
     await play(screen, 'e2', 'e4');
     await play(screen, 'e7', 'e5');
 
-    expect(screen.getByTestId('piece-e4')).toBeTruthy();
-    expect(screen.getByTestId('piece-e5')).toBeTruthy();
+    const board = boardTester(screen);
+    expect(board.pieceOn('e4')).toBe('wp');
+    expect(board.pieceOn('e5')).toBe('bp');
     expect(screen.getByText('1. e4')).toBeTruthy();
     expect(screen.getByText('e5')).toBeTruthy();
   });
@@ -97,12 +98,12 @@ describe('AnalysisBoardContent', () => {
 
     await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
     await settleAnimations();
-    expect(screen.getByTestId('piece-e7')).toBeTruthy();
+    expect(boardTester(screen).pieceOn('e7')).toBe('bp');
     await play(screen, 'c7', 'c5');
 
     expect(screen.getByText('1... c5')).toBeTruthy();
     expect(screen.getByText('(')).toBeTruthy();
-    expect(screen.getByTestId('piece-c5')).toBeTruthy();
+    expect(boardTester(screen).pieceOn('c5')).toBe('bp');
   });
 
   it('names the opening', async () => {
@@ -131,8 +132,9 @@ describe('AnalysisBoardContent', () => {
 
     expect(screen.getByTestId('engine-line-0-score')).toHaveTextContent('+0.3');
     expect(screen.getByTestId('eval-bar-score')).toHaveTextContent('+0.3');
-    expect(screen.getByTestId('arrow-e2e4')).toBeTruthy();
-    expect(screen.getByTestId('arrow-d2d4')).toBeTruthy();
+    expect(boardTester(screen).arrows()).toEqual(
+      expect.arrayContaining(['e2e4', 'd2d4']),
+    );
   });
 
   it('analyses the new position once a move is played', async () => {
@@ -179,13 +181,13 @@ describe('AnalysisBoardContent', () => {
     await fireEvent.press(screen.getByTestId('engine-line-1'));
     await settleAnimations();
 
-    expect(screen.getByTestId('piece-d4')).toBeTruthy();
+    expect(boardTester(screen).pieceOn('d4')).toBe('wp');
     expect(
       within(screen.getByTestId('variation-move-list')).getByText('1. d4'),
     ).toBeTruthy();
     // The last position's lines stay, greyed, and its arrows go.
     expect(screen.getByTestId('engine-line-0')).toBeDisabled();
-    expect(screen.queryByTestId('arrow-e2e4')).toBeNull();
+    expect(boardTester(screen).arrows()).not.toContain('e2e4');
   });
 
   it('opens the settings from its menu', async () => {
@@ -236,7 +238,7 @@ describe('AnalysisBoardContent', () => {
     });
 
     expect(screen.getByTestId('eval-bar')).toHaveStyle({ width: 18 });
-    expect(screen.getByTestId('chessboard')).toHaveStyle({ width: width - 18 });
+    expect(boardTester(screen).size()).toBe(width - 18);
   });
 
   it('shows the download while the engine is on its way', async () => {

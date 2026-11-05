@@ -1,13 +1,12 @@
-import { act, fireEvent, render, within } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 
 import AnalysisBoard from '.';
+import { boardTester } from '../../components/Board/boardTester';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { AnalysisSettingsProvider } from '../../context/AnalysisSettingsContext';
 import { EngineContext } from '../../context/EngineContext';
 import { AnalysisSource } from '../../hooks/useAnalysisSource';
 import { makeAuthSession } from '../../testUtils/authSession';
-import { piecePositionOnScreen } from '../../testUtils/boardPosition';
 import { waitForSheetToClose } from '../../testUtils/modal';
 import { withSafeArea } from '../../testUtils/safeArea';
 
@@ -60,14 +59,15 @@ describe('AnalysisBoard', () => {
     await fireEvent.press(screen.getByTestId('set-up-menu'));
     await fireEvent.press(screen.getByTestId('editor-clear'));
     expect(screen.getByTestId('set-up-analyse')).toBeDisabled();
+    const editorBoard = boardTester(screen, 'setup');
     await fireEvent.press(screen.getByTestId('editor-tool-wk'));
-    await fireEvent.press(screen.getByTestId('square-e1'));
+    await editorBoard.tap('e1');
     await fireEvent.press(screen.getByTestId('editor-tool-bk'));
-    await fireEvent.press(screen.getByTestId('square-e8'));
+    await editorBoard.tap('e8');
     await fireEvent.press(screen.getByTestId('set-up-analyse'));
 
     expect(screen.getByTestId('analysis-board')).toBeTruthy();
-    expect(screen.getAllByTestId(/^piece-/)).toHaveLength(2);
+    expect(boardTester(screen).pieces()).toEqual({ e8: 'bk', e1: 'wk' });
     expect(navigation.setOptions).toHaveBeenLastCalledWith({
       title: 'Analysis',
     });
@@ -83,9 +83,7 @@ describe('AnalysisBoard', () => {
     await fireEvent.press(screen.getByTestId('game-menu-button'));
     await fireEvent.press(screen.getByTestId('edit-position-action'));
     await waitForSheetToClose();
-    expect(
-      within(screen.getByTestId('editor-board')).getByTestId('piece-d2'),
-    ).toBeTruthy();
+    expect(boardTester(screen, 'setup').pieceOn('d2')).toBe('wk');
 
     await fireEvent.press(screen.getByTestId('set-up-menu'));
     await fireEvent.press(screen.getByTestId('set-up-cancel'));
@@ -106,7 +104,7 @@ describe('AnalysisBoard', () => {
     await fireEvent.press(screen.getByTestId('new-analysis-action'));
 
     expect(screen.queryByText('1. Kd2')).toBeNull();
-    expect(screen.getAllByTestId(/^piece-/)).toHaveLength(32);
+    expect(Object.keys(boardTester(screen).pieces())).toHaveLength(32);
   });
 
   it("sets whose move it is and castling in the position's settings, and flips the board", async () => {
@@ -121,15 +119,12 @@ describe('AnalysisBoard', () => {
 
     await fireEvent.press(screen.getByTestId('set-up-flip'));
     // Black at the bottom: a8 drawn bottom right.
-    const editorBoard = screen.getByTestId('editor-board');
-    const square = StyleSheet.flatten(editorBoard.props.style).width / 8;
-    expect(
-      piecePositionOnScreen(
-        within(editorBoard).getByTestId('piece-a8'),
-        screen.getByTestId('editor-board-pieces'),
-        square,
-      ),
-    ).toEqual({ x: 7 * square, y: 7 * square });
+    const editorBoard = boardTester(screen, 'setup');
+    const square = editorBoard.size() / 8;
+    expect(editorBoard.pieceDrawnAt('a8')).toEqual({
+      x: 7 * square,
+      y: 7 * square,
+    });
 
     await fireEvent.press(screen.getByTestId('set-up-analyse'));
     expect(screen.getByTestId('analysis-board')).toBeTruthy();

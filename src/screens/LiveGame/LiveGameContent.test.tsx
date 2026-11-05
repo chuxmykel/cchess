@@ -1,6 +1,6 @@
-import { act, fireEvent, render, within } from '@testing-library/react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import { Color } from 'chess.js';
+import { Color, Square } from 'chess.js';
 
 import LiveGameContent, { LiveGameContentNavigation } from './LiveGameContent';
 import { OnlineChessGameProvider } from '../../context/LiveGame/OnlineChessGameContext';
@@ -14,7 +14,7 @@ import { makeGameSnapshot } from '../../testUtils/gameSnapshot';
 import { timeControlOf } from '../../constants/timeControls';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { waitForSheetToClose } from '../../testUtils/modal';
-import { piecePositionOnScreen } from '../../testUtils/boardPosition';
+import { boardTester } from '../../components/Board/boardTester';
 
 jest.mock('../../components/ConnectionStrengthIndicator', () =>
   jest.requireActual('../../testUtils/ConnectionStrengthIndicatorStub'),
@@ -90,13 +90,9 @@ describe('LiveGameContent', () => {
     return screen.getAllByTestId(/^player-bar-/).map((bar) => bar.props.testID);
   }
 
-  // How far down the board the piece with this testID is drawn.
-  function pieceYOnScreen(screen: Screen, testID: string) {
-    return piecePositionOnScreen(
-      screen.getByTestId(testID),
-      screen.getByTestId('chessboard-pieces'),
-      PIECE_WIDTH,
-    ).y;
+  // How far down the board the piece on this square is drawn.
+  function pieceYOnScreen(screen: Screen, square: Square) {
+    return boardTester(screen).pieceDrawnAt(square).y;
   }
 
   async function openGameMenu(screen: Screen) {
@@ -296,9 +292,7 @@ describe('LiveGameContent', () => {
     async (myColor, myKingSquare, expectedBarOrder) => {
       const { screen } = await renderContent(myColor);
 
-      expect(pieceYOnScreen(screen, `piece-${myKingSquare}`)).toBe(
-        BOTTOM_ROW_Y,
-      );
+      expect(pieceYOnScreen(screen, myKingSquare)).toBe(BOTTOM_ROW_Y);
       expect(playerBarOrder(screen)).toEqual(expectedBarOrder);
     },
   );
@@ -308,8 +302,8 @@ describe('LiveGameContent', () => {
 
     await flipViaMenu(screen);
 
-    expect(pieceYOnScreen(screen, 'piece-e8')).toBe(0);
-    expect(pieceYOnScreen(screen, 'piece-e1')).toBe(BOTTOM_ROW_Y);
+    expect(pieceYOnScreen(screen, 'e8')).toBe(0);
+    expect(pieceYOnScreen(screen, 'e1')).toBe(BOTTOM_ROW_Y);
     expect(playerBarOrder(screen)).toEqual([
       BLACK_PLAYER_BAR,
       WHITE_PLAYER_BAR,
@@ -317,7 +311,7 @@ describe('LiveGameContent', () => {
 
     await flipViaMenu(screen);
 
-    expect(pieceYOnScreen(screen, 'piece-e8')).toBe(BOTTOM_ROW_Y);
+    expect(pieceYOnScreen(screen, 'e8')).toBe(BOTTOM_ROW_Y);
     expect(playerBarOrder(screen)).toEqual([
       WHITE_PLAYER_BAR,
       BLACK_PLAYER_BAR,
@@ -477,14 +471,14 @@ describe('LiveGameContent', () => {
 
       await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
 
-      const earlier = within(screen.getByTestId('earlier-position'));
-      expect(earlier.getByTestId('piece-e2')).toBeTruthy();
-      expect(earlier.queryByTestId('piece-e4')).toBeNull();
+      const earlier = boardTester(screen, 'position');
+      expect(earlier.pieceOn('e2')).toBe('wp');
+      expect(earlier.pieceOn('e4')).toBeNull();
 
       await fireEvent(screen.getByTestId('next-move-button'), 'pressIn');
 
       expect(screen.queryByTestId('earlier-position')).toBeNull();
-      expect(screen.getByTestId('piece-e4')).toBeTruthy();
+      expect(boardTester(screen).pieceOn('e4')).toBe('wp');
     });
 
     it('keeps the live board mounted while browsing, so returning to live never remounts it', async () => {
@@ -492,13 +486,14 @@ describe('LiveGameContent', () => {
       await act(() =>
         pushMove(trigger, snapshot.id, moveSummary(1, 'e2', 'e4', AFTER_E4)),
       );
-      const liveBoard = screen.getByTestId('chessboard');
+      const board = boardTester(screen);
+      const liveBoard = board.element();
 
       await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
-      expect(screen.getByTestId('chessboard')).toBe(liveBoard);
+      expect(board.element()).toBe(liveBoard);
 
       await fireEvent(screen.getByTestId('next-move-button'), 'pressIn');
-      expect(screen.getByTestId('chessboard')).toBe(liveBoard);
+      expect(board.element()).toBe(liveBoard);
     });
 
     it('keeps the earlier-position board mounted but hidden while live, so stepping back reuses it', async () => {
@@ -506,14 +501,14 @@ describe('LiveGameContent', () => {
       await act(() =>
         pushMove(trigger, snapshot.id, moveSummary(1, 'e2', 'e4', AFTER_E4)),
       );
-      expect(screen.queryByTestId('static-chessboard')).toBeNull();
-      const hiddenStaticBoard = screen.getByTestId('static-chessboard', {
-        includeHiddenElements: true,
-      });
+      const earlier = boardTester(screen, 'position', { includeHidden: true });
+      expect(boardTester(screen, 'position').isShown()).toBe(false);
+      const hiddenBoard = earlier.element();
 
       await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
 
-      expect(screen.getByTestId('static-chessboard')).toBe(hiddenStaticBoard);
+      expect(boardTester(screen, 'position').isShown()).toBe(true);
+      expect(earlier.element()).toBe(hiddenBoard);
     });
 
     it('lists the moves and jumps to one when it is tapped', async () => {
@@ -529,9 +524,9 @@ describe('LiveGameContent', () => {
       await fireEvent.press(screen.getByTestId('move-1'));
 
       expect(screen.getByTestId('move-1')).toBeSelected();
-      const earlier = within(screen.getByTestId('earlier-position'));
-      expect(earlier.getByTestId('piece-e4')).toBeTruthy();
-      expect(earlier.getByTestId('piece-e7')).toBeTruthy();
+      const earlier = boardTester(screen, 'position');
+      expect(earlier.pieceOn('e4')).toBe('wp');
+      expect(earlier.pieceOn('e7')).toBe('bp');
     });
 
     it('returns to live when a new move arrives while browsing', async () => {
@@ -546,8 +541,9 @@ describe('LiveGameContent', () => {
       );
 
       expect(screen.queryByTestId('earlier-position')).toBeNull();
-      expect(screen.getByTestId('piece-e4')).toBeTruthy();
-      expect(screen.getByTestId('piece-e5')).toBeTruthy();
+      const board = boardTester(screen);
+      expect(board.pieceOn('e4')).toBe('wp');
+      expect(board.pieceOn('e5')).toBe('bp');
     });
   });
 
@@ -567,7 +563,7 @@ describe('LiveGameContent', () => {
     expect(screen.queryByTestId('resign-action')).toBeNull();
     await chooseMenuAction(screen, 'flip-board-action');
 
-    expect(pieceYOnScreen(screen, 'piece-e1')).toBe(0);
+    expect(pieceYOnScreen(screen, 'e1')).toBe(0);
     expect(playerBarOrder(screen)).toEqual([
       WHITE_PLAYER_BAR,
       BLACK_PLAYER_BAR,

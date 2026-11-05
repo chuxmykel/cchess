@@ -3,6 +3,8 @@ import { getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 
 import { Chessboard, ChessboardProps, PieceImages } from '..';
 import { getXYFromSquare } from '../coordinates';
+import { usePieceGesture } from '../hooks/usePieceGesture';
+import { animatedStyleOf } from '../../../testUtils/animatedValue';
 import { piecePositionOnScreen } from '../../../testUtils/boardPosition';
 import {
   dragPiece,
@@ -10,6 +12,12 @@ import {
   tapPiece,
   touchPiece,
 } from '../../../testUtils/pieceGestures';
+
+// Passed straight through, only so a test can count the pieces' renders.
+jest.mock('../hooks/usePieceGesture', () => {
+  const actual = jest.requireActual('../hooks/usePieceGesture');
+  return { ...actual, usePieceGesture: jest.fn(actual.usePieceGesture) };
+});
 
 const SIZE = 400;
 const SQUARE = SIZE / 8;
@@ -22,9 +30,15 @@ const COLORS = {
   dragOrigin: 'orange',
   check: 'red',
 };
-const PIECE_IMAGES = new Proxy({} as PieceImages, {
-  get: (_, code) => ({ uri: `${String(code)}.png` }),
-});
+// The same object for a piece every time, as an app's images are.
+const PIECE_IMAGES = Object.fromEntries(
+  ['w', 'b'].flatMap((color) =>
+    ['p', 'n', 'b', 'r', 'q', 'k'].map((type) => [
+      `${color}${type}`,
+      { uri: `${color}${type}.png` },
+    ]),
+  ),
+) as PieceImages;
 
 // Only what the board's told: no rules of its own.
 const E2_MOVES = { e2: ['e3', 'e4'] } as ChessboardProps['movable']['dests'];
@@ -58,6 +72,68 @@ function onScreen(screen: Screen, square: string) {
 describe('Chessboard', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
+
+  it('is a square of the size given', async () => {
+    const screen = await render(board());
+
+    expect(screen.getByTestId('chessboard')).toHaveStyle({
+      width: SIZE,
+      height: SIZE,
+    });
+  });
+
+  describe('re-renders no piece - which would set its gestures up again, cancelling a drag - when', () => {
+    const movable = { color: 'w' as const, dests: E2_MOVES };
+
+    it('given the same props again, as by a screen re-rendering around it', async () => {
+      const onMove = jest.fn();
+      const screen = await render(board({ movable, onMove }));
+      jest.mocked(usePieceGesture).mockClear();
+
+      await screen.rerender(board({ movable, onMove }));
+
+      expect(usePieceGesture).not.toHaveBeenCalled();
+    });
+
+    it('handed new callbacks, as an app hands over on every render', async () => {
+      const screen = await render(board({ movable, onMove: () => {} }));
+      jest.mocked(usePieceGesture).mockClear();
+
+      await screen.rerender(
+        board({ movable, onMove: () => {}, onSquarePress: () => {} }),
+      );
+
+      expect(usePieceGesture).not.toHaveBeenCalled();
+    });
+  });
+
+  describe.each(['w', 'b'] as const)(
+    'the drag guide, facing %s',
+    (orientation) => {
+      const movable = { color: 'w' as const, dests: E2_MOVES };
+
+      it('is hidden before any touch', async () => {
+        const screen = await render(board({ movable, orientation }));
+
+        expect(animatedStyleOf(screen.getByTestId('drag-guide')).opacity).toBe(
+          0,
+        );
+      });
+
+      it("shows on the touched piece's own square at touch-down", async () => {
+        const screen = await render(board({ movable, orientation }));
+
+        await touchPiece('piece-e2');
+
+        const guide = animatedStyleOf(screen.getByTestId('drag-guide'));
+        const [{ translateX }, { translateY }] = guide.transform;
+        expect(guide.opacity).toBe(1);
+        expect({ x: translateX, y: translateY }).toEqual(
+          getXYFromSquare('e2', SQUARE, orientation),
+        );
+      });
+    },
+  );
 
   it('names each piece for a screen reader', async () => {
     const screen = await render(board());
