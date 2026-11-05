@@ -23,7 +23,7 @@ const WaitingSeekCard: React.FC<WaitingSeekCardProps> = ({
   return (
     <View style={styles.card} testID={`daily-seek-${seek.id}`}>
       <View style={styles.board} pointerEvents="none">
-        <EmptyBoard width={DAILY_GAME_BOARD_WIDTH} />
+        <EmptyBoard width={DAILY_GAME_BOARD_WIDTH} coordinates={false} />
       </View>
       <Pressable
         style={styles.cancel}

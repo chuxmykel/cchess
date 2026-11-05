@@ -17,23 +17,13 @@ jest.mock('../../hooks/useSeekDailyGame', () => ({
 }));
 
 describe('NewGame', () => {
-  function renderScreen({
-    isGuest,
-    daily,
-  }: {
-    isGuest: boolean;
-    daily?: boolean;
-  }) {
+  function renderScreen({ isGuest }: { isGuest: boolean }) {
     (useAuthSession as jest.Mock).mockReturnValue(
       makeAuthSession({ user: { isGuest } }),
     );
     const navigation = { navigate: jest.fn() };
     return {
-      screenPromise: render(
-        withSafeArea(
-          <NewGame navigation={navigation} route={{ params: { daily } }} />,
-        ),
-      ),
+      screenPromise: render(withSafeArea(<NewGame navigation={navigation} />)),
       navigation,
     };
   }
@@ -43,14 +33,24 @@ describe('NewGame', () => {
       jest.clearAllMocks();
     });
 
+    async function chooseThreeDays(
+      screen: Awaited<ReturnType<typeof renderScreen>['screenPromise']>,
+    ) {
+      await fireEvent.press(screen.getByTestId('time-control-trigger'));
+      await fireEvent.press(
+        screen.getByTestId('time-control-option-daily-3 days'),
+      );
+      await waitForSheetToClose();
+    }
+
     it('posts a seek and returns home to wait for an opponent there', async () => {
       mockSeekDailyGame.mockResolvedValue({ status: 'queued' });
       const { screenPromise, navigation } = renderScreen({
         isGuest: false,
-        daily: true,
       });
       const screen = await screenPromise;
 
+      await chooseThreeDays(screen);
       expect(screen.getByText('Daily · 3 days')).toBeTruthy();
       await fireEvent.press(screen.getByTestId('start-new-game-button'));
 
@@ -70,10 +70,10 @@ describe('NewGame', () => {
       });
       const { screenPromise, navigation } = renderScreen({
         isGuest: false,
-        daily: true,
       });
       const screen = await screenPromise;
 
+      await chooseThreeDays(screen);
       await fireEvent.press(screen.getByTestId('start-new-game-button'));
 
       expect(navigation.navigate).toHaveBeenCalledWith('DailyGame', {
@@ -87,10 +87,10 @@ describe('NewGame', () => {
       );
       const { screenPromise, navigation } = renderScreen({
         isGuest: false,
-        daily: true,
       });
       const screen = await screenPromise;
 
+      await chooseThreeDays(screen);
       await fireEvent.press(screen.getByTestId('start-new-game-button'));
 
       expect(navigation.navigate).not.toHaveBeenCalled();

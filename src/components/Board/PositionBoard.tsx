@@ -19,6 +19,9 @@ interface PositionBoardProps {
   onSettled?: () => void;
   /** The side that lost, when this is the game's last position. */
   defeated?: Color | null;
+  /** The ranks and files in the squares' corners - on unless turned off,
+   * for a board too small to read them. */
+  coordinates?: boolean;
 }
 
 // A read-only board drawn from a FEN, with no game behind it - a game looked
@@ -32,6 +35,7 @@ const PositionBoard: React.FC<PositionBoardProps> = ({
   animate = false,
   onSettled,
   defeated = null,
+  coordinates = true,
 }) => {
   const colors = useChessboardColors();
   const pieceSet = usePieceSet();
@@ -53,6 +57,7 @@ const PositionBoard: React.FC<PositionBoardProps> = ({
       animation={animation}
       onSettled={onSettled}
       viewOnly
+      coordinates={coordinates}
       testID="static-chessboard"
     />
   );

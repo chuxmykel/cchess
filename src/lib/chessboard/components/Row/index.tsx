@@ -10,6 +10,7 @@ interface RowProps {
   };
   rank: number;
   orientation?: Color;
+  coordinates?: boolean;
   onSquarePress?: (square: SquareName) => void;
 }
 
@@ -17,6 +18,7 @@ const Row: React.FC<RowProps> = ({
   colors,
   rank,
   orientation = 'w',
+  coordinates = true,
   onSquarePress = () => {},
 }) => {
   return (
@@ -31,6 +33,7 @@ const Row: React.FC<RowProps> = ({
             rank={rank}
             file={file}
             orientation={orientation}
+            coordinates={coordinates}
             onPress={() => onSquarePress(`${file}${rank}` as SquareName)}
           />
         );

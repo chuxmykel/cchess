@@ -8,12 +8,15 @@ const EMPTY_BOARD = '8/8/8/8/8/8/8/8';
 interface EmptyBoardProps {
   width: number;
   orientation?: Color;
+  /** The ranks and files in the squares' corners; on unless turned off. */
+  coordinates?: boolean;
 }
 
 // The board's squares and nothing on them - while a game is on its way.
 const EmptyBoard: React.FC<EmptyBoardProps> = ({
   width,
   orientation = 'w',
+  coordinates = true,
 }) => {
   const colors = useChessboardColors();
   return (
@@ -23,6 +26,7 @@ const EmptyBoard: React.FC<EmptyBoardProps> = ({
       orientation={orientation}
       colors={colors}
       viewOnly
+      coordinates={coordinates}
       testID="empty-chessboard"
     />
   );

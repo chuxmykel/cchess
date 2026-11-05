@@ -9,12 +9,14 @@ interface BoardSurfaceProps {
     dark: string;
   };
   orientation?: Color;
+  coordinates?: boolean;
   onSquarePress?: (square: Square) => void;
 }
 
 const BoardSurface: React.FC<BoardSurfaceProps> = ({
   colors,
   orientation = 'w',
+  coordinates = true,
   onSquarePress,
 }) => (
   <>
@@ -24,6 +26,7 @@ const BoardSurface: React.FC<BoardSurfaceProps> = ({
         colors={colors}
         rank={orientation === 'b' ? idx + 1 : BOARD_SQUARES - idx}
         orientation={orientation}
+        coordinates={coordinates}
         onSquarePress={onSquarePress}
       />
     ))}

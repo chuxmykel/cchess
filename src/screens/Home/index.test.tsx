@@ -176,14 +176,11 @@ describe('Home', () => {
       expect(screen.queryByTestId('daily-seek-seek-1')).toBeNull();
     });
 
-    it('offers to start one when there are none', async () => {
-      const { screen, navigation } = await renderScreen();
+    it('shows no section without a daily game or seek', async () => {
+      const { screen } = await renderScreen(makeAuthSession({ user: MAGNUS }));
 
-      await fireEvent.press(screen.getByTestId('start-daily-game'));
-
-      expect(navigation.navigate).toHaveBeenCalledWith('NewGame', {
-        daily: true,
-      });
+      expect(screen.queryByTestId('your-games')).toBeNull();
+      expect(screen.queryByText('Your games')).toBeNull();
     });
   });
 

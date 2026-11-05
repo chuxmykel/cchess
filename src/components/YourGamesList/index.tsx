@@ -1,6 +1,5 @@
 import { FlatList, StyleSheet, View } from 'react-native';
 
-import EmptyState from '../EmptyState';
 import SectionHeader from '../SectionHeader';
 import { DailyGame, DailySeek } from '../../network/restClient';
 import { DAILY_GAMES_STATUS, DailyGames } from '../../hooks/useDailyGames';
@@ -21,19 +20,16 @@ interface YourGamesListProps {
   seeks: DailySeek[] | null;
   onPressGame: (game: DailyGame) => void;
   onCancelSeek: (seek: DailySeek) => void;
-  /** The empty state's way to start one. */
-  onStartDailyGame: () => void;
 }
 
 // Home's "Your games": your daily games in progress, in the server's order -
 // those on your move first, then by time left - and after them any seeks
-// still waiting for an opponent.
+// still waiting for an opponent. Shown only when there's one or the other.
 const YourGamesList: React.FC<YourGamesListProps> = ({
   dailyGames,
   seeks,
   onPressGame,
   onCancelSeek,
-  onStartDailyGame,
 }) => {
   const now = useNow(TIME_LEFT_REFRESH_MS);
   if (dailyGames.status !== DAILY_GAMES_STATUS.READY) {
@@ -43,6 +39,9 @@ const YourGamesList: React.FC<YourGamesListProps> = ({
     ...dailyGames.games.map((game) => ({ kind: 'game' as const, game })),
     ...(seeks ?? []).map((seek) => ({ kind: 'seek' as const, seek })),
   ];
+  if (items.length === 0) {
+    return null;
+  }
 
   return (
     <View style={styles.container} testID="your-games">
@@ -53,37 +52,23 @@ const YourGamesList: React.FC<YourGamesListProps> = ({
         }
         testID="your-games-header"
       />
-      {items.length === 0 ? (
-        <EmptyState
-          illustration="games"
-          title="No daily games"
-          message="Games with days for every move, to play whenever suits you. Yours will show up here."
-          action={{
-            label: 'Start a daily game',
-            onPress: onStartDailyGame,
-            testID: 'start-daily-game',
-          }}
-          testID="your-games-empty"
-        />
-      ) : (
-        <FlatList
-          data={items}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) =>
-            item.kind === 'game' ? item.game.id : `seek-${item.seek.id}`
-          }
-          renderItem={({ item }) =>
-            item.kind === 'game' ? (
-              <DailyGameCard game={item.game} now={now} onPress={onPressGame} />
-            ) : (
-              <WaitingSeekCard seek={item.seek} onCancel={onCancelSeek} />
-            )
-          }
-          contentContainerStyle={styles.list}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
-      )}
+      <FlatList
+        data={items}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) =>
+          item.kind === 'game' ? item.game.id : `seek-${item.seek.id}`
+        }
+        renderItem={({ item }) =>
+          item.kind === 'game' ? (
+            <DailyGameCard game={item.game} now={now} onPress={onPressGame} />
+          ) : (
+            <WaitingSeekCard seek={item.seek} onCancel={onCancelSeek} />
+          )
+        }
+        contentContainerStyle={styles.list}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+      />
     </View>
   );
 };

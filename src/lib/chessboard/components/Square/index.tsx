@@ -11,13 +11,15 @@ const Square = ({
   rank,
   file,
   orientation = 'w',
+  coordinates = true,
   onPress = () => {},
 }) => {
   const isDark = (file.charCodeAt(0) - CHAR_CODE_FOR_LETTER_A + rank) % 2 === 1;
   const backgroundColor = isDark ? colors.dark : colors.light;
   const textColor = isDark ? colors.light : colors.dark;
-  const showRankLabel = file === (orientation === 'w' ? 'a' : 'h');
-  const showFileLabel = rank === (orientation === 'w' ? 1 : 8);
+  const showRankLabel =
+    coordinates && file === (orientation === 'w' ? 'a' : 'h');
+  const showFileLabel = coordinates && rank === (orientation === 'w' ? 1 : 8);
 
   return (
     <Pressable

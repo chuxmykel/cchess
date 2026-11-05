@@ -47,6 +47,7 @@ const DailyGameCard: React.FC<DailyGameCardProps> = ({
           width={DAILY_GAME_BOARD_WIDTH}
           orientation={game.playedAsWhite ? 'w' : 'b'}
           lastMove={game.lastMove}
+          coordinates={false}
         />
       </View>
       <View style={styles.player}>

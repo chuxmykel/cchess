@@ -47,7 +47,6 @@ describe('YourGamesList', () => {
       seeks: [SEEK],
       onPressGame: jest.fn(),
       onCancelSeek: jest.fn(),
-      onStartDailyGame: jest.fn(),
       ...overrides,
     } as React.ComponentProps<typeof YourGamesList>;
     return { props, screenPromise: render(<YourGamesList {...props} />) };
@@ -95,6 +94,15 @@ describe('YourGamesList', () => {
     expect(sideAtBottom('theirs')).toBe('b');
   });
 
+  it('leaves the coordinates off its small boards', async () => {
+    const { screenPromise } = renderList();
+    const screen = await screenPromise;
+
+    const card = within(screen.getByTestId('daily-game-mine'));
+    expect(card.queryByText('a')).toBeNull();
+    expect(card.queryByText('8')).toBeNull();
+  });
+
   it('opens a game, and withdraws a seek', async () => {
     const { props, screenPromise } = renderList();
     const screen = await screenPromise;
@@ -117,17 +125,14 @@ describe('YourGamesList', () => {
     expect(seek.getByText('7 days · Casual')).toBeTruthy();
   });
 
-  it('offers to start one when there are none', async () => {
-    const { props, screenPromise } = renderList({
+  it('shows nothing with no game or seek', async () => {
+    const { screenPromise } = renderList({
       dailyGames: { status: DAILY_GAMES_STATUS.READY, games: [] },
       seeks: [],
     });
     const screen = await screenPromise;
 
-    await fireEvent.press(screen.getByTestId('start-daily-game'));
-
-    expect(screen.getByText('No daily games')).toBeTruthy();
-    expect(props.onStartDailyGame).toHaveBeenCalled();
+    expect(screen.queryByTestId('your-games')).toBeNull();
   });
 
   it('shows nothing until the games have loaded', async () => {

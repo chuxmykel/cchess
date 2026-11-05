@@ -166,9 +166,6 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
               .cancel(seek.id)
               .catch((error: Error) => toast.show(error.message))
           }
-          onStartDailyGame={() =>
-            navigation.navigate('NewGame', { daily: true })
-          }
         />
         <RecentGamesList
           recentGames={recentGames}

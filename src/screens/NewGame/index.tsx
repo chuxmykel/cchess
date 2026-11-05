@@ -16,28 +16,20 @@ import {
   DEFAULT_TIME_CONTROL,
   daysPerMove,
   isDailyTimeControl,
-  TIME_CONTROL_GROUPS,
 } from '../../constants/timeControls';
 import { makeStyles } from '../../theme';
-
-// What a daily game starts at, when New Game is opened to start one.
-const DEFAULT_DAILY_TIME_CONTROL = TIME_CONTROL_GROUPS.find(
-  (group) => group.type === 'daily',
-)!.options[2];
 
 interface NewGameProps {
   navigation: {
     navigate: (route: string, params?: object) => any;
   };
-  route?: { params?: { daily?: boolean } };
 }
 
-const NewGame: React.FC<NewGameProps> = ({ navigation, route }) => {
+const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
   const styles = useStyles();
 
-  const [timeControl, setTimeControl] = useState<TimeControl>(
-    route?.params?.daily ? DEFAULT_DAILY_TIME_CONTROL : DEFAULT_TIME_CONTROL,
-  );
+  const [timeControl, setTimeControl] =
+    useState<TimeControl>(DEFAULT_TIME_CONTROL);
   const [chosenRated, setChosenRated] = useState(true);
   const [ratingRange, setRatingRange] = useState(DEFAULT_RATING_RANGE);
   const [color, setColor] = useState<ColorChoice>('random');
