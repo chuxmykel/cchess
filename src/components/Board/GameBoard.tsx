@@ -2,12 +2,12 @@ import { memo, useCallback, useMemo } from 'react';
 import { Color, Square } from 'chess.js';
 
 import { BoardArrow, Chessboard } from '../../lib/chessboard';
-import { PIECES } from '../../constants';
 import { useChessGameContext } from '../../context/ChessGameContext';
 import { kingInDanger } from '../../domain/kingInDanger';
 import { lastMoveSquares, PlayedMove } from '../../domain/lastMoveSquares';
 import { DRAG_LOG_ENABLED, logDrag } from '../../utils/dragLog';
 import { useChessboardColors } from './boardStyle';
+import { usePieceSet } from './pieceSets';
 
 interface GameBoardProps {
   width: number;
@@ -47,6 +47,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
     attemptMove,
   } = useChessGameContext();
   const colors = useChessboardColors();
+  const pieceSet = usePieceSet();
 
   const movable = useMemo(
     () => ({ color: movableColor, dests: legalTargets }),
@@ -75,7 +76,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
       size={width}
       orientation={orientation}
       colors={colors}
-      pieceImages={PIECES}
+      pieceSet={pieceSet}
       movable={movable}
       onMove={handleMove}
       lastMove={markedMove}

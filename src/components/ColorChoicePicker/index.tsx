@@ -1,7 +1,7 @@
-import { Image, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import Icon from '../Icon';
-import { PIECES } from '../../constants';
+import { BoardPieceIcon } from '../Board';
 import { ColorChoice } from '../../network/socketEvents';
 import { makeStyles, useTheme } from '../../theme';
 
@@ -46,9 +46,10 @@ const ColorChoicePicker: React.FC<ColorChoicePickerProps> = ({
                 color={isSelected ? colors.accent : colors.textMuted}
               />
             ) : (
-              <Image
-                source={PIECES[color === 'white' ? 'wk' : 'bk']}
-                style={styles.king}
+              <BoardPieceIcon
+                color={color === 'white' ? 'w' : 'b'}
+                type="k"
+                size={ICON_SIZE}
               />
             )}
             <Text style={[styles.label, isSelected && styles.selectedLabel]}>
@@ -81,10 +82,6 @@ const useStyles = makeStyles((t) => ({
   selected: {
     borderColor: t.colors.accent,
     backgroundColor: t.colors.accentSubtle,
-  },
-  king: {
-    width: ICON_SIZE,
-    height: ICON_SIZE,
   },
   label: {
     fontSize: t.fontSize.md,

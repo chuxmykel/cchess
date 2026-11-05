@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { act, render } from '@testing-library/react-native';
+import { act, render, within } from '@testing-library/react-native';
 import * as ReactNative from 'react-native';
 
 import CapturedPieces from '.';
@@ -27,9 +27,13 @@ describe('CapturedPieces', () => {
       await act(async () => {});
 
       for (const id of ['captured-piece-w', 'captured-piece-b']) {
-        expect(screen.getByTestId(id)).toHaveStyle({
-          tintColor: theme.colors.capturedPiece,
-        });
+        const { xml } = within(screen.getByTestId(id)).getByTestId(
+          'captured-piece-drawing',
+        ).props;
+        const colors = [...xml.matchAll(/(?:fill|stroke)="([^"]*)"/g)]
+          .map(([, color]) => color)
+          .filter((color) => color !== 'none');
+        expect(new Set(colors)).toEqual(new Set([theme.colors.capturedPiece]));
       }
     },
   );

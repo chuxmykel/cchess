@@ -1,7 +1,7 @@
-import { Image, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { PieceSymbol, Color } from 'chess.js';
 
-import { PIECES } from '../../constants';
+import { BoardPieceIcon } from '../Board';
 import { PROMOTION_PIECE_TYPES } from '../../domain/types';
 import { makeStyles } from '../../theme';
 
@@ -59,9 +59,10 @@ const PromotionMenu: React.FC<PromotionMenuProps> = ({
               accessibilityLabel={PIECE_NAMES[type]}
               testID={`promote-${type}`}
             >
-              <Image
-                source={PIECES[`${promotingColor}${type}`]}
-                style={{ width: pieceWidth, height: pieceWidth }}
+              <BoardPieceIcon
+                color={promotingColor}
+                type={type}
+                size={pieceWidth}
               />
             </Pressable>
           ))}

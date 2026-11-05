@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { ImageSourcePropType, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Animated, {
   SharedValue,
   useAnimatedStyle,
@@ -17,7 +17,7 @@ interface StaticPieceProps {
   x: SharedValue<number>;
   y: SharedValue<number>;
   captured: boolean;
-  source: ImageSourcePropType;
+  svg: string;
   width: number;
   orientation: Color;
   // This piece's king in danger, if it is one.
@@ -32,7 +32,7 @@ const StaticPiece: React.FC<StaticPieceProps> = ({
   x,
   y,
   captured,
-  source,
+  svg,
   width,
   orientation,
   danger,
@@ -48,13 +48,12 @@ const StaticPiece: React.FC<StaticPieceProps> = ({
       accessibilityLabel={pieceLabel(id)}
     >
       <PieceImage
-        source={source}
+        svg={svg}
         width={width}
         orientation={orientation}
         inDanger={danger !== null}
         dangerColor={dangerColor}
         fallen={danger?.fallen ?? false}
-        fadeDuration={0}
       />
     </Animated.View>
   );

@@ -1,15 +1,17 @@
 import { useEffect } from 'react';
-import { Image, ImageSourcePropType, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { SvgXml } from 'react-native-svg';
 import { KING_FALL_DEGREES, KING_FALL_TIMING } from '../../constants';
 import { Color } from '../../types';
 
 interface PieceImageProps {
-  source: ImageSourcePropType;
+  // The piece's SVG, from its set.
+  svg: string;
   width: number;
   orientation: Color;
   // A king in check, or whose side lost, glowing red.
@@ -18,7 +20,6 @@ interface PieceImageProps {
   dangerColor?: string;
   // A king whose side lost - mated, or any other way - tipped over.
   fallen?: boolean;
-  fadeDuration?: number;
 }
 
 // How far a king in check's glow spreads, as a share of the square.
@@ -28,13 +29,12 @@ const GLOW_RADIUS_RATIO = 0.15;
 // round for black, and for a king in danger, glowing red - toppling over
 // once its side has lost.
 const PieceImage: React.FC<PieceImageProps> = ({
-  source,
+  svg,
   width,
   orientation,
   inDanger = false,
   dangerColor,
   fallen = false,
-  fadeDuration,
 }) => {
   const fall = useSharedValue(fallen ? 1 : 0);
   useEffect(() => {
@@ -63,7 +63,7 @@ const PieceImage: React.FC<PieceImageProps> = ({
           ]}
           testID={inDanger ? 'danger-glow' : undefined}
         >
-          <Image source={source} fadeDuration={fadeDuration} style={size} />
+          <SvgXml xml={svg} width={width} height={width} testID="drawing" />
         </View>
       </Animated.View>
     </View>

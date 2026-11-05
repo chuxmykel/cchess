@@ -3,7 +3,7 @@ import { SharedValue } from 'react-native-reanimated';
 import { DragGuide } from '../../hooks/useDragGuide';
 import { MovableSquares } from '../../hooks/usePieceGesture';
 import { TrackedPiece } from '../../hooks/usePieceTracker';
-import { Color, Dests, KingCheck, PieceImages, Square } from '../../types';
+import { Color, Dests, KingCheck, PieceSet, Square } from '../../types';
 import Piece from './Piece';
 import StaticPiece from './StaticPiece';
 
@@ -11,7 +11,7 @@ interface PiecesProps {
   pieces: TrackedPiece[];
   pieceWidth: number;
   orientation: Color;
-  pieceImages: PieceImages;
+  pieceSet: PieceSet;
   // The king in danger, if any, glowing red - and fallen, once beaten.
   kingInDanger: KingCheck | null;
   dangerColor: string;
@@ -32,7 +32,7 @@ const Pieces: React.FC<PiecesProps> = ({
   pieces,
   pieceWidth,
   orientation,
-  pieceImages,
+  pieceSet,
   kingInDanger,
   dangerColor,
   viewOnly = false,
@@ -57,7 +57,7 @@ const Pieces: React.FC<PiecesProps> = ({
             x={piece.x}
             y={piece.y}
             captured={piece.captured ?? false}
-            source={pieceImages[piece.spriteId]}
+            svg={pieceSet[piece.spriteId]}
             width={pieceWidth}
             orientation={orientation}
             danger={inDanger ? kingInDanger : null}
@@ -69,7 +69,7 @@ const Pieces: React.FC<PiecesProps> = ({
         <Piece
           key={piece.id}
           id={piece.spriteId}
-          source={pieceImages[piece.spriteId]}
+          svg={pieceSet[piece.spriteId]}
           square={piece.square}
           width={pieceWidth}
           orientation={orientation}

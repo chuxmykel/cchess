@@ -1,5 +1,3 @@
-import type { ImageSourcePropType } from 'react-native';
-
 // The board's own vocabulary. It knows squares and pieces, not the rules of
 // chess: which moves are legal is the app's to say (`Movable.dests`). The
 // unions are the same strings chess.js uses, so its values pass straight in.
@@ -60,7 +58,9 @@ export type BoardColors = {
   check: string;
 };
 
-export type PieceImages = Record<PieceCode, ImageSourcePropType>;
+// A set of pieces to draw: each piece an SVG document, drawn to fill its
+// square - a 100x100 viewBox, say, with the piece standing on its bottom.
+export type PieceSet = Record<PieceCode, string>;
 
 export type BoardArrow = {
   from: Square;

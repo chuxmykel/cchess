@@ -9,7 +9,7 @@ import {
   saveAppearanceSettings,
 } from '../network/appearanceSettingsStorage';
 
-// Light or dark mode and the board's colors, kept on the device: the
+// Light or dark mode, the board's colors and its pieces, kept on the device: the
 // defaults until what was saved has loaded, then each change saved as it's
 // made.
 export type AppearanceSettingsState = {

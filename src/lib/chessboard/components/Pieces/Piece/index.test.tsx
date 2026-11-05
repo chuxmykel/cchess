@@ -4,6 +4,7 @@ import { makeMutable } from 'react-native-reanimated';
 
 import Piece from '.';
 import { getXYFromSquare } from '../../../coordinates';
+import { defaultPieceSet } from '../../../defaultPieceSet';
 import { DRAG_LIFT, DRAG_SCALE } from '../../../constants';
 import { TakenByDrop } from '../../../hooks/useDragGuide';
 import { Color, Dests, PieceCode, Square } from '../../../types';
@@ -57,7 +58,7 @@ describe('Piece', () => {
       <GestureHandlerRootView>
         <Piece
           id={overrides.id ?? 'wp'}
-          source={{ uri: `${overrides.id ?? 'wp'}.png` }}
+          svg={defaultPieceSet[overrides.id ?? 'wp']}
           square={square}
           width={width}
           orientation={overrides.orientation ?? 'w'}

@@ -2,10 +2,10 @@ import { useMemo } from 'react';
 import { Color } from 'chess.js';
 
 import { Chessboard } from '../../lib/chessboard';
-import { PIECES } from '../../constants';
 import { kingInDanger } from '../../domain/kingInDanger';
 import { MoveSquares } from '../../domain/types';
 import { useChessboardColors } from './boardStyle';
+import { usePieceSet } from './pieceSets';
 
 interface PositionBoardProps {
   fen: string;
@@ -34,6 +34,7 @@ const PositionBoard: React.FC<PositionBoardProps> = ({
   defeated = null,
 }) => {
   const colors = useChessboardColors();
+  const pieceSet = usePieceSet();
   const check = useMemo(() => kingInDanger(fen, defeated), [fen, defeated]);
   const animation = useMemo(
     () => ({ enabled: animate, slideOnSet: true }),
@@ -46,7 +47,7 @@ const PositionBoard: React.FC<PositionBoardProps> = ({
       size={width}
       orientation={orientation}
       colors={colors}
-      pieceImages={PIECES}
+      pieceSet={pieceSet}
       lastMove={lastMove}
       check={check}
       animation={animation}

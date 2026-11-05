@@ -29,13 +29,18 @@ describe('useAppearanceSettings', () => {
     expect(again.result.current.settings).toEqual({
       colorScheme: 'dark',
       boardTheme: 'lichess.org',
+      pieceSet: 'standard',
     });
   });
 
   it('falls back to the default for a value no longer offered', async () => {
     await AsyncStorage.setItem(
       'cchess.appearanceSettings',
-      JSON.stringify({ colorScheme: 'sepia', boardTheme: 'toString' }),
+      JSON.stringify({
+        colorScheme: 'sepia',
+        boardTheme: 'toString',
+        pieceSet: 'cardboard',
+      }),
     );
     const { result } = await renderHook(() => useAppearanceSettings());
     await act(async () => {});

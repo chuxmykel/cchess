@@ -6,12 +6,9 @@ import { makeMutable } from 'react-native-reanimated';
 import Pieces from '.';
 import { TrackedPiece } from '../../hooks/usePieceTracker';
 import { getXYFromSquare } from '../../coordinates';
-import { KingCheck, PieceImages, Square } from '../../types';
+import { defaultPieceSet } from '../../defaultPieceSet';
+import { KingCheck, Square } from '../../types';
 import { dragPiece, tapPiece } from '../../../../testUtils/pieceGestures';
-
-const PIECE_IMAGES = new Proxy({} as PieceImages, {
-  get: (_, code) => ({ uri: `${String(code)}.png` }),
-});
 
 describe('Pieces', () => {
   const pieceWidth = 50;
@@ -56,7 +53,7 @@ describe('Pieces', () => {
           pieces={pieces}
           pieceWidth={pieceWidth}
           orientation="w"
-          pieceImages={PIECE_IMAGES}
+          pieceSet={defaultPieceSet}
           movable={movable}
           viewOnly={overrides.viewOnly ?? false}
           kingInDanger={overrides.kingInDanger ?? null}

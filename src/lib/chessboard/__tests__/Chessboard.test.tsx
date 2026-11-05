@@ -1,7 +1,7 @@
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
 import { getByGestureTestId } from 'react-native-gesture-handler/jest-utils';
 
-import { Chessboard, ChessboardProps, PieceImages } from '..';
+import { Chessboard, ChessboardProps, defaultPieceSet, PieceSet } from '..';
 import { getXYFromSquare } from '../coordinates';
 import { usePieceGesture } from '../hooks/usePieceGesture';
 import { animatedStyleOf } from '../../../testUtils/animatedValue';
@@ -30,29 +30,11 @@ const COLORS = {
   dragOrigin: 'orange',
   check: 'red',
 };
-// The same object for a piece every time, as an app's images are.
-const PIECE_IMAGES = Object.fromEntries(
-  ['w', 'b'].flatMap((color) =>
-    ['p', 'n', 'b', 'r', 'q', 'k'].map((type) => [
-      `${color}${type}`,
-      { uri: `${color}${type}.png` },
-    ]),
-  ),
-) as PieceImages;
-
 // Only what the board's told: no rules of its own.
 const E2_MOVES = { e2: ['e3', 'e4'] } as ChessboardProps['movable']['dests'];
 
 function board(props: Partial<ChessboardProps> = {}) {
-  return (
-    <Chessboard
-      fen={START}
-      size={SIZE}
-      colors={COLORS}
-      pieceImages={PIECE_IMAGES}
-      {...props}
-    />
-  );
+  return <Chessboard fen={START} size={SIZE} colors={COLORS} {...props} />;
 }
 
 type Screen = Awaited<ReturnType<typeof render>>;
@@ -146,6 +128,26 @@ describe('Chessboard', () => {
       'accessibilityLabel',
       'black knight',
     );
+  });
+
+  it('draws its own pieces unless given a set', async () => {
+    const svgOn = (
+      screen: Awaited<ReturnType<typeof render>>,
+      square: string,
+    ) =>
+      within(screen.getByTestId(`piece-${square}`)).getByTestId('drawing').props
+        .xml;
+    const screen = await render(board());
+    expect(svgOn(screen, 'e1')).toBe(defaultPieceSet.wk);
+    expect(svgOn(screen, 'g8')).toBe(defaultPieceSet.bn);
+
+    const pieceSet = Object.fromEntries(
+      Object.keys(defaultPieceSet).map((code) => [code, `<svg id="${code}"/>`]),
+    ) as PieceSet;
+    await screen.rerender(board({ pieceSet }));
+
+    expect(svgOn(screen, 'e1')).toBe('<svg id="wk"/>');
+    expect(svgOn(screen, 'g8')).toBe('<svg id="bn"/>');
   });
 
   it('draws the pieces of a placement', async () => {

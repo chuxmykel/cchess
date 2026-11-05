@@ -3,6 +3,9 @@
 // its imports, and this file is all of it the app sees.
 export { default as Chessboard } from './Chessboard';
 export type { ChessboardProps } from './Chessboard';
+export { default as ChessPiece } from './components/ChessPiece';
+export type { ChessPieceProps } from './components/ChessPiece';
+export { defaultPieceSet } from './defaultPieceSet';
 export type {
   BoardAnimation,
   BoardArrow,
@@ -14,7 +17,7 @@ export type {
   Movable,
   MoveSquares,
   PieceCode,
-  PieceImages,
+  PieceSet,
   PieceSymbol,
   Square,
 } from './types';

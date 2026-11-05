@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { ImageSourcePropType, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   SharedValue,
@@ -17,7 +17,7 @@ import PieceImage from '../../PieceImage';
 
 interface PieceProps {
   id: PieceCode;
-  source: ImageSourcePropType;
+  svg: string;
   square: Square;
   width: number;
   orientation: Color;
@@ -41,7 +41,7 @@ interface PieceProps {
 }
 
 const Piece: React.FC<PieceProps> = (props) => {
-  const { id, source, square, width, orientation, x, y, captured } = props;
+  const { id, svg, square, width, orientation, x, y, captured } = props;
   const { inDanger = false, dangerColor, fallen = false } = props;
   const testID = captured ? `taken-piece-${square}` : `piece-${square}`;
   const { gesture, scale, zIndex, hidden } = usePieceGesture({
@@ -69,7 +69,7 @@ const Piece: React.FC<PieceProps> = (props) => {
         pointerEvents={captured ? 'none' : 'auto'}
       >
         <PieceImage
-          source={source}
+          svg={svg}
           width={width}
           orientation={orientation}
           inDanger={inDanger}

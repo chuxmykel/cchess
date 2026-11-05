@@ -2,9 +2,9 @@ import { useMemo } from 'react';
 import { Color } from 'chess.js';
 
 import { Chessboard } from '../../lib/chessboard';
-import { PIECES } from '../../constants';
 import { PositionEditor } from '../../hooks/usePositionEditor';
 import { useChessboardColors } from './boardStyle';
+import { usePieceSet } from './pieceSets';
 
 interface SetupBoardProps {
   editor: PositionEditor;
@@ -24,6 +24,7 @@ const SetupBoard: React.FC<SetupBoardProps> = ({
   orientation = 'w',
 }) => {
   const colors = useChessboardColors();
+  const pieceSet = usePieceSet();
   const isHand = editor.tool === 'move';
   const movable = useMemo(
     () => (isHand ? { color: 'both' as const, free: true } : null),
@@ -37,7 +38,7 @@ const SetupBoard: React.FC<SetupBoardProps> = ({
       size={width}
       orientation={orientation}
       colors={colors}
-      pieceImages={PIECES}
+      pieceSet={pieceSet}
       movable={movable}
       onMove={movePiece}
       onDropOff={(square) => movePiece(square, null)}

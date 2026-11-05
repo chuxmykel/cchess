@@ -1,7 +1,6 @@
 import { Color } from 'chess.js';
 
 import { Chessboard } from '../../lib/chessboard';
-import { PIECES } from '../../constants';
 import { useChessboardColors } from './boardStyle';
 
 const EMPTY_BOARD = '8/8/8/8/8/8/8/8';
@@ -23,7 +22,6 @@ const EmptyBoard: React.FC<EmptyBoardProps> = ({
       size={width}
       orientation={orientation}
       colors={colors}
-      pieceImages={PIECES}
       viewOnly
       testID="empty-chessboard"
     />

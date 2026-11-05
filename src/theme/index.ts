@@ -4,4 +4,8 @@ export { makeStyles } from './makeStyles';
 export { useTheme } from '../context/ThemeContext';
 export * from './boardThemes';
 export { navigationTheme } from './navigationTheme';
-export { useAppearance, useBoardColors } from '../context/ThemeContext';
+export {
+  useAppearance,
+  useBoardColors,
+  usePieceSetName,
+} from '../context/ThemeContext';

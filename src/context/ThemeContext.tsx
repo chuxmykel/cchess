@@ -1,7 +1,10 @@
 import { createContext, useContext, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 
-import { DEFAULT_APPEARANCE_SETTINGS } from '../constants/appearance';
+import {
+  DEFAULT_APPEARANCE_SETTINGS,
+  PieceSetName,
+} from '../constants/appearance';
 import {
   AppearanceSettingsState,
   useAppearanceSettings,
@@ -51,4 +54,11 @@ export function useBoardColors(): BoardTheme {
   const name =
     context?.settings.boardTheme ?? DEFAULT_APPEARANCE_SETTINGS.boardTheme;
   return useMemo(() => BOARD_THEMES[name], [name]);
+}
+
+// The board's pieces as chosen in Appearance, by name - the default set
+// outside a ThemeProvider, like useTheme.
+export function usePieceSetName(): PieceSetName {
+  const context = useContext(AppearanceContext);
+  return context?.settings.pieceSet ?? DEFAULT_APPEARANCE_SETTINGS.pieceSet;
 }

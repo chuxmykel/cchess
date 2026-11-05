@@ -1,9 +1,8 @@
-import { Image, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Color, PieceSymbol } from 'chess.js';
 
-import { SetupBoard } from '../Board';
+import { BoardPieceIcon, SetupBoard } from '../Board';
 import Icon, { IconName } from '../Icon';
-import { PIECES } from '../../constants';
 import { SetupError } from '../../domain/positionSetup';
 import {
   EditorTool,
@@ -19,6 +18,7 @@ interface PositionEditorProps {
 }
 
 const PIECE_TYPES: PieceSymbol[] = ['k', 'q', 'r', 'b', 'n', 'p'];
+const TOOL_PIECE_SIZE = 34;
 
 export const SETUP_ERROR_TEXT: Record<SetupError, string> = {
   'white-king': 'White needs exactly one king.',
@@ -99,11 +99,7 @@ const PositionEditor: React.FC<PositionEditorProps> = ({
           isTool(editor.tool, type, color),
           `${color === 'w' ? 'White' : 'Black'} ${type}`,
           `editor-tool-${color}${type}`,
-          <Image
-            source={PIECES[`${color}${type}`]}
-            style={styles.toolImage}
-            fadeDuration={0}
-          />,
+          <BoardPieceIcon color={color} type={type} size={TOOL_PIECE_SIZE} />,
         ),
       )}
     </View>
@@ -154,10 +150,6 @@ const useStyles = makeStyles((t) => ({
   // Its border alone: the panel stays light grey under a black piece.
   selectedTool: {
     borderColor: t.colors.accent,
-  },
-  toolImage: {
-    width: 34,
-    height: 34,
   },
   error: {
     color: t.colors.danger,

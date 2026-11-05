@@ -25,9 +25,10 @@ import {
   KingCheck,
   Movable,
   MoveSquares,
-  PieceImages,
+  PieceSet,
   Square,
 } from './types';
+import { defaultPieceSet } from './defaultPieceSet';
 
 import BoardArrows from './components/BoardArrows';
 import BoardSurface from './components/BoardSurface';
@@ -45,7 +46,8 @@ export interface ChessboardProps {
   // Whose side of the board is at the bottom; defaults to white's.
   orientation?: 'w' | 'b';
   colors: BoardColors;
-  pieceImages: PieceImages;
+  // The pieces to draw: the board's own, unless given another set.
+  pieceSet?: PieceSet;
   // Which pieces can be picked up or tapped, and where they may go. None,
   // when left out.
   movable?: Movable | null;
@@ -93,7 +95,7 @@ const BoardCore = memo(function BoardCore({
   size,
   orientation = 'w',
   colors,
-  pieceImages,
+  pieceSet = defaultPieceSet,
   movable = null,
   onMove,
   onDropOff,
@@ -322,7 +324,7 @@ const BoardCore = memo(function BoardCore({
           pieces={trackedPieces}
           pieceWidth={squareSize}
           orientation={orientation}
-          pieceImages={pieceImages}
+          pieceSet={pieceSet}
           kingInDanger={check}
           dangerColor={colors.check}
           viewOnly={viewOnly}
