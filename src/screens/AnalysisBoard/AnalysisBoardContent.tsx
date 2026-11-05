@@ -5,6 +5,7 @@ import { Color } from 'chess.js';
 
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
 import AnalysisView from '../../components/AnalysisView';
+import OpeningExplorerSheet from '../../components/OpeningExplorerSheet';
 import EngineLines, {
   DEPTH_HEIGHT,
   LINE_HEIGHT,
@@ -21,6 +22,7 @@ import { AnalysisStart } from '../../hooks/useAnalysisTree';
 import { useAnalysisWorkspace } from '../../hooks/useAnalysisWorkspace';
 import { useAppIsActive } from '../../hooks/useAppIsActive';
 import { useEngineAnalysis } from '../../hooks/useEngineAnalysis';
+import { useOpeningExplorer } from '../../hooks/useOpeningExplorer';
 import { analysisArrows } from '../../utils/analysisArrows';
 import { flipBoardAction } from '../gameMenuActions';
 import { makeStyles, useTheme } from '../../theme';
@@ -53,8 +55,10 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
   const { analysis, game, steps, orientation, flip } = workspace;
   const { settings } = useAnalysisSettingsContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isExplorerOpen, setIsExplorerOpen] = useState(false);
 
   const { fen } = analysis.current;
+  const explorer = useOpeningExplorer(fen, isExplorerOpen);
   const over = useMemo(() => finalScore(fen), [fen]);
   // Searching only while it's seen: not behind another screen, nor with the
   // app in the background.
@@ -136,6 +140,11 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
       testID: 'edit-position-action',
     },
     {
+      label: 'Opening explorer',
+      onPress: () => setIsExplorerOpen(true),
+      testID: 'opening-explorer-action',
+    },
+    {
       label: 'Settings',
       onPress: onOpenSettings,
       testID: 'analysis-settings-action',
@@ -191,6 +200,15 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
         visible={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         actions={menuActions}
+      />
+      <OpeningExplorerSheet
+        visible={isExplorerOpen}
+        explorer={explorer}
+        onClose={() => setIsExplorerOpen(false)}
+        onPlayMove={(uci) => {
+          const { from, to, promotion } = uciToMoveSpec(uci);
+          game.attemptMove(from, to, promotion);
+        }}
       />
     </AnalysisView>
   );

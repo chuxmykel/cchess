@@ -32,7 +32,9 @@ const DailyAnalysis: React.FC<DailyAnalysisProps> = ({ navigation, route }) => {
     () => ({ kind: 'game', gameId }),
     [gameId],
   );
-  const { state, reload } = useAnalysisSource(source);
+  const { state, reload } = useAnalysisSource(source, {
+    allowDailyInPlay: true,
+  });
 
   if (state.status === 'error') {
     return (
@@ -43,7 +45,8 @@ const DailyAnalysis: React.FC<DailyAnalysisProps> = ({ navigation, route }) => {
       </View>
     );
   }
-  if (state.status === 'loading') {
+  // It allows a daily game in play, so this never comes.
+  if (state.status === 'loading' || state.status === 'in-play') {
     return (
       <View style={styles.centred} testID="analysis-loading">
         <ActivityIndicator />

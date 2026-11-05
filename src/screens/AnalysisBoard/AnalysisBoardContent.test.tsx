@@ -11,6 +11,16 @@ import { SETTLE_MS } from '../../hooks/useEngineAnalysis';
 import { makeFakeEngine } from '../../testUtils/fakeEngine';
 import { settleAnimations } from '../../testUtils/pieceGestures';
 import { withSafeArea } from '../../testUtils/safeArea';
+import { getExplorer } from '../../network/restClient';
+
+jest.mock('../../context/AuthSessionContext', () => ({
+  useAuthSession: () =>
+    jest.requireActual('../../testUtils/authSession').makeAuthSession(),
+}));
+jest.mock('../../network/restClient', () => ({
+  ...jest.requireActual('../../network/restClient'),
+  getExplorer: jest.fn(),
+}));
 
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
@@ -199,6 +209,33 @@ describe('AnalysisBoardContent', () => {
     await settleAnimations();
 
     expect(onOpenSettings).toHaveBeenCalled();
+  });
+
+  it('opens the opening explorer from its menu, a tap playing its move', async () => {
+    jest.mocked(getExplorer).mockResolvedValue({
+      totalGames: 1,
+      moves: [
+        {
+          san: 'd4',
+          uci: 'd2d4',
+          games: 1,
+          whiteWins: 1,
+          draws: 0,
+          blackWins: 0,
+        },
+      ],
+    });
+    const { screen } = await renderAnalysis();
+
+    await fireEvent.press(screen.getByTestId('game-menu-button'));
+    await fireEvent.press(screen.getByTestId('opening-explorer-action'));
+    await settleAnimations();
+    await act(async () => {});
+    await fireEvent.press(screen.getByTestId('explorer-move-d2d4'));
+    await settleAnimations();
+
+    expect(getExplorer).toHaveBeenCalledWith(DEFAULT_POSITION, 'access-token');
+    expect(boardTester(screen).pieceOn('d4')).toBe('wp');
   });
 
   it('searches for as long, and shows as many lines, as the settings say', async () => {

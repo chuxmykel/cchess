@@ -9,9 +9,15 @@ import { AnalysisSource } from '../../hooks/useAnalysisSource';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { waitForSheetToClose } from '../../testUtils/modal';
 import { withSafeArea } from '../../testUtils/safeArea';
+import { getGame } from '../../network/restClient';
+import { makeGameSnapshot } from '../../testUtils/gameSnapshot';
 
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
+}));
+jest.mock('../../network/restClient', () => ({
+  ...jest.requireActual('../../network/restClient'),
+  getGame: jest.fn(),
 }));
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
@@ -49,6 +55,23 @@ describe('AnalysisBoard', () => {
     await act(async () => {});
     return { screen, navigation };
   }
+
+  it("won't analyse your own daily game still being played", async () => {
+    const snapshot = makeGameSnapshot({ gameType: 'daily', status: 'active' });
+    jest.mocked(getGame).mockResolvedValue({
+      ...snapshot,
+      white: { ...snapshot.white, id: 'user-1' },
+    });
+    const { screen, navigation } = await renderBoard({
+      kind: 'game',
+      gameId: 'game-1',
+    });
+
+    expect(screen.getByTestId('analysis-in-play')).toBeTruthy();
+    expect(screen.queryByTestId('analysis-board')).toBeNull();
+    await fireEvent.press(screen.getByText('Back'));
+    expect(navigation.goBack).toHaveBeenCalled();
+  });
 
   it('sets up a position, then analyses it', async () => {
     const { screen, navigation } = await renderBoard({ kind: 'setup' });

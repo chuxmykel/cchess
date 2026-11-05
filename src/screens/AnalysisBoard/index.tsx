@@ -75,6 +75,18 @@ const AnalysisBoard: React.FC<AnalysisBoardProps> = ({ route, navigation }) => {
       </View>
     );
   }
+  if (state.status === 'in-play') {
+    return (
+      <View style={styles.centred} testID="analysis-in-play">
+        <Text style={styles.message}>
+          {
+            "This game is still being played. Analyse it from the game's own board."
+          }
+        </Text>
+        <Button label="Back" onPress={navigation.goBack} variant="text" />
+      </View>
+    );
+  }
   if (state.status === 'loading') {
     return (
       <View style={styles.centred} testID="analysis-loading">

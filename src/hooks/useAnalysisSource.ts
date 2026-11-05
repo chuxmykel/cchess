@@ -21,6 +21,8 @@ export type AnalysisSource =
 export type AnalysisSourceState =
   | { status: 'loading' }
   | { status: 'error' }
+  // Your own daily game, still being played: not for an engine.
+  | { status: 'in-play' }
   // `orientation`: the side to look from - your own, in a game you played.
   | { status: 'ready'; start: AnalysisStart; orientation: Color };
 
@@ -42,8 +44,13 @@ function startOfGame(snapshot: GameSnapshot, ply?: number): AnalysisStart {
 }
 
 // Resolves where an analysis starts. Only a game needs fetching; the rest
-// are ready at once. (A position being set up has no start yet.)
-export function useAnalysisSource(source: AnalysisSource): {
+// are ready at once. (A position being set up has no start yet.) Your own
+// daily game still being played is refused - the engine would play it for
+// you - unless allowDailyInPlay, for its own analysis board, which has none.
+export function useAnalysisSource(
+  source: AnalysisSource,
+  { allowDailyInPlay = false }: { allowDailyInPlay?: boolean } = {},
+): {
   state: AnalysisSourceState;
   reload: () => void;
 } {
@@ -63,17 +70,23 @@ export function useAnalysisSource(source: AnalysisSource): {
     let current = true;
     authorized((token) => getGame(gameId, token))
       .then((snapshot) => {
-        if (current) {
-          setFetched({
-            gameId,
-            state: {
-              status: 'ready',
-              start: startOfGame(snapshot, ply),
-              orientation:
-                (userId ? colorPlayedBy(snapshot, userId) : null) ?? 'w',
-            },
-          });
-        }
+        if (!current) return;
+        const playedAs = userId ? colorPlayedBy(snapshot, userId) : null;
+        const isMyDailyInPlay =
+          snapshot.gameType === 'daily' &&
+          snapshot.status === 'active' &&
+          playedAs !== null;
+        setFetched({
+          gameId,
+          state:
+            isMyDailyInPlay && !allowDailyInPlay
+              ? { status: 'in-play' }
+              : {
+                  status: 'ready',
+                  start: startOfGame(snapshot, ply),
+                  orientation: playedAs ?? 'w',
+                },
+        });
       })
       .catch(() => {
         if (current) setFetched({ gameId, state: { status: 'error' } });
@@ -81,7 +94,7 @@ export function useAnalysisSource(source: AnalysisSource): {
     return () => {
       current = false;
     };
-  }, [authorized, gameId, ply, userId, attempt]);
+  }, [authorized, gameId, ply, userId, attempt, allowDailyInPlay]);
 
   const reload = useCallback(() => {
     setFetched(null);
