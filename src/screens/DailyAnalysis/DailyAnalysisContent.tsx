@@ -120,13 +120,13 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
             testID="opening-explorer-button"
           />
           <ToolbarButton
-            icon="note-text-outline"
+            icon="note-edit-outline"
             label="Notes"
             onPress={() => setSheet('notes')}
             testID="notes-button"
           />
           <ToolbarButton
-            icon="swap-vertical"
+            icon="rotate-3d-variant"
             label="Flip board"
             onPress={flip}
             testID="flip-board-button"

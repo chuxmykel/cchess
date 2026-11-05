@@ -165,7 +165,7 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
       )}
       {onAnalyse && (
         <ToolbarButton
-          icon="magnify"
+          icon="head-cog-outline"
           label="Analysis"
           onPress={onAnalyse}
           testID="toolbar-analysis-button"
