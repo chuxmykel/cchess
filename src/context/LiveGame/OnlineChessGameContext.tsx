@@ -14,12 +14,12 @@ const OnlineChessGameContext = createContext<UseOnlineChessGameResult | null>(
 );
 
 // The online counterpart to ChessGameContext (which stays local/two-sided -
-// it's also used by ChessBoard's own gesture tests to drive either color in
+// it's also used by GameBoard's own gesture tests to drive either color in
 // one render, which a single-color-gated online game can't do). Scoped to
 // the LiveGame screen the same way, just backed by useOnlineChessGame instead.
 //
-// Also provides through ChessGameContext itself: ChessBoard (and anything
-// else under it) reads board/move state from ChessGameContext directly, not
+// Also provides through ChessGameContext itself: GameBoard reads board/move
+// state from ChessGameContext directly, not
 // from this one, and UseOnlineChessGameResult is a structural superset of
 // UseChessGameResult, so the same value satisfies both.
 export const OnlineChessGameProvider: React.FC<{

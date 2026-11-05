@@ -9,12 +9,24 @@ export const COLOR_SCHEME_PREFERENCES: ColorSchemePreference[] = [
   'dark',
 ];
 
+// The board's pieces: the sets offered, by name - each drawn by
+// src/components/Board/pieceSets.ts.
+export type PieceSetName = 'standard';
+
+export const PIECE_SET_NAMES: PieceSetName[] = ['standard'];
+
+export const PIECE_SET_LABELS: Record<PieceSetName, string> = {
+  standard: 'Standard',
+};
+
 export interface AppearanceSettings {
   colorScheme: ColorSchemePreference;
   boardTheme: BoardThemeName;
+  pieceSet: PieceSetName;
 }
 
 export const DEFAULT_APPEARANCE_SETTINGS: AppearanceSettings = {
   colorScheme: 'system',
   boardTheme: DEFAULT_BOARD_THEME,
+  pieceSet: 'standard',
 };

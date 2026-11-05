@@ -6,7 +6,8 @@ type Element = { props: Record<string, any> };
 
 // Where a board piece is drawn on screen: its position from white's side,
 // turned round with the pieces layer when the board faces black (see
-// Chessboard). Both elements by testID: `piece-<square>` and `pieces-layer`.
+// Chessboard). Both elements by testID: `piece-<square>` and the board's
+// `<testID>-pieces`.
 export function piecePositionOnScreen(
   piece: Element,
   piecesLayer: Element,

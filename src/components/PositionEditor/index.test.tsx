@@ -1,21 +1,10 @@
-import { act, fireEvent, render } from '@testing-library/react-native';
-import { State } from 'react-native-gesture-handler';
-import {
-  fireGestureHandler,
-  getByGestureTestId,
-} from 'react-native-gesture-handler/jest-utils';
+import { fireEvent, render } from '@testing-library/react-native';
 
 import PositionEditor from '.';
+import { boardTester } from '../Board/boardTester';
 import { usePositionEditor } from '../../hooks/usePositionEditor';
-import { settleAnimations } from '../../testUtils/pieceGestures';
 
 const WIDTH = 400;
-// A square's middle, by its column and row from the top left (white at the
-// bottom), in the board's own coordinates.
-const at = (column: number, row: number) => ({
-  x: column * 50 + 25,
-  y: row * 50 + 25,
-});
 
 function Editor({ fen }: { fen: string }) {
   const editor = usePositionEditor(fen);
@@ -26,57 +15,99 @@ describe('PositionEditor', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => jest.useRealTimers());
 
-  async function drag(
-    from: { x: number; y: number },
-    to: { x: number; y: number },
-  ) {
-    await act(() =>
-      fireGestureHandler(getByGestureTestId('editor-board-pan'), [
-        { state: State.BEGAN, ...from },
-        { state: State.ACTIVE, ...from },
-        { state: State.ACTIVE, ...to },
-        { state: State.END, ...to },
-      ]),
-    );
-    await settleAnimations(16);
+  async function renderEditor(fen = '4k3/8/8/8/8/8/8/4K3 w - - 0 1') {
+    const screen = await render(<Editor fen={fen} />);
+    return { screen, board: boardTester(screen, 'setup') };
   }
 
   it('drags a piece to another square with the hand', async () => {
-    const screen = await render(<Editor fen="4k3/8/8/8/8/8/8/4K3 w - - 0 1" />);
+    const { screen, board } = await renderEditor();
     await fireEvent.press(screen.getByTestId('editor-tool-hand'));
 
-    // e1 to d3.
-    await drag(at(4, 7), at(3, 5));
+    await board.drag('e1', 'd3');
 
-    expect(screen.queryByTestId('editor-piece-e1')).toBeNull();
-    expect(screen.getByTestId('editor-piece-d3')).toBeTruthy();
-    expect(screen.queryByTestId('editor-lifted-piece')).toBeNull();
+    expect(board.pieceOn('e1')).toBeNull();
+    expect(board.pieceOn('d3')).toBe('wk');
+  });
+
+  it("drops a piece on another, of either side, in that one's place", async () => {
+    const { screen, board } = await renderEditor(
+      '4k3/8/8/8/8/8/4R3/4K3 w - - 0 1',
+    );
+    await fireEvent.press(screen.getByTestId('editor-tool-hand'));
+
+    // The king onto its own rook on e2.
+    await board.drag('e1', 'e2');
+
+    expect(board.pieceOn('e1')).toBeNull();
+    expect(board.pieceOn('e2')).toBe('wk');
+    expect(screen.queryByTestId('editor-error-white-king')).toBeNull();
   });
 
   it('takes a piece dragged off the board away', async () => {
-    const screen = await render(<Editor fen="4k3/8/8/8/8/8/8/4K3 w - - 0 1" />);
+    const { screen, board } = await renderEditor();
     await fireEvent.press(screen.getByTestId('editor-tool-hand'));
 
-    await drag(at(4, 0), { x: 200, y: WIDTH + 60 });
+    await board.dragOff('e8');
 
-    expect(screen.queryByTestId('editor-piece-e8')).toBeNull();
+    expect(board.pieceOn('e8')).toBeNull();
     expect(screen.getByTestId('editor-error-black-king')).toBeTruthy();
   });
 
   it("doesn't drag unless the hand is picked", async () => {
-    const screen = await render(<Editor fen="4k3/8/8/8/8/8/8/4K3 w - - 0 1" />);
+    const { board } = await renderEditor();
 
-    await drag(at(4, 7), at(3, 5));
+    await board.drag('e1', 'd3');
 
-    expect(screen.getByTestId('editor-piece-e1')).toBeTruthy();
+    expect(board.pieceOn('e1')).toBe('wk');
+    expect(board.pieceOn('d3')).toBeNull();
+  });
+
+  it.each(['hand', 'erase'])(
+    'offers the %s in both rows, picked in both from either',
+    async (tool) => {
+      const { screen } = await renderEditor();
+
+      await fireEvent.press(screen.getByTestId(`editor-tool-${tool}-bottom`));
+
+      expect(screen.getByTestId(`editor-tool-${tool}`)).toBeSelected();
+      expect(screen.getByTestId(`editor-tool-${tool}-bottom`)).toBeSelected();
+
+      await fireEvent.press(screen.getByTestId('editor-tool-wq'));
+
+      expect(screen.getByTestId(`editor-tool-${tool}`)).not.toBeSelected();
+      expect(
+        screen.getByTestId(`editor-tool-${tool}-bottom`),
+      ).not.toBeSelected();
+    },
+  );
+
+  it("drags with the lower row's hand too", async () => {
+    const { screen, board } = await renderEditor();
+    await fireEvent.press(screen.getByTestId('editor-tool-hand-bottom'));
+
+    await board.drag('e1', 'd3');
+
+    expect(board.pieceOn('d3')).toBe('wk');
   });
 
   it('places the picked piece where the board is tapped', async () => {
-    const screen = await render(<Editor fen="4k3/8/8/8/8/8/8/4K3 w - - 0 1" />);
+    const { screen, board } = await renderEditor();
 
     await fireEvent.press(screen.getByTestId('editor-tool-bq'));
-    await fireEvent.press(screen.getByTestId('square-d4'));
+    await board.tap('d4');
 
-    expect(screen.getByTestId('editor-piece-d4')).toBeTruthy();
+    expect(board.pieceOn('d4')).toBe('bq');
+  });
+
+  it('erases a piece tapped with the eraser', async () => {
+    const { screen, board } = await renderEditor(
+      '4k3/8/8/8/3q4/8/8/4K3 w - - 0 1',
+    );
+
+    await fireEvent.press(screen.getByTestId('editor-tool-erase'));
+    await board.tap('d4');
+
+    expect(board.pieceOn('d4')).toBeNull();
   });
 });

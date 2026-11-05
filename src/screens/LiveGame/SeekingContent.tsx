@@ -1,6 +1,6 @@
 import { View, Text, Pressable } from 'react-native';
 
-import BoardSurface from '../../components/ChessBoard/BoardSurface';
+import { EmptyBoard } from '../../components/Board';
 import BottomBar from '../../components/BottomBar';
 import GameBoardArea, { PlayerBarSpace } from '../../components/GameBoardArea';
 import GameHeader from '../../components/GameHeader';
@@ -10,7 +10,7 @@ import Icon from '../../components/Icon';
 import { Seek } from '../../constants/seek';
 import { LobbyStats } from '../../network/socketEvents';
 import { formatRatingRange } from '../../utils/rating';
-import { makeStyles, useBoardColors } from '../../theme';
+import { makeStyles } from '../../theme';
 
 interface SeekingContentProps {
   width: number;
@@ -31,7 +31,6 @@ const SeekingContent: React.FC<SeekingContentProps> = ({
   isConnecting,
   onCancel,
 }) => {
-  const boardColors = useBoardColors();
   const styles = useStyles();
   return (
     <View style={styles.screen} testID="seeking-content">
@@ -41,7 +40,7 @@ const SeekingContent: React.FC<SeekingContentProps> = ({
       <GameBoardArea>
         <PlayerBarSpace />
         <View style={{ width, height: width }}>
-          <BoardSurface colors={boardColors} />
+          <EmptyBoard width={width} />
           <View style={styles.cardOverlay} pointerEvents="box-none">
             <SeekCard
               timeControl={seek.timeControl}

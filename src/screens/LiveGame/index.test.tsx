@@ -7,6 +7,7 @@ import { Seek } from '../../constants/seek';
 import { AccountUser } from '../../network/restClient';
 import { GAME_RESULT_REASON } from '../../network/socketEvents';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
+import { boardTester } from '../../components/Board/boardTester';
 import { makeGameSnapshot } from '../../testUtils/gameSnapshot';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { makeAuthSession } from '../../testUtils/authSession';
@@ -102,7 +103,7 @@ describe('LiveGame', () => {
     await act(() => trigger('game:state', makeGameSnapshot({ id: 'game-1' })));
 
     expect(screen.getByTestId('game-toolbar')).toBeTruthy();
-    expect(screen.getByTestId('piece-e2')).toBeTruthy();
+    expect(boardTester(screen).pieceOn('e2')).toBe('wp');
     expect(navigation.goBack).not.toHaveBeenCalled();
   });
 
@@ -153,8 +154,8 @@ describe('LiveGame', () => {
     await act(() => trigger('game:created', secondGame));
     await act(() => trigger('game:state', secondGame));
 
-    expect(screen.getByTestId('piece-e2')).toBeTruthy();
-    expect(screen.queryByTestId('piece-e4')).toBeNull();
+    expect(boardTester(screen).pieceOn('e2')).toBe('wp');
+    expect(boardTester(screen).pieceOn('e4')).toBeNull();
   });
 
   it('leaves the screen when the seek is cancelled', async () => {

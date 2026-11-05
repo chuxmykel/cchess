@@ -53,6 +53,13 @@ export interface ThemeColors {
   accentSubtle: string;
   // The accent as a soft fill: the current move, the clock that's running.
   accentSoft: string;
+  // A choice drawn with a piece on it - Play as's kings - and its label,
+  // then the same once picked. On a dark screen, a mid grey either king
+  // shows on (tinted with the accent once picked), its label lighter.
+  pieceChoice: string;
+  pieceChoiceSelected: string;
+  pieceChoiceLabel: string;
+  pieceChoiceLabelSelected: string;
   // Text in the accent's color, dark enough to read on the background.
   accentText: string;
   link: string;
@@ -104,6 +111,11 @@ export interface ThemeColors {
     check: string;
     promotionTile: string;
     promotionTilePressed: string;
+    // The position editor's palette: a light grey panel - the same in both
+    // modes, so black pieces show on a dark screen too - and its own tools'
+    // icons drawn on it.
+    palette: string;
+    paletteIcon: string;
     // An engine line's arrow, best first, and the threat's.
     arrows: readonly string[];
     threatArrow: string;
@@ -138,6 +150,8 @@ const sharedBoardColors = {
   lastMove: 'rgba(155, 199, 0, 0.41)',
   moveHint: 'rgba(70, 70, 70, 0.4)',
   dragOrigin: 'rgba(255, 210, 60, 0.5)',
+  palette: '#dcdfe3',
+  paletteIcon: '#4b4f55',
   arrows: [
     'rgba(98, 153, 88, 0.62)',
     'rgba(98, 153, 88, 0.42)',
@@ -180,6 +194,10 @@ export const lightTheme: Theme = {
     accent: '#769656',
     accentSubtle: '#eef4e8',
     accentSoft: '#e3edd8',
+    pieceChoice: '#f7f7f7',
+    pieceChoiceSelected: '#eef4e8',
+    pieceChoiceLabel: '#888',
+    pieceChoiceLabelSelected: '#769656',
     accentText: '#2f6f3e',
     link: '#2a7ae2',
 
@@ -259,6 +277,10 @@ export const darkTheme: Theme = {
     accent: '#769656',
     accentSubtle: '#232b1c',
     accentSoft: '#2f3b24',
+    pieceChoice: '#56534e',
+    pieceChoiceSelected: '#52603f',
+    pieceChoiceLabel: '#e8e6e3',
+    pieceChoiceLabelSelected: '#9cc37a',
     accentText: '#9cc37a',
     link: '#5b9cf0',
 

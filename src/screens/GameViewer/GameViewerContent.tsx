@@ -6,7 +6,7 @@ import { formatDistanceToNowStrict, min } from 'date-fns';
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
 import BottomBar from '../../components/BottomBar';
 import ChatSheet from '../../components/ChatSheet';
-import StaticBoard from '../../components/ChessBoard/StaticBoard';
+import { PositionBoard } from '../../components/Board';
 import GameScreenHeader from '../../components/GameScreenHeader';
 import GameOverCard from '../../components/GameOverCard';
 import GameOverOverlay from '../../components/GameOverOverlay';
@@ -37,7 +37,6 @@ import {
   useMoveNavigationSounds,
 } from '../../hooks/useGameSounds';
 import { GameSnapshot } from '../../network/socketEvents';
-import { useBoardColors } from '../../theme';
 import {
   analyseAction,
   flipBoardAction,
@@ -80,7 +79,6 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   onAnalyse,
   onError,
 }) => {
-  const boardColors = useBoardColors();
   // From your own side, or else that of the player being watched.
   const watchedPlayedAs = watchedUserId
     ? colorPlayedBy(snapshot, watchedUserId)
@@ -169,9 +167,8 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
         material={material}
         playerBarProps={playerBarProps}
       >
-        <StaticBoard
+        <PositionBoard
           fen={viewedFen}
-          colors={boardColors}
           width={width}
           orientation={orientation}
           lastMove={moveNavigation.lastMove}

@@ -19,10 +19,7 @@ describe('useOnlineChessGame', () => {
     );
 
     await act(() => {
-      result.current.handleSquareTap('e2');
-    });
-    await act(() => {
-      result.current.handleSquareTap('e4');
+      result.current.attemptMove('e2', 'e4');
     });
 
     expect(result.current.pieces).toEqual(
@@ -43,11 +40,12 @@ describe('useOnlineChessGame', () => {
       useOnlineChessGame(socket, GAME_ID, 'b', snapshot),
     );
 
+    let status: string;
     await act(() => {
-      result.current.handleSquareTap('e7');
+      status = result.current.attemptMove('e7', 'e5').status;
     });
 
-    expect(result.current.selectedSquare).toBeNull();
+    expect(status).toBe('illegal');
     expect(socket.emit).not.toHaveBeenCalledWith(
       'game:move',
       expect.anything(),
@@ -63,14 +61,12 @@ describe('useOnlineChessGame', () => {
 
     // White to move: neither white's pieces (the side to move, but not
     // mine) nor mine, out of turn.
-    expect(asBlack.result.current.isOwnPieceAt('e2')).toBe(false);
-    expect(asBlack.result.current.isOwnPieceAt('e7')).toBe(false);
+    expect(asBlack.result.current.movableColor).toBeNull();
 
     const asWhite = await renderHook(() =>
       useOnlineChessGame(socket, GAME_ID, 'w', snapshot),
     );
-    expect(asWhite.result.current.isOwnPieceAt('e2')).toBe(true);
-    expect(asWhite.result.current.isOwnPieceAt('e7')).toBe(false);
+    expect(asWhite.result.current.movableColor).toBe('w');
   });
 
   it('does not re-apply the echo of its own submitted move', async () => {
@@ -81,10 +77,7 @@ describe('useOnlineChessGame', () => {
     );
 
     await act(() => {
-      result.current.handleSquareTap('e2');
-    });
-    await act(() => {
-      result.current.handleSquareTap('e4');
+      result.current.attemptMove('e2', 'e4');
     });
     const fenAfterLocalMove = result.current.fen;
 
@@ -313,10 +306,7 @@ describe('useOnlineChessGame', () => {
       );
 
       await act(() => {
-        result.current.handleSquareTap('e7');
-      });
-      await act(() => {
-        result.current.handleSquareTap('e5');
+        result.current.attemptMove('e7', 'e5');
       });
 
       expect(result.current.canAbort).toBe(false);

@@ -3,103 +3,42 @@ import { act, renderHook } from '@testing-library/react-native';
 import { useChessGame } from '../useChessGame';
 
 describe('useChessGame', () => {
-  it('starts with the standard setup, white to move, and nothing selected', async () => {
+  it('starts with the standard setup, white to move', async () => {
     const { result } = await renderHook(() => useChessGame());
 
     expect(result.current.pieces).toHaveLength(32);
     expect(result.current.turn).toBe('w');
     expect(result.current.isGameOver).toBe(false);
-    expect(result.current.selectedSquare).toBeNull();
-    expect(result.current.legalMoveSquares).toEqual([]);
+    expect(result.current.movableColor).toBe('w');
+    expect([...result.current.legalTargets.e2].sort()).toEqual(['e3', 'e4']);
   });
 
-  it('selects an own piece on tap and lists its legal destination squares', async () => {
+  it('makes a legal move, and the other side is to move', async () => {
     const { result } = await renderHook(() => useChessGame());
 
     await act(() => {
-      result.current.handleSquareTap('e2');
+      result.current.attemptMove('e2', 'e4');
     });
 
-    expect(result.current.selectedSquare).toBe('e2');
-    expect([...result.current.legalMoveSquares].sort()).toEqual(['e3', 'e4']);
-  });
-
-  it('treats tapping the same selected square again as a no-op', async () => {
-    const { result } = await renderHook(() => useChessGame());
-
-    await act(() => {
-      result.current.handleSquareTap('e2');
-    });
-    await act(() => {
-      result.current.handleSquareTap('e2');
-    });
-
-    expect(result.current.selectedSquare).toBe('e2');
-  });
-
-  it('switches selection when a different own piece is tapped', async () => {
-    const { result } = await renderHook(() => useChessGame());
-
-    await act(() => {
-      result.current.handleSquareTap('e2');
-    });
-    await act(() => {
-      result.current.handleSquareTap('b1');
-    });
-
-    expect(result.current.selectedSquare).toBe('b1');
-  });
-
-  it('commits the move and clears selection when a legal target square is tapped', async () => {
-    const { result } = await renderHook(() => useChessGame());
-
-    await act(() => {
-      result.current.handleSquareTap('e2');
-    });
-    await act(() => {
-      result.current.handleSquareTap('e4');
-    });
-
-    expect(result.current.selectedSquare).toBeNull();
-    expect(result.current.legalMoveSquares).toEqual([]);
     expect(result.current.turn).toBe('b');
+    expect(result.current.movableColor).toBe('b');
     expect(result.current.pieces).toEqual(
       expect.arrayContaining([{ square: 'e4', type: 'p', color: 'w' }]),
     );
     expect(result.current.lastMove).toMatchObject({ from: 'e2', to: 'e4' });
   });
 
-  it('rejects an illegal attemptMove (e.g. a drag) without changing the board, and clears any selection', async () => {
+  it('rejects an illegal move without changing the board', async () => {
     const { result } = await renderHook(() => useChessGame());
+    const before = result.current;
 
+    let status: string;
     await act(() => {
-      result.current.handleSquareTap('e2'); // arm a selection via tap
-    });
-    await act(() => {
-      result.current.attemptMove('c1', 'c2'); // unrelated illegal drag - bishop boxed in
-    });
-
-    expect(result.current.selectedSquare).toBeNull();
-    expect(result.current.turn).toBe('w');
-  });
-
-  it('does not leave a stale tap-selection armed after an unrelated illegal drag', async () => {
-    const { result } = await renderHook(() => useChessGame());
-
-    await act(() => {
-      result.current.handleSquareTap('e2');
-    });
-    await act(() => {
-      result.current.attemptMove('c1', 'c2'); // illegal
-    });
-    await act(() => {
-      result.current.handleSquareTap('e4'); // nothing selected now - must be a no-op
+      status = result.current.attemptMove('c1', 'c2').status; // bishop boxed in
     });
 
-    expect(result.current.pieces).toEqual(
-      expect.arrayContaining([{ square: 'e2', type: 'p', color: 'w' }]),
-    );
-    expect(result.current.turn).toBe('w');
+    expect(status).toBe('illegal');
+    expect(result.current).toBe(before);
   });
 
   it('asks for a promotion choice instead of moving, then applies it once chosen', async () => {
@@ -146,14 +85,11 @@ describe('useChessGame', () => {
     expect(result.current.turn).toBe('w');
   });
 
-  it('resets to a position without a move, clearing the selection', async () => {
+  it('resets to a position without a move', async () => {
     const start = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     const { result } = await renderHook(() => useChessGame(start));
     await act(() => {
       result.current.attemptMove('e2', 'e4');
-    });
-    await act(() => {
-      result.current.handleSquareTap('e7');
     });
 
     await act(() => {
@@ -163,7 +99,6 @@ describe('useChessGame', () => {
     expect(result.current.fen).toBe(start);
     expect(result.current.turn).toBe('w');
     expect(result.current.lastMove).toBeNull();
-    expect(result.current.selectedSquare).toBeNull();
     expect(result.current.pieces).toEqual(
       expect.arrayContaining([{ square: 'e2', type: 'p', color: 'w' }]),
     );
@@ -203,17 +138,14 @@ describe('useChessGame', () => {
     expect(result.current.isGameOver).toBe(true);
   });
 
-  it('tells onMoveApplied of every move made, tapped or promoted, with the position reached', async () => {
+  it('tells onMoveApplied of every move made, promoted too, with the position reached', async () => {
     const onMoveApplied = jest.fn();
     const { result } = await renderHook(() =>
       useChessGame('7k/4P3/8/8/8/8/8/4K3 w - - 0 1', { onMoveApplied }),
     );
 
     await act(() => {
-      result.current.handleSquareTap('e7');
-    });
-    await act(() => {
-      result.current.handleSquareTap('e8');
+      result.current.attemptMove('e7', 'e8');
     });
     expect(onMoveApplied).not.toHaveBeenCalled();
     await act(() => {
@@ -226,7 +158,7 @@ describe('useChessGame', () => {
     );
   });
 
-  it('ignores taps once the game is over', async () => {
+  it('lets no piece move once the game is over', async () => {
     const { result } = await renderHook(() => useChessGame());
 
     await act(() => {
@@ -243,16 +175,6 @@ describe('useChessGame', () => {
     });
     expect(result.current.isGameOver).toBe(true);
 
-    await act(() => {
-      result.current.handleSquareTap('e8');
-    });
-    await act(() => {
-      result.current.handleSquareTap('e7');
-    });
-
-    expect(result.current.selectedSquare).toBeNull();
-    expect(result.current.pieces).toEqual(
-      expect.arrayContaining([{ square: 'e8', type: 'k', color: 'b' }]),
-    );
+    expect(result.current.movableColor).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 import { Square } from 'chess.js';
 
-import { BoardArrow } from '../components/ChessBoard/BoardArrows';
+import { BoardArrow } from '../components/Board';
 import { EngineLineView } from '../hooks/useEngineAnalysis';
 import { ThemeColors } from '../theme/themes';
 

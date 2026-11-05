@@ -25,7 +25,7 @@ export type { GameStatus };
 
 export type UseOnlineChessGameResult = Omit<
   UseChessGameResult,
-  'isGameOver' | 'attemptMove' | 'handleSquareTap' | 'isOwnPieceAt'
+  'isGameOver' | 'attemptMove' | 'movableColor'
 > & {
   myColor: Color;
   isGameOver: boolean;
@@ -48,10 +48,9 @@ export type UseOnlineChessGameResult = Omit<
   isOpponentOnline: boolean;
   chat: GameChat;
   attemptMove: (from: Square, to: Square) => MoveResult;
-  handleSquareTap: (square: Square) => void;
-  /** Whether the piece on a square is mine to touch: my pieces, on my
-   * turn, while the game is on. */
-  isOwnPieceAt: (square: Square) => boolean;
+  /** Whose pieces can be picked up: mine, on my turn, while the game is
+   * on - nobody's otherwise. */
+  movableColor: Color | null;
   resign: () => void;
   offerDraw: () => void;
   respondToDraw: (accept: boolean) => void;
@@ -129,19 +128,10 @@ export function useOnlineChessGame(
     return game.attemptMove(from, to);
   }
 
-  function handleSquareTap(square: Square): void {
-    if (!canAct()) {
-      return;
-    }
-    game.handleSquareTap(square);
-  }
-
   // The board lets a piece be picked up - and shows its moves - when this
   // says so. Left to the local game alone it would answer for the side to
   // move, so on the opponent's turn their pieces would show moves to me.
-  function isOwnPieceAt(square: Square): boolean {
-    return canAct() && game.isOwnPieceAt(square);
-  }
+  const movableColor = canAct() ? myColor : null;
 
   function resign(): void {
     socket.emit('game:resign', { gameId });
@@ -181,8 +171,7 @@ export function useOnlineChessGame(
     isOpponentOnline,
     chat,
     attemptMove,
-    handleSquareTap,
-    isOwnPieceAt,
+    movableColor,
     resign,
     offerDraw,
     respondToDraw,

@@ -5,8 +5,7 @@ import { Color } from 'chess.js';
 
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
 import BottomBar from '../../components/BottomBar';
-import Chessboard from '../../components/ChessBoard';
-import BoardArrows from '../../components/ChessBoard/BoardArrows';
+import { GameBoard } from '../../components/Board';
 import EngineLines, {
   DEPTH_HEIGHT,
   LINE_HEIGHT,
@@ -32,7 +31,7 @@ import { useEngineAnalysis } from '../../hooks/useEngineAnalysis';
 import { useAnalysisSounds } from '../../hooks/useGameSounds';
 import { analysisArrows } from '../../utils/analysisArrows';
 import { flipBoardAction } from '../gameMenuActions';
-import { makeStyles, useTheme, useBoardColors } from '../../theme';
+import { makeStyles, useTheme } from '../../theme';
 
 interface AnalysisBoardContentProps {
   start: AnalysisStart;
@@ -55,7 +54,6 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
   onEditPosition,
   onOpenSettings,
 }) => {
-  const boardColors = useBoardColors();
   const styles = useStyles();
   const { colors } = useTheme();
 
@@ -218,19 +216,14 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
         {evalBarAt === 'left' && evalBar}
         <View style={{ width: boardWidth, height: boardWidth }}>
           <ChessGameContext.Provider value={game}>
-            <Chessboard
-              colors={boardColors}
+            <GameBoard
               width={boardWidth}
               orientation={orientation}
               lastPlayedMove={lastPlayedMove}
               slideOnReset
+              arrows={arrows}
             />
           </ChessGameContext.Provider>
-          <BoardArrows
-            arrows={arrows}
-            boardWidth={boardWidth}
-            orientation={orientation}
-          />
           {game.pendingPromotion && (
             <PromotionMenu
               promotingColor={game.turn}

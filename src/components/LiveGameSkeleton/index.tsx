@@ -1,6 +1,6 @@
 import { View, StyleSheet } from 'react-native';
 
-import BoardSurface from '../ChessBoard/BoardSurface';
+import { EmptyBoard } from '../Board';
 import BottomBar from '../BottomBar';
 import GameHeader from '../GameHeader';
 import Placeholder from '../Placeholder';
@@ -8,7 +8,7 @@ import GameBoardArea from '../GameBoardArea';
 import { MOVE_LIST_HEIGHT } from '../MoveList';
 import { PLAYER_BAR_HEIGHT } from '../PlayerBar';
 import { TimeControl } from '../../constants/timeControls';
-import { spacing, useBoardColors } from '../../theme';
+import { spacing } from '../../theme';
 
 interface LiveGameSkeletonProps {
   width: number;
@@ -28,7 +28,6 @@ const LiveGameSkeleton: React.FC<LiveGameSkeletonProps> = ({
   timeControl,
   rated,
 }) => {
-  const boardColors = useBoardColors();
   return (
     <View style={styles.screen} testID="live-game-skeleton">
       <GameHeader timeControl={timeControl} rated={rated} />
@@ -36,7 +35,7 @@ const LiveGameSkeleton: React.FC<LiveGameSkeletonProps> = ({
       <GameBoardArea>
         <PlayerBarPlaceholder />
         <View style={{ width, height: width }}>
-          <BoardSurface colors={boardColors} />
+          <EmptyBoard width={width} />
         </View>
         <PlayerBarPlaceholder />
       </GameBoardArea>

@@ -1,33 +1,14 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
-import {
-  GestureDetector,
-  GestureHandlerRootView,
-  PanGestureConfig,
-  usePanGesture,
-} from 'react-native-gesture-handler';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-} from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
-import { Color, PieceSymbol, Square } from 'chess.js';
+import { Pressable, Text, View } from 'react-native';
+import { Color, PieceSymbol } from 'chess.js';
 
-import BoardSurface from '../ChessBoard/BoardSurface';
+import { BoardPieceIcon, SetupBoard } from '../Board';
 import Icon, { IconName } from '../Icon';
-import { PIECES, TAP_MOVEMENT_THRESHOLD } from '../../constants';
-import { DRAG_LIFT, DRAG_SCALE } from '../../constants/animations';
-import {
-  getSquareFromXY,
-  getXYFromSquare,
-  isOnBoard,
-} from '../../domain/boardCoordinates';
 import { SetupError } from '../../domain/positionSetup';
 import {
   EditorTool,
   PositionEditor as Editor,
 } from '../../hooks/usePositionEditor';
-import { makeStyles, useTheme, useBoardColors } from '../../theme';
+import { makeStyles, useTheme } from '../../theme';
 
 interface PositionEditorProps {
   editor: Editor;
@@ -37,6 +18,7 @@ interface PositionEditorProps {
 }
 
 const PIECE_TYPES: PieceSymbol[] = ['k', 'q', 'r', 'b', 'n', 'p'];
+const TOOL_PIECE_SIZE = 34;
 
 export const SETUP_ERROR_TEXT: Record<SetupError, string> = {
   'white-king': 'White needs exactly one king.',
@@ -53,30 +35,18 @@ function isTool(tool: EditorTool, type: PieceSymbol, color: Color) {
 // Setting up a position: the board, and the palette around it - a piece to
 // put down where the board's tapped, the eraser, or the hand, to drag the
 // pieces already there to another square, or off the board - each side's
-// pieces by its own side of the board. Whose move it is and castling are set
-// apart (PositionSetupSheet).
+// pieces by its own side of the board, the hand and the eraser on both. Each
+// row is a light grey panel, so black pieces show on a dark screen. Whose
+// move it is and castling are set apart (PositionSetupSheet).
 const PositionEditor: React.FC<PositionEditorProps> = ({
   editor,
   width,
   orientation = 'w',
 }) => {
-  const boardColors = useBoardColors();
   const styles = useStyles();
   const { colors } = useTheme();
 
-  const square = width / 8;
-  const pieces = Object.entries(editor.setup.board) as [
-    Square,
-    { type: PieceSymbol; color: Color },
-  ][];
-  const { lifted, gesture, liftedStyle } = useEditorDrag(
-    editor,
-    square,
-    orientation,
-    editor.tool === 'move',
-  );
   const topColor = orientation === 'w' ? 'b' : 'w';
-  const liftedPiece = lifted ? editor.setup.board[lifted] : undefined;
 
   const toolButton = (
     tool: EditorTool,
@@ -88,7 +58,11 @@ const PositionEditor: React.FC<PositionEditorProps> = ({
     <Pressable
       key={testID}
       onPress={() => editor.setTool(tool)}
-      style={[styles.tool, selected && styles.selectedTool]}
+      style={({ pressed }) => [
+        styles.tool,
+        pressed && styles.pressedTool,
+        selected && styles.selectedTool,
+      ]}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected }}
@@ -97,31 +71,35 @@ const PositionEditor: React.FC<PositionEditorProps> = ({
       {content}
     </Pressable>
   );
-  const iconTool = (tool: 'move' | 'erase', icon: IconName, label: string) =>
+  // The same tool in both rows, selected in both - the lower one's testID
+  // marked as such, so each stays unique.
+  const iconTool = (
+    tool: 'move' | 'erase',
+    icon: IconName,
+    label: string,
+    testIDSuffix: string,
+  ) =>
     toolButton(
       tool,
       editor.tool === tool,
       label,
-      `editor-tool-${tool === 'move' ? 'hand' : tool}`,
-      <Icon name={icon} size={26} color={colors.textSecondary} />,
+      `editor-tool-${tool === 'move' ? 'hand' : tool}${testIDSuffix}`,
+      <Icon name={icon} size={26} color={colors.board.paletteIcon} />,
     );
 
-  // Each colour's pieces, after a tool of the board's own: the hand above,
-  // the eraser below.
-  const paletteRow = (color: Color, first: React.ReactNode) => (
+  // Each colour's pieces, after the board's own tools: the hand, then the
+  // eraser.
+  const paletteRow = (color: Color, testIDSuffix: string) => (
     <View style={styles.palette}>
-      {first}
+      {iconTool('move', 'hand-back-right-outline', 'Move', testIDSuffix)}
+      {iconTool('erase', 'eraser', 'Eraser', testIDSuffix)}
       {PIECE_TYPES.map((type) =>
         toolButton(
           { type, color },
           isTool(editor.tool, type, color),
           `${color === 'w' ? 'White' : 'Black'} ${type}`,
           `editor-tool-${color}${type}`,
-          <Image
-            source={PIECES[`${color}${type}`]}
-            style={styles.toolImage}
-            fadeDuration={0}
-          />,
+          <BoardPieceIcon color={color} type={type} size={TOOL_PIECE_SIZE} />,
         ),
       )}
     </View>
@@ -129,57 +107,9 @@ const PositionEditor: React.FC<PositionEditorProps> = ({
 
   return (
     <View testID="position-editor">
-      {paletteRow(
-        topColor,
-        iconTool('move', 'hand-back-right-outline', 'Move'),
-      )}
-      {/* Its own gesture root, as the game board has: it's also shown in
-          a modal, outside the app's. */}
-      <GestureHandlerRootView>
-        <GestureDetector gesture={gesture}>
-          <View style={{ width, height: width }} testID="editor-board">
-            <BoardSurface
-              colors={boardColors}
-              orientation={orientation}
-              onSquarePress={editor.tapSquare}
-            />
-            {pieces.map(([at, piece]) => {
-              const { x, y } = getXYFromSquare(at, square, orientation);
-              return (
-                <Image
-                  key={at}
-                  source={PIECES[`${piece.color}${piece.type}`]}
-                  fadeDuration={0}
-                  pointerEvents="none"
-                  style={[
-                    styles.piece,
-                    { left: x, top: y, width: square, height: square },
-                    at === lifted && styles.liftedFrom,
-                  ]}
-                  testID={`editor-piece-${at}`}
-                />
-              );
-            })}
-            {liftedPiece && (
-              <Animated.Image
-                source={PIECES[`${liftedPiece.color}${liftedPiece.type}`]}
-                fadeDuration={0}
-                pointerEvents="none"
-                style={[
-                  styles.piece,
-                  {
-                    width: square * DRAG_SCALE,
-                    height: square * DRAG_SCALE,
-                  },
-                  liftedStyle,
-                ]}
-                testID="editor-lifted-piece"
-              />
-            )}
-          </View>
-        </GestureDetector>
-      </GestureHandlerRootView>
-      {paletteRow(orientation, iconTool('erase', 'eraser', 'Eraser'))}
+      {paletteRow(topColor, '')}
+      <SetupBoard editor={editor} width={width} orientation={orientation} />
+      {paletteRow(orientation, '-bottom')}
       {editor.errors.map((error) => (
         <Text key={error} style={styles.error} testID={`editor-error-${error}`}>
           {SETUP_ERROR_TEXT[error]}
@@ -191,89 +121,18 @@ const PositionEditor: React.FC<PositionEditorProps> = ({
 
 export default PositionEditor;
 
-// The hand's drag: a piece lifted where the finger starts, drawn under it -
-// bigger, and a square above it, as a piece dragged on the game board is -
-// and moved to the square it's let go on, or off the board when that's off
-// it. Everything after touch-down runs on the UI thread; only lifting and
-// dropping reach JS.
-function useEditorDrag(
-  editor: Editor,
-  square: number,
-  orientation: Color,
-  enabled: boolean,
-) {
-  const [lifted, setLifted] = useState<Square | null>(null);
-  const start = useSharedValue({ x: 0, y: 0 });
-  const finger = useSharedValue({ x: 0, y: 0 });
-
-  // Always the latest, for the gesture's callbacks, which never change.
-  const latestEditor = useRef(editor);
-  useLayoutEffect(() => {
-    latestEditor.current = editor;
-  });
-  const lift = useCallback((from: Square) => {
-    if (latestEditor.current.setup.board[from]) setLifted(from);
-  }, []);
-  const drop = useCallback((from: Square, to: Square | null) => {
-    setLifted(null);
-    latestEditor.current.movePiece(from, to);
-  }, []);
-
-  const panConfig = useMemo<PanGestureConfig>(
-    () => ({
-      testID: 'editor-board-pan',
-      enabled,
-      minDistance: TAP_MOVEMENT_THRESHOLD,
-      onBegin: (event) => {
-        'worklet';
-        start.set({ x: event.x, y: event.y });
-      },
-      onActivate: (event) => {
-        'worklet';
-        finger.set({ x: event.x, y: event.y });
-        if (isOnBoard(start.get(), square)) {
-          scheduleOnRN(lift, getSquareFromXY(start.get(), square, orientation));
-        }
-      },
-      onUpdate: (event) => {
-        'worklet';
-        finger.set({ x: event.x, y: event.y });
-      },
-      onDeactivate: (event) => {
-        'worklet';
-        if (!isOnBoard(start.get(), square)) return;
-        const at = { x: event.x, y: event.y };
-        scheduleOnRN(
-          drop,
-          getSquareFromXY(start.get(), square, orientation),
-          isOnBoard(at, square)
-            ? getSquareFromXY(at, square, orientation)
-            : null,
-        );
-      },
-    }),
-    [enabled, square, orientation, start, finger, lift, drop],
-  );
-  const gesture = usePanGesture(panConfig);
-
-  const liftedStyle = useAnimatedStyle(() => {
-    const size = square * DRAG_SCALE;
-    const { x, y } = finger.get();
-    return {
-      left: x - size / 2,
-      top: y - square * DRAG_LIFT - size / 2,
-    };
-  });
-
-  return { lifted, gesture, liftedStyle };
-}
-
 const useStyles = makeStyles((t) => ({
+  // One light grey panel per row - not a tile per tool, which looked like
+  // more squares of the board.
   palette: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: t.spacing.xs,
-    paddingVertical: t.spacing.sm,
+    gap: t.spacing.xxs,
+    marginHorizontal: t.spacing.sm,
+    marginVertical: t.spacing.sm,
+    padding: t.spacing.xs,
+    borderRadius: t.radius.lg,
+    backgroundColor: t.colors.board.palette,
   },
   tool: {
     width: 44,
@@ -281,21 +140,16 @@ const useStyles = makeStyles((t) => ({
     borderRadius: t.radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  selectedTool: {
-    backgroundColor: t.colors.accentSoft,
+    // Always there, so a tool selected keeps its size.
     borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  pressedTool: {
+    opacity: 0.7,
+  },
+  // Its border alone: the panel stays light grey under a black piece.
+  selectedTool: {
     borderColor: t.colors.accent,
-  },
-  toolImage: {
-    width: 36,
-    height: 36,
-  },
-  piece: {
-    position: 'absolute',
-  },
-  liftedFrom: {
-    opacity: 0,
   },
   error: {
     color: t.colors.danger,

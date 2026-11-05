@@ -9,7 +9,7 @@ import { useChessGame, UseChessGameResult } from './useChessGame';
 // variation or along one already there - and stepping through the tree
 // moves the board: one move forward is played, so it animates and sounds as
 // a move does; anything else puts the board in the position, sliding the
-// pieces there (see Chessboard's `slideOnReset`).
+// pieces there (see GameBoard's `slideOnReset`).
 //
 // Its steps (`navigation`) move the board in the same render as the tree,
 // as the press is handled: waiting for the tree's render to move the board

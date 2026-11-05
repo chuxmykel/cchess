@@ -6,7 +6,7 @@ import {
   getByGestureTestId,
 } from 'react-native-gesture-handler/jest-utils';
 
-import { TAP_MOVEMENT_THRESHOLD } from '../constants';
+import { TAP_MOVEMENT_THRESHOLD } from '../lib/chessboard/constants';
 
 // Drives a board piece's gestures (see usePieceGesture) the way Gesture
 // Handler would on a device, by the testID the piece was rendered with -

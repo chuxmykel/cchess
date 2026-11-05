@@ -1,7 +1,7 @@
-import { Image, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import Icon from '../Icon';
-import { PIECES } from '../../constants';
+import { BoardPieceIcon } from '../Board';
 import { ColorChoice } from '../../network/socketEvents';
 import { makeStyles, useTheme } from '../../theme';
 
@@ -43,12 +43,17 @@ const ColorChoicePicker: React.FC<ColorChoicePickerProps> = ({
               <Icon
                 name="shuffle-variant"
                 size={ICON_SIZE - 4}
-                color={isSelected ? colors.accent : colors.textMuted}
+                color={
+                  isSelected
+                    ? colors.pieceChoiceLabelSelected
+                    : colors.pieceChoiceLabel
+                }
               />
             ) : (
-              <Image
-                source={PIECES[color === 'white' ? 'wk' : 'bk']}
-                style={styles.king}
+              <BoardPieceIcon
+                color={color === 'white' ? 'w' : 'b'}
+                type="k"
+                size={ICON_SIZE}
               />
             )}
             <Text style={[styles.label, isSelected && styles.selectedLabel]}>
@@ -76,22 +81,18 @@ const useStyles = makeStyles((t) => ({
     borderRadius: t.radius.md,
     borderWidth: 1.5,
     borderColor: t.colors.divider,
-    backgroundColor: t.colors.surfaceSubtle,
+    backgroundColor: t.colors.pieceChoice,
   },
   selected: {
     borderColor: t.colors.accent,
-    backgroundColor: t.colors.accentSubtle,
-  },
-  king: {
-    width: ICON_SIZE,
-    height: ICON_SIZE,
+    backgroundColor: t.colors.pieceChoiceSelected,
   },
   label: {
     fontSize: t.fontSize.md,
-    color: t.colors.textMuted,
+    color: t.colors.pieceChoiceLabel,
   },
   selectedLabel: {
     fontWeight: t.fontWeight.semibold,
-    color: t.colors.accent,
+    color: t.colors.pieceChoiceLabelSelected,
   },
 }));
