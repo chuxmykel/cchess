@@ -27,7 +27,7 @@ function showsGamesFor(loaded: LoadedGames | null, userId: string): boolean {
 
 export function useRecentGames(limit: number): {
   recentGames: RecentGames;
-  reload: () => void;
+  reload: () => Promise<void>;
 } {
   const session = useAuthSession();
   const { authorized } = session;
@@ -37,11 +37,11 @@ export function useRecentGames(limit: number): {
 
   const reload = useCallback(() => {
     if (!userId) {
-      return;
+      return Promise.resolve();
     }
     latestRequestId.current += 1;
     const requestId = latestRequestId.current;
-    authorized((accessToken) => getMyGames(accessToken, limit))
+    return authorized((accessToken) => getMyGames(accessToken, limit))
       .then((games) => ({ userId, games: games.filter(isFinished) }))
       .catch(() => ({ userId, failed: true as const }))
       .then((result) => {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { Alert, FlatList, View } from 'react-native';
 
@@ -47,7 +47,12 @@ const Friends: React.FC<FriendsProps> = ({ navigation, route }) => {
     toast.show(`Challenge sent to ${friend.displayName}`),
   );
   const [tab, setTab] = useState<FriendsTab>('online');
-  useFocusEffect(social.reload);
+  const reloadSocial = social.reload;
+  useFocusEffect(
+    useCallback(() => {
+      reloadSocial();
+    }, [reloadSocial]),
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const userSearch = useUserSearch(searchQuery);
 

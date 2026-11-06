@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 
 import ProfileFriends from '../../components/ProfileFriends';
@@ -26,7 +27,11 @@ const MyFriends: React.FC<MyFriendsProps> = ({
   navigation,
 }) => {
   const { state, reload } = useUserFriends(username);
-  useFocusEffect(reload);
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload]),
+  );
   const friends = state.status === 'ready' ? state.friends : null;
 
   return (

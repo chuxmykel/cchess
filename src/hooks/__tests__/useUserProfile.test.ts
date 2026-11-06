@@ -48,7 +48,9 @@ describe('useUserProfile', () => {
     await act(async () => {});
 
     (getUserProfile as jest.Mock).mockRejectedValueOnce(new Error('offline'));
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
 
     expect(result.current.state.status).toBe('ready');
   });

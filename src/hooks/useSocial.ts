@@ -40,7 +40,7 @@ export type Social = {
   requests: FriendRequests;
   challenges: Challenges;
   unreadByUserId: Record<string, number>;
-  reload: () => void;
+  reload: () => Promise<void>;
   sendFriendRequest: (username: string) => Promise<void>;
   respondToFriendRequest: (requestId: string, accept: boolean) => Promise<void>;
   cancelFriendRequest: (requestId: string) => Promise<void>;
@@ -129,11 +129,11 @@ export function useSocial(
 
   const reload = useCallback(() => {
     if (!userId) {
-      return;
+      return Promise.resolve();
     }
     latestLoad.current += 1;
     const loadId = latestLoad.current;
-    authorized((accessToken) =>
+    return authorized((accessToken) =>
       Promise.all([
         getFriends(accessToken),
         getFriendRequests(accessToken),

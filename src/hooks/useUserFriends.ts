@@ -11,7 +11,7 @@ export type UserFriendsState =
 // A player's friends - anyone's, not just your own - with their presence.
 export function useUserFriends(username: string): {
   state: UserFriendsState;
-  reload: () => void;
+  reload: () => Promise<void>;
 } {
   const { authorized } = useAuthSession();
   const [state, setState] = useState<UserFriendsState>({ status: 'loading' });
@@ -20,7 +20,7 @@ export function useUserFriends(username: string): {
   const reload = useCallback(() => {
     latestRequest.current += 1;
     const requestId = latestRequest.current;
-    authorized((token) => getUserFriends(username, token))
+    return authorized((token) => getUserFriends(username, token))
       .then((friends) => {
         if (requestId === latestRequest.current) {
           setState({ status: 'ready', friends });

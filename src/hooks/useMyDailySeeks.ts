@@ -15,7 +15,7 @@ import { GameSnapshot } from '../network/socketEvents';
  */
 export function useMyDailySeeks(): {
   seeks: DailySeek[] | null;
-  reload: () => void;
+  reload: () => Promise<void>;
   cancel: (seekId: string) => Promise<void>;
 } {
   const session = useAuthSession();
@@ -29,17 +29,19 @@ export function useMyDailySeeks(): {
   const latestRequestId = useRef(0);
 
   const reload = useCallback(() => {
-    if (!userId) return;
+    if (!userId) return Promise.resolve();
     latestRequestId.current += 1;
     const requestId = latestRequestId.current;
-    authorized(getMyDailySeeks)
-      .then((seeks) => {
-        if (requestId === latestRequestId.current) {
-          setLoaded({ userId, seeks });
-        }
-      })
-      // A failed refresh keeps what it had.
-      .catch(() => {});
+    return (
+      authorized(getMyDailySeeks)
+        .then((seeks) => {
+          if (requestId === latestRequestId.current) {
+            setLoaded({ userId, seeks });
+          }
+        })
+        // A failed refresh keeps what it had.
+        .catch(() => {})
+    );
   }, [userId, authorized]);
 
   useEffect(() => {

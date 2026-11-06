@@ -239,7 +239,9 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
 
   // The games "Next game" goes through, as Home lists them.
   const { dailyGames, reload: reloadDailyGames } = useDailyGames();
-  useEffect(() => reloadDailyGames(), [reloadDailyGames]);
+  useEffect(() => {
+    reloadDailyGames();
+  }, [reloadDailyGames]);
   const nextGame =
     dailyGames.status === 'ready'
       ? nextDailyGame(dailyGames.games, snapshot.id)

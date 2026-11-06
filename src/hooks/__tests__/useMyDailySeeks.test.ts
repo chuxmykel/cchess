@@ -54,14 +54,18 @@ describe('useMyDailySeeks', () => {
     const { result } = await renderHook(() => useMyDailySeeks());
     expect(result.current.seeks).toBeNull();
 
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
 
     expect(result.current.seeks?.map((seek) => seek.id)).toEqual(['a', 'b']);
   });
 
   it('withdraws one, dropping it at once', async () => {
     const { result } = await renderHook(() => useMyDailySeeks());
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
 
     await act(() => result.current.cancel('a'));
 
@@ -71,7 +75,9 @@ describe('useMyDailySeeks', () => {
 
   it('looks again when a daily game starts, which one may have', async () => {
     const { result } = await renderHook(() => useMyDailySeeks());
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
     (getMyDailySeeks as jest.Mock).mockResolvedValue([makeSeek('b')]);
 
     await act(async () =>

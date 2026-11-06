@@ -47,7 +47,9 @@ describe('useDailyGames', () => {
   it('loads your daily games in progress, in the order the server lists them', async () => {
     const { result } = await renderHook(() => useDailyGames(10));
 
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
 
     expect(getDailyGames).toHaveBeenCalledWith('token-a', 10);
     expect(result.current.dailyGames).toEqual({
@@ -58,10 +60,14 @@ describe('useDailyGames', () => {
 
   it('keeps the list it has when a refresh fails, and reports a first failure', async () => {
     const { result } = await renderHook(() => useDailyGames(10));
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
 
     (getDailyGames as jest.Mock).mockRejectedValue(new ApiError(500, 'boom'));
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
 
     expect(result.current.dailyGames.status).toBe(DAILY_GAMES_STATUS.READY);
 
@@ -74,7 +80,9 @@ describe('useDailyGames', () => {
 
   it("reloads when one of its games moves or ends, or a daily game starts - not for another game's", async () => {
     const { result } = await renderHook(() => useDailyGames(10));
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
     (getDailyGames as jest.Mock).mockClear();
 
     await act(async () => fake.trigger('game:move', { gameId: 'live-game' }));

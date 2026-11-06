@@ -42,7 +42,7 @@ export function nextDailyGame(
  */
 export function useDailyGames(limit?: number): {
   dailyGames: DailyGames;
-  reload: () => void;
+  reload: () => Promise<void>;
 } {
   const session = useAuthSession();
   const { authorized } = session;
@@ -52,10 +52,10 @@ export function useDailyGames(limit?: number): {
   const latestRequestId = useRef(0);
 
   const reload = useCallback(() => {
-    if (!userId) return;
+    if (!userId) return Promise.resolve();
     latestRequestId.current += 1;
     const requestId = latestRequestId.current;
-    authorized((accessToken) => getDailyGames(accessToken, limit))
+    return authorized((accessToken) => getDailyGames(accessToken, limit))
       .then((games): Loaded => ({ userId, games }))
       .catch((): Loaded => ({ userId, failed: true }))
       .then((result) => {
