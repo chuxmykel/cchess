@@ -6,10 +6,12 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import BottomBar from '../../components/BottomBar';
 import { GameBoard } from '../../components/Board';
 import ExplorerMoveList from '../../components/ExplorerMoveList';
+import ExplorerSettingsSheet from '../../components/ExplorerSettingsSheet';
 import { ToolbarButton } from '../../components/GameToolbar';
 import MoveList, { MoveListMove } from '../../components/MoveList';
 import PromotionMenu from '../../components/PromotionMenu';
 import { ChessGameContext } from '../../context/ChessGameContext';
+import { EXPLORER_DB_LABELS } from '../../constants/explorer';
 import { uciToMoveSpec } from '../../domain/analysisTree';
 import { useAnalysisWorkspace } from '../../hooks/useAnalysisWorkspace';
 import { useAuthSession } from '../../context/AuthSessionContext';
@@ -55,6 +57,12 @@ const OpeningExplorer: React.FC<OpeningExplorerProps> = ({
       )
     : null;
   const explorer = useExplorerMoves(analysis.current.fen, query);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { settings } = explorerSettings;
+  const dbCaption =
+    settings.db === 'player' && settings.player
+      ? settings.player.username
+      : EXPLORER_DB_LABELS[settings.db];
 
   const lineMoves = useMemo(
     () =>
@@ -121,6 +129,14 @@ const OpeningExplorer: React.FC<OpeningExplorerProps> = ({
       <BottomBar>
         <View style={styles.toolbar} testID="opening-explorer-toolbar">
           <ToolbarButton
+            icon="database-outline"
+            label="Database"
+            hint="Choose the database"
+            caption={dbCaption}
+            onPress={() => setSettingsOpen(true)}
+            testID="explorer-database-button"
+          />
+          <ToolbarButton
             icon="rotate-3d-variant"
             label="Flip board"
             onPress={flip}
@@ -144,6 +160,12 @@ const OpeningExplorer: React.FC<OpeningExplorerProps> = ({
           />
         </View>
       </BottomBar>
+      <ExplorerSettingsSheet
+        visible={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        settings={settings}
+        onChange={explorerSettings.update}
+      />
     </View>
   );
 };
