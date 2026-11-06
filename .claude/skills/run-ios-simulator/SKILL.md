@@ -196,14 +196,22 @@ resign or abort from the app (see `examples/resign.yaml` /
   `confirm-move-bar` with `cancel-move-button` / `confirm-move-button`
   over the toolbar. `conditional-moves-note` opens
   `conditional-moves-sheet` with `delete-conditional-moves-button`.
+  Once over, `rematch-button` sends a daily challenge (the opponent's
+  `challenge-card-<id>` in 🔔); `rematch-status` then shows it.
   Settings: `daily-game-settings`, `daily-setting-confirmMoves`.
-- **Daily analysis**: `daily-analysis`, `daily-analysis-toolbar` with
-  `opening-explorer-button` (→ `opening-explorer`, rows
-  `explorer-move-<uci>`, or `explorer-empty`), `notes-button` (→
-  `notes-sheet`, `notes-input`, `notes-status`), `flip-board-button`,
+- **Daily analysis**: `daily-analysis` - the game's `move-list` /
+  `move-<ply>` and `player-name-<color>` (no clocks) -
+  `daily-analysis-toolbar` with `opening-explorer-button`,
+  `notes-button` (→ the `game-notes` screen: `notes-input`,
+  `notes-status`; `header-back` saves and returns), `flip-board-button`,
   `reset-analysis-button`, ‹ ›; `conditional-move-panel` with
-  `save-conditional-moves-button`, then `conditional-move-saved`. The
-  main analysis board's ☰ has `opening-explorer-action` too.
+  `save-conditional-moves-button`, then `conditional-move-saved`.
+- **Opening explorer** (a screen, from either analysis board's
+  `opening-explorer-button`): `opening-explorer`, its own board,
+  `opening-name`, rows `explorer-move-<uci>` (book moves, with
+  `explorer-results-<uci>` where games here played it) or
+  `explorer-empty`, and `opening-explorer-toolbar` (`flip-board-button`,
+  ‹ ›). `header-back` takes the line back to the analysis.
 - **Challenge sheet**: `challenge-sheet`, `challenge-time-<label>` (e.g.
   `challenge-time-3+2`), `challenge-rated-switch`,
   `send-challenge-button`, `challenge-error`.
@@ -265,9 +273,10 @@ resign or abort from the app (see `examples/resign.yaml` /
     `engine-error` (`engine-retry`), `arrow-<from><to>`, `opening-name`,
     the move list `analysis-move-<nodeId>` (long-press for
     `promote-variation-action` / `delete-variation-action`), and the
-    toolbar's `game-menu-button` (☰: `flip-board-action`,
-    `new-analysis-action`, `edit-position-action`,
-    `analysis-settings-action`, which opens the settings screen) and ‹ ›.
+    toolbar's `game-menu-button` (☰: `new-analysis-action`,
+    `edit-position-action`, `analysis-settings-action`, which opens the
+    settings screen), `opening-explorer-button`, `flip-board-button` and
+    ‹ ›.
     Tapping `engine-line-<n>` plays its first move. The board is over the
     tabs, so there's no tab bar there; `header-back` returns to the tab.
   - Settings (a screen, `analysis-settings`; `header-back` returns):
