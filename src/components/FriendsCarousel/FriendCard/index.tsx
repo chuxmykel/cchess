@@ -7,6 +7,10 @@ import { Friend } from '../../../network/restClient';
 import { presenceLabel } from '../../../utils/presence';
 import { makeStyles, useTheme } from '../../../theme';
 
+/** A card's width, and its avatar's size - for the skeleton too. */
+export const FRIEND_CARD_WIDTH = 120;
+export const FRIEND_AVATAR_SIZE = 48;
+
 export interface FriendCardProps {
   friend: Friend;
   unreadCount: number;
@@ -24,7 +28,7 @@ const FriendCard: React.FC<FriendCardProps> = ({
   onChallenge,
   onWatch,
 }) => {
-  const styles = useStyles();
+  const styles = useFriendCardStyles();
   const { colors } = useTheme();
 
   const { playingGameId } = friend;
@@ -58,7 +62,7 @@ const FriendCard: React.FC<FriendCardProps> = ({
         <Avatar
           name={friend.displayName}
           color={friend.avatarColor}
-          size={48}
+          size={FRIEND_AVATAR_SIZE}
         />
         {(friend.online || playingGameId) && (
           <View
@@ -97,9 +101,9 @@ const FriendCard: React.FC<FriendCardProps> = ({
 
 export default FriendCard;
 
-const useStyles = makeStyles((t) => ({
+export const useFriendCardStyles = makeStyles((t) => ({
   card: {
-    width: 120,
+    width: FRIEND_CARD_WIDTH,
     padding: t.spacing.md,
     borderRadius: t.radius.md,
     backgroundColor: t.colors.surface,

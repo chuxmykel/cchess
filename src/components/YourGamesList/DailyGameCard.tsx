@@ -11,15 +11,9 @@ import { makeStyles, useTheme } from '../../theme';
 export const DAILY_GAME_CARD_WIDTH = 152;
 const CARD_PADDING = 8;
 export const DAILY_GAME_BOARD_WIDTH = DAILY_GAME_CARD_WIDTH - 2 * CARD_PADDING;
-const AVATAR_SIZE = 28;
+export const DAILY_GAME_AVATAR_SIZE = 28;
 const PLAYER_GAP = 8;
 const CARD_BORDER = 2;
-/** A card's height: its board, and the opponent under it. */
-export const DAILY_GAME_CARD_HEIGHT =
-  2 * (CARD_PADDING + CARD_BORDER) +
-  DAILY_GAME_BOARD_WIDTH +
-  PLAYER_GAP +
-  AVATAR_SIZE;
 
 interface DailyGameCardProps {
   game: DailyGame;
@@ -41,7 +35,7 @@ const DailyGameCard: React.FC<DailyGameCardProps> = ({
   onPress,
   marksYourMove = false,
 }) => {
-  const styles = useStyles();
+  const styles = useDailyGameCardStyles();
   const { colors } = useTheme();
   const msLeft = new Date(game.moveDeadlineAt).getTime() - now;
   const timeLeft = formatTimeLeft(Math.max(msLeft, 0));
@@ -73,7 +67,7 @@ const DailyGameCard: React.FC<DailyGameCardProps> = ({
         <Avatar
           name={game.opponent.displayName}
           color={game.opponent.avatarColor}
-          size={AVATAR_SIZE}
+          size={DAILY_GAME_AVATAR_SIZE}
           square
         />
         <View style={styles.playerText}>
@@ -106,7 +100,7 @@ const DailyGameCard: React.FC<DailyGameCardProps> = ({
 
 export default DailyGameCard;
 
-const useStyles = makeStyles((t) => ({
+export const useDailyGameCardStyles = makeStyles((t) => ({
   card: {
     width: DAILY_GAME_CARD_WIDTH,
     padding: CARD_PADDING,

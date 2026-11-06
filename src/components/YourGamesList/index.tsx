@@ -7,8 +7,9 @@ import { DAILY_GAMES_STATUS, DailyGames } from '../../hooks/useDailyGames';
 import { useNow } from '../../hooks/useNow';
 import { spacing } from '../../theme';
 import DailyGameCard, {
-  DAILY_GAME_CARD_HEIGHT,
-  DAILY_GAME_CARD_WIDTH,
+  DAILY_GAME_AVATAR_SIZE,
+  DAILY_GAME_BOARD_WIDTH,
+  useDailyGameCardStyles,
 } from './DailyGameCard';
 import WaitingSeekCard from './WaitingSeekCard';
 
@@ -30,24 +31,39 @@ interface YourGamesListProps {
 
 const LOADING_CARD_COUNT = 2;
 
-// Where Your games will be, while it's loading: a title and cards the size
-// of a game's - gone if there turn out to be none.
-const LoadingCards: React.FC = () => (
-  <View style={styles.container} testID="your-games-loading">
-    <View style={styles.loadingTitle}>
-      <Placeholder width={120} height={20} />
+// Where Your games will be, while it's loading: a title and cards shaped as
+// a game's are - the board, and the opponent under it with the time left -
+// gone if there turn out to be none.
+const LoadingCards: React.FC = () => {
+  const cardStyles = useDailyGameCardStyles();
+  return (
+    <View style={styles.container} testID="your-games-loading">
+      <View style={styles.loadingTitle}>
+        <Placeholder width={120} height={20} />
+      </View>
+      <View style={[styles.list, styles.loadingCards]}>
+        {Array.from({ length: LOADING_CARD_COUNT }, (_, index) => (
+          <View key={index} style={cardStyles.card}>
+            <Placeholder
+              width={DAILY_GAME_BOARD_WIDTH}
+              height={DAILY_GAME_BOARD_WIDTH}
+            />
+            <View style={cardStyles.player}>
+              <Placeholder
+                width={DAILY_GAME_AVATAR_SIZE}
+                height={DAILY_GAME_AVATAR_SIZE}
+              />
+              <View style={styles.loadingText}>
+                <Placeholder width="80%" height={12} />
+                <Placeholder width="50%" height={10} />
+              </View>
+            </View>
+          </View>
+        ))}
+      </View>
     </View>
-    <View style={[styles.list, styles.loadingCards]}>
-      {Array.from({ length: LOADING_CARD_COUNT }, (_, index) => (
-        <Placeholder
-          key={index}
-          width={DAILY_GAME_CARD_WIDTH}
-          height={DAILY_GAME_CARD_HEIGHT}
-        />
-      ))}
-    </View>
-  </View>
-);
+  );
+};
 
 // Home's "Your games": your daily games in progress, in the server's order -
 // those on your move first, then by time left - and after them any seeks
@@ -127,5 +143,9 @@ const styles = StyleSheet.create({
   loadingCards: {
     flexDirection: 'row',
     gap: spacing.md,
+  },
+  loadingText: {
+    flex: 1,
+    gap: spacing.xs,
   },
 });

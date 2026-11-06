@@ -4,13 +4,27 @@ import { makeStyles } from '../../theme';
 interface PlaceholderProps {
   width: DimensionValue;
   height: number;
+  /** Its corners - half its size for a round one, an avatar's. */
+  borderRadius?: number;
   testID?: string;
 }
 
-const Placeholder: React.FC<PlaceholderProps> = ({ width, height, testID }) => {
+const Placeholder: React.FC<PlaceholderProps> = ({
+  width,
+  height,
+  borderRadius,
+  testID,
+}) => {
   const styles = useStyles();
   return (
-    <View style={[styles.placeholder, { width, height }]} testID={testID} />
+    <View
+      style={[
+        styles.placeholder,
+        { width, height },
+        borderRadius !== undefined && { borderRadius },
+      ]}
+      testID={testID}
+    />
   );
 };
 

@@ -5,7 +5,7 @@ import Button from '../Button';
 import Placeholder from '../Placeholder';
 import SectionHeader from '../SectionHeader';
 import EmptyState from '../EmptyState';
-import GameRow from './GameRow';
+import GameRow, { AVATAR_SIZE, ROW_ICON_SIZE } from './GameRow';
 import { RECENT_GAMES_STATUS, RecentGames } from '../../hooks/useRecentGames';
 import { GameSummary } from '../../network/restClient';
 import { makeStyles } from '../../theme';
@@ -19,15 +19,38 @@ interface RecentGamesListProps {
 
 const LOADING_ROW_COUNT = 3;
 
+// Rows shaped as GameRow's are: the game type, the opponent's avatar, their
+// name over when it was, then the rating change and the result.
 const LoadingRows: React.FC = () => {
   const styles = useStyles();
   return (
     <View testID="recent-games-loading">
       {Array.from({ length: LOADING_ROW_COUNT }, (_, index) => (
-        <View key={index} style={styles.loadingRow}>
-          <Placeholder width={36} height={36} />
-          <Placeholder width="50%" height={16} />
-        </View>
+        <Fragment key={index}>
+          {index > 0 && <View style={styles.divider} />}
+          <View style={styles.loadingRow}>
+            <Placeholder
+              width={ROW_ICON_SIZE}
+              height={ROW_ICON_SIZE}
+              borderRadius={ROW_ICON_SIZE / 2}
+            />
+            <Placeholder
+              width={AVATAR_SIZE}
+              height={AVATAR_SIZE}
+              borderRadius={AVATAR_SIZE / 2}
+            />
+            <View style={styles.loadingDetails}>
+              <Placeholder width="60%" height={14} />
+              <Placeholder width="35%" height={10} />
+            </View>
+            <Placeholder width={32} height={14} />
+            <Placeholder
+              width={ROW_ICON_SIZE}
+              height={ROW_ICON_SIZE}
+              borderRadius={ROW_ICON_SIZE / 2}
+            />
+          </View>
+        </Fragment>
       ))}
     </View>
   );
@@ -118,6 +141,10 @@ const useStyles = makeStyles((t) => ({
     gap: t.spacing.md,
     paddingHorizontal: t.spacing.lg,
     paddingVertical: t.spacing.md,
+  },
+  loadingDetails: {
+    flex: 1,
+    gap: t.spacing.xs,
   },
   message: {
     alignItems: 'center',
