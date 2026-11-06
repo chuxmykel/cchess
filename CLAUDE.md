@@ -675,7 +675,10 @@ lib/chessboard/  the board, written as a package of its own: outside the
     `DailyGameCard` - its board without coordinates (the board's
     `coordinates` prop), faded while it's the opponent's move, ringed
     when it's yours, the opponent and the time left (`useNow` ticking a
-    minute) - and each seek a `WaitingSeekCard` with ✕ to withdraw it.
+    minute, in red under 10 hours - `DAILY_LOW_TIME_MS`, the clock's too)
+    - and each seek a `WaitingSeekCard` with ✕ to withdraw it. A skeleton
+      of cards holds its place while the games load; See All opens
+      `DailyGamesList`, every game and seek, two to a row.
   - `DailyGame`: `useOnlineChessGame` with no pre-moves, its clocks the
     time left on the move (`GameClock`'s `daily`, `utils/timeLeft.ts`'
     `formatTimeLeft`: whole hours rounded up from an hour, minutes under
@@ -683,7 +686,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
     too), ticking once a second (`useGameClock`'s `tickMs`); Back always
     works. Its toolbar: ☰, chat, Analysis (`GameToolbar`'s `onAnalyse`),
     ‹ ›; ☰: Next game (`nextDailyGame`, through `useDailyGames`' order),
-    Offer/Accept draw, Resign or Abort, Settings, Flip board. Its
+    Offer/Accept draw, Resign or Abort, Conditional moves (N) while the
+    opponent's to move, Settings, Flip board. Its
     finished game's Rematch is a daily challenge of the same days,
     colors swapped (`useDailyRematch`, over `useSocial`'s challenges), so
     it reaches the opponent's notifications; one either has sent the
@@ -705,34 +709,41 @@ lib/chessboard/  the board, written as a package of its own: outside the
     line of moves (the tree's `singleLine`: a different move replaces
     those that followed). It starts from the game in
     `DailyGamePositionsContext` - fetched, `useAnalysisSource`'s, only
-    when its screen isn't open - and Reset remounts it on the game as it
-    now stands, with nothing to wait for. Its toolbar: the opening
+    when its screen isn't open - and Reset starts it afresh in place on
+    the game as it now stands (the tree's `reset`; nothing when it's
+    there already, `isLineTo`), the board turned as it was. Its toolbar:
+    the opening
     explorer, notes (the `GameNotes` screen: `useGameNotes`, your own,
     saved once typing pauses and on leaving), flip, reset and ‹ ›.
     `useAnalysisSource` refuses your own daily game in play
     (`'in-play'`) unless `allowDailyInPlay`, which only this screen asks.
   - The opening explorer, from either analysis board's toolbar: the
     `OpeningExplorer` screen, a board of its own on the line to the
-    position shown (`useExplorerLine`'s `lineTo`), the opening name, and
-    `ExplorerMoveList` - the book's moves only (`useBookExplorer`:
-    `domain/openings.ts`' `bookMovesFrom`, each with the opening it
-    reaches, plus `useOpeningExplorer`'s results from games finished
-    here, the most played first). A tap plays one there. Leaving sets the
-    line on the analysis's route (`explorerLine`, by `returnKey`), which
-    `useTakeExplorerLine` goes along (the tree's `playLine`) and clears.
-  - Conditional moves: in `DailyAnalysis`, the opponent to move, a line
-    tried from the game's position (`domain/conditionalMoves.ts`:
-    `mainLineNodeId`, `conditionalLine` - cut to end on your reply -
-    `lineAsText`) is saved from `ConditionalMovePanel`
-    (`useConditionalMoves`, refetched with each move of the game); the
-    game shows `ConditionalMovesNote`, listing them to delete.
+    position shown (`useExplorerLine`'s `lineTo`), the moves played along
+    the top, and `ExplorerMoveList` - the opening heading it, then the
+    book's moves only, numbered (`useBookExplorer`: `domain/openings.ts`'
+    `bookMovesFrom`, with `useOpeningExplorer`'s results from games
+    finished here - a count and a bar - the most played first; "No
+    results" out of the book). A tap plays one there. As the line
+    changes it's set on the analysis's route (`explorerLine`, by
+    `returnKey` - not on leaving: an action dispatched from
+    `beforeRemove` brought the removal round again, overflowing the
+    stack), and the analysis, once focused again, goes along it
+    (`useTakeExplorerLine`, the tree's `playLine`) and clears it.
+  - Conditional moves: the `ConditionalMoves` screen, from the game's ☰
+    while the opponent's to move - lines written on a board from the
+    game's position (`domain/conditionalMoves.ts`' editor: `playMove`,
+    `addLine`, `deleteMove`, `deleteLine`, at most 10 lines), listed by
+    `ConditionalLinesList`; Confirm saves them all in place of those
+    saved (`useConditionalMoves`' `save`, a PUT; refetched with each move
+    of the game, and as the game's screen is focused again).
 
 - **Navigation** (React Navigation, nested stacks/tabs):
   `App.tsx` (root native-stack, inside a `GestureHandlerRootView` for
   the chart's gestures - the board brings its own, so it works wherever
   it's rendered, tests included) -> `HomeStack` (`HomeTabs`, `LiveGame`,
   `DailyGame`, `DailyAnalysis`, `OpeningExplorer`, `GameNotes`,
-  `DailyGameSettings`,
+  `ConditionalMoves`, `DailyGamesList`, `DailyGameSettings`,
   `GameViewer`, `AnalysisBoard`, `AnalysisSettings`, `UserProfile`, `Conversation`, `GamesList`,
   `RatingStats`, `UserFriends`, `FindFriends`, `SignIn`, `CreateAccount`,
   `Appearance`, `Licenses`) ->
