@@ -17,17 +17,17 @@ describe('DailyGameSettings', () => {
     return screen;
   }
 
-  it('leaves moves unconfirmed until switched on, and keeps the choice', async () => {
+  it('confirms moves until switched off, and keeps the choice', async () => {
     const screen = await renderScreen();
     const toggle = () => screen.getByTestId('daily-setting-confirmMoves');
-    expect(toggle().props.value).toBe(false);
-
-    await fireEvent(toggle(), 'valueChange', true);
     expect(toggle().props.value).toBe(true);
+
+    await fireEvent(toggle(), 'valueChange', false);
+    expect(toggle().props.value).toBe(false);
 
     const again = await renderScreen();
     expect(again.getByTestId('daily-setting-confirmMoves').props.value).toBe(
-      true,
+      false,
     );
   });
 });

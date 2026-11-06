@@ -6,5 +6,5 @@ export type DailyGameSettings = {
 };
 
 export const DEFAULT_DAILY_GAME_SETTINGS: DailyGameSettings = {
-  confirmMoves: false,
+  confirmMoves: true,
 };
