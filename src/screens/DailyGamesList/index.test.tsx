@@ -173,6 +173,23 @@ describe('DailyGamesList', () => {
     });
   });
 
+  it('keeps the boards it hides drawn, to show them again at once', async () => {
+    (getDailyGames as jest.Mock).mockResolvedValue([
+      makeDailyGame({ id: 'mine', myTurn: true }),
+      makeDailyGame({ id: 'theirs', myTurn: false }),
+    ]);
+    const { screen } = await renderList();
+    const board = screen.getByTestId('daily-game-theirs-board');
+    const filter = screen.getByTestId('daily-games-your-move-filter');
+
+    await fireEvent.press(filter);
+    expect(screen.queryByTestId('daily-game-theirs')).toBeNull();
+    expect(screen.queryByTestId('daily-seek-seek-1')).toBeNull();
+    await fireEvent.press(filter);
+
+    expect(screen.getByTestId('daily-game-theirs-board')).toBe(board);
+  });
+
   it('fetches the games and seeks again when pulled down', async () => {
     (getDailyGames as jest.Mock)
       .mockResolvedValueOnce([makeDailyGame({ id: 'old' })])

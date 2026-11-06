@@ -48,6 +48,8 @@ type DailyGamesListProps = Pick<
 // filtered here, from the games fetched - and laid out as one wrapping row
 // of cards, each keyed by its game, so a new order moves the cards rather
 // than drawing their boards again (a list's rows of two would each be new).
+// The filter hides the others rather than taking them away, so switching it
+// off shows boards already drawn.
 const DailyGamesList: React.FC<DailyGamesListProps> = ({ navigation }) => {
   const themed = useStyles();
   const { dailyGames, reload } = useDailyGames();
@@ -63,8 +65,8 @@ const DailyGamesList: React.FC<DailyGamesListProps> = ({ navigation }) => {
   const allGames =
     dailyGames.status === DAILY_GAMES_STATUS.READY ? dailyGames.games : null;
   const games = useMemo(
-    () => allGames && sortDailyGames(allGames, sort, yourMoveOnly),
-    [allGames, sort, yourMoveOnly],
+    () => allGames && sortDailyGames(allGames, sort),
+    [allGames, sort],
   );
   const openGame = useCallback(
     (game: DailyGame) => navigation.navigate('DailyGame', { gameId: game.id }),
@@ -105,8 +107,11 @@ const DailyGamesList: React.FC<DailyGamesListProps> = ({ navigation }) => {
   }
 
   const yourMoveCount = allGames.filter((game) => game.myTurn).length;
-  // Waiting for an opponent, none is on your move.
-  const seeks = yourMoveOnly ? [] : (dailySeeks.seeks ?? []);
+  const seeks = dailySeeks.seeks ?? [];
+  // Waiting for an opponent, no seek is on your move.
+  const shownCount = yourMoveOnly
+    ? yourMoveCount
+    : allGames.length + seeks.length;
   return (
     <View style={themed.screen} testID="daily-games-list">
       <ListControls<DailyGameSort>
@@ -126,8 +131,8 @@ const DailyGamesList: React.FC<DailyGamesListProps> = ({ navigation }) => {
         refreshControl={<RefreshControl {...refresh} />}
         testID="daily-games-scroll"
       >
-        {games.length === 0 && seeks.length === 0 ? (
-          yourMoveOnly ? (
+        {shownCount === 0 &&
+          (yourMoveOnly ? (
             <EmptyState
               illustration="games"
               title="Nothing on your move"
@@ -141,34 +146,40 @@ const DailyGamesList: React.FC<DailyGamesListProps> = ({ navigation }) => {
               message="Your daily games in progress will show up here."
               testID="daily-games-empty"
             />
-          )
-        ) : (
-          <View style={styles.grid}>
-            {games.map((game) => (
+          ))}
+        <View style={styles.grid}>
+          {games.map((game) => (
+            <Shown key={game.id} shown={!yourMoveOnly || game.myTurn}>
               <DailyGameCard
-                key={game.id}
                 game={game}
                 now={now}
                 width={cardWidth}
                 marksYourMove
                 onPress={openGame}
               />
-            ))}
-            {seeks.map((seek) => (
+            </Shown>
+          ))}
+          {seeks.map((seek) => (
+            <Shown key={`seek-${seek.id}`} shown={!yourMoveOnly}>
               <WaitingSeekCard
-                key={`seek-${seek.id}`}
                 seek={seek}
                 width={cardWidth}
                 onCancel={cancelSeek}
               />
-            ))}
-          </View>
-        )}
+            </Shown>
+          ))}
+        </View>
       </ScrollView>
       <Toast toasts={toast.toasts} />
     </View>
   );
 };
+
+// A card kept drawn while the filter leaves it out, taking no room.
+const Shown: React.FC<{ shown: boolean; children: React.ReactNode }> = ({
+  shown,
+  children,
+}) => <View style={!shown && styles.hidden}>{children}</View>;
 
 export default DailyGamesList;
 
@@ -193,6 +204,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: GUTTER,
     paddingBottom: spacing.lg,
+  },
+  hidden: {
+    display: 'none',
   },
   // Two cards fill a row; a row of one lines up under the left of them.
   grid: {
