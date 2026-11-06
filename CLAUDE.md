@@ -683,7 +683,13 @@ lib/chessboard/  the board, written as a package of its own: outside the
     too), ticking once a second (`useGameClock`'s `tickMs`); Back always
     works. Its toolbar: ☰, chat, Analysis (`GameToolbar`'s `onAnalyse`),
     ‹ ›; ☰: Next game (`nextDailyGame`, through `useDailyGames`' order),
-    Offer/Accept draw, Resign or Abort, Settings, Flip board.
+    Offer/Accept draw, Resign or Abort, Settings, Flip board. Its
+    finished game's Rematch is a daily challenge of the same days,
+    colors swapped (`useDailyRematch`, over `useSocial`'s challenges), so
+    it reaches the opponent's notifications; one either has sent the
+    other at those days shows on the result card as the rematch.
+    It keeps the game as it stands in `DailyGamePositionsContext`
+    (`useDailyGamePositions`, in `HomeStack`), for the analysis over it.
   - Move confirmation: `DailyGameSettings` (`constants/dailyGame.ts`,
     `network/dailyGameSettingsStorage.ts`, `useDailyGameSettings`,
     `DailyGameSettingsContext` in `HomeStack`) - on, `useOnlineChessGame`'s
@@ -692,15 +698,28 @@ lib/chessboard/  the board, written as a package of its own: outside the
     taken from its moves), until `confirmMove` sends it or `cancelMove`
     puts it back; `ConfirmMoveBar` is drawn over the toolbar, which keeps
     its place hidden so the screen doesn't move.
-  - `DailyAnalysis`: the analysis board with no engine -
-    `useAnalysisWorkspace` and `AnalysisView`, which `AnalysisBoardContent`
-    builds its engine onto too. Its toolbar: `OpeningExplorerSheet`
-    (`useOpeningExplorer`, the server's explorer of games finished here,
-    each position asked for once; also in the analysis board's ☰),
-    `NotesSheet` (`useGameNotes`, your own, saved once typing pauses and
-    on closing), flip, reset (the game fetched again) and ‹ ›.
+  - `DailyAnalysis`: an analysis with no engine (`useAnalysisWorkspace`,
+    which `AnalysisBoardContent` builds its engine onto too), laid out
+    as the game is - `MoveList` along the top, `PlayerBarsFrame` with no
+    clocks (`PlayerBar`'s `clock` left out), no opening name - and one
+    line of moves (the tree's `singleLine`: a different move replaces
+    those that followed). It starts from the game in
+    `DailyGamePositionsContext` - fetched, `useAnalysisSource`'s, only
+    when its screen isn't open - and Reset remounts it on the game as it
+    now stands, with nothing to wait for. Its toolbar: the opening
+    explorer, notes (the `GameNotes` screen: `useGameNotes`, your own,
+    saved once typing pauses and on leaving), flip, reset and ‹ ›.
     `useAnalysisSource` refuses your own daily game in play
     (`'in-play'`) unless `allowDailyInPlay`, which only this screen asks.
+  - The opening explorer, from either analysis board's toolbar: the
+    `OpeningExplorer` screen, a board of its own on the line to the
+    position shown (`useExplorerLine`'s `lineTo`), the opening name, and
+    `ExplorerMoveList` - the book's moves only (`useBookExplorer`:
+    `domain/openings.ts`' `bookMovesFrom`, each with the opening it
+    reaches, plus `useOpeningExplorer`'s results from games finished
+    here, the most played first). A tap plays one there. Leaving sets the
+    line on the analysis's route (`explorerLine`, by `returnKey`), which
+    `useTakeExplorerLine` goes along (the tree's `playLine`) and clears.
   - Conditional moves: in `DailyAnalysis`, the opponent to move, a line
     tried from the game's position (`domain/conditionalMoves.ts`:
     `mainLineNodeId`, `conditionalLine` - cut to end on your reply -
@@ -712,7 +731,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `App.tsx` (root native-stack, inside a `GestureHandlerRootView` for
   the chart's gestures - the board brings its own, so it works wherever
   it's rendered, tests included) -> `HomeStack` (`HomeTabs`, `LiveGame`,
-  `DailyGame`, `DailyAnalysis`, `DailyGameSettings`,
+  `DailyGame`, `DailyAnalysis`, `OpeningExplorer`, `GameNotes`,
+  `DailyGameSettings`,
   `GameViewer`, `AnalysisBoard`, `AnalysisSettings`, `UserProfile`, `Conversation`, `GamesList`,
   `RatingStats`, `UserFriends`, `FindFriends`, `SignIn`, `CreateAccount`,
   `Appearance`, `Licenses`) ->
