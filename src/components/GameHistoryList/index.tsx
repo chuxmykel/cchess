@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -20,17 +21,21 @@ const PAGE_SIZE = 20;
 interface GameHistoryListProps {
   fetchPage: FetchGamesPage;
   onSelectGame: (game: GameSummary) => void;
+  /** Only the games it's true of, from those fetched. */
+  filter?: (game: GameSummary) => boolean;
   // What the empty list says will show up there.
   emptyMessage: string;
   // Its title, "No games yet" unless given.
   emptyTitle?: string;
 }
 
-// Finished games, newest first, loading more as the list nears its end,
-// and again when pulled down.
+// Finished games, newest first, loading more as the list nears its end -
+// or, filtered, while fewer than a page's worth match - and again when
+// pulled down.
 const GameHistoryList: React.FC<GameHistoryListProps> = ({
   fetchPage,
   onSelectGame,
+  filter,
   emptyMessage,
   emptyTitle = 'No games yet',
 }) => {
@@ -38,6 +43,19 @@ const GameHistoryList: React.FC<GameHistoryListProps> = ({
 
   const games = usePagedGames(fetchPage, PAGE_SIZE);
   const refresh = usePullToRefresh(games.reload);
+  const shown = useMemo(
+    () => (filter ? games.games.filter(filter) : games.games),
+    [games.games, filter],
+  );
+
+  // Too few match to fill the screen, or reach the list's end to ask for
+  // more: fetch on until enough do, or there are no more.
+  const { hasMore, isLoadingMore, loadMore, status } = games;
+  const needsMore =
+    status === 'ready' && hasMore && !isLoadingMore && shown.length < PAGE_SIZE;
+  useEffect(() => {
+    if (needsMore) loadMore();
+  }, [needsMore, loadMore]);
 
   if (games.status === 'loading') {
     return <ActivityIndicator style={styles.loading} testID="games-loading" />;
@@ -54,7 +72,7 @@ const GameHistoryList: React.FC<GameHistoryListProps> = ({
   return (
     <FlatList
       style={styles.list}
-      data={games.games}
+      data={shown}
       keyExtractor={(game) => game.id}
       renderItem={({ item }) => (
         <GameRow game={item} onPress={() => onSelectGame(item)} />
@@ -67,12 +85,14 @@ const GameHistoryList: React.FC<GameHistoryListProps> = ({
         games.isLoadingMore ? <ActivityIndicator style={styles.more} /> : null
       }
       ListEmptyComponent={
-        <EmptyState
-          illustration="games"
-          title={emptyTitle}
-          message={emptyMessage}
-          testID="games-empty"
-        />
+        games.isLoadingMore ? null : (
+          <EmptyState
+            illustration="games"
+            title={emptyTitle}
+            message={emptyMessage}
+            testID="games-empty"
+          />
+        )
       }
       testID="games-list"
     />

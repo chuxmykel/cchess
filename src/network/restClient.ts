@@ -151,23 +151,15 @@ export type GamesPage = {
   before?: string;
 };
 
-/** A history narrowed: games won, drawn or lost - by the player whose
- * history it is - and of one type. */
-export type GamesFilter = {
-  result?: 'win' | 'draw' | 'loss';
-  gameType?: GameType;
-};
-
 export async function getMyGames(
   accessToken: string,
   limit: number,
   before?: string,
-  filter: GamesFilter = {},
 ): Promise<GameSummary[]> {
   return (
     await apiClient.get<GameSummary[]>('/games', {
       ...bearer(accessToken),
-      params: { limit, before, ...filter, status: FINISHED },
+      params: { limit, before, status: FINISHED },
     })
   ).data;
 }
@@ -378,12 +370,11 @@ export async function getUserGames(
   username: string,
   page: GamesPage,
   accessToken: string,
-  filter: GamesFilter = {},
 ): Promise<GameSummary[]> {
   return (
     await apiClient.get<GameSummary[]>(`${userPath(username)}/games`, {
       ...bearer(accessToken),
-      params: { ...page, ...filter, status: FINISHED },
+      params: { ...page, status: FINISHED },
     })
   ).data;
 }

@@ -6,9 +6,10 @@ import GameHistoryList from '../../components/GameHistoryList';
 import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import { GameType } from '../../domain/types';
 import {
+  GameHistoryResult,
+  GameSummary,
   getMyGames,
   getUserGames,
-  GamesFilter,
   GamesPage,
 } from '../../network/restClient';
 import { HomeStackScreenProps } from '../HomeStack/types';
@@ -19,7 +20,7 @@ type GamesListProps = Pick<
   'navigation' | 'route'
 >;
 
-type ResultChoice = 'all' | NonNullable<GamesFilter['result']>;
+type ResultChoice = 'all' | NonNullable<GameHistoryResult>;
 type TypeChoice = 'all' | GameType;
 
 const RESULTS: { key: ResultChoice; label: string }[] = [
@@ -37,8 +38,8 @@ const TYPES: { key: TypeChoice; label: string }[] = [
 ];
 
 // A player's finished games - yours, or anyone's - newest first, narrowed
-// to those won, drawn or lost (by them) and of one type, if asked; the
-// server filters, so the pages still come whole.
+// to those won, drawn or lost (by them) and of one type, if asked: from the
+// games fetched, so a new choice shows at once.
 const GamesList: React.FC<GamesListProps> = ({ navigation, route }) => {
   const styles = useStyles();
   const { username, displayName } = route.params;
@@ -47,16 +48,17 @@ const GamesList: React.FC<GamesListProps> = ({ navigation, route }) => {
   const isFiltered = result !== 'all' || gameType !== 'all';
 
   const fetchPage = useCallback(
-    (page: GamesPage, token: string) => {
-      const filter: GamesFilter = {
-        ...(result !== 'all' && { result }),
-        ...(gameType !== 'all' && { gameType }),
-      };
-      return username
-        ? getUserGames(username, page, token, filter)
-        : getMyGames(token, page.limit, page.before, filter);
-    },
-    [username, result, gameType],
+    (page: GamesPage, token: string) =>
+      username
+        ? getUserGames(username, page, token)
+        : getMyGames(token, page.limit, page.before),
+    [username],
+  );
+  const matches = useCallback(
+    (game: GameSummary) =>
+      (result === 'all' || game.result === result) &&
+      (gameType === 'all' || game.gameType === gameType),
+    [result, gameType],
   );
 
   useLayoutEffect(() => {
@@ -92,6 +94,7 @@ const GamesList: React.FC<GamesListProps> = ({ navigation, route }) => {
       </View>
       <GameHistoryList
         fetchPage={fetchPage}
+        filter={isFiltered ? matches : undefined}
         onSelectGame={(game) =>
           navigation.navigate('GameViewer', { gameId: game.id })
         }
