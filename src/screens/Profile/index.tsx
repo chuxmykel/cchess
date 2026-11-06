@@ -77,12 +77,11 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
 
   return (
     <ScrollView
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 24 }]}
-      refreshControl={
-        isSignedIn ? (
-          <RefreshControl {...refresh} progressViewOffset={insets.top} />
-        ) : undefined
-      }
+      // Below the status bar, not padded under it, so pulling down shows
+      // the spinner there.
+      style={{ marginTop: insets.top }}
+      contentContainerStyle={styles.content}
+      refreshControl={isSignedIn ? <RefreshControl {...refresh} /> : undefined}
       testID="profile-screen"
     >
       <View style={styles.identity}>
@@ -162,6 +161,7 @@ const useStyles = makeStyles((t) => ({
     alignItems: 'center',
   },
   content: {
+    paddingTop: t.spacing.xl,
     paddingBottom: t.spacing.xl,
     gap: t.spacing.lg,
   },
