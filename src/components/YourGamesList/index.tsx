@@ -1,11 +1,15 @@
 import { FlatList, StyleSheet, View } from 'react-native';
 
+import Placeholder from '../Placeholder';
 import SectionHeader from '../SectionHeader';
 import { DailyGame, DailySeek } from '../../network/restClient';
 import { DAILY_GAMES_STATUS, DailyGames } from '../../hooks/useDailyGames';
 import { useNow } from '../../hooks/useNow';
 import { spacing } from '../../theme';
-import DailyGameCard from './DailyGameCard';
+import DailyGameCard, {
+  DAILY_GAME_CARD_HEIGHT,
+  DAILY_GAME_CARD_WIDTH,
+} from './DailyGameCard';
 import WaitingSeekCard from './WaitingSeekCard';
 
 // Time left is shown in minutes at most, so a minute's tick will do.
@@ -20,18 +24,46 @@ interface YourGamesListProps {
   seeks: DailySeek[] | null;
   onPressGame: (game: DailyGame) => void;
   onCancelSeek: (seek: DailySeek) => void;
+  /** Every daily game, on a screen of their own. */
+  onSeeAll: () => void;
 }
+
+const LOADING_CARD_COUNT = 2;
+
+// Where Your games will be, while it's loading: a title and cards the size
+// of a game's - gone if there turn out to be none.
+const LoadingCards: React.FC = () => (
+  <View style={styles.container} testID="your-games-loading">
+    <View style={styles.loadingTitle}>
+      <Placeholder width={120} height={20} />
+    </View>
+    <View style={[styles.list, styles.loadingCards]}>
+      {Array.from({ length: LOADING_CARD_COUNT }, (_, index) => (
+        <Placeholder
+          key={index}
+          width={DAILY_GAME_CARD_WIDTH}
+          height={DAILY_GAME_CARD_HEIGHT}
+        />
+      ))}
+    </View>
+  </View>
+);
 
 // Home's "Your games": your daily games in progress, in the server's order -
 // those on your move first, then by time left - and after them any seeks
-// still waiting for an opponent. Shown only when there's one or the other.
+// still waiting for an opponent. Shown only when there's one or the other,
+// and as a skeleton while they load.
 const YourGamesList: React.FC<YourGamesListProps> = ({
   dailyGames,
   seeks,
   onPressGame,
   onCancelSeek,
+  onSeeAll,
 }) => {
   const now = useNow(TIME_LEFT_REFRESH_MS);
+  if (dailyGames.status === DAILY_GAMES_STATUS.LOADING) {
+    return <LoadingCards />;
+  }
   if (dailyGames.status !== DAILY_GAMES_STATUS.READY) {
     return null;
   }
@@ -50,7 +82,9 @@ const YourGamesList: React.FC<YourGamesListProps> = ({
         count={
           dailyGames.games.length > 0 ? dailyGames.games.length : undefined
         }
-        testID="your-games-header"
+        actionLabel="See All"
+        onActionPress={onSeeAll}
+        testID="your-games-see-all"
       />
       <FlatList
         data={items}
@@ -85,5 +119,13 @@ const styles = StyleSheet.create({
   },
   separator: {
     width: spacing.md,
+  },
+  loadingTitle: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  loadingCards: {
+    flexDirection: 'row',
+    gap: spacing.md,
   },
 });

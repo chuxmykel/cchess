@@ -49,6 +49,7 @@ describe('YourGamesList', () => {
       seeks: [SEEK],
       onPressGame: jest.fn(),
       onCancelSeek: jest.fn(),
+      onSeeAll: jest.fn(),
       ...overrides,
     } as React.ComponentProps<typeof YourGamesList>;
     return { props, screenPromise: render(<YourGamesList {...props} />) };
@@ -63,7 +64,7 @@ describe('YourGamesList', () => {
         .getAllByTestId(/^daily-(game-(mine|theirs)|seek-seek-1)$/)
         .map((card) => card.props.testID),
     ).toEqual(['daily-game-mine', 'daily-game-theirs', 'daily-seek-seek-1']);
-    expect(screen.getByTestId('your-games-header-count')).toHaveTextContent(
+    expect(screen.getByTestId('your-games-see-all-count')).toHaveTextContent(
       '2',
     );
   });
@@ -156,6 +157,15 @@ describe('YourGamesList', () => {
     expect(props.onCancelSeek).toHaveBeenCalledWith(SEEK);
   });
 
+  it('opens every game from See All', async () => {
+    const { props, screenPromise } = renderList();
+    const screen = await screenPromise;
+
+    await fireEvent.press(screen.getByTestId('your-games-see-all'));
+
+    expect(props.onSeeAll).toHaveBeenCalled();
+  });
+
   it('says what a seek is for', async () => {
     const { screenPromise } = renderList();
     const screen = await screenPromise;
@@ -175,12 +185,23 @@ describe('YourGamesList', () => {
     expect(screen.queryByTestId('your-games')).toBeNull();
   });
 
-  it('shows nothing until the games have loaded', async () => {
+  it('shows a skeleton of cards while the games load', async () => {
     const { screenPromise } = renderList({
       dailyGames: { status: DAILY_GAMES_STATUS.LOADING },
     });
     const screen = await screenPromise;
 
+    expect(screen.getByTestId('your-games-loading')).toBeTruthy();
+    expect(screen.queryByTestId('your-games')).toBeNull();
+  });
+
+  it("shows nothing when the games couldn't be loaded", async () => {
+    const { screenPromise } = renderList({
+      dailyGames: { status: DAILY_GAMES_STATUS.ERROR },
+    });
+    const screen = await screenPromise;
+
+    expect(screen.queryByTestId('your-games-loading')).toBeNull();
     expect(screen.queryByTestId('your-games')).toBeNull();
   });
 });

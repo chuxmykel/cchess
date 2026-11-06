@@ -45,6 +45,8 @@ export type HomeStackParamList = {
   UserFriends: { username: string; displayName: string };
   /** Someone's games; your own without a username. */
   GamesList: { username?: string; displayName?: string };
+  /** Every daily game of yours in progress, and seeks still waiting. */
+  DailyGamesList: undefined;
   /** A player's rating history and results in one category. */
   RatingStats: { username: string; displayName: string; category: GameType };
   SignIn: undefined;

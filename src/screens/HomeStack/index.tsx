@@ -24,6 +24,7 @@ import OpeningExplorer from '../OpeningExplorer';
 import UserProfile from '../UserProfile';
 import Conversation from '../Conversation';
 import GamesList from '../GamesList';
+import DailyGamesList from '../DailyGamesList';
 import UserFriends from '../UserFriends';
 import Friends from '../Friends';
 import RatingStats from '../RatingStats';
@@ -123,6 +124,14 @@ const HomeStack: React.FC = () => {
                 name="GamesList"
                 component={GamesList}
                 options={({ navigation }) => plainHeaderOptions(navigation)}
+              />
+              <Screen
+                name="DailyGamesList"
+                component={DailyGamesList}
+                options={({ navigation }) => ({
+                  ...plainHeaderOptions(navigation),
+                  title: 'Your games',
+                })}
               />
               <Screen
                 name="RatingStats"
