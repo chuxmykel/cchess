@@ -112,6 +112,10 @@ const OpeningExplorer: React.FC<OpeningExplorerProps> = ({
         fen={analysis.current.fen}
         opening={opening}
         moves={explorer.moves}
+        status={explorer.status}
+        totals={explorer.totals}
+        db={query?.db ?? null}
+        source={explorer.source}
         onPlayMove={playMove}
       />
       <BottomBar>
