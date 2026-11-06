@@ -5,7 +5,7 @@ import { makeStyles } from '../../theme';
 
 interface SectionHeaderProps {
   title: string;
-  /** How many there are, shown beside the title. */
+  /** How many there are, in a small pill beside the title. */
   count?: number;
   actionLabel?: string;
   onActionPress?: () => void;
@@ -23,15 +23,16 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
 
   return (
     <View style={styles.row}>
-      <Text style={styles.title}>
-        {title}
+      <View style={styles.heading}>
+        <Text style={styles.title}>{title}</Text>
         {count !== undefined && (
-          <Text style={styles.count} testID={testID && `${testID}-count`}>
-            {'  '}
-            {count}
-          </Text>
+          <View style={styles.pill}>
+            <Text style={styles.count} testID={testID && `${testID}-count`}>
+              {count}
+            </Text>
+          </View>
         )}
-      </Text>
+      </View>
       {actionLabel && onActionPress && (
         <Button
           label={actionLabel}
@@ -55,13 +56,26 @@ const useStyles = makeStyles((t) => ({
     paddingHorizontal: t.spacing.lg,
     marginBottom: t.spacing.md,
   },
+  heading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.spacing.sm,
+  },
   title: {
     color: t.colors.text,
     fontSize: t.fontSize.xxl,
     fontWeight: t.fontWeight.semibold,
   },
+  pill: {
+    paddingHorizontal: t.spacing.sm,
+    paddingVertical: t.spacing.xxs,
+    borderRadius: t.radius.pill,
+    backgroundColor: t.colors.surfaceSubtle,
+  },
   count: {
-    fontWeight: t.fontWeight.regular,
     color: t.colors.textMuted,
+    fontSize: t.fontSize.sm,
+    fontWeight: t.fontWeight.semibold,
+    fontVariant: ['tabular-nums'],
   },
 }));

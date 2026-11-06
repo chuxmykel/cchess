@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react-native';
 
 import { RECENT_GAMES_STATUS, useRecentGames } from '../useRecentGames';
 import { useAuthSession } from '../../context/AuthSessionContext';
-import { ApiError, getMyGames } from '../../network/restClient';
+import { ApiError, getMyGames, getUserProfile } from '../../network/restClient';
 import {
   makeAuthSession,
   makeBootstrappingAuthSession,
@@ -15,6 +15,7 @@ jest.mock('../../context/AuthSessionContext', () => ({
 jest.mock('../../network/restClient', () => ({
   ...jest.requireActual('../../network/restClient'),
   getMyGames: jest.fn(),
+  getUserProfile: jest.fn(),
 }));
 
 const FINISHED = makeGameSummary({ id: 'finished' });
@@ -37,6 +38,7 @@ function deferred<T>() {
 
 describe('useRecentGames', () => {
   beforeEach(() => {
+    (getUserProfile as jest.Mock).mockResolvedValue({ gamesPlayed: 42 });
     (useAuthSession as jest.Mock).mockReturnValue(
       makeAuthSession({ accessToken: 'token-a' }),
     );
@@ -69,6 +71,23 @@ describe('useRecentGames', () => {
     expect(result.current.recentGames).toEqual({
       status: RECENT_GAMES_STATUS.READY,
       games: [FINISHED, ABORTED],
+      total: 42,
+    });
+  });
+
+  it("shows the games without a total when it can't be had", async () => {
+    (getMyGames as jest.Mock).mockResolvedValue([FINISHED]);
+    (getUserProfile as jest.Mock).mockRejectedValue(new Error('offline'));
+    const { result } = await renderHook(() => useRecentGames(10));
+
+    await act(async () => {
+      result.current.reload();
+    });
+
+    expect(result.current.recentGames).toEqual({
+      status: RECENT_GAMES_STATUS.READY,
+      games: [FINISHED],
+      total: null,
     });
   });
 
@@ -99,6 +118,7 @@ describe('useRecentGames', () => {
     expect(result.current.recentGames).toEqual({
       status: RECENT_GAMES_STATUS.READY,
       games: [FINISHED],
+      total: 42,
     });
   });
 
@@ -132,6 +152,7 @@ describe('useRecentGames', () => {
     expect(result.current.recentGames).toEqual({
       status: RECENT_GAMES_STATUS.READY,
       games: [FINISHED],
+      total: 42,
     });
   });
 
@@ -153,6 +174,7 @@ describe('useRecentGames', () => {
     expect(result.current.recentGames).toEqual({
       status: RECENT_GAMES_STATUS.READY,
       games: [ABORTED],
+      total: 42,
     });
   });
 

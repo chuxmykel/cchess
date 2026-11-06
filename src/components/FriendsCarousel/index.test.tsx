@@ -70,4 +70,12 @@ describe('FriendsCarousel', () => {
     expect(screen.getByTestId('friends-loading')).toBeTruthy();
     expect(screen.queryByTestId('friends-empty')).toBeNull();
   });
+
+  it('counts my friends beside the title, once they have loaded', async () => {
+    const screen = await renderCarousel().screenPromise;
+    expect(screen.getByTestId('friends-see-all-count')).toHaveTextContent('2');
+
+    const loading = await renderCarousel({ friends: null }).screenPromise;
+    expect(loading.queryByTestId('friends-see-all-count')).toBeNull();
+  });
 });

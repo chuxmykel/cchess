@@ -107,6 +107,11 @@ const RecentGamesList: React.FC<RecentGamesListProps> = ({
     <View style={styles.container}>
       <SectionHeader
         title="Recent Games"
+        count={
+          recentGames.status === RECENT_GAMES_STATUS.READY
+            ? (recentGames.total ?? undefined)
+            : undefined
+        }
         actionLabel="See All"
         onActionPress={onSeeAll}
         testID="recent-games-see-all"

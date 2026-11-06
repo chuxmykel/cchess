@@ -57,6 +57,7 @@ const FriendsCarousel: React.FC<FriendsCarouselProps> = ({
     <View style={styles.container}>
       <SectionHeader
         title="Friends"
+        count={friends?.length}
         actionLabel="See All"
         onActionPress={onSeeAll}
         testID="friends-see-all"

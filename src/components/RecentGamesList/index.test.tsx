@@ -238,4 +238,29 @@ describe('RecentGamesList', () => {
 
     expect(onSeeAll).toHaveBeenCalled();
   });
+
+  it('counts every game I have finished beside the title', async () => {
+    const games = [makeGameSummary({ id: 'newest' })];
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.READY, games, total: 137 }}
+        onRetry={jest.fn()}
+        onPressGame={jest.fn()}
+        onSeeAll={jest.fn()}
+      />,
+    );
+    expect(screen.getByTestId('recent-games-see-all-count')).toHaveTextContent(
+      '137',
+    );
+
+    await screen.rerender(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.READY, games, total: null }}
+        onRetry={jest.fn()}
+        onPressGame={jest.fn()}
+        onSeeAll={jest.fn()}
+      />,
+    );
+    expect(screen.queryByTestId('recent-games-see-all-count')).toBeNull();
+  });
 });
