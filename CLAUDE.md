@@ -643,7 +643,7 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `SectionHeader`'s action is optional, and it can show a count beside
   the title, in a small pill), and `Home`-screen-specific pieces
   (`HomeHeader`, `RecentGamesList`, whose rows open the game viewer; it,
-  Friends and Your games count theirs beside their titles).
+  Friends and Daily games count theirs beside their titles).
   `GameOverCard` names the winner instead of "You won" for a game you
   didn't play - and offers "Play 5+0" (the game's time control) rather
   than "New opponent", as does the viewer's ☰ - and can be dismissed,
