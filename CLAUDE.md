@@ -225,7 +225,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
     retries once, one refresh at a time since refresh tokens rotate, and a
     socket kicked by the server for a stale token is refreshed and
     reconnected once),
-    `useRecentGames` (the player's finished games, from `GET /games`),
+    `useRecentGames` (the player's finished games, from `GET /games`,
+    and how many they've finished in all - their profile's
+    `gamesPlayed`, shown without if it fails),
     `useResumeActiveGame` (once per account the app signs in as, asks for
     a game still in progress and reopens it - after the app restarts
     mid-game, say; `HomeStack` opens it in `LiveGame`),
@@ -639,8 +641,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
   with `react-native-svg`, a title, a line on what will show up there,
   and an optional action;
   `SectionHeader`'s action is optional, and it can show a count beside
-  the title), and `Home`-screen-specific pieces
-  (`HomeHeader`, `RecentGamesList`, whose rows open the game viewer).
+  the title, in a small pill), and `Home`-screen-specific pieces
+  (`HomeHeader`, `RecentGamesList`, whose rows open the game viewer; it,
+  Friends and Your games count theirs beside their titles).
   `GameOverCard` names the winner instead of "You won" for a game you
   didn't play - and offers "Play 5+0" (the game's time control) rather
   than "New opponent", as does the viewer's ☰ - and can be dismissed,
@@ -697,7 +700,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
       on the device, from the games fetched; laid out as one wrapping row
       of memoised cards keyed by game, not a two-column `FlatList`, whose
       rows - keyed by the games in them - remounted every board on a new
-      order.
+      order. The filter hides the cards it leaves out (`display: 'none'`)
+      rather than removing them, so switching it off shows boards already
+      drawn.
   - `DailyGame`: `useOnlineChessGame` with no pre-moves, its clocks the
     time left on the move (`GameClock`'s `daily`, `utils/timeLeft.ts`'
     `formatTimeLeft`: whole hours rounded up from an hour, minutes under
