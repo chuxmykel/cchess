@@ -20,6 +20,8 @@ interface GameHistoryListProps {
   onSelectGame: (game: GameSummary) => void;
   // What the empty list says will show up there.
   emptyMessage: string;
+  // Its title, "No games yet" unless given.
+  emptyTitle?: string;
 }
 
 // Finished games, newest first, loading more as the list nears its end.
@@ -27,6 +29,7 @@ const GameHistoryList: React.FC<GameHistoryListProps> = ({
   fetchPage,
   onSelectGame,
   emptyMessage,
+  emptyTitle = 'No games yet',
 }) => {
   const styles = useStyles();
 
@@ -61,7 +64,7 @@ const GameHistoryList: React.FC<GameHistoryListProps> = ({
       ListEmptyComponent={
         <EmptyState
           illustration="games"
-          title="No games yet"
+          title={emptyTitle}
           message={emptyMessage}
           testID="games-empty"
         />

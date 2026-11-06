@@ -194,6 +194,22 @@ describe('restClient', () => {
       expect(request.headers.Authorization).toBe('Bearer access-123');
     });
 
+    it('narrows my games to a result and a type', async () => {
+      const transport = stubTransport(respondWith([]));
+
+      await getMyGames('access-123', 20, undefined, {
+        result: 'draw',
+        gameType: 'rapid',
+      });
+
+      expect(sentRequest(transport).params).toEqual({
+        limit: 20,
+        result: 'draw',
+        gameType: 'rapid',
+        status: 'completed',
+      });
+    });
+
     it("fetches a player's finished games, a page at a time", async () => {
       const transport = stubTransport(respondWith([]));
 

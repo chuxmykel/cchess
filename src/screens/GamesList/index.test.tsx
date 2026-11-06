@@ -6,6 +6,9 @@ import { getMyGames, getUserGames } from '../../network/restClient';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { makeGameSummary } from '../../testUtils/gameSummary';
 
+jest.mock('../../hooks/usePopoverMenu', () =>
+  jest.requireActual('../../testUtils/popoverMenuStartingOpen'),
+);
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
 }));
@@ -42,7 +45,9 @@ describe('GamesList', () => {
     ]);
     const { screen, navigation } = await renderScreen({});
 
-    expect(navigation.setOptions).toHaveBeenCalledWith({ title: 'Your games' });
+    expect(navigation.setOptions).toHaveBeenCalledWith({
+      title: 'Game history',
+    });
     await fireEvent.press(screen.getByTestId('game-row-mine'));
     expect(navigation.navigate).toHaveBeenCalledWith('GameViewer', {
       gameId: 'mine',
@@ -62,6 +67,7 @@ describe('GamesList', () => {
       'judit',
       { limit: 20, before: undefined },
       'access-token',
+      {},
     );
     expect(navigation.setOptions).toHaveBeenCalledWith({
       title: "Judit's games",
@@ -86,6 +92,43 @@ describe('GamesList', () => {
       expect(screen.getByText(text)).toBeTruthy();
     },
   );
+
+  it('asks for only the games won, drawn or lost, and of a type', async () => {
+    (getMyGames as jest.Mock).mockResolvedValue([]);
+    const { screen } = await renderScreen({});
+
+    // Both menus start open here (popoverMenuStartingOpen).
+    await fireEvent.press(screen.getByTestId('games-result-filter-loss'));
+    await act(async () => {});
+    await fireEvent.press(screen.getByTestId('games-type-filter-blitz'));
+    await act(async () => {});
+
+    expect(getMyGames).toHaveBeenLastCalledWith('access-token', 20, undefined, {
+      result: 'loss',
+      gameType: 'blitz',
+    });
+    expect(
+      screen.getByText('No finished games match these filters.'),
+    ).toBeTruthy();
+  });
+
+  it("filters another player's games the same way", async () => {
+    (getUserGames as jest.Mock).mockResolvedValue([]);
+    const { screen } = await renderScreen({
+      username: 'judit',
+      displayName: 'Judit',
+    });
+
+    await fireEvent.press(screen.getByTestId('games-result-filter-win'));
+    await act(async () => {});
+
+    expect(getUserGames).toHaveBeenLastCalledWith(
+      'judit',
+      { limit: 20, before: undefined },
+      'access-token',
+      { result: 'win' },
+    );
+  });
 
   it('offers to retry when the games fail to load', async () => {
     (getMyGames as jest.Mock).mockRejectedValueOnce(new Error('offline'));
