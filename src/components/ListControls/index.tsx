@@ -1,12 +1,9 @@
 import { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import Dropdown from '../Dropdown';
 import Icon from '../Icon';
-import Popover, { POPOVER_TRIGGER_HIT_SLOP } from '../Popover';
-import { usePopoverMenu } from '../../hooks/usePopoverMenu';
 import { makeStyles, useTheme } from '../../theme';
-
-const MENU_WIDTH = 200;
 
 interface ListControlsProps<Sort extends string> {
   /** A chip that narrows the list, on or off. */
@@ -37,15 +34,6 @@ function ListControls<Sort extends string>({
   const styles = useStyles();
   const { colors } = useTheme();
 
-  const { triggerRef, visible, position, open, close } =
-    usePopoverMenu(MENU_WIDTH);
-  const sortLabel = sorts.find((each) => each.key === sort)?.label;
-
-  function select(selected: Sort) {
-    close();
-    onSortChange(selected);
-  }
-
   return (
     <View style={styles.row}>
       <Pressable
@@ -69,50 +57,14 @@ function ListControls<Sort extends string>({
         )}
       </Pressable>
 
-      <Pressable
-        ref={triggerRef}
-        style={styles.sortTrigger}
-        onPress={open}
-        hitSlop={POPOVER_TRIGGER_HIT_SLOP}
-        accessibilityRole="button"
-        accessibilityLabel={`Sort: ${sortLabel}`}
+      <Dropdown
+        options={sorts}
+        value={sort}
+        onChange={onSortChange}
+        icon="sort"
+        accessibilityName="Sort"
         testID={`${testID}-sort`}
-      >
-        <Icon name="sort" size={18} color={colors.textMuted} />
-        <Text style={styles.sortLabel}>{sortLabel}</Text>
-        <Icon name="chevron-down" size={16} color={colors.textMuted} />
-      </Pressable>
-      <Popover
-        visible={visible}
-        position={position}
-        onClose={close}
-        width={MENU_WIDTH}
-        contentStyle={styles.menu}
-        testID={`${testID}-sort-menu`}
-      >
-        {sorts.map((each) => {
-          const isSelected = each.key === sort;
-          return (
-            <Pressable
-              key={each.key}
-              style={styles.option}
-              onPress={() => select(each.key)}
-              accessibilityRole="menuitem"
-              accessibilityState={{ selected: isSelected }}
-              testID={`${testID}-sort-${each.key}`}
-            >
-              <Text
-                style={[styles.optionLabel, isSelected && styles.selectedLabel]}
-              >
-                {each.label}
-              </Text>
-              {isSelected && (
-                <Icon name="check" size={18} color={colors.accent} />
-              )}
-            </Pressable>
-          );
-        })}
-      </Popover>
+      />
     </View>
   );
 }
@@ -146,40 +98,6 @@ const useStyles = makeStyles((t) => ({
     fontSize: t.fontSize.base,
   },
   chipLabelSelected: {
-    fontWeight: t.fontWeight.semibold,
-    color: t.colors.accent,
-  },
-  sortTrigger: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.spacing.xs,
-  },
-  sortLabel: {
-    fontSize: t.fontSize.base,
-    color: t.colors.textMuted,
-  },
-  // A visible edge and a lift off the page, like the rating category
-  // dropdown.
-  menu: {
-    paddingVertical: t.spacing.xs,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: t.colors.border,
-    borderRadius: t.radius.lg,
-    ...t.elevation.lg,
-    shadowColor: t.colors.shadow,
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: t.spacing.lg,
-    paddingVertical: t.spacing.md,
-  },
-  optionLabel: {
-    color: t.colors.text,
-    flex: 1,
-    fontSize: t.fontSize.lg,
-  },
-  selectedLabel: {
     fontWeight: t.fontWeight.semibold,
     color: t.colors.accent,
   },
