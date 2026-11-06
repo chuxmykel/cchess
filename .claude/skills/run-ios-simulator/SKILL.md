@@ -179,7 +179,7 @@ resign or abort from the app (see `examples/resign.yaml` /
   `decline-challenge-<id>` (✕) (or `cancel-challenge-<id>` for your
   own), and `friend-request-<id>` with `accept-friend-<id>` /
   `decline-friend-<id>`. Tap outside the popup to close it.
-- **Your games** (Home, between Friends and Recent Games - only with a
+- **Daily games** (Home, between Friends and Recent Games - only with a
   daily game in progress or a seek waiting): `your-games`,
   `your-games-see-all` (See All, → `daily-games-list`: its
   `daily-games-your-move-filter` chip, the `daily-games-sort` dropdown
