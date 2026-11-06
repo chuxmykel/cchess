@@ -4,7 +4,8 @@ import Avatar from '../Avatar';
 import { PositionBoard } from '../Board';
 import { DailyGame } from '../../network/restClient';
 import { DAILY_LOW_TIME_MS, formatTimeLeft } from '../../utils/timeLeft';
-import { makeStyles } from '../../theme';
+import Icon from '../Icon';
+import { makeStyles, useTheme } from '../../theme';
 
 /** A card's width - a little wider than a friend's. */
 export const DAILY_GAME_CARD_WIDTH = 152;
@@ -25,6 +26,9 @@ interface DailyGameCardProps {
   /** The time now, epoch ms, for the time left. */
   now: number;
   onPress: (game: DailyGame) => void;
+  /** A pawn in the corner of a game on your move - where the cards stand
+   * many to a screen, so it's quicker to find than the ring. */
+  marksYourMove?: boolean;
 }
 
 // A daily game in progress: its board from your side, and the opponent as a
@@ -35,8 +39,10 @@ const DailyGameCard: React.FC<DailyGameCardProps> = ({
   game,
   now,
   onPress,
+  marksYourMove = false,
 }) => {
   const styles = useStyles();
+  const { colors } = useTheme();
   const msLeft = new Date(game.moveDeadlineAt).getTime() - now;
   const timeLeft = formatTimeLeft(Math.max(msLeft, 0));
 
@@ -85,6 +91,14 @@ const DailyGameCard: React.FC<DailyGameCardProps> = ({
             {timeLeft}
           </Text>
         </View>
+        {marksYourMove && game.myTurn && (
+          <Icon
+            name="chess-pawn"
+            size={20}
+            color={colors.accent}
+            testID={`daily-game-${game.id}-your-move`}
+          />
+        )}
       </View>
     </Pressable>
   );

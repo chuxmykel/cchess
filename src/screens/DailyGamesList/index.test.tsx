@@ -15,6 +15,9 @@ import { withSafeArea } from '../../testUtils/safeArea';
 jest.mock('@react-navigation/native', () =>
   jest.requireActual('../../testUtils/focusEffectRunsOnMount'),
 );
+jest.mock('../../hooks/usePopoverMenu', () =>
+  jest.requireActual('../../testUtils/popoverMenuStartingOpen'),
+);
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
 }));
@@ -78,6 +81,62 @@ describe('DailyGamesList', () => {
       gameId: 'game-1',
     });
     expect(cancelDailySeek).toHaveBeenCalledWith('seek-1', expect.any(String));
+  });
+
+  describe('filtered and sorted', () => {
+    const HOUR = 60 * 60 * 1000;
+    const inHours = (hours: number) =>
+      new Date(Date.now() + hours * HOUR).toISOString();
+    const GAMES = [
+      makeDailyGame({ id: 'mine', myTurn: true, moveDeadlineAt: inHours(20) }),
+      makeDailyGame({
+        id: 'theirs',
+        myTurn: false,
+        moveDeadlineAt: inHours(2),
+      }),
+    ];
+    const order = (screen: Awaited<ReturnType<typeof render>>) =>
+      screen
+        .getAllByTestId(/^daily-(game-(mine|theirs)|seek-seek-1)$/)
+        .map((card) => card.props.testID);
+
+    beforeEach(() => {
+      (getDailyGames as jest.Mock).mockResolvedValue(GAMES);
+    });
+
+    it('puts your move first, marked with a pawn, then the seeks', async () => {
+      const { screen } = await renderList();
+
+      expect(order(screen)).toEqual([
+        'daily-game-mine',
+        'daily-game-theirs',
+        'daily-seek-seek-1',
+      ]);
+      expect(screen.getByTestId('daily-game-mine-your-move')).toBeTruthy();
+      expect(screen.queryByTestId('daily-game-theirs-your-move')).toBeNull();
+    });
+
+    it('sorts by time left', async () => {
+      const { screen } = await renderList();
+
+      // The menu starts open here (popoverMenuStartingOpen).
+      await fireEvent.press(screen.getByTestId('daily-games-sort-timeLeft'));
+
+      expect(order(screen).slice(0, 2)).toEqual([
+        'daily-game-theirs',
+        'daily-game-mine',
+      ]);
+    });
+
+    it('shows only those on your move, with how many', async () => {
+      const { screen } = await renderList();
+      const filter = screen.getByTestId('daily-games-your-move-filter');
+      expect(filter).toHaveTextContent('Your move 1');
+
+      await fireEvent.press(filter);
+
+      expect(order(screen)).toEqual(['daily-game-mine']);
+    });
   });
 
   it('says so with none', async () => {
