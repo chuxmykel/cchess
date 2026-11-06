@@ -5,6 +5,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Color } from 'chess.js';
 
@@ -43,6 +44,7 @@ const DailyAnalysis: React.FC<DailyAnalysisProps> = ({ navigation, route }) => {
   const styles = useStyles();
   const { gameId } = route.params;
   const { width } = useWindowDimensions();
+  const isFocused = useIsFocused();
   const live = useDailyGamePosition(gameId);
   const source = useMemo<AnalysisSource>(
     () => ({ kind: 'game', gameId }),
@@ -111,7 +113,8 @@ const DailyAnalysis: React.FC<DailyAnalysisProps> = ({ navigation, route }) => {
             returnKey: route.key,
           })
         }
-        explorerLine={route.params.explorerLine}
+        // Taken once back from the explorer, which sets it as it goes.
+        explorerLine={isFocused ? route.params.explorerLine : undefined}
         onExplorerLineTaken={() =>
           navigation.setParams({ explorerLine: undefined })
         }

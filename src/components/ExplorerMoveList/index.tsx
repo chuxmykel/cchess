@@ -1,10 +1,15 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
+import { Opening } from '../../domain/openings';
 import { BookExplorerMove } from '../../hooks/useBookExplorer';
 import { ExplorerMove } from '../../network/restClient';
 import { makeStyles } from '../../theme';
 
 interface ExplorerMoveListProps {
+  /** The position the moves are from - for their numbers. */
+  fen: string;
+  /** The opening the position's in, heading the list. */
+  opening: Opening | null;
   moves: BookExplorerMove[];
   /** A move tapped, as UCI. */
   onPlayMove: (uci: string) => void;
@@ -14,73 +19,102 @@ function percent(count: number, games: number): number {
   return games === 0 ? 0 : Math.round((count / games) * 100);
 }
 
-// The book moves from a position, each with the opening it reaches - and,
-// once games finished here have played it, how many and a bar of how they
-// ended: white's wins, draws and black's. A tap plays it.
+// A move's number as a list of moves reads it: "4." for white's, "4..."
+// for black's.
+function moveNumberAt(fen: string): string {
+  const [, turn, , , , fullMove] = fen.split(' ');
+  return turn === 'w' ? `${fullMove}.` : `${fullMove}...`;
+}
+
+// The book moves from a position, under the opening it's in: each
+// numbered, with how many games finished here played it and a bar of how
+// they ended - white's wins, draws and black's. A tap plays it. It fills
+// the room it's given, moves or not, so what's under it stays put.
 const ExplorerMoveList: React.FC<ExplorerMoveListProps> = ({
+  fen,
+  opening,
   moves,
   onPlayMove,
 }) => {
   const styles = useStyles();
-  if (moves.length === 0) {
-    return (
-      <Text style={styles.note} testID="explorer-empty">
-        No book moves from here.
-      </Text>
-    );
-  }
+  const number = moveNumberAt(fen);
   return (
-    <ScrollView
-      style={styles.list}
-      contentContainerStyle={styles.content}
-      testID="explorer-moves"
-    >
-      {moves.map((move) => (
-        <MoveRow key={move.uci} move={move} onPress={onPlayMove} />
-      ))}
-    </ScrollView>
+    <View style={styles.area}>
+      {opening && (
+        <Text
+          style={styles.opening}
+          numberOfLines={1}
+          testID="explorer-opening"
+        >
+          {opening.name}
+        </Text>
+      )}
+      {moves.length === 0 ? (
+        <Text style={styles.note} testID="explorer-empty">
+          No results
+        </Text>
+      ) : (
+        <ScrollView style={styles.list} testID="explorer-moves">
+          {moves.map((move) => (
+            <MoveRow
+              key={move.uci}
+              number={number}
+              move={move}
+              onPress={onPlayMove}
+            />
+          ))}
+        </ScrollView>
+      )}
+    </View>
   );
 };
 
 const MoveRow: React.FC<{
+  number: string;
   move: BookExplorerMove;
   onPress: (uci: string) => void;
-}> = ({ move, onPress }) => {
+}> = ({ number, move, onPress }) => {
   const styles = useStyles();
-  const { results } = move;
   return (
     <Pressable
       style={styles.row}
       onPress={() => onPress(move.uci)}
       accessibilityRole="button"
-      accessibilityLabel={`${move.san}, ${move.opening.name}`}
+      accessibilityLabel={`${number} ${move.san}, ${move.opening.name}`}
       testID={`explorer-move-${move.uci}`}
     >
-      <Text style={styles.san}>{move.san}</Text>
-      <View style={styles.details}>
-        <Text style={styles.opening} numberOfLines={1}>
-          {move.opening.name}
-        </Text>
-        {results && <Results results={results} />}
-      </View>
+      <Text style={styles.san} numberOfLines={1}>
+        {number} {move.san}
+      </Text>
+      <Results uci={move.uci} results={move.results} />
     </Pressable>
   );
 };
 
-const Results: React.FC<{ results: ExplorerMove }> = ({ results }) => {
+// How many games here played it, and how they ended - none yet, an empty
+// bar.
+const Results: React.FC<{ uci: string; results: ExplorerMove | null }> = ({
+  uci,
+  results,
+}) => {
   const styles = useStyles();
-  const white = percent(results.whiteWins, results.games);
-  const draw = percent(results.draws, results.games);
-  const black = 100 - white - draw;
+  const games = results?.games ?? 0;
+  const white = results ? percent(results.whiteWins, games) : 0;
+  const draw = results ? percent(results.draws, games) : 0;
+  const black = results ? 100 - white - draw : 0;
   return (
     <View
       style={styles.results}
       accessible
-      accessibilityLabel={`${results.games} games: white won ${white}%, drawn ${draw}%, black won ${black}%`}
-      testID={`explorer-results-${results.uci}`}
+      accessibilityLabel={
+        results
+          ? `${games} games: white won ${white}%, drawn ${draw}%, black won ${black}%`
+          : 'No games'
+      }
+      testID={`explorer-results-${uci}`}
     >
-      <Text style={styles.games}>
-        {results.games} {results.games === 1 ? 'game' : 'games'}
+      <Text style={styles.games} testID={`explorer-games-${uci}`}>
+        {games}
       </Text>
       <View style={styles.bar}>
         {white > 0 && (
@@ -106,12 +140,17 @@ const Results: React.FC<{ results: ExplorerMove }> = ({ results }) => {
 export default ExplorerMoveList;
 
 const useStyles = makeStyles((t) => ({
+  area: {
+    flex: 1,
+    paddingHorizontal: t.spacing.lg,
+  },
   list: {
     flex: 1,
   },
-  content: {
-    paddingHorizontal: t.spacing.lg,
-    paddingBottom: t.spacing.md,
+  opening: {
+    color: t.colors.textMuted,
+    fontSize: t.fontSize.base,
+    paddingVertical: t.spacing.sm,
   },
   note: {
     color: t.colors.textMuted,
@@ -124,33 +163,25 @@ const useStyles = makeStyles((t) => ({
     alignItems: 'center',
     gap: t.spacing.md,
     paddingVertical: t.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: t.colors.divider,
   },
   san: {
-    width: 56,
+    width: 80,
     color: t.colors.text,
     fontSize: t.fontSize.lg,
     fontWeight: t.fontWeight.semibold,
   },
-  details: {
-    flex: 1,
-    gap: t.spacing.xxs,
-  },
-  opening: {
-    color: t.colors.text,
-    fontSize: t.fontSize.base,
-  },
   results: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.spacing.sm,
   },
   games: {
-    width: 64,
+    width: 56,
     color: t.colors.textMuted,
     fontSize: t.fontSize.sm,
     fontVariant: ['tabular-nums'],
+    textAlign: 'right',
   },
   bar: {
     flex: 1,

@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 
+import { useIsFocused } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import Button from '../../components/Button';
@@ -41,6 +42,7 @@ const AnalysisBoard: React.FC<AnalysisBoardProps> = ({ route, navigation }) => {
   const styles = useStyles();
 
   const { width } = useWindowDimensions();
+  const isFocused = useIsFocused();
   const [session, setSession] = useState<Session>({
     source: route.params.source,
     key: 0,
@@ -117,7 +119,8 @@ const AnalysisBoard: React.FC<AnalysisBoardProps> = ({ route, navigation }) => {
             returnKey: route.key,
           })
         }
-        explorerLine={route.params.explorerLine}
+        // Taken once back from the explorer, which sets it as it goes.
+        explorerLine={isFocused ? route.params.explorerLine : undefined}
         onExplorerLineTaken={() =>
           navigation.setParams({ explorerLine: undefined })
         }
