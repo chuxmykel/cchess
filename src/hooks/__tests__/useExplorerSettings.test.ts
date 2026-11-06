@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook } from '@testing-library/react-native';
 
-import { useExplorerSettings } from '../useExplorerSettings';
+import { explorerQuery, useExplorerSettings } from '../useExplorerSettings';
 import { DEFAULT_EXPLORER_SETTINGS } from '../../constants/explorer';
 
 describe('useExplorerSettings', () => {
@@ -58,5 +58,38 @@ describe('useExplorerSettings', () => {
       ...DEFAULT_EXPLORER_SETTINGS,
       ratings: [2000],
     });
+  });
+});
+
+describe('explorerQuery', () => {
+  it('asks Masters, or Lichess with its filters', () => {
+    expect(
+      explorerQuery({ ...DEFAULT_EXPLORER_SETTINGS, db: 'masters' }, 'me'),
+    ).toEqual({ db: 'masters' });
+    expect(explorerQuery(DEFAULT_EXPLORER_SETTINGS, 'me')).toEqual({
+      db: 'lichess',
+      speeds: DEFAULT_EXPLORER_SETTINGS.speeds,
+      ratings: DEFAULT_EXPLORER_SETTINGS.ratings,
+    });
+  });
+
+  it('asks about your games, or the player picked, from their side', () => {
+    const player = { ...DEFAULT_EXPLORER_SETTINGS, db: 'player' as const };
+    expect(explorerQuery(player, 'me')).toEqual({
+      db: 'player',
+      user: 'me',
+      color: 'white',
+    });
+    expect(
+      explorerQuery(
+        {
+          ...player,
+          player: { id: 'judy-id', username: 'judy' },
+          color: 'black',
+        },
+        'me',
+      ),
+    ).toEqual({ db: 'player', user: 'judy-id', color: 'black' });
+    expect(explorerQuery(player, null)).toBeNull();
   });
 });

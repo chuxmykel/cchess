@@ -4,6 +4,7 @@ import {
   DEFAULT_EXPLORER_SETTINGS,
   ExplorerSettings,
 } from '../constants/explorer';
+import type { ExplorerQuery } from '../network/restClient';
 import {
   loadExplorerSettings,
   saveExplorerSettings,
@@ -46,4 +47,27 @@ export function useExplorerSettings(): ExplorerSettingsState {
     () => ({ settings, loaded, update }),
     [settings, loaded, update],
   );
+}
+
+/** What to ask the explorer, from its settings: the Player database is
+ * `myUserId`'s games when no one else is picked - null, asking nothing,
+ * until there's one. */
+export function explorerQuery(
+  settings: ExplorerSettings,
+  myUserId: string | null,
+): ExplorerQuery | null {
+  switch (settings.db) {
+    case 'masters':
+      return { db: 'masters' };
+    case 'lichess':
+      return {
+        db: 'lichess',
+        speeds: settings.speeds,
+        ratings: settings.ratings,
+      };
+    case 'player': {
+      const user = settings.player?.id ?? myUserId;
+      return user ? { db: 'player', user, color: settings.color } : null;
+    }
+  }
 }

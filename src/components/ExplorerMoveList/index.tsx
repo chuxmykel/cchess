@@ -1,7 +1,7 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Opening } from '../../domain/openings';
-import { BookExplorerMove } from '../../hooks/useBookExplorer';
+import { ExplorerMoveRow } from '../../hooks/useExplorerMoves';
 import { ExplorerMove } from '../../network/restClient';
 import { makeStyles } from '../../theme';
 
@@ -10,7 +10,7 @@ interface ExplorerMoveListProps {
   fen: string;
   /** The opening the position's in, heading the list. */
   opening: Opening | null;
-  moves: BookExplorerMove[];
+  moves: ExplorerMoveRow[];
   /** A move tapped, as UCI. */
   onPlayMove: (uci: string) => void;
 }
@@ -26,9 +26,10 @@ function moveNumberAt(fen: string): string {
   return turn === 'w' ? `${fullMove}.` : `${fullMove}...`;
 }
 
-// The book moves from a position, under the opening it's in: each
-// numbered, with how many games finished here played it and a bar of how
-// they ended - white's wins, draws and black's. A tap plays it. It fills
+// The moves from a position, under the opening it's in - the database's,
+// then the book's no one has played: each numbered, with how many games
+// played it and a bar of how they ended - white's wins, draws and
+// black's. A tap plays it. It fills
 // the room it's given, moves or not, so what's under it stays put.
 const ExplorerMoveList: React.FC<ExplorerMoveListProps> = ({
   fen,
@@ -71,7 +72,7 @@ const ExplorerMoveList: React.FC<ExplorerMoveListProps> = ({
 
 const MoveRow: React.FC<{
   number: string;
-  move: BookExplorerMove;
+  move: ExplorerMoveRow;
   onPress: (uci: string) => void;
 }> = ({ number, move, onPress }) => {
   const styles = useStyles();
@@ -80,7 +81,11 @@ const MoveRow: React.FC<{
       style={styles.row}
       onPress={() => onPress(move.uci)}
       accessibilityRole="button"
-      accessibilityLabel={`${number} ${move.san}, ${move.opening.name}`}
+      accessibilityLabel={
+        move.opening
+          ? `${number} ${move.san}, ${move.opening.name}`
+          : `${number} ${move.san}`
+      }
       testID={`explorer-move-${move.uci}`}
     >
       <Text style={styles.san} numberOfLines={1}>
