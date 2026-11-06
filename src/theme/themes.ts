@@ -69,6 +69,9 @@ export interface ThemeColors {
   warning: string;
   // An unread count's dot.
   badge: string;
+  // The pill behind a section's count: a see-through grey, the same in
+  // both modes, so it shows a shade off the page in either.
+  countPill: string;
   // A friend who isn't online.
   presenceOffline: string;
   // Captured pieces under a player's name, either side's, as lichess draws
@@ -219,6 +222,7 @@ export const lightTheme: Theme = {
     success: '#4caf50',
     warning: '#c99a1c',
     badge: '#e53935',
+    countPill: 'rgba(120, 120, 128, 0.2)',
     presenceOffline: '#bbb',
     capturedPiece: '#888',
 
@@ -304,6 +308,7 @@ export const darkTheme: Theme = {
     success: '#66bb6a',
     warning: '#d6a930',
     badge: '#e53935',
+    countPill: 'rgba(120, 120, 128, 0.2)',
     presenceOffline: '#6d6a65',
     capturedPiece: '#888',
 

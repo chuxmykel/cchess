@@ -70,7 +70,7 @@ const useStyles = makeStyles((t) => ({
     paddingHorizontal: t.spacing.sm,
     paddingVertical: t.spacing.xxs,
     borderRadius: t.radius.pill,
-    backgroundColor: t.colors.surfaceSubtle,
+    backgroundColor: t.colors.countPill,
   },
   count: {
     color: t.colors.textMuted,
