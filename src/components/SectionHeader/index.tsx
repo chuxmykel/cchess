@@ -1,6 +1,7 @@
 import { View, Text } from 'react-native';
 
 import Button from '../Button';
+import CountPill from '../CountPill';
 import { makeStyles } from '../../theme';
 
 interface SectionHeaderProps {
@@ -26,11 +27,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
       <View style={styles.heading}>
         <Text style={styles.title}>{title}</Text>
         {count !== undefined && (
-          <View style={styles.pill}>
-            <Text style={styles.count} testID={testID && `${testID}-count`}>
-              {count}
-            </Text>
-          </View>
+          <CountPill count={count} testID={testID && `${testID}-count`} />
         )}
       </View>
       {actionLabel && onActionPress && (
@@ -65,17 +62,5 @@ const useStyles = makeStyles((t) => ({
     color: t.colors.text,
     fontSize: t.fontSize.xxl,
     fontWeight: t.fontWeight.semibold,
-  },
-  pill: {
-    paddingHorizontal: t.spacing.sm,
-    paddingVertical: t.spacing.xxs,
-    borderRadius: t.radius.pill,
-    backgroundColor: t.colors.countPill,
-  },
-  count: {
-    color: t.colors.textMuted,
-    fontSize: t.fontSize.sm,
-    fontWeight: t.fontWeight.semibold,
-    fontVariant: ['tabular-nums'],
   },
 }));
