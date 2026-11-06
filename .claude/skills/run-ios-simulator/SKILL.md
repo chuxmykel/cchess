@@ -161,7 +161,8 @@ resign or abort from the app (see `examples/resign.yaml` /
   Analysis, Profile. Only Analysis has a testID (`analysis-tab`), and
   the labels aren't matched by text - tap Home at (67, 817) and Profile
   at (335, 817) (measured 2026-11-03 on iPhone 18 Pro).
-- **Home**: `avatar-button` (header, opens Profile), `recent-games-loading`,
+- **Home**: `avatar-button` (header, opens Profile), `friends-loading`,
+  `recent-games-loading`,
   `game-row-<gameId>` (opens the game viewer), `recent-games-retry`,
   `recent-games-see-all` (the full list), `recent-games-empty`. Guests
   see `sign-in-prompt` (with `sign-in-button` /
@@ -180,7 +181,11 @@ resign or abort from the app (see `examples/resign.yaml` /
   `decline-friend-<id>`. Tap outside the popup to close it.
 - **Your games** (Home, between Friends and Recent Games - only with a
   daily game in progress or a seek waiting): `your-games`,
-  `your-games-see-all` (See All, → `daily-games-list`) with its `-count`,
+  `your-games-see-all` (See All, → `daily-games-list`: its
+  `daily-games-your-move-filter` chip, the `daily-games-sort` dropdown
+  with `daily-games-sort-<yourMove|timeLeft|lastMove|opponent>`, and a
+  `daily-game-<gameId>-your-move` pawn on cards on your move) with its
+  `-count`,
   `your-games-loading`, `daily-game-<gameId>` (opens the game) with
   `daily-game-<gameId>-board` (faded while it's the opponent's move) and
   `daily-game-<gameId>-time-left`, and `daily-seek-<seekId>` with its
@@ -245,7 +250,10 @@ resign or abort from the app (see `examples/resign.yaml` /
   `message-list`, `message-<id>`, `load-older-messages`,
   `message-input`, `send-message-button`, and
   `clear-conversation-button` (🗑, in the header; confirm "Delete").
-- **Game list**: `games-list`, `game-row-<gameId>`, `games-error`.
+- **Game list** ("Game history" for yours): `games-list`,
+  `game-row-<gameId>`, `games-error`, and the dropdowns
+  `games-result-filter` (`-all`, `-win`, `-draw`, `-loss`) and
+  `games-type-filter` (`-all`, `-bullet` ... `-daily`).
 - **Game viewer**: `game-viewer`, `game-header-subtitle` ("2 minutes
   ago", or "Playing now" while watching), the LiveGame header, move
   list, player bars and toolbar testIDs below (no resign; no chat unless
