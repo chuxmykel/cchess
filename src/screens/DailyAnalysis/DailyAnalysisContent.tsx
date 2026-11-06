@@ -1,22 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Color } from 'chess.js';
 
 import BottomBar from '../../components/BottomBar';
 import { GameBoard } from '../../components/Board';
-import ConditionalMovePanel from '../../components/ConditionalMovePanel';
 import { ToolbarButton } from '../../components/GameToolbar';
 import MoveList, { MoveListMove } from '../../components/MoveList';
 import PlayerBarsFrame from '../../components/PlayerBarsFrame';
 import PromotionMenu from '../../components/PromotionMenu';
 import { ChessGameContext } from '../../context/ChessGameContext';
-import {
-  conditionalLine,
-  lineAsText,
-  mainLineNodeId,
-} from '../../domain/conditionalMoves';
 import { capturedMaterial } from '../../domain/material';
-import { useConditionalMoves } from '../../hooks/useConditionalMoves';
 import { AnalysisStart } from '../../hooks/useAnalysisTree';
 import { useAnalysisWorkspace } from '../../hooks/useAnalysisWorkspace';
 import {
@@ -28,14 +21,10 @@ import { GameUserSummary } from '../../network/socketEvents';
 import { makeStyles, spacing } from '../../theme';
 
 interface DailyAnalysisContentProps {
-  gameId: string;
   start: AnalysisStart;
   players: { white: GameUserSummary; black: GameUserSummary };
   /** The side you play. */
   initialOrientation: Color;
-  /** Whether the game's still being played - only then are conditional
-   * moves saved. */
-  isGameInPlay: boolean;
   width: number;
   /** Back to the game as it stands now, its latest moves and all. */
   onReset: () => void;
@@ -56,11 +45,9 @@ interface DailyAnalysisContentProps {
 // the game, the board's flip, a reset to the game as it stands, and the
 // steps through the moves.
 const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
-  gameId,
   start,
   players,
   initialOrientation,
-  isGameInPlay,
   width,
   onReset,
   onOpenNotes,
@@ -92,44 +79,6 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
       return { color: move.color, captured: move.captured ?? null };
     }),
   );
-
-  // The game's own position, its moves at the start of the line - gone
-  // once a move before it replaces them.
-  const gamePly = start.uciMoves?.length ?? 0;
-  const [gameNodeId] = useState(() => mainLineNodeId(analysis.tree, gamePly));
-  const gameNode = gameNodeId
-    ? (analysis.tree.nodes[gameNodeId] ?? null)
-    : null;
-  const isOpponentToMove =
-    isGameInPlay &&
-    gameNode !== null &&
-    gameNode.fen.split(' ')[1] !== initialOrientation;
-  const line =
-    isOpponentToMove && gameNodeId
-      ? conditionalLine(analysis.tree, gameNodeId, analysis.current.id)
-      : null;
-  const conditional = useConditionalMoves(gameId);
-  const isLineSaved =
-    line !== null &&
-    conditional.saved?.basePly === gamePly &&
-    conditional.saved.lines.some((saved) =>
-      line.every((move, index) => saved[index] === move),
-    );
-  const [isSavingLine, setIsSavingLine] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-
-  async function saveLine() {
-    if (!line) return;
-    setIsSavingLine(true);
-    setSaveError(null);
-    try {
-      await conditional.add(gamePly, [line]);
-    } catch (error) {
-      setSaveError((error as Error).message);
-    } finally {
-      setIsSavingLine(false);
-    }
-  }
 
   return (
     <View style={themed.screen} testID="daily-analysis">
@@ -167,18 +116,6 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
             />
           )}
         </PlayerBarsFrame>
-        {/* Over the room under the board, so the board never moves for it. */}
-        {line && gameNode && (
-          <View style={styles.conditionalPanel}>
-            <ConditionalMovePanel
-              line={lineAsText(gameNode.fen, line)}
-              isSaved={isLineSaved}
-              isSaving={isSavingLine}
-              errorMessage={saveError}
-              onSave={saveLine}
-            />
-          </View>
-        )}
       </View>
 
       <BottomBar>
@@ -248,12 +185,6 @@ const useStyles = makeStyles((t) => ({
 const styles = StyleSheet.create({
   boardArea: {
     flex: 1,
-  },
-  conditionalPanel: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: spacing.sm,
   },
   toolbar: {
     width: '100%',

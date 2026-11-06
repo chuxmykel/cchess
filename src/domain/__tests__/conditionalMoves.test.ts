@@ -1,64 +1,94 @@
-import { DEFAULT_POSITION } from 'chess.js';
-
-import { treeFromMoves, addMove, AnalysisTree } from '../analysisTree';
 import {
-  conditionalLine,
-  lineAsText,
-  mainLineNodeId,
+  MAX_CONDITIONAL_LINES,
+  addLine,
+  canAddLine,
+  deleteLine,
+  deleteMove,
+  editorFrom,
+  fenAfterLine,
+  lastMoveOfLine,
+  lineRows,
+  linesToSave,
+  playMove,
+  selectLine,
 } from '../conditionalMoves';
 
 const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
 
-function played(moves: string[]): { tree: AnalysisTree; ids: string[] } {
-  const { tree, line } = treeFromMoves(DEFAULT_POSITION, moves);
-  return { tree, ids: line };
-}
-
-describe('conditional moves', () => {
-  it("finds the game's position down the main line", () => {
-    const { tree, ids } = played(['e2e4', 'e7e5', 'g1f3']);
-
-    expect(mainLineNodeId(tree, 0)).toBe(tree.rootId);
-    expect(mainLineNodeId(tree, 1)).toBe(ids[0]);
-    expect(mainLineNodeId(tree, 4)).toBeNull();
+describe('the conditional moves editor', () => {
+  it('starts on one empty line, or on the last of those saved', () => {
+    expect(editorFrom([])).toEqual({ lines: [[]], current: 0 });
+    expect(
+      editorFrom([
+        ['e7e5', 'g1f3'],
+        ['c7c5', 'g1f3'],
+      ]).current,
+    ).toBe(1);
   });
 
-  it("takes the moves from the game's position to the one looked at, ending on a reply", () => {
-    const { tree, ids } = played(['e2e4', 'e7e5', 'g1f3', 'b8c6', 'f1b5']);
-    const game = ids[0];
+  it('writes moves on the line being written, and takes them back', () => {
+    let editor = editorFrom([]);
+    editor = playMove(editor, 'e7e5');
+    editor = playMove(editor, 'g1f3');
+    expect(editor.lines).toEqual([['e7e5', 'g1f3']]);
 
-    expect(conditionalLine(tree, game, ids[4])).toEqual([
-      'e7e5',
-      'g1f3',
-      'b8c6',
-      'f1b5',
+    expect(deleteMove(editor).lines).toEqual([['e7e5']]);
+  });
+
+  it('adds a line only once this one has a move, and at most ten', () => {
+    const empty = editorFrom([]);
+    expect(addLine(empty)).toBe(empty);
+
+    const added = addLine(playMove(empty, 'e7e5'));
+    expect(added).toEqual({ lines: [['e7e5'], []], current: 1 });
+
+    const full = editorFrom(
+      Array.from({ length: MAX_CONDITIONAL_LINES }, () => ['e7e5', 'g1f3']),
+    );
+    expect(canAddLine(full)).toBe(false);
+  });
+
+  it('selects and deletes lines, keeping one to write on', () => {
+    const editor = editorFrom([
+      ['e7e5', 'g1f3'],
+      ['c7c5', 'g1f3'],
     ]);
-    expect(conditionalLine(tree, game, ids[3])).toEqual(['e7e5', 'g1f3']);
+    expect(selectLine(editor, 0).current).toBe(0);
+    expect(deleteLine(editor, 1)).toEqual({
+      lines: [['e7e5', 'g1f3']],
+      current: 0,
+    });
+    expect(deleteLine(deleteLine(editor, 0), 0)).toEqual({
+      lines: [[]],
+      current: 0,
+    });
   });
 
-  it("has none for a position that isn't down a line from the game's, or no reply yet", () => {
-    const { tree, ids } = played(['e2e4', 'e7e5']);
-
-    expect(conditionalLine(tree, ids[0], ids[1])).toBeNull();
-    expect(conditionalLine(tree, ids[1], ids[0])).toBeNull();
-    expect(conditionalLine(tree, ids[0], ids[0])).toBeNull();
+  it('saves each line to its last reply, leaving empty ones out', () => {
+    expect(
+      linesToSave({
+        lines: [['e7e5', 'g1f3', 'b8c6'], ['c7c5'], []],
+        current: 0,
+      }),
+    ).toEqual([['e7e5', 'g1f3']]);
   });
 
-  it('follows a variation, not just the main line', () => {
-    const { tree, ids } = played(['e2e4', 'e7e5', 'g1f3']);
-    const withC5 = addMove(tree, ids[0], { from: 'c7', to: 'c5' })!;
-    const withNc3 = addMove(withC5.tree, withC5.nodeId, {
-      from: 'b1',
-      to: 'c3',
-    })!;
-
-    expect(conditionalLine(withNc3.tree, ids[0], withNc3.nodeId)).toEqual([
-      'c7c5',
-      'b1c3',
+  it('reads a line in rows of white and black, from the game position', () => {
+    expect(lineRows(AFTER_E4, ['e7e5', 'g1f3', 'b8c6'])).toEqual([
+      { number: 1, white: null, black: 'e5' },
+      { number: 2, white: 'Nf3', black: 'Nc6' },
     ]);
+    expect(fenAfterLine(AFTER_E4, ['e7e5'])).toBe(
+      'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
+    );
   });
 
-  it('reads a line as it would be written', () => {
-    expect(lineAsText(AFTER_E4, ['e7e5', 'g1f3'])).toBe('1... e5 2. Nf3');
+  it("marks a line's last move, with the piece that made it", () => {
+    expect(lastMoveOfLine(AFTER_E4, [])).toBeNull();
+    expect(lastMoveOfLine(AFTER_E4, ['e7e5', 'g1f3'])).toEqual({
+      from: 'g1',
+      to: 'f3',
+      piece: 'n',
+    });
   });
 });

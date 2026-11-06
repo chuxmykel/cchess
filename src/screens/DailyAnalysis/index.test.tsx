@@ -9,11 +9,7 @@ import {
   usePublishDailyGamePosition,
 } from '../../context/DailyGamePositionsContext';
 import { boardTester } from '../../components/Board/boardTester';
-import {
-  getConditionalMoves,
-  getGame,
-  getGameNotes,
-} from '../../network/restClient';
+import { getGame } from '../../network/restClient';
 import { GameMoveSummary } from '../../network/socketEvents';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
@@ -31,8 +27,6 @@ jest.mock('../../context/AuthSessionContext', () => ({
 jest.mock('../../network/restClient', () => ({
   ...jest.requireActual('../../network/restClient'),
   getGame: jest.fn(),
-  getGameNotes: jest.fn(),
-  getConditionalMoves: jest.fn(),
 }));
 
 const SNAPSHOT = makeGameSnapshot({ id: 'game-1', gameType: 'daily' });
@@ -81,14 +75,6 @@ describe('DailyAnalysis', () => {
         socket: createFakeSocket().socket,
       }),
     );
-    (getGameNotes as jest.Mock).mockResolvedValue({
-      body: '',
-      updatedAt: null,
-    });
-    (getConditionalMoves as jest.Mock).mockResolvedValue({
-      basePly: null,
-      lines: [],
-    });
     return AsyncStorage.clear();
   });
   afterEach(() => {

@@ -305,28 +305,21 @@ export async function getConditionalMoves(
   ).data;
 }
 
-/** Adds lines, from the game's position after `basePly` moves - the
- * opponent to move - to any saved from there. */
-export async function addConditionalMoves(
+/** Saves lines, from the game's position after `basePly` moves - the
+ * opponent to move - in place of any saved; none clears them. */
+export async function saveConditionalMoves(
   gameId: string,
   basePly: number,
   lines: string[][],
   accessToken: string,
 ): Promise<ConditionalLines> {
   return (
-    await apiClient.post<ConditionalLines>(
+    await apiClient.put<ConditionalLines>(
       conditionalMovesPath(gameId),
       { basePly, lines },
       bearer(accessToken),
     )
   ).data;
-}
-
-export async function clearConditionalMoves(
-  gameId: string,
-  accessToken: string,
-): Promise<void> {
-  await apiClient.delete(conditionalMovesPath(gameId), bearer(accessToken));
 }
 
 /** Your own notes on a game, seen by nobody else. */

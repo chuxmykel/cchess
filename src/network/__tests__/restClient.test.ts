@@ -10,9 +10,8 @@ import {
   setGameBookmarked,
   cancelDailySeek,
   createDailySeek,
-  addConditionalMoves,
-  clearConditionalMoves,
   getConditionalMoves,
+  saveConditionalMoves,
   getDailyGames,
   getExplorer,
   getGameNotes,
@@ -255,22 +254,18 @@ describe('restClient', () => {
       });
     });
 
-    it('reads, adds and drops conditional moves', async () => {
+    it('reads and saves conditional moves, all at once', async () => {
       const reading = stubTransport(respondWith({ basePly: null, lines: [] }));
       await getConditionalMoves('game-1', 'access-123');
       expect(sentRequest(reading).url).toBe('/games/game-1/conditional-moves');
 
-      const adding = stubTransport(respondWith({ basePly: 3, lines: [] }));
-      await addConditionalMoves('game-1', 3, [['e7e5', 'g1f3']], 'access-123');
-      expect(sentRequest(adding).method).toBe('post');
-      expect(JSON.parse(sentRequest(adding).data)).toEqual({
+      const saving = stubTransport(respondWith({ basePly: 3, lines: [] }));
+      await saveConditionalMoves('game-1', 3, [['e7e5', 'g1f3']], 'access-123');
+      expect(sentRequest(saving).method).toBe('put');
+      expect(JSON.parse(sentRequest(saving).data)).toEqual({
         basePly: 3,
         lines: [['e7e5', 'g1f3']],
       });
-
-      const dropping = stubTransport(respondWith(null));
-      await clearConditionalMoves('game-1', 'access-123');
-      expect(sentRequest(dropping).method).toBe('delete');
     });
 
     it('reads and saves your notes on a game', async () => {

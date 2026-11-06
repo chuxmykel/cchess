@@ -26,6 +26,8 @@ export type HomeStackParamList = {
    * position - `returnKey` the analysis's route, which gets the line
    * explored back on leaving. */
   OpeningExplorer: ExplorerLine & { orientation: Color; returnKey: string };
+  /** Your conditional moves in a daily game, the opponent to move. */
+  ConditionalMoves: { gameId: string };
   /** Your own notes on a game. */
   GameNotes: { gameId: string };
   /** watchedUserId: the player whose game this is being watched for -

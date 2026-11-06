@@ -31,7 +31,6 @@ type DailyAnalysisProps = NativeStackScreenProps<
 type AnalysedGame = {
   start: AnalysisStart;
   orientation: Color;
-  isGameInPlay: boolean;
   players: { white: GameUserSummary; black: GameUserSummary };
 };
 
@@ -60,7 +59,6 @@ const DailyAnalysis: React.FC<DailyAnalysisProps> = ({ navigation, route }) => {
       return {
         start: startOfGame(live),
         orientation: live.myColor,
-        isGameInPlay: live.status === 'active',
         players: { white: live.white, black: live.black },
       };
     }
@@ -68,7 +66,6 @@ const DailyAnalysis: React.FC<DailyAnalysisProps> = ({ navigation, route }) => {
       return {
         start: state.start,
         orientation: state.orientation,
-        isGameInPlay: state.gameStatus === 'active',
         players: state.players,
       };
     }
@@ -98,11 +95,9 @@ const DailyAnalysis: React.FC<DailyAnalysisProps> = ({ navigation, route }) => {
     return (
       <DailyAnalysisContent
         key={shown.resets}
-        gameId={gameId}
         start={shown.game.start}
         players={shown.game.players}
         initialOrientation={shown.game.orientation}
-        isGameInPlay={shown.game.isGameInPlay}
         width={width}
         onReset={reset}
         onOpenNotes={() => navigation.navigate('GameNotes', { gameId })}

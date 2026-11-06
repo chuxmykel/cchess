@@ -22,7 +22,6 @@ import BottomBar from '../../components/BottomBar';
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
 import ChatSheet from '../../components/ChatSheet';
 import DrawOfferPrompt from '../../components/DrawOfferPrompt';
-import ConditionalMovesNote from '../../components/ConditionalMovesNote';
 import { useConditionalMoves } from '../../hooks/useConditionalMoves';
 import GameOverCard from '../../components/GameOverCard';
 import GameOverOverlay from '../../components/GameOverOverlay';
@@ -55,7 +54,7 @@ const DAILY_CLOCK_TICK_MS = 1000;
 
 export type DailyGameContentNavigation = Pick<
   NativeStackNavigationProp<HomeStackParamList, 'DailyGame'>,
-  'navigate' | 'replace' | 'goBack'
+  'navigate' | 'replace' | 'goBack' | 'addListener'
 >;
 
 interface DailyGameContentProps {
@@ -80,6 +79,9 @@ type DailyGameMenuOptions = {
   analyse: () => void;
   /** Brings the result card back; only while it's dismissed. */
   showResult?: () => void;
+  /** Your conditional moves - how many are saved - offered while the
+   * opponent's to move. */
+  conditionalMoves?: { count: number; open: () => void };
 };
 
 export function dailyGameMenuActions({
@@ -95,6 +97,7 @@ export function dailyGameMenuActions({
   flip,
   analyse,
   showResult,
+  conditionalMoves,
 }: DailyGameMenuOptions): ActionSheetAction[] {
   const settings: ActionSheetAction = {
     label: 'Settings',
@@ -154,7 +157,19 @@ export function dailyGameMenuActions({
         destructive: true,
         testID: 'resign-action',
       };
-  return [nextGame, ...draw, leaveGame, settings, flipBoard];
+  const conditional: ActionSheetAction[] = conditionalMoves
+    ? [
+        {
+          label:
+            conditionalMoves.count > 0
+              ? `Conditional moves (${conditionalMoves.count})`
+              : 'Conditional moves',
+          onPress: conditionalMoves.open,
+          testID: 'conditional-moves-action',
+        },
+      ]
+    : [];
+  return [nextGame, ...draw, leaveGame, ...conditional, settings, flipBoard];
 }
 
 const DailyGameContent: React.FC<DailyGameContentProps> = ({
@@ -231,6 +246,12 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
       : null;
   const seekDailyGame = useSeekDailyGame();
   const conditional = useConditionalMoves(snapshot.id);
+  // Saved on their own screen, over this one.
+  const reloadConditional = conditional.reload;
+  useEffect(
+    () => navigation.addListener('focus', reloadConditional),
+    [navigation, reloadConditional],
+  );
   const conditionalLines =
     !isGameOver && conditional.saved?.basePly === moves.length
       ? conditional.saved.lines
@@ -301,6 +322,14 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
     showResult: isResultDismissed
       ? () => setResultDismissedAt(null)
       : undefined,
+    conditionalMoves:
+      !isGameOver && turn !== myColor
+        ? {
+            count: conditionalLines.length,
+            open: () =>
+              navigation.navigate('ConditionalMoves', { gameId: snapshot.id }),
+          }
+        : undefined,
   });
 
   const myPlayer = playerOf(snapshot, myColor);
@@ -398,18 +427,6 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
           </GameOverOverlay>
         )}
       </PlayerBarsFrame>
-
-      {conditionalLines.length > 0 && (
-        <ConditionalMovesNote
-          fen={moves.at(-1)?.fenAfter ?? snapshot.fen}
-          lines={conditionalLines}
-          onDelete={() =>
-            conditional
-              .clear()
-              .catch((error: Error) => onMessage(error.message))
-          }
-        />
-      )}
 
       {!isGameOver && drawOffer === 'received' && (
         <DrawOfferPrompt

@@ -42,12 +42,11 @@ let mockConditionalLines: { basePly: number | null; lines: string[][] } = {
   basePly: null,
   lines: [],
 };
-const mockClearConditionalMoves = jest.fn().mockResolvedValue(undefined);
 jest.mock('../../hooks/useConditionalMoves', () => ({
   useConditionalMoves: () => ({
     saved: mockConditionalLines,
-    add: jest.fn(),
-    clear: mockClearConditionalMoves,
+    save: jest.fn(),
+    reload: jest.fn(),
   }),
 }));
 let mockSocial = makeSocial();
@@ -129,6 +128,7 @@ describe('DailyGameContent', () => {
       navigate: jest.fn(),
       replace: jest.fn(),
       goBack: jest.fn(),
+      addListener: jest.fn(() => () => {}),
     };
     const onMessage = jest.fn();
     const screen = await render(
@@ -220,25 +220,31 @@ describe('DailyGameContent', () => {
     });
   });
 
-  it('shows the conditional moves saved from the position as it stands, to delete', async () => {
+  it("offers conditional moves on the opponent's move, with how many are saved", async () => {
     mockConditionalLines = { basePly: 2, lines: [['g1f3', 'b8c6']] };
-    const { screen } = await renderContent('b', UNDER_WAY);
+    const { screen, navigation } = await renderContent('b', UNDER_WAY);
 
-    expect(screen.getByText('1 conditional line')).toBeTruthy();
-    await fireEvent.press(screen.getByTestId('conditional-moves-note'));
-    expect(screen.getByText('2. Nf3 Nc6')).toBeTruthy();
-    await fireEvent.press(
-      screen.getByTestId('delete-conditional-moves-button'),
+    await fireEvent.press(screen.getByTestId('game-menu-button'));
+    expect(screen.getByTestId('conditional-moves-action')).toHaveTextContent(
+      'Conditional moves (1)',
     );
+    await fireEvent.press(screen.getByTestId('conditional-moves-action'));
+    await waitForSheetToClose();
 
-    expect(mockClearConditionalMoves).toHaveBeenCalled();
+    expect(navigation.navigate).toHaveBeenCalledWith('ConditionalMoves', {
+      gameId: 'this-game',
+    });
   });
 
-  it('shows none saved from a position since moved on from', async () => {
+  it('counts none saved from a position since moved on from', async () => {
     mockConditionalLines = { basePly: 0, lines: [['e2e4', 'e7e5']] };
     const { screen } = await renderContent('b', UNDER_WAY);
 
-    expect(screen.queryByTestId('conditional-moves-note')).toBeNull();
+    await fireEvent.press(screen.getByTestId('game-menu-button'));
+
+    expect(screen.getByTestId('conditional-moves-action')).toHaveTextContent(
+      /^Conditional moves$/,
+    );
   });
 
   it('opens the daily game settings', async () => {

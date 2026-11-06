@@ -7,10 +7,6 @@ import { boardTester } from '../../components/Board/boardTester';
 import { AnalysisSettingsProvider } from '../../context/AnalysisSettingsContext';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { EngineContext } from '../../context/EngineContext';
-import {
-  addConditionalMoves,
-  getConditionalMoves,
-} from '../../network/restClient';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
 import { settleAnimations } from '../../testUtils/pieceGestures';
@@ -20,11 +16,6 @@ import { ExplorerLine } from '../../hooks/useExplorerLine';
 
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
-}));
-jest.mock('../../network/restClient', () => ({
-  ...jest.requireActual('../../network/restClient'),
-  getConditionalMoves: jest.fn(),
-  addConditionalMoves: jest.fn(),
 }));
 
 const PLAYERS = {
@@ -41,10 +32,6 @@ describe('DailyAnalysisContent', () => {
         socket: createFakeSocket().socket,
       }),
     );
-    (getConditionalMoves as jest.Mock).mockResolvedValue({
-      basePly: null,
-      lines: [],
-    });
     return AsyncStorage.clear();
   });
   afterEach(() => {
@@ -54,11 +41,9 @@ describe('DailyAnalysisContent', () => {
 
   async function renderAnalysis({
     uciMoves = ['e2e4', 'e7e5'],
-    isGameInPlay = true,
     explorerLine,
   }: {
     uciMoves?: string[];
-    isGameInPlay?: boolean;
     explorerLine?: ExplorerLine;
   } = {}) {
     const acquire = jest.fn(() => () => {});
@@ -73,11 +58,9 @@ describe('DailyAnalysisContent', () => {
             value={{ status: { kind: 'idle' }, acquire, retry: jest.fn() }}
           >
             <DailyAnalysisContent
-              gameId="game-1"
               start={{ startFen: DEFAULT_POSITION, uciMoves }}
               players={PLAYERS}
               initialOrientation="w"
-              isGameInPlay={isGameInPlay}
               width={400}
               onReset={onReset}
               onOpenNotes={onOpenNotes}
@@ -183,72 +166,6 @@ describe('DailyAnalysisContent', () => {
 
     await fireEvent.press(screen.getByTestId('reset-analysis-button'));
     expect(onReset).toHaveBeenCalled();
-  });
-
-  describe('conditional moves', () => {
-    async function tryLine(screen: Awaited<ReturnType<typeof render>>) {
-      await boardTester(screen).taps('e7', 'e5');
-      await settleAnimations();
-      await boardTester(screen).taps('g1', 'f3');
-      await settleAnimations();
-    }
-
-    it("saves a line tried from the game's position, the opponent to move", async () => {
-      (addConditionalMoves as jest.Mock).mockResolvedValue({
-        basePly: 1,
-        lines: [['e7e5', 'g1f3']],
-      });
-      const { screen } = await renderAnalysis({ uciMoves: ['e2e4'] });
-      expect(screen.queryByTestId('conditional-move-panel')).toBeNull();
-
-      await tryLine(screen);
-      expect(screen.getByText('1... e5 2. Nf3')).toBeTruthy();
-      await fireEvent.press(
-        screen.getByTestId('save-conditional-moves-button'),
-      );
-      await act(async () => {});
-
-      expect(addConditionalMoves).toHaveBeenCalledWith(
-        'game-1',
-        1,
-        [['e7e5', 'g1f3']],
-        'token-a',
-      );
-      expect(screen.getByTestId('conditional-move-saved')).toBeTruthy();
-    });
-
-    it('offers none on your own move, or once the game is over', async () => {
-      const mine = await renderAnalysis();
-      await boardTester(mine.screen).taps('g1', 'f3');
-      await settleAnimations();
-      await boardTester(mine.screen).taps('b8', 'c6');
-      await settleAnimations();
-      expect(mine.screen.queryByTestId('conditional-move-panel')).toBeNull();
-
-      const over = await renderAnalysis({
-        uciMoves: ['e2e4'],
-        isGameInPlay: false,
-      });
-      await tryLine(over.screen);
-      expect(over.screen.queryByTestId('conditional-move-panel')).toBeNull();
-    });
-
-    it("says why a line couldn't be saved", async () => {
-      (addConditionalMoves as jest.Mock).mockRejectedValue(
-        new Error('The game has moved on since'),
-      );
-      const { screen } = await renderAnalysis({ uciMoves: ['e2e4'] });
-
-      await tryLine(screen);
-      await fireEvent.press(
-        screen.getByTestId('save-conditional-moves-button'),
-      );
-      await act(async () => {});
-
-      expect(screen.getByTestId('conditional-move-error')).toHaveTextContent(
-        'The game has moved on since',
-      );
-    });
   });
 
   it('opens your notes on the game', async () => {

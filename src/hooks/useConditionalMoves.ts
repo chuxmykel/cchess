@@ -2,20 +2,21 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuthSession } from '../context/AuthSessionContext';
 import {
-  addConditionalMoves,
-  clearConditionalMoves,
   ConditionalLines,
   getConditionalMoves,
+  saveConditionalMoves,
 } from '../network/restClient';
 import { GameMovePushPayload } from '../network/socketEvents';
 
 export type ConditionalMovesState = {
   /** Null until they've loaded. */
   saved: ConditionalLines | null;
-  /** Adds lines from the game's position after `basePly` moves; rejects
-   * with the server's message. */
-  add: (basePly: number, lines: string[][]) => Promise<void>;
-  clear: () => Promise<void>;
+  /** Saves these lines, from the game's position after `basePly` moves,
+   * in place of those saved - none clears them; rejects with the server's
+   * message. */
+  save: (basePly: number, lines: string[][]) => Promise<void>;
+  /** Fetches them again - saved elsewhere, say. */
+  reload: () => void;
 };
 
 /**
@@ -48,21 +49,16 @@ export function useConditionalMoves(gameId: string): ConditionalMovesState {
     };
   }, [socket, gameId, reload]);
 
-  const add = useCallback(
+  const save = useCallback(
     async (basePly: number, lines: string[][]) => {
       setSaved(
         await authorized((token) =>
-          addConditionalMoves(gameId, basePly, lines, token),
+          saveConditionalMoves(gameId, basePly, lines, token),
         ),
       );
     },
     [authorized, gameId],
   );
 
-  const clear = useCallback(async () => {
-    await authorized((token) => clearConditionalMoves(gameId, token));
-    setSaved({ basePly: null, lines: [] });
-  }, [authorized, gameId]);
-
-  return { saved, add, clear };
+  return { saved, save, reload };
 }

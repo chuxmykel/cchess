@@ -19,6 +19,7 @@ import AnalysisBoard from '../AnalysisBoard';
 import AnalysisSettings from '../AnalysisSettings';
 import DailyGameSettings from '../DailyGameSettings';
 import GameNotes from '../GameNotes';
+import ConditionalMoves from '../ConditionalMoves';
 import OpeningExplorer from '../OpeningExplorer';
 import UserProfile from '../UserProfile';
 import Conversation from '../Conversation';
@@ -161,6 +162,14 @@ const HomeStack: React.FC = () => {
                 options={({ navigation }) => ({
                   ...plainHeaderOptions(navigation),
                   title: 'Opening explorer',
+                })}
+              />
+              <Screen
+                name="ConditionalMoves"
+                component={ConditionalMoves}
+                options={({ navigation }) => ({
+                  ...plainHeaderOptions(navigation),
+                  title: 'Conditional moves',
                 })}
               />
               <Screen
