@@ -324,6 +324,11 @@ lib/chessboard/  the board, written as a package of its own: outside the
     their game), `useUserProfile` (a player's profile and activity),
     `useUserFriends` (anyone's friends, for their profile and its list),
     `usePagedGames` (game history a page at a time, yours or a player's),
+    `usePullToRefresh` (a list's `RefreshControl`: every screen that
+    fetches from the server - Home, the game and daily game lists,
+    Friends, profiles, a player's friends, rating stats - fetches again
+    when pulled down, refreshing until its reloads, each returning its
+    request, have all finished),
     `useDirectMessages` (one conversation: paged history, new messages,
     marked read while open, sending and clearing), and `useUserSearch`
     (players matching what's typed in Friends' search, asked of
@@ -531,8 +536,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `Appearance` screen), and `GameHistoryList` (a
   player's finished games, paged - `GamesList` and the analysis game
   picker share it; `GamesList`, titled "Game history" for yours, filters
-  them by result and game type with two `Dropdown`s, the server doing
-  the filtering so pages stay whole).
+  them by result and game type with two `Dropdown`s - the games fetched,
+  so a choice shows at once, more pages fetched while fewer than a
+  page's worth match).
 
 - **`src/components/`** (everything else) - also purely presentational,
   consuming hooks/context the same way: in-game UI (`GameHeader`,
@@ -677,17 +683,21 @@ lib/chessboard/  the board, written as a package of its own: outside the
     server's order - your move first, then by time left - reloaded on
     focus and on any push touching one) and `useMyDailySeeks`, each game a
     `DailyGameCard` - its board without coordinates (the board's
-    `coordinates` prop), faded while it's the opponent's move, ringed
-    when it's yours, the opponent and the time left (`useNow` ticking a
+    `coordinates` prop), faded while it's the opponent's move, the
+    opponent and the time left (`useNow` ticking a
     minute, in red under 10 hours - `DAILY_LOW_TIME_MS`, the clock's too)
     - and each seek a `WaitingSeekCard` with ✕ to withdraw it. A skeleton
       of cards shaped as a game's holds its place while the games load
       (Friends and Recent Games load as cards and rows shaped as theirs,
       too); See All opens `DailyGamesList`: every game and seek, two to a
-      row from the left, a pawn on those on your move, filtered to your
-      move and sorted by your move first, time left, last move or
-      opponent (`utils/dailyGameSort.ts` - the last move's time is the
-      deadline less the days a move gives).
+      row across the screen (a row of one on the left), a grey pawn on
+      those on your move, filtered to your move and sorted by your move
+      first, time left, last move or opponent (`utils/dailyGameSort.ts` -
+      the last move's time is the deadline less the days a move gives) -
+      on the device, from the games fetched; laid out as one wrapping row
+      of memoised cards keyed by game, not a two-column `FlatList`, whose
+      rows - keyed by the games in them - remounted every board on a new
+      order.
   - `DailyGame`: `useOnlineChessGame` with no pre-moves, its clocks the
     time left on the move (`GameClock`'s `daily`, `utils/timeLeft.ts`'
     `formatTimeLeft`: whole hours rounded up from an hour, minutes under
@@ -705,7 +715,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
     (`useDailyGamePositions`, in `HomeStack`), for the analysis over it.
   - Move confirmation: `DailyGameSettings` (`constants/dailyGame.ts`,
     `network/dailyGameSettingsStorage.ts`, `useDailyGameSettings`,
-    `DailyGameSettingsContext` in `HomeStack`) - on, `useOnlineChessGame`'s
+    `DailyGameSettingsContext` in `HomeStack`) - on by default,
+    `useOnlineChessGame`'s
     `confirmMoves` option holds a move on the board, unsent
     (`hasPendingMove`, against the last position the server confirmed,
     taken from its moves), until `confirmMove` sends it or `cancelMove`
