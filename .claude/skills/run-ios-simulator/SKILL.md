@@ -180,13 +180,13 @@ resign or abort from the app (see `examples/resign.yaml` /
   own), and `friend-request-<id>` with `accept-friend-<id>` /
   `decline-friend-<id>`. Tap outside the popup to close it.
 - **Daily games** (Home, between Friends and Recent Games - only with a
-  daily game in progress or a seek waiting): `your-games`,
-  `your-games-see-all` (See All, → `daily-games-list`: its
+  daily game in progress or a seek waiting): `daily-games-section`,
+  `daily-games-section-see-all` (See All, → `daily-games-list`: its
   `daily-games-your-move-filter` chip, the `daily-games-sort` dropdown
   with `daily-games-sort-<yourMove|timeLeft|lastMove|opponent>`, and a
   `daily-game-<gameId>-your-move` pawn on cards on your move) with its
   `-count`,
-  `your-games-loading`, `daily-game-<gameId>` (opens the game) with
+  `daily-games-section-loading`, `daily-game-<gameId>` (opens the game) with
   `daily-game-<gameId>-board` (faded while it's the opponent's move) and
   `daily-game-<gameId>-time-left`, and `daily-seek-<seekId>` with its
   ✕ `daily-seek-<seekId>-cancel`. Daily time controls are
@@ -254,7 +254,10 @@ resign or abort from the app (see `examples/resign.yaml` /
 - **Game list** ("Game history" for yours): `games-list`,
   `game-row-<gameId>`, `games-error`, and the dropdowns
   `games-result-filter` (`-all`, `-win`, `-draw`, `-loss`) and
-  `games-type-filter` (`-all`, `-bullet` ... `-daily`).
+  `games-type-filter` (`-all`, `-bullet` ... `-daily`), each with its
+  count - the chosen one's `<filter>-count`, each option's
+  `<filter>-<key>-count`. Home's section counts are `friends-see-all-count`,
+  `daily-games-section-see-all-count` and `recent-games-see-all-count`.
 - **Game viewer**: `game-viewer`, `game-header-subtitle` ("2 minutes
   ago", or "Playing now" while watching), the LiveGame header, move
   list, player bars and toolbar testIDs below (no resign; no chat unless
