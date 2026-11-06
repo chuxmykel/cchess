@@ -72,34 +72,23 @@ const DailyAnalysis: React.FC<DailyAnalysisProps> = ({ navigation, route }) => {
     return null;
   }, [live, state]);
 
-  // The game as the board started from it - kept while the game moves on,
-  // until Reset.
-  const [shown, setShown] = useState<{
-    game: AnalysedGame;
-    resets: number;
-  } | null>(null);
-  if (shown === null && latest) setShown({ game: latest, resets: 0 });
-
-  function reset() {
-    if (latest) {
-      setShown((previous) => ({
-        game: latest,
-        resets: (previous?.resets ?? 0) + 1,
-      }));
-    }
-    // Fetched, not open on its screen: fetched again, for the next reset.
-    if (!live) reload();
-  }
+  // The game as the board started from it - kept while the game moves on;
+  // Reset goes to it as it now stands.
+  const [shown, setShown] = useState<AnalysedGame | null>(null);
+  if (shown === null && latest) setShown(latest);
 
   if (shown) {
     return (
       <DailyAnalysisContent
-        key={shown.resets}
-        start={shown.game.start}
-        players={shown.game.players}
-        initialOrientation={shown.game.orientation}
+        start={shown.start}
+        players={shown.players}
+        initialOrientation={shown.orientation}
         width={width}
-        onReset={reset}
+        gameStart={(latest ?? shown).start}
+        // Fetched, not open on its screen: fetched again, for the next reset.
+        onReset={() => {
+          if (!live) reload();
+        }}
         onOpenNotes={() => navigation.navigate('GameNotes', { gameId })}
         onOpenExplorer={(line, orientation) =>
           navigation.navigate('OpeningExplorer', {

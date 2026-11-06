@@ -42,8 +42,11 @@ describe('DailyAnalysisContent', () => {
   async function renderAnalysis({
     uciMoves = ['e2e4', 'e7e5'],
     explorerLine,
+    gameMoves,
   }: {
     uciMoves?: string[];
+    /** The game's moves now, if it's moved on since. */
+    gameMoves?: string[];
     explorerLine?: ExplorerLine;
   } = {}) {
     const acquire = jest.fn(() => () => {});
@@ -59,6 +62,10 @@ describe('DailyAnalysisContent', () => {
           >
             <DailyAnalysisContent
               start={{ startFen: DEFAULT_POSITION, uciMoves }}
+              gameStart={{
+                startFen: DEFAULT_POSITION,
+                uciMoves: gameMoves ?? uciMoves,
+              }}
               players={PLAYERS}
               initialOrientation="w"
               width={400}
@@ -158,14 +165,32 @@ describe('DailyAnalysisContent', () => {
     expect(onExplorerLineTaken).toHaveBeenCalled();
   });
 
-  it('flips the board, and resets to the game', async () => {
-    const { screen, onReset } = await renderAnalysis();
-
+  it('resets to the game as it now stands, in place, the board turned as it was', async () => {
+    const { screen, onReset } = await renderAnalysis({
+      gameMoves: ['e2e4', 'e7e5', 'g1f3'],
+    });
+    await boardTester(screen).taps('d2', 'd4');
+    await settleAnimations();
     await fireEvent.press(screen.getByTestId('flip-board-button'));
-    expect(boardTester(screen).orientation()).toBe('b');
 
     await fireEvent.press(screen.getByTestId('reset-analysis-button'));
+    await settleAnimations();
+
+    expect(boardTester(screen).pieceOn('f3')).toBe('wn');
+    expect(boardTester(screen).pieceOn('d4')).toBeNull();
+    expect(screen.getByTestId('move-3')).toHaveTextContent('Nf3');
+    expect(boardTester(screen).orientation()).toBe('b');
     expect(onReset).toHaveBeenCalled();
+  });
+
+  it("leaves the board alone when it's at the game's position already", async () => {
+    const { screen } = await renderAnalysis();
+    const board = screen.getByTestId('chessboard');
+
+    await fireEvent.press(screen.getByTestId('reset-analysis-button'));
+
+    expect(screen.getByTestId('chessboard')).toBe(board);
+    expect(boardTester(screen).pieceOn('e5')).toBe('bp');
   });
 
   it('opens your notes on the game', async () => {

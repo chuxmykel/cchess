@@ -186,6 +186,24 @@ export function promoteVariation(tree: AnalysisTree, id: string): AnalysisTree {
   return tree;
 }
 
+// Whether the line from the tree's start to `id` is these moves from that
+// position - the tree being where they'd start it afresh.
+export function isLineTo(
+  tree: AnalysisTree,
+  id: string,
+  startFen: string,
+  uciMoves: string[],
+): boolean {
+  const path = pathTo(tree, id).slice(1);
+  return (
+    tree.nodes[tree.rootId].fen === new Chess(startFen).fen() &&
+    path.length === uciMoves.length &&
+    path.every(
+      (nodeId, index) => tree.nodes[nodeId].move?.uci === uciMoves[index],
+    )
+  );
+}
+
 // Keeps only one of a position's continuations, removing the others and
 // everything played from them - an analysis of a single line, where a new
 // move from a position replaces what followed it.

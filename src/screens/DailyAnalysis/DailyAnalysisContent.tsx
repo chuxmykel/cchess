@@ -9,6 +9,7 @@ import MoveList, { MoveListMove } from '../../components/MoveList';
 import PlayerBarsFrame from '../../components/PlayerBarsFrame';
 import PromotionMenu from '../../components/PromotionMenu';
 import { ChessGameContext } from '../../context/ChessGameContext';
+import { isLineTo } from '../../domain/analysisTree';
 import { capturedMaterial } from '../../domain/material';
 import { AnalysisStart } from '../../hooks/useAnalysisTree';
 import { useAnalysisWorkspace } from '../../hooks/useAnalysisWorkspace';
@@ -26,7 +27,9 @@ interface DailyAnalysisContentProps {
   /** The side you play. */
   initialOrientation: Color;
   width: number;
-  /** Back to the game as it stands now, its latest moves and all. */
+  /** The game as it stands now, its latest moves and all - what Reset
+   * goes back to. */
+  gameStart: AnalysisStart;
   onReset: () => void;
   /** Your notes on the game. */
   onOpenNotes: () => void;
@@ -49,6 +52,7 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
   players,
   initialOrientation,
   width,
+  gameStart,
   onReset,
   onOpenNotes,
   onOpenExplorer,
@@ -79,6 +83,22 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
       return { color: move.color, captured: move.captured ?? null };
     }),
   );
+
+  // Back to the game as it stands - in place, the board turned as it is;
+  // nothing to do when it's there already.
+  function reset() {
+    const lastId = analysis.line[analysis.line.length - 1];
+    const isAtGame =
+      analysis.current.id === lastId &&
+      isLineTo(
+        analysis.tree,
+        lastId,
+        gameStart.startFen,
+        gameStart.uciMoves ?? [],
+      );
+    if (!isAtGame) analysis.reset(gameStart);
+    onReset();
+  }
 
   return (
     <View style={themed.screen} testID="daily-analysis">
@@ -147,7 +167,7 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
             icon="restore"
             label="Reset"
             hint="Back to the game's position"
-            onPress={onReset}
+            onPress={reset}
             testID="reset-analysis-button"
           />
           <ToolbarButton

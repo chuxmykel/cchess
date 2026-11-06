@@ -35,6 +35,7 @@ export type TreeStep =
 type Action =
   | { type: 'MOVE'; move: MoveSpec }
   | { type: 'PLAY_LINE'; moves: MoveSpec[] }
+  | { type: 'RESET'; start: AnalysisStart }
   | TreeStep
   | { type: 'PROMOTE'; id: string }
   | { type: 'DELETE'; id: string };
@@ -71,6 +72,8 @@ function reducer(state: State, action: Action): State {
         ...state,
         currentId: tree.rootId,
       });
+    case 'RESET':
+      return init({ start: action.start, singleLine: state.singleLine });
     case 'GO_TO':
       return goTo(state, action.id);
     case 'BACK': {
@@ -161,6 +164,10 @@ export function useAnalysisTree(
     (moves: MoveSpec[]) => dispatch({ type: 'PLAY_LINE', moves }),
     [],
   );
+  const reset = useCallback(
+    (start: AnalysisStart) => dispatch({ type: 'RESET', start }),
+    [],
+  );
   const goToId = useCallback(
     (id: string) => dispatch({ type: 'GO_TO', id }),
     [],
@@ -208,6 +215,7 @@ export function useAnalysisTree(
     canGoForward: line.indexOf(currentId) < line.length - 1,
     recordMove,
     playLine,
+    reset,
     peek,
     step,
     goTo: goToId,
