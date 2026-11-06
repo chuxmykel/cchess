@@ -1,10 +1,11 @@
-import { useCallback, useLayoutEffect, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 
 import Dropdown from '../../components/Dropdown';
 import GameHistoryList from '../../components/GameHistoryList';
 import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import { GameType } from '../../domain/types';
+import { useGameCounts } from '../../hooks/useGameCounts';
 import {
   GameHistoryResult,
   GameSummary,
@@ -12,6 +13,7 @@ import {
   getUserGames,
   GamesPage,
 } from '../../network/restClient';
+import { countMatching } from '../../utils/gameCounts';
 import { HomeStackScreenProps } from '../HomeStack/types';
 import { makeStyles } from '../../theme';
 
@@ -39,13 +41,42 @@ const TYPES: { key: TypeChoice; label: string }[] = [
 
 // A player's finished games - yours, or anyone's - newest first, narrowed
 // to those won, drawn or lost (by them) and of one type, if asked: from the
-// games fetched, so a new choice shows at once.
+// games fetched, so a new choice shows at once. Each choice shows how many
+// of all their games it matches, with the other filter's - counted by the
+// server, by result and type, once.
 const GamesList: React.FC<GamesListProps> = ({ navigation, route }) => {
   const styles = useStyles();
   const { username, displayName } = route.params;
   const [result, setResult] = useState<ResultChoice>('all');
   const [gameType, setGameType] = useState<TypeChoice>('all');
   const isFiltered = result !== 'all' || gameType !== 'all';
+  const { counts, reload: reloadCounts } = useGameCounts(username);
+  const resultOptions = useMemo(
+    () =>
+      RESULTS.map((option) => ({
+        ...option,
+        count: !counts
+          ? undefined
+          : countMatching(counts, {
+              result: option.key === 'all' ? undefined : option.key,
+              gameType: gameType === 'all' ? undefined : gameType,
+            }),
+      })),
+    [counts, gameType],
+  );
+  const typeOptions = useMemo(
+    () =>
+      TYPES.map((option) => ({
+        ...option,
+        count: !counts
+          ? undefined
+          : countMatching(counts, {
+              result: result === 'all' ? undefined : result,
+              gameType: option.key === 'all' ? undefined : option.key,
+            }),
+      })),
+    [counts, result],
+  );
 
   const fetchPage = useCallback(
     (page: GamesPage, token: string) =>
@@ -76,7 +107,7 @@ const GamesList: React.FC<GamesListProps> = ({ navigation, route }) => {
     <View style={styles.screen}>
       <View style={styles.filters}>
         <Dropdown<ResultChoice>
-          options={RESULTS}
+          options={resultOptions}
           value={result}
           onChange={setResult}
           icon="filter-variant"
@@ -84,7 +115,7 @@ const GamesList: React.FC<GamesListProps> = ({ navigation, route }) => {
           testID="games-result-filter"
         />
         <Dropdown<TypeChoice>
-          options={TYPES}
+          options={typeOptions}
           value={gameType}
           onChange={setGameType}
           icon="timer-outline"
@@ -94,6 +125,7 @@ const GamesList: React.FC<GamesListProps> = ({ navigation, route }) => {
       </View>
       <GameHistoryList
         fetchPage={fetchPage}
+        onRefresh={reloadCounts}
         filter={isFiltered ? matches : undefined}
         onSelectGame={(game) =>
           navigation.navigate('GameViewer', { gameId: game.id })

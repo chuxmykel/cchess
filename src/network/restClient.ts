@@ -366,6 +366,34 @@ export async function getDailyGames(
   ).data;
 }
 
+/** How many finished games ended one way, in one game type, for the
+ * player whose games they are - one for each pair they've played. */
+export type GameCount = {
+  result: 'win' | 'draw' | 'loss';
+  gameType: GameType;
+  count: number;
+};
+
+export async function getMyGameCounts(
+  accessToken: string,
+): Promise<GameCount[]> {
+  return (
+    await apiClient.get<GameCount[]>('/games/counts', bearer(accessToken))
+  ).data;
+}
+
+export async function getUserGameCounts(
+  username: string,
+  accessToken: string,
+): Promise<GameCount[]> {
+  return (
+    await apiClient.get<GameCount[]>(
+      `${userPath(username)}/games/counts`,
+      bearer(accessToken),
+    )
+  ).data;
+}
+
 export async function getUserGames(
   username: string,
   page: GamesPage,

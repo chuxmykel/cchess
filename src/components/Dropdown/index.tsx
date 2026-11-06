@@ -1,14 +1,17 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import CountPill from '../CountPill';
 import Icon, { IconName } from '../Icon';
 import Popover, { POPOVER_TRIGGER_HIT_SLOP } from '../Popover';
 import { usePopoverMenu } from '../../hooks/usePopoverMenu';
 import { makeStyles, useTheme } from '../../theme';
 
 const MENU_WIDTH = 200;
+const TICK_SIZE = 18;
 
 interface DropdownProps<Value extends string> {
-  options: { key: Value; label: string }[];
+  /** Each choice - with how many it matches, if given, in a pill. */
+  options: { key: Value; label: string; count?: number }[];
   value: Value;
   onChange: (value: Value) => void;
   /** Before the label - what it chooses. */
@@ -20,7 +23,8 @@ interface DropdownProps<Value extends string> {
 }
 
 // A choice of a few, shown as the one chosen: tapped, a menu of them all,
-// the chosen one ticked.
+// the chosen one ticked. Options with a count show it, the chosen one's
+// beside it in the trigger too.
 function Dropdown<Value extends string>({
   options,
   value,
@@ -34,7 +38,8 @@ function Dropdown<Value extends string>({
 
   const { triggerRef, visible, position, open, close } =
     usePopoverMenu(MENU_WIDTH);
-  const label = options.find((each) => each.key === value)?.label;
+  const chosen = options.find((each) => each.key === value);
+  const label = chosen?.label;
 
   function select(selected: Value) {
     close();
@@ -54,6 +59,9 @@ function Dropdown<Value extends string>({
       >
         <Icon name={icon} size={18} color={colors.textMuted} />
         <Text style={styles.label}>{label}</Text>
+        {chosen?.count !== undefined && (
+          <CountPill count={chosen.count} testID={`${testID}-count`} />
+        )}
         <Icon name="chevron-down" size={16} color={colors.textMuted} />
       </Pressable>
       <Popover
@@ -80,9 +88,18 @@ function Dropdown<Value extends string>({
               >
                 {each.label}
               </Text>
-              {isSelected && (
-                <Icon name="check" size={18} color={colors.accent} />
+              {each.count !== undefined && (
+                <CountPill
+                  count={each.count}
+                  testID={`${testID}-${each.key}-count`}
+                />
               )}
+              {/* The tick's room kept on every row, lining the counts up. */}
+              <View style={styles.tick}>
+                {isSelected && (
+                  <Icon name="check" size={TICK_SIZE} color={colors.accent} />
+                )}
+              </View>
             </Pressable>
           );
         })}
@@ -116,8 +133,12 @@ const useStyles = makeStyles((t) => ({
   option: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: t.spacing.sm,
     paddingHorizontal: t.spacing.lg,
     paddingVertical: t.spacing.md,
+  },
+  tick: {
+    width: TICK_SIZE,
   },
   optionLabel: {
     color: t.colors.text,

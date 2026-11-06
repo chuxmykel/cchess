@@ -17,6 +17,8 @@ import {
   getGameNotes,
   saveGameNotes,
   getMyActiveGame,
+  getMyGameCounts,
+  getUserGameCounts,
   getMyDailySeeks,
   getMyGames,
   getUserGames,
@@ -210,6 +212,20 @@ describe('restClient', () => {
         before: '2026-01-01T00:00:00.000Z',
         status: 'completed',
       });
+    });
+
+    it("counts my finished games, and a player's, by result and type", async () => {
+      const counts = [{ result: 'win', gameType: 'blitz', count: 3 }];
+      const transport = stubTransport(respondWith(counts));
+
+      await expect(getMyGameCounts('access-123')).resolves.toEqual(counts);
+      expect(sentRequest(transport).url).toBe('/games/counts');
+      expect(sentRequest(transport).headers.Authorization).toBe(
+        'Bearer access-123',
+      );
+
+      await getUserGameCounts('magnus', 'access-123');
+      expect(transport.mock.calls[1][0].url).toBe('/users/magnus/games/counts');
     });
 
     it("finds the live game you're in the middle of, not a daily one", async () => {

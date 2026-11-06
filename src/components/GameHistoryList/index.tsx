@@ -21,6 +21,8 @@ const PAGE_SIZE = 20;
 interface GameHistoryListProps {
   fetchPage: FetchGamesPage;
   onSelectGame: (game: GameSummary) => void;
+  /** Pulled down, run alongside fetching the games again. */
+  onRefresh?: () => Promise<unknown>;
   /** Only the games it's true of, from those fetched. */
   filter?: (game: GameSummary) => boolean;
   // What the empty list says will show up there.
@@ -35,6 +37,7 @@ interface GameHistoryListProps {
 const GameHistoryList: React.FC<GameHistoryListProps> = ({
   fetchPage,
   onSelectGame,
+  onRefresh,
   filter,
   emptyMessage,
   emptyTitle = 'No games yet',
@@ -42,7 +45,7 @@ const GameHistoryList: React.FC<GameHistoryListProps> = ({
   const styles = useStyles();
 
   const games = usePagedGames(fetchPage, PAGE_SIZE);
-  const refresh = usePullToRefresh(games.reload);
+  const refresh = usePullToRefresh(games.reload, onRefresh);
   const shown = useMemo(
     () => (filter ? games.games.filter(filter) : games.games),
     [games.games, filter],

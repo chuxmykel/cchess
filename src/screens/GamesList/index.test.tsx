@@ -2,7 +2,12 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 
 import GamesList from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
-import { getMyGames, getUserGames } from '../../network/restClient';
+import {
+  getMyGameCounts,
+  getMyGames,
+  getUserGameCounts,
+  getUserGames,
+} from '../../network/restClient';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { makeGameSummary } from '../../testUtils/gameSummary';
 
@@ -16,7 +21,15 @@ jest.mock('../../network/restClient', () => ({
   ...jest.requireActual('../../network/restClient'),
   getMyGames: jest.fn(),
   getUserGames: jest.fn(),
+  getMyGameCounts: jest.fn(),
+  getUserGameCounts: jest.fn(),
 }));
+
+const COUNTS = [
+  { result: 'win', gameType: 'blitz', count: 5 },
+  { result: 'loss', gameType: 'blitz', count: 3 },
+  { result: 'win', gameType: 'rapid', count: 2 },
+];
 
 describe('GamesList', () => {
   async function renderScreen(params: {
@@ -34,6 +47,11 @@ describe('GamesList', () => {
     await act(async () => {});
     return { screen, navigation };
   }
+
+  beforeEach(() => {
+    (getMyGameCounts as jest.Mock).mockResolvedValue(COUNTS);
+    (getUserGameCounts as jest.Mock).mockResolvedValue([]);
+  });
 
   afterEach(() => {
     jest.clearAllMocks();
@@ -172,9 +190,36 @@ describe('GamesList', () => {
     await act(async () => refreshControl.props.onRefresh());
 
     expect(screen.getByTestId('game-row-new')).toBeTruthy();
+    expect(getMyGameCounts).toHaveBeenCalledTimes(2);
     expect(
       screen.getByTestId('games-list').props.refreshControl.props.refreshing,
     ).toBe(false);
+  });
+
+  it('counts the games each filter matches, with the other', async () => {
+    (getMyGames as jest.Mock).mockResolvedValue([]);
+    const { screen } = await renderScreen({});
+    const count = (testID: string) =>
+      screen.getByTestId(`${testID}-count`).props.children;
+
+    // Both menus start open here (popoverMenuStartingOpen).
+    expect(count('games-result-filter')).toBe(10);
+    expect(count('games-result-filter-win')).toBe(7);
+    expect(count('games-result-filter-draw')).toBe(0);
+    expect(count('games-type-filter-blitz')).toBe(8);
+
+    await fireEvent.press(screen.getByTestId('games-type-filter-blitz'));
+
+    expect(count('games-type-filter')).toBe(8);
+    expect(count('games-result-filter-win')).toBe(5);
+    expect(count('games-result-filter-loss')).toBe(3);
+  });
+
+  it("counts another player's games", async () => {
+    (getUserGames as jest.Mock).mockResolvedValue([]);
+    await renderScreen({ username: 'judit', displayName: 'Judit' });
+
+    expect(getUserGameCounts).toHaveBeenCalledWith('judit', 'access-token');
   });
 
   it('offers to retry when the games fail to load', async () => {
