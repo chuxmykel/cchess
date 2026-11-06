@@ -10,20 +10,19 @@ import { EngineContext } from '../../context/EngineContext';
 import {
   addConditionalMoves,
   getConditionalMoves,
-  getExplorer,
 } from '../../network/restClient';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { createFakeSocket } from '../../testUtils/fakeSocket';
 import { settleAnimations } from '../../testUtils/pieceGestures';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { makeGameSnapshot } from '../../testUtils/gameSnapshot';
+import { ExplorerLine } from '../../hooks/useExplorerLine';
 
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
 }));
 jest.mock('../../network/restClient', () => ({
   ...jest.requireActual('../../network/restClient'),
-  getExplorer: jest.fn(),
   getConditionalMoves: jest.fn(),
   addConditionalMoves: jest.fn(),
 }));
@@ -46,19 +45,6 @@ describe('DailyAnalysisContent', () => {
       basePly: null,
       lines: [],
     });
-    (getExplorer as jest.Mock).mockResolvedValue({
-      totalGames: 12,
-      moves: [
-        {
-          san: 'Nf3',
-          uci: 'g1f3',
-          games: 8,
-          whiteWins: 4,
-          draws: 2,
-          blackWins: 2,
-        },
-      ],
-    });
     return AsyncStorage.clear();
   });
   afterEach(() => {
@@ -69,10 +55,17 @@ describe('DailyAnalysisContent', () => {
   async function renderAnalysis({
     uciMoves = ['e2e4', 'e7e5'],
     isGameInPlay = true,
-  }: { uciMoves?: string[]; isGameInPlay?: boolean } = {}) {
+    explorerLine,
+  }: {
+    uciMoves?: string[];
+    isGameInPlay?: boolean;
+    explorerLine?: ExplorerLine;
+  } = {}) {
     const acquire = jest.fn(() => () => {});
     const onReset = jest.fn();
     const onOpenNotes = jest.fn();
+    const onOpenExplorer = jest.fn();
+    const onExplorerLineTaken = jest.fn();
     const screen = await render(
       withSafeArea(
         <AnalysisSettingsProvider>
@@ -88,13 +81,23 @@ describe('DailyAnalysisContent', () => {
               width={400}
               onReset={onReset}
               onOpenNotes={onOpenNotes}
+              onOpenExplorer={onOpenExplorer}
+              explorerLine={explorerLine}
+              onExplorerLineTaken={onExplorerLineTaken}
             />
           </EngineContext.Provider>
         </AnalysisSettingsProvider>,
       ),
     );
     await act(async () => {});
-    return { screen, acquire, onReset, onOpenNotes };
+    return {
+      screen,
+      acquire,
+      onReset,
+      onOpenNotes,
+      onOpenExplorer,
+      onExplorerLineTaken,
+    };
   }
 
   it('analyses with no engine at all', async () => {
@@ -144,21 +147,32 @@ describe('DailyAnalysisContent', () => {
     }
   });
 
-  it("lists the explorer's moves from the position shown, a tap playing one", async () => {
-    const { screen } = await renderAnalysis();
+  it('opens the opening explorer on the line to the position shown', async () => {
+    const { screen, onOpenExplorer } = await renderAnalysis();
 
+    await fireEvent.press(screen.getByTestId('previous-move-button'));
+    await settleAnimations();
     await fireEvent.press(screen.getByTestId('opening-explorer-button'));
-    await act(async () => {});
 
-    expect(getExplorer).toHaveBeenCalledWith(
-      'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
-      'token-a',
+    expect(onOpenExplorer).toHaveBeenCalledWith(
+      { startFen: DEFAULT_POSITION, uciMoves: ['e2e4'] },
+      'w',
     );
-    expect(screen.getByText('12 games')).toBeTruthy();
-    await fireEvent.press(screen.getByTestId('explorer-move-g1f3'));
+  });
+
+  it('goes along the line the explorer hands back, replacing what followed', async () => {
+    const { screen, onExplorerLineTaken } = await renderAnalysis({
+      explorerLine: {
+        startFen: DEFAULT_POSITION,
+        uciMoves: ['e2e4', 'c7c5', 'g1f3'],
+      },
+    });
     await settleAnimations();
 
+    expect(screen.getByTestId('move-2')).toHaveTextContent('c5');
+    expect(screen.getByTestId('move-3')).toHaveTextContent('Nf3');
     expect(boardTester(screen).pieceOn('f3')).toBe('wn');
+    expect(onExplorerLineTaken).toHaveBeenCalled();
   });
 
   it('flips the board, and resets to the game', async () => {

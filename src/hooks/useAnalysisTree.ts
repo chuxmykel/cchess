@@ -34,6 +34,7 @@ export type TreeStep =
 
 type Action =
   | { type: 'MOVE'; move: MoveSpec }
+  | { type: 'PLAY_LINE'; moves: MoveSpec[] }
   | TreeStep
   | { type: 'PROMOTE'; id: string }
   | { type: 'DELETE'; id: string };
@@ -47,17 +48,29 @@ function goTo(state: State, id: string): State {
   };
 }
 
+// A move played from the position looked at, gone to.
+function play(state: State, move: MoveSpec): State {
+  const { tree, currentId } = state;
+  const added = addMove(tree, currentId, move);
+  if (!added) return state;
+  const next = state.singleLine
+    ? keepOnlyChild(added.tree, currentId, added.nodeId)
+    : added.tree;
+  return goTo({ ...state, tree: next }, added.nodeId);
+}
+
 function reducer(state: State, action: Action): State {
   const { tree, currentId, line } = state;
   switch (action.type) {
-    case 'MOVE': {
-      const added = addMove(tree, currentId, action.move);
-      if (!added) return state;
-      const next = state.singleLine
-        ? keepOnlyChild(added.tree, currentId, added.nodeId)
-        : added.tree;
-      return goTo({ ...state, tree: next }, added.nodeId);
-    }
+    case 'MOVE':
+      return play(state, action.move);
+    case 'PLAY_LINE':
+      // From the start, along the moves already there and on past them -
+      // as far as the moves are legal.
+      return action.moves.reduce(play, {
+        ...state,
+        currentId: tree.rootId,
+      });
     case 'GO_TO':
       return goTo(state, action.id);
     case 'BACK': {
@@ -144,6 +157,10 @@ export function useAnalysisTree(
     (move: MoveSpec) => dispatch({ type: 'MOVE', move }),
     [],
   );
+  const playLine = useCallback(
+    (moves: MoveSpec[]) => dispatch({ type: 'PLAY_LINE', moves }),
+    [],
+  );
   const goToId = useCallback(
     (id: string) => dispatch({ type: 'GO_TO', id }),
     [],
@@ -190,6 +207,7 @@ export function useAnalysisTree(
     canGoBack: current.parentId !== null,
     canGoForward: line.indexOf(currentId) < line.length - 1,
     recordMove,
+    playLine,
     peek,
     step,
     goTo: goToId,

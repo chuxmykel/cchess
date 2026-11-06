@@ -34,6 +34,7 @@ describe('AnalysisBoard', () => {
       setOptions: jest.fn(),
       goBack: jest.fn(),
       navigate: jest.fn(),
+      setParams: jest.fn(),
     };
     const engine = {
       status: { kind: 'starting' as const },
@@ -46,7 +47,7 @@ describe('AnalysisBoard', () => {
           <EngineContext.Provider value={engine}>
             <AnalysisBoard
               navigation={navigation}
-              route={{ params: { source } }}
+              route={{ key: 'analysis', params: { source } }}
             />
           </EngineContext.Provider>
         </AnalysisSettingsProvider>,

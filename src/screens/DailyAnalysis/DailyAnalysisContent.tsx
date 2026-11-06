@@ -7,11 +7,9 @@ import { GameBoard } from '../../components/Board';
 import ConditionalMovePanel from '../../components/ConditionalMovePanel';
 import { ToolbarButton } from '../../components/GameToolbar';
 import MoveList, { MoveListMove } from '../../components/MoveList';
-import OpeningExplorerSheet from '../../components/OpeningExplorerSheet';
 import PlayerBarsFrame from '../../components/PlayerBarsFrame';
 import PromotionMenu from '../../components/PromotionMenu';
 import { ChessGameContext } from '../../context/ChessGameContext';
-import { uciToMoveSpec } from '../../domain/analysisTree';
 import {
   conditionalLine,
   lineAsText,
@@ -21,7 +19,11 @@ import { capturedMaterial } from '../../domain/material';
 import { useConditionalMoves } from '../../hooks/useConditionalMoves';
 import { AnalysisStart } from '../../hooks/useAnalysisTree';
 import { useAnalysisWorkspace } from '../../hooks/useAnalysisWorkspace';
-import { useOpeningExplorer } from '../../hooks/useOpeningExplorer';
+import {
+  ExplorerLine,
+  lineTo,
+  useTakeExplorerLine,
+} from '../../hooks/useExplorerLine';
 import { GameUserSummary } from '../../network/socketEvents';
 import { makeStyles, spacing } from '../../theme';
 
@@ -39,6 +41,11 @@ interface DailyAnalysisContentProps {
   onReset: () => void;
   /** Your notes on the game. */
   onOpenNotes: () => void;
+  /** The opening explorer, on the line to the position shown. */
+  onOpenExplorer: (line: ExplorerLine, orientation: Color) => void;
+  /** The line the explorer handed back, to go along. */
+  explorerLine?: ExplorerLine;
+  onExplorerLineTaken: () => void;
 }
 
 // A daily game's analysis board, laid out as the game is - its moves along
@@ -57,6 +64,9 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
   width,
   onReset,
   onOpenNotes,
+  onOpenExplorer,
+  explorerLine,
+  onExplorerLineTaken,
 }) => {
   const themed = useStyles();
   const workspace = useAnalysisWorkspace(start, initialOrientation, {
@@ -64,11 +74,7 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
   });
   const { analysis, game, lastPlayedMove, steps, orientation, flip } =
     workspace;
-  const [sheet, setSheet] = useState<'explorer' | null>(null);
-  const explorer = useOpeningExplorer(
-    analysis.current.fen,
-    sheet === 'explorer',
-  );
+  useTakeExplorerLine(analysis, explorerLine, onExplorerLineTaken);
 
   const lineMoves = useMemo(
     () =>
@@ -123,11 +129,6 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
     } finally {
       setIsSavingLine(false);
     }
-  }
-
-  function playMove(uci: string) {
-    const { from, to, promotion } = uciToMoveSpec(uci);
-    game.attemptMove(from, to, promotion);
   }
 
   return (
@@ -185,7 +186,12 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
           <ToolbarButton
             icon="book-open-variant"
             label="Opening explorer"
-            onPress={() => setSheet('explorer')}
+            onPress={() =>
+              onOpenExplorer(
+                lineTo(analysis.tree, analysis.current.id),
+                orientation,
+              )
+            }
             testID="opening-explorer-button"
           />
           <ToolbarButton
@@ -225,13 +231,6 @@ const DailyAnalysisContent: React.FC<DailyAnalysisContentProps> = ({
           />
         </View>
       </BottomBar>
-
-      <OpeningExplorerSheet
-        visible={sheet === 'explorer'}
-        explorer={explorer}
-        onClose={() => setSheet(null)}
-        onPlayMove={playMove}
-      />
     </View>
   );
 };

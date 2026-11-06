@@ -7,23 +7,29 @@ import {
   View,
 } from 'react-native';
 
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import Button from '../../components/Button';
 import {
   AnalysisSource,
   useAnalysisSource,
 } from '../../hooks/useAnalysisSource';
+import { ExplorerLine } from '../../hooks/useExplorerLine';
+import { HomeStackParamList } from '../HomeStack/types';
 import AnalysisBoardContent from './AnalysisBoardContent';
 import SetUpPositionView from './SetUpPositionView';
 import { makeStyles } from '../../theme';
 
 // The analysis board's route, in the Analysis tab or over a game.
 export type AnalysisBoardProps = {
-  route: { params: { source: AnalysisSource } };
-  navigation: {
-    setOptions: (options: { title: string }) => void;
-    goBack: () => void;
-    navigate: (route: 'AnalysisSettings') => void;
+  route: {
+    key: string;
+    params: { source: AnalysisSource; explorerLine?: ExplorerLine };
   };
+  navigation: Pick<
+    NativeStackNavigationProp<HomeStackParamList, 'AnalysisBoard'>,
+    'setOptions' | 'goBack' | 'navigate' | 'setParams'
+  >;
 };
 
 // What's being analysed changes in place - a new analysis, or a position set
@@ -104,6 +110,17 @@ const AnalysisBoard: React.FC<AnalysisBoardProps> = ({ route, navigation }) => {
         onNewAnalysis={() => open({ kind: 'new' })}
         onEditPosition={setEditingFen}
         onOpenSettings={() => navigation.navigate('AnalysisSettings')}
+        onOpenExplorer={(line, orientation) =>
+          navigation.navigate('OpeningExplorer', {
+            ...line,
+            orientation,
+            returnKey: route.key,
+          })
+        }
+        explorerLine={route.params.explorerLine}
+        onExplorerLineTaken={() =>
+          navigation.setParams({ explorerLine: undefined })
+        }
       />
       <Modal
         visible={editingFen !== null}

@@ -19,6 +19,7 @@ import AnalysisBoard from '../AnalysisBoard';
 import AnalysisSettings from '../AnalysisSettings';
 import DailyGameSettings from '../DailyGameSettings';
 import GameNotes from '../GameNotes';
+import OpeningExplorer from '../OpeningExplorer';
 import UserProfile from '../UserProfile';
 import Conversation from '../Conversation';
 import GamesList from '../GamesList';
@@ -152,6 +153,14 @@ const HomeStack: React.FC = () => {
                 options={({ navigation }) => ({
                   ...plainHeaderOptions(navigation),
                   title: 'Analysis Settings',
+                })}
+              />
+              <Screen
+                name="OpeningExplorer"
+                component={OpeningExplorer}
+                options={({ navigation }) => ({
+                  ...plainHeaderOptions(navigation),
+                  title: 'Opening explorer',
                 })}
               />
               <Screen

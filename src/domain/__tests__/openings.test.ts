@@ -1,6 +1,6 @@
 import { Chess, DEFAULT_POSITION } from 'chess.js';
 
-import { epd, openingAt } from '../openings';
+import { bookMovesFrom, epd, openingAt } from '../openings';
 
 // Every position along a line of SAN moves, the start first.
 function fensAlong(...sans: string[]) {
@@ -43,5 +43,33 @@ describe('openings', () => {
 
     expect(openingAt(fensAlong('d4', 'd5', 'Nf3'))).toEqual(zukertort);
     expect(openingAt(fensAlong('Nf3', 'd5', 'd4'))).toEqual(zukertort);
+  });
+});
+
+describe('bookMovesFrom', () => {
+  const AFTER_E4_E5 =
+    'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2';
+
+  it('gives the moves from a position that the book names, with the opening each reaches', () => {
+    const moves = bookMovesFrom(AFTER_E4_E5);
+    const byUci = Object.fromEntries(
+      moves.map((move) => [move.uci, move.opening.name]),
+    );
+
+    expect(byUci.g1f3).toBe("King's Knight Opening");
+    expect(byUci.f2f4).toBe("King's Gambit");
+    expect(moves.find((move) => move.uci === 'g1f3')?.san).toBe('Nf3');
+    // A legal move no book has.
+    expect(byUci.g2g4).toBeUndefined();
+  });
+
+  it('gives the first moves from the starting position', () => {
+    const ucis = bookMovesFrom(DEFAULT_POSITION).map((move) => move.uci);
+
+    expect(ucis).toEqual(expect.arrayContaining(['e2e4', 'd2d4', 'c2c4']));
+  });
+
+  it('gives none once out of the book', () => {
+    expect(bookMovesFrom('8/8/4k3/8/8/4K3/8/8 w - - 0 60')).toEqual([]);
   });
 });

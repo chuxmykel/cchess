@@ -1,9 +1,11 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Color } from 'chess.js';
 
 import { Seek } from '../../constants/seek';
 import { GameType } from '../../domain/types';
 import { AnalysisSource } from '../../hooks/useAnalysisSource';
+import { ExplorerLine } from '../../hooks/useExplorerLine';
 
 export type ConversationPartner = {
   userId: string;
@@ -19,7 +21,11 @@ export type HomeStackParamList = {
   DailyGame: { gameId: string };
   /** A daily game in an analysis board of its own - no engine - apart
    * from the game. */
-  DailyAnalysis: { gameId: string };
+  DailyAnalysis: { gameId: string; explorerLine?: ExplorerLine };
+  /** The opening explorer, on a board of its own, from an analysis's
+   * position - `returnKey` the analysis's route, which gets the line
+   * explored back on leaving. */
+  OpeningExplorer: ExplorerLine & { orientation: Color; returnKey: string };
   /** Your own notes on a game. */
   GameNotes: { gameId: string };
   /** watchedUserId: the player whose game this is being watched for -
@@ -27,7 +33,7 @@ export type HomeStackParamList = {
   GameViewer: { gameId: string; watchedUserId?: string };
   /** The analysis board, over the tabs - opened from the Analysis tab, or
    * from a game, so Back returns there. */
-  AnalysisBoard: { source: AnalysisSource };
+  AnalysisBoard: { source: AnalysisSource; explorerLine?: ExplorerLine };
   UserProfile: { username: string };
   Conversation: ConversationPartner;
   /** Friends over the tabs, for screens there to open; focusSearch opens

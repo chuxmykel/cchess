@@ -5,7 +5,6 @@ import { Color } from 'chess.js';
 
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
 import AnalysisView from '../../components/AnalysisView';
-import OpeningExplorerSheet from '../../components/OpeningExplorerSheet';
 import EngineLines, {
   DEPTH_HEIGHT,
   LINE_HEIGHT,
@@ -22,9 +21,12 @@ import { AnalysisStart } from '../../hooks/useAnalysisTree';
 import { useAnalysisWorkspace } from '../../hooks/useAnalysisWorkspace';
 import { useAppIsActive } from '../../hooks/useAppIsActive';
 import { useEngineAnalysis } from '../../hooks/useEngineAnalysis';
-import { useOpeningExplorer } from '../../hooks/useOpeningExplorer';
+import {
+  ExplorerLine,
+  lineTo,
+  useTakeExplorerLine,
+} from '../../hooks/useExplorerLine';
 import { analysisArrows } from '../../utils/analysisArrows';
-import { flipBoardAction } from '../gameMenuActions';
 import { makeStyles, useTheme } from '../../theme';
 
 interface AnalysisBoardContentProps {
@@ -35,6 +37,11 @@ interface AnalysisBoardContentProps {
   // Opens the position editor on the position shown.
   onEditPosition: (fen: string) => void;
   onOpenSettings: () => void;
+  /** The opening explorer, on the line to the position shown. */
+  onOpenExplorer: (line: ExplorerLine, orientation: Color) => void;
+  /** The line the explorer handed back, to go along. */
+  explorerLine?: ExplorerLine;
+  onExplorerLineTaken: () => void;
 }
 
 // An analysis: a board either side can move on, the engine's view of the
@@ -47,6 +54,9 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
   onNewAnalysis,
   onEditPosition,
   onOpenSettings,
+  onOpenExplorer,
+  explorerLine,
+  onExplorerLineTaken,
 }) => {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -54,11 +64,10 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
   const workspace = useAnalysisWorkspace(start, initialOrientation);
   const { analysis, game, steps, orientation, flip } = workspace;
   const { settings } = useAnalysisSettingsContext();
+  useTakeExplorerLine(analysis, explorerLine, onExplorerLineTaken);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isExplorerOpen, setIsExplorerOpen] = useState(false);
 
   const { fen } = analysis.current;
-  const explorer = useOpeningExplorer(fen, isExplorerOpen);
   const over = useMemo(() => finalScore(fen), [fen]);
   // Searching only while it's seen: not behind another screen, nor with the
   // app in the background.
@@ -127,7 +136,6 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
   );
 
   const menuActions: ActionSheetAction[] = [
-    flipBoardAction(flip),
     {
       label: 'New analysis',
       onPress: onNewAnalysis,
@@ -138,11 +146,6 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
       label: 'Edit position',
       onPress: () => onEditPosition(fen),
       testID: 'edit-position-action',
-    },
-    {
-      label: 'Opening explorer',
-      onPress: () => setIsExplorerOpen(true),
-      testID: 'opening-explorer-action',
     },
     {
       label: 'Settings',
@@ -192,7 +195,17 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
       right={evalBarAt === 'right' && evalBar}
       below={evalBarAt === 'bottom' && evalBar}
       toolbar={
-        <GameToolbar onOpenMenu={() => setIsMenuOpen(true)} moveSteps={steps} />
+        <GameToolbar
+          onOpenMenu={() => setIsMenuOpen(true)}
+          onOpenExplorer={() =>
+            onOpenExplorer(
+              lineTo(analysis.tree, analysis.current.id),
+              orientation,
+            )
+          }
+          onFlip={flip}
+          moveSteps={steps}
+        />
       }
       testID="analysis-board"
     >
@@ -200,15 +213,6 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
         visible={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         actions={menuActions}
-      />
-      <OpeningExplorerSheet
-        visible={isExplorerOpen}
-        explorer={explorer}
-        onClose={() => setIsExplorerOpen(false)}
-        onPlayMove={(uci) => {
-          const { from, to, promotion } = uciToMoveSpec(uci);
-          game.attemptMove(from, to, promotion);
-        }}
       />
     </AnalysisView>
   );

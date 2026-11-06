@@ -107,6 +107,27 @@ describe('useAnalysisTree', () => {
     expect(sans()).toEqual(['e4', 'c5', 'Nf3']);
   });
 
+  it('plays a line from the start, along the moves already there and on', async () => {
+    const { result } = await renderHook(() =>
+      useAnalysisTree({
+        startFen: DEFAULT_POSITION,
+        uciMoves: ['e2e4', 'e7e5'],
+        initialPly: 0,
+      }),
+    );
+
+    await act(async () =>
+      result.current.playLine([
+        { from: 'e2', to: 'e4' },
+        { from: 'e7', to: 'e5' },
+        { from: 'g1', to: 'f3' },
+      ]),
+    );
+
+    expect(sanOf(result)).toBe('Nf3');
+    expect(Object.keys(result.current.tree.nodes)).toHaveLength(4);
+  });
+
   it("goes to a move that's already there rather than adding it again", async () => {
     const { result } = await renderHook(() =>
       useAnalysisTree({

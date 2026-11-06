@@ -104,6 +104,17 @@ const DailyAnalysis: React.FC<DailyAnalysisProps> = ({ navigation, route }) => {
         width={width}
         onReset={reset}
         onOpenNotes={() => navigation.navigate('GameNotes', { gameId })}
+        onOpenExplorer={(line, orientation) =>
+          navigation.navigate('OpeningExplorer', {
+            ...line,
+            orientation,
+            returnKey: route.key,
+          })
+        }
+        explorerLine={route.params.explorerLine}
+        onExplorerLineTaken={() =>
+          navigation.setParams({ explorerLine: undefined })
+        }
       />
     );
   }
