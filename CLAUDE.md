@@ -530,7 +530,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
   (System/Light/Dark, and the board themes as swatches - the
   `Appearance` screen), and `GameHistoryList` (a
   player's finished games, paged - `GamesList` and the analysis game
-  picker share it).
+  picker share it; `GamesList`, titled "Game history" for yours, filters
+  them by result and game type with two `Dropdown`s, the server doing
+  the filtering so pages stay whole).
 
 - **`src/components/`** (everything else) - also purely presentational,
   consuming hooks/context the same way: in-game UI (`GameHeader`,
@@ -607,7 +609,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
   Friends section: the count beside the title, up to ten friends online
   first, then - on your own, the Profile tab's - an Add friends tile, and
   View All), `FriendListControls`
-  (the friends list's "Online" filter and sort dropdown),
+  (the friends list's "Online" filter and sort dropdown - `ListControls`,
+  a filter chip and a sort `Dropdown`, which the daily games list uses
+  too),
   `MessageList`), rating stats UI (`RatingChart` - the rating as a line
   over the period, one point per day (the server sends each day's closing
   rating), drawn with `victory-native` on
@@ -677,8 +681,13 @@ lib/chessboard/  the board, written as a package of its own: outside the
     when it's yours, the opponent and the time left (`useNow` ticking a
     minute, in red under 10 hours - `DAILY_LOW_TIME_MS`, the clock's too)
     - and each seek a `WaitingSeekCard` with ✕ to withdraw it. A skeleton
-      of cards holds its place while the games load; See All opens
-      `DailyGamesList`, every game and seek, two to a row.
+      of cards shaped as a game's holds its place while the games load
+      (Friends and Recent Games load as cards and rows shaped as theirs,
+      too); See All opens `DailyGamesList`: every game and seek, two to a
+      row from the left, a pawn on those on your move, filtered to your
+      move and sorted by your move first, time left, last move or
+      opponent (`utils/dailyGameSort.ts` - the last move's time is the
+      deadline less the days a move gives).
   - `DailyGame`: `useOnlineChessGame` with no pre-moves, its clocks the
     time left on the move (`GameClock`'s `daily`, `utils/timeLeft.ts`'
     `formatTimeLeft`: whole hours rounded up from an hour, minutes under
