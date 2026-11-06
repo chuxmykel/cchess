@@ -207,7 +207,8 @@ resign or abort from the app (see `examples/resign.yaml` /
   `delete-conditional-move-button`.
   Once over, `rematch-button` sends a daily challenge (the opponent's
   `challenge-card-<id>` in 🔔); `rematch-status` then shows it.
-  Settings: `daily-game-settings`, `daily-setting-confirmMoves`.
+  Settings: `daily-game-settings`, `daily-setting-confirmMoves` (on by
+  default, so a fresh install confirms every move).
 - **Daily analysis**: `daily-analysis` - the game's `move-list` /
   `move-<ply>` and `player-name-<color>` (no clocks) -
   `daily-analysis-toolbar` with `opening-explorer-button`,
