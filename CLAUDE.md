@@ -540,7 +540,11 @@ lib/chessboard/  the board, written as a package of its own: outside the
   picker share it; `GamesList`, titled "Game history" for yours, filters
   them by result and game type with two `Dropdown`s - the games fetched,
   so a choice shows at once, more pages fetched while fewer than a
-  page's worth match).
+  page's worth match - each choice showing how many of all the games it
+  matches with the other (`useGameCounts`: the server's counts by result
+  and type, `GET /games/counts`, totalled by `utils/gameCounts.ts`)).
+  `Dropdown`'s options can carry a count, shown in a `CountPill` in the
+  menu and beside the chosen one.
 
 - **`src/components/`** (everything else) - also purely presentational,
   consuming hooks/context the same way: in-game UI (`GameHeader`,
@@ -641,7 +645,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
   with `react-native-svg`, a title, a line on what will show up there,
   and an optional action;
   `SectionHeader`'s action is optional, and it can show a count beside
-  the title, in a small pill), and `Home`-screen-specific pieces
+  the title, in a `CountPill` - a small see-through grey pill, the theme's
+  `countPill`, the same in both modes), and `Home`-screen-specific pieces
   (`HomeHeader`, `RecentGamesList`, whose rows open the game viewer; it,
   Friends and Daily games count theirs beside their titles).
   `GameOverCard` names the winner instead of "You won" for a game you
@@ -681,7 +686,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
     (`useSocial`'s `onGameStarted` has the game type). `useResumeActiveGame`
     resumes live games only (`kind=live`), and a daily game reaching
     `LiveGame` or `GameViewer` (yours, still on) is sent to `DailyGame`.
-  - Home's `YourGamesList`, between Friends and Recent Games, shown only
+  - Home's `DailyGamesList` (`components/`; "Daily games"), between
+    Friends and Recent Games, shown only
     with a game in progress or a seek waiting: `useDailyGames` (the
     server's order - your move first, then by time left - reloaded on
     focus and on any push touching one) and `useMyDailySeeks`, each game a
@@ -692,7 +698,7 @@ lib/chessboard/  the board, written as a package of its own: outside the
     - and each seek a `WaitingSeekCard` with ✕ to withdraw it. A skeleton
       of cards shaped as a game's holds its place while the games load
       (Friends and Recent Games load as cards and rows shaped as theirs,
-      too); See All opens `DailyGamesList`: every game and seek, two to a
+      too); See All opens the `DailyGamesList` screen: every game and seek, two to a
       row across the screen (a row of one on the left), a grey pawn on
       those on your move, filtered to your move and sorted by your move
       first, time left, last move or opponent (`utils/dailyGameSort.ts` -
