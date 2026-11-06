@@ -2,8 +2,9 @@ const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
 const HOURS_PER_DAY = 24;
 
-/** Under this, a daily game's time left is shown as running out. */
-export const DAILY_LOW_TIME_MS = HOUR_MS;
+/** Under this, a daily game's time left is shown as running out, in red -
+ * on its card and its clock. */
+export const DAILY_LOW_TIME_MS = 10 * HOUR_MS;
 
 /**
  * Time left until a deadline, rounded up so it never reads less than is

@@ -6,6 +6,7 @@ import { boardTester } from '../Board/boardTester';
 import { DAILY_GAMES_STATUS } from '../../hooks/useDailyGames';
 import { DailySeek } from '../../network/restClient';
 import { makeDailyGame } from '../../testUtils/dailyGame';
+import { lightTheme } from '../../theme';
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -80,6 +81,32 @@ describe('YourGamesList', () => {
     expect(screen.getByTestId('daily-game-theirs-time-left')).toHaveTextContent(
       '30m',
     );
+  });
+
+  it('shows the time left in red under 10 hours', async () => {
+    const { screenPromise } = renderList({
+      dailyGames: {
+        status: DAILY_GAMES_STATUS.READY,
+        games: [
+          makeDailyGame({
+            id: 'eleven',
+            moveDeadlineAt: new Date(Date.now() + 11 * HOUR).toISOString(),
+          }),
+          makeDailyGame({
+            id: 'nine',
+            moveDeadlineAt: new Date(Date.now() + 9 * HOUR).toISOString(),
+          }),
+        ],
+      },
+    });
+    const screen = await screenPromise;
+
+    const color = (gameId: string) =>
+      StyleSheet.flatten(
+        screen.getByTestId(`daily-game-${gameId}-time-left`).props.style,
+      ).color;
+    expect(color('nine')).toBe(lightTheme.colors.danger);
+    expect(color('eleven')).not.toBe(lightTheme.colors.danger);
   });
 
   it('draws each board from your side', async () => {
