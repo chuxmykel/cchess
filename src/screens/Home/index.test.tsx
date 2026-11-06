@@ -179,7 +179,7 @@ describe('Home', () => {
     it('shows no section without a daily game or seek', async () => {
       const { screen } = await renderScreen(makeAuthSession({ user: MAGNUS }));
 
-      expect(screen.queryByTestId('your-games')).toBeNull();
+      expect(screen.queryByTestId('daily-games-section')).toBeNull();
       expect(screen.queryByText('Daily games')).toBeNull();
     });
   });

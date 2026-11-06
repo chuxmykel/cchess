@@ -19,7 +19,7 @@ const TIME_LEFT_REFRESH_MS = 60_000;
 type Item =
   { kind: 'game'; game: DailyGame } | { kind: 'seek'; seek: DailySeek };
 
-interface YourGamesListProps {
+interface DailyGamesListProps {
   dailyGames: DailyGames;
   /** Daily seeks still waiting; null while they're loading. */
   seeks: DailySeek[] | null;
@@ -37,7 +37,7 @@ const LOADING_CARD_COUNT = 2;
 const LoadingCards: React.FC = () => {
   const cardStyles = useDailyGameCardStyles();
   return (
-    <View style={styles.container} testID="your-games-loading">
+    <View style={styles.container} testID="daily-games-section-loading">
       <View style={styles.loadingTitle}>
         <Placeholder width={120} height={20} />
       </View>
@@ -69,7 +69,7 @@ const LoadingCards: React.FC = () => {
 // those on your move first, then by time left - and after them any seeks
 // still waiting for an opponent. Shown only when there's one or the other,
 // and as a skeleton while they load.
-const YourGamesList: React.FC<YourGamesListProps> = ({
+const DailyGamesList: React.FC<DailyGamesListProps> = ({
   dailyGames,
   seeks,
   onPressGame,
@@ -92,7 +92,7 @@ const YourGamesList: React.FC<YourGamesListProps> = ({
   }
 
   return (
-    <View style={styles.container} testID="your-games">
+    <View style={styles.container} testID="daily-games-section">
       <SectionHeader
         title="Daily games"
         count={
@@ -100,7 +100,7 @@ const YourGamesList: React.FC<YourGamesListProps> = ({
         }
         actionLabel="See All"
         onActionPress={onSeeAll}
-        testID="your-games-see-all"
+        testID="daily-games-section-see-all"
       />
       <FlatList
         data={items}
@@ -123,7 +123,7 @@ const YourGamesList: React.FC<YourGamesListProps> = ({
   );
 };
 
-export default YourGamesList;
+export default DailyGamesList;
 
 const styles = StyleSheet.create({
   container: {

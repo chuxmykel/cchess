@@ -1,7 +1,7 @@
 import { fireEvent, render, within } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
-import YourGamesList from '.';
+import DailyGamesList from '.';
 import { boardTester } from '../Board/boardTester';
 import { DAILY_GAMES_STATUS } from '../../hooks/useDailyGames';
 import { DailySeek } from '../../network/restClient';
@@ -20,9 +20,9 @@ const SEEK: DailySeek = {
   createdAt: '2026-01-01T00:00:00.000Z',
 };
 
-describe('YourGamesList', () => {
+describe('DailyGamesList', () => {
   function renderList(
-    overrides: Partial<React.ComponentProps<typeof YourGamesList>> = {},
+    overrides: Partial<React.ComponentProps<typeof DailyGamesList>> = {},
   ) {
     const props = {
       dailyGames: {
@@ -51,8 +51,8 @@ describe('YourGamesList', () => {
       onCancelSeek: jest.fn(),
       onSeeAll: jest.fn(),
       ...overrides,
-    } as React.ComponentProps<typeof YourGamesList>;
-    return { props, screenPromise: render(<YourGamesList {...props} />) };
+    } as React.ComponentProps<typeof DailyGamesList>;
+    return { props, screenPromise: render(<DailyGamesList {...props} />) };
   }
 
   it('shows each game, in the order given, then the seeks still waiting', async () => {
@@ -64,9 +64,9 @@ describe('YourGamesList', () => {
         .getAllByTestId(/^daily-(game-(mine|theirs)|seek-seek-1)$/)
         .map((card) => card.props.testID),
     ).toEqual(['daily-game-mine', 'daily-game-theirs', 'daily-seek-seek-1']);
-    expect(screen.getByTestId('your-games-see-all-count')).toHaveTextContent(
-      '2',
-    );
+    expect(
+      screen.getByTestId('daily-games-section-see-all-count'),
+    ).toHaveTextContent('2');
   });
 
   it('names each opponent with the time left on the move under it, and no rating', async () => {
@@ -161,7 +161,7 @@ describe('YourGamesList', () => {
     const { props, screenPromise } = renderList();
     const screen = await screenPromise;
 
-    await fireEvent.press(screen.getByTestId('your-games-see-all'));
+    await fireEvent.press(screen.getByTestId('daily-games-section-see-all'));
 
     expect(props.onSeeAll).toHaveBeenCalled();
   });
@@ -182,7 +182,7 @@ describe('YourGamesList', () => {
     });
     const screen = await screenPromise;
 
-    expect(screen.queryByTestId('your-games')).toBeNull();
+    expect(screen.queryByTestId('daily-games-section')).toBeNull();
   });
 
   it('shows a skeleton of cards while the games load', async () => {
@@ -191,8 +191,8 @@ describe('YourGamesList', () => {
     });
     const screen = await screenPromise;
 
-    expect(screen.getByTestId('your-games-loading')).toBeTruthy();
-    expect(screen.queryByTestId('your-games')).toBeNull();
+    expect(screen.getByTestId('daily-games-section-loading')).toBeTruthy();
+    expect(screen.queryByTestId('daily-games-section')).toBeNull();
   });
 
   it("shows nothing when the games couldn't be loaded", async () => {
@@ -201,7 +201,7 @@ describe('YourGamesList', () => {
     });
     const screen = await screenPromise;
 
-    expect(screen.queryByTestId('your-games-loading')).toBeNull();
-    expect(screen.queryByTestId('your-games')).toBeNull();
+    expect(screen.queryByTestId('daily-games-section-loading')).toBeNull();
+    expect(screen.queryByTestId('daily-games-section')).toBeNull();
   });
 });

@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import HomeHeader from '../../components/HomeHeader';
 import FriendsCarousel from '../../components/FriendsCarousel';
 import RecentGamesList from '../../components/RecentGamesList';
-import YourGamesList from '../../components/YourGamesList';
+import DailyGamesList from '../../components/DailyGamesList';
 import SignInPrompt from '../../components/SignInPrompt';
 import Button from '../../components/Button';
 import ChallengeCard from '../../components/ChallengeCard';
@@ -166,7 +166,7 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
             />
           </View>
         )}
-        <YourGamesList
+        <DailyGamesList
           dailyGames={dailyGames}
           seeks={dailySeeks.seeks}
           onPressGame={(game) =>

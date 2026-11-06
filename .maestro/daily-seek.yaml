@@ -21,10 +21,10 @@ tags:
       text: "Finding opponent"
     timeout: 10000
 - assertVisible:
-    id: "your-games"
+    id: "daily-games-section"
 - tapOn:
     id: "daily-seek-.*-cancel"
 - extendedWaitUntil:
     notVisible:
-      id: "your-games"
+      id: "daily-games-section"
     timeout: 10000
