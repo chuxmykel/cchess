@@ -9,7 +9,8 @@ export type UserFriendsState =
   | { status: 'ready'; friends: UserFriend[] };
 
 // A player's friends - anyone's, not just your own - with their presence.
-export function useUserFriends(username: string): {
+// With no player - a guest's own, who has none - nothing is fetched.
+export function useUserFriends(username: string | null): {
   state: UserFriendsState;
   reload: () => Promise<void>;
 } {
@@ -18,6 +19,7 @@ export function useUserFriends(username: string): {
   const latestRequest = useRef(0);
 
   const reload = useCallback(() => {
+    if (!username) return Promise.resolve();
     latestRequest.current += 1;
     const requestId = latestRequest.current;
     return authorized((token) => getUserFriends(username, token))

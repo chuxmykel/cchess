@@ -9,6 +9,7 @@ import {
 import {
   Alert,
   Animated,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -31,6 +32,7 @@ import Toast from '../../components/Toast';
 import { useSocialContext } from '../../context/SocialContext';
 import { useFriendActions } from '../../hooks/useFriendActions';
 import { usePagedGames } from '../../hooks/usePagedGames';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useToast } from '../../hooks/useToast';
 import { useUserFriends } from '../../hooks/useUserFriends';
 import { useUserProfile } from '../../hooks/useUserProfile';
@@ -72,6 +74,11 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
     [username],
   );
   const recentGames = usePagedGames(fetchGames, RECENT_GAMES_SHOWN);
+  const refresh = usePullToRefresh(
+    reloadProfile,
+    reloadFriends,
+    recentGames.reload,
+  );
   // The username goes in the header only once the avatar block showing it
   // has scrolled out of view.
   const [identityBottom, setIdentityBottom] = useState<number | null>(null);
@@ -226,6 +233,7 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
       <ScrollView
         contentContainerStyle={styles.content}
         scrollEventThrottle={16}
+        refreshControl={<RefreshControl {...refresh} />}
         onScroll={(event) => {
           const hidden =
             identityBottom !== null &&

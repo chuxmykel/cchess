@@ -327,6 +327,28 @@ describe('Home', () => {
     });
   });
 
+  it('fetches everything again when pulled down', async () => {
+    const social = makeSocial();
+    (useSocialContext as jest.Mock).mockReturnValue(social);
+    (getMyGames as jest.Mock)
+      .mockResolvedValueOnce([])
+      .mockResolvedValue([makeGameSummary({ id: 'just-finished' })]);
+    const { screen } = await renderScreen(makeAuthSession({ user: MAGNUS }));
+    jest.clearAllMocks();
+
+    const { refreshControl } = screen.getByTestId('home-scroll').props;
+    await act(async () => refreshControl.props.onRefresh());
+
+    expect(getMyGames).toHaveBeenCalled();
+    expect(getDailyGames).toHaveBeenCalled();
+    expect(getMyDailySeeks).toHaveBeenCalled();
+    expect(social.reload).toHaveBeenCalled();
+    expect(screen.getByTestId('game-row-just-finished')).toBeTruthy();
+    expect(
+      screen.getByTestId('home-scroll').props.refreshControl.props.refreshing,
+    ).toBe(false);
+  });
+
   it('opens a recent game in the viewer', async () => {
     (getMyGames as jest.Mock).mockResolvedValue([
       makeGameSummary({ id: 'game-3' }),

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, ScrollView } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import HomeHeader from '../../components/HomeHeader';
@@ -19,6 +19,7 @@ import { useFriendActions } from '../../hooks/useFriendActions';
 import { useRecentGames } from '../../hooks/useRecentGames';
 import { useDailyGames } from '../../hooks/useDailyGames';
 import { useMyDailySeeks } from '../../hooks/useMyDailySeeks';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useToast } from '../../hooks/useToast';
 import { HomeTabStackScreenProps } from '../HomeTabStack/types';
 import { makeStyles } from '../../theme';
@@ -55,6 +56,12 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
     notificationCount > 0 || challenges.outgoing.length > 0;
 
   const reloadSocial = social.reload;
+  const refresh = usePullToRefresh(
+    reload,
+    reloadDailyGames,
+    reloadDailySeeks,
+    reloadSocial,
+  );
   useFocusEffect(
     useCallback(() => {
       reload();
@@ -132,7 +139,11 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
           )
         }
       />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl {...refresh} />}
+        testID="home-scroll"
+      >
         {isSignedIn && (
           <FriendsCarousel
             friends={social.friends}

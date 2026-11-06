@@ -1,8 +1,5 @@
-import { useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
-
 import ProfileFriends from '../../components/ProfileFriends';
-import { useUserFriends } from '../../hooks/useUserFriends';
+import { UserFriendsState } from '../../hooks/useUserFriends';
 import { HomeStackParamList } from '../HomeStack/types';
 
 export interface MyFriendsNavigation {
@@ -16,22 +13,18 @@ export interface MyFriendsNavigation {
 interface MyFriendsProps {
   username: string;
   displayName: string;
+  /** Yours, which Profile keeps current. */
+  state: UserFriendsState;
   navigation: MyFriendsNavigation;
 }
 
-// The Profile tab's Friends section: your friends, kept current each time
-// the tab is shown, and the way to add more.
+// The Profile tab's Friends section: your friends, and the way to add more.
 const MyFriends: React.FC<MyFriendsProps> = ({
   username,
   displayName,
+  state,
   navigation,
 }) => {
-  const { state, reload } = useUserFriends(username);
-  useFocusEffect(
-    useCallback(() => {
-      reload();
-    }, [reload]),
-  );
   const friends = state.status === 'ready' ? state.friends : null;
 
   return (

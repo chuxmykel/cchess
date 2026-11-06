@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   FlatList,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -10,6 +11,7 @@ import Button from '../Button';
 import EmptyState from '../EmptyState';
 import GameRow from '../RecentGamesList/GameRow';
 import { FetchGamesPage, usePagedGames } from '../../hooks/usePagedGames';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { GameSummary } from '../../network/restClient';
 import { makeStyles } from '../../theme';
 
@@ -24,7 +26,8 @@ interface GameHistoryListProps {
   emptyTitle?: string;
 }
 
-// Finished games, newest first, loading more as the list nears its end.
+// Finished games, newest first, loading more as the list nears its end,
+// and again when pulled down.
 const GameHistoryList: React.FC<GameHistoryListProps> = ({
   fetchPage,
   onSelectGame,
@@ -34,6 +37,7 @@ const GameHistoryList: React.FC<GameHistoryListProps> = ({
   const styles = useStyles();
 
   const games = usePagedGames(fetchPage, PAGE_SIZE);
+  const refresh = usePullToRefresh(games.reload);
 
   if (games.status === 'loading') {
     return <ActivityIndicator style={styles.loading} testID="games-loading" />;
@@ -58,6 +62,7 @@ const GameHistoryList: React.FC<GameHistoryListProps> = ({
       ItemSeparatorComponent={() => <View style={styles.divider} />}
       onEndReached={games.loadMore}
       onEndReachedThreshold={0.5}
+      refreshControl={<RefreshControl {...refresh} />}
       ListFooterComponent={
         games.isLoadingMore ? <ActivityIndicator style={styles.more} /> : null
       }

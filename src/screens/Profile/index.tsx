@@ -1,5 +1,11 @@
 import { useCallback } from 'react';
-import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,6 +18,8 @@ import { SIGN_OUT_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { AUTH_SESSION_STATUS } from '../../hooks/useAuthSessionLifecycle';
 import { useAsyncAction } from '../../hooks/useAsyncAction';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
+import { useUserFriends } from '../../hooks/useUserFriends';
 import { HomeStackParamList } from '../HomeStack/types';
 import MyFriends, { MyFriendsNavigation } from './MyFriends';
 import { makeStyles } from '../../theme';
@@ -34,13 +42,24 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
   const isSignedIn = session.isReady && !session.user.isGuest;
   const signOutAttempt = useAsyncAction(signOut, SIGN_OUT_FAILED_MESSAGE);
 
+  const { state: friends, reload: reloadFriends } = useUserFriends(
+    isSignedIn ? session.user.username : null,
+  );
+  // Your ratings and friends, kept current each time the tab is shown, and
+  // when it's pulled down.
+  const reload = useCallback(
+    () =>
+      isSignedIn
+        ? Promise.all([reloadUser().catch(() => {}), reloadFriends()])
+        : Promise.resolve(),
+    [isSignedIn, reloadUser, reloadFriends],
+  );
   useFocusEffect(
     useCallback(() => {
-      if (isSignedIn) {
-        reloadUser().catch(() => {});
-      }
-    }, [isSignedIn, reloadUser]),
+      reload();
+    }, [reload]),
   );
+  const refresh = usePullToRefresh(reload);
 
   if (!session.isReady) {
     return (
@@ -59,6 +78,11 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
   return (
     <ScrollView
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 24 }]}
+      refreshControl={
+        isSignedIn ? (
+          <RefreshControl {...refresh} progressViewOffset={insets.top} />
+        ) : undefined
+      }
       testID="profile-screen"
     >
       <View style={styles.identity}>
@@ -92,6 +116,7 @@ const Profile: React.FC<ProfileProps> = ({ navigation }) => {
           <MyFriends
             username={user.username}
             displayName={user.displayName}
+            state={friends}
             navigation={navigation}
           />
           <View style={styles.signOut}>
