@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import Avatar from '../Avatar';
@@ -7,19 +8,25 @@ import { DAILY_LOW_TIME_MS, formatTimeLeft } from '../../utils/timeLeft';
 import Icon from '../Icon';
 import { makeStyles, useTheme } from '../../theme';
 
-/** A card's width - a little wider than a friend's. */
+/** A card's width on Home - a little wider than a friend's. */
 export const DAILY_GAME_CARD_WIDTH = 152;
 const CARD_PADDING = 8;
-export const DAILY_GAME_BOARD_WIDTH = DAILY_GAME_CARD_WIDTH - 2 * CARD_PADDING;
+/** The board on a card of this width. */
+export const dailyGameBoardWidth = (cardWidth: number) =>
+  cardWidth - 2 * CARD_PADDING;
+export const DAILY_GAME_BOARD_WIDTH = dailyGameBoardWidth(
+  DAILY_GAME_CARD_WIDTH,
+);
 export const DAILY_GAME_AVATAR_SIZE = 28;
 const PLAYER_GAP = 8;
-const CARD_BORDER = 2;
 
 interface DailyGameCardProps {
   game: DailyGame;
   /** The time now, epoch ms, for the time left. */
   now: number;
   onPress: (game: DailyGame) => void;
+  /** Its width, Home's unless given. */
+  width?: number;
   /** A pawn in the corner of a game on your move - where the cards stand
    * many to a screen, so it's quicker to find than the ring. */
   marksYourMove?: boolean;
@@ -27,12 +34,13 @@ interface DailyGameCardProps {
 
 // A daily game in progress: its board from your side, and the opponent as a
 // player bar shows them - with the time left on the move under the name, and
-// no rating. Ringed in the accent when it's your move; greyed out while it's
-// theirs.
+// no rating. Greyed out while it's their move. Memoised: a list of them
+// re-sorted, or the time ticking on, redraws only the cards that changed.
 const DailyGameCard: React.FC<DailyGameCardProps> = ({
   game,
   now,
   onPress,
+  width = DAILY_GAME_CARD_WIDTH,
   marksYourMove = false,
 }) => {
   const styles = useDailyGameCardStyles();
@@ -42,7 +50,7 @@ const DailyGameCard: React.FC<DailyGameCardProps> = ({
 
   return (
     <Pressable
-      style={[styles.card, game.myTurn && styles.myTurn]}
+      style={[styles.card, { width }]}
       onPress={() => onPress(game)}
       accessibilityRole="button"
       accessibilityLabel={`Daily game against ${game.opponent.displayName}, ${
@@ -57,7 +65,7 @@ const DailyGameCard: React.FC<DailyGameCardProps> = ({
       >
         <PositionBoard
           fen={game.fen}
-          width={DAILY_GAME_BOARD_WIDTH}
+          width={dailyGameBoardWidth(width)}
           orientation={game.playedAsWhite ? 'w' : 'b'}
           lastMove={game.lastMove}
           coordinates={false}
@@ -89,7 +97,7 @@ const DailyGameCard: React.FC<DailyGameCardProps> = ({
           <Icon
             name="chess-pawn"
             size={20}
-            color={colors.accent}
+            color={colors.textMuted}
             testID={`daily-game-${game.id}-your-move`}
           />
         )}
@@ -98,21 +106,16 @@ const DailyGameCard: React.FC<DailyGameCardProps> = ({
   );
 };
 
-export default DailyGameCard;
+export default memo(DailyGameCard);
 
 export const useDailyGameCardStyles = makeStyles((t) => ({
   card: {
     width: DAILY_GAME_CARD_WIDTH,
     padding: CARD_PADDING,
     borderRadius: t.radius.md,
-    borderWidth: CARD_BORDER,
-    borderColor: 'transparent',
     backgroundColor: t.colors.surface,
     ...t.elevation.sm,
     shadowColor: t.colors.shadow,
-  },
-  myTurn: {
-    borderColor: t.colors.accent,
   },
   // Nothing to do here until they've moved.
   waiting: {

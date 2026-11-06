@@ -1,9 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
+  RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -17,6 +19,7 @@ import WaitingSeekCard from '../../components/YourGamesList/WaitingSeekCard';
 import { DAILY_GAMES_STATUS, useDailyGames } from '../../hooks/useDailyGames';
 import { useMyDailySeeks } from '../../hooks/useMyDailySeeks';
 import { useNow } from '../../hooks/useNow';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useToast } from '../../hooks/useToast';
 import { DailyGame, DailySeek } from '../../network/restClient';
 import {
@@ -30,9 +33,8 @@ import { makeStyles, spacing } from '../../theme';
 // Time left is shown in minutes at most, so a minute's tick will do.
 const TIME_LEFT_REFRESH_MS = 60_000;
 const COLUMNS = 2;
-
-type Item =
-  { kind: 'game'; game: DailyGame } | { kind: 'seek'; seek: DailySeek };
+const GUTTER = spacing.lg;
+const GAP = spacing.md;
 
 type DailyGamesListProps = Pick<
   HomeStackScreenProps<'DailyGamesList'>,
@@ -40,9 +42,12 @@ type DailyGamesListProps = Pick<
 >;
 
 // Every daily game of yours in progress - Home shows the first ten - two to
-// a row, a pawn on those on your move: your move first, or by time left,
-// the last move or the opponent, and only those on your move if you like;
-// then the seeks still waiting for an opponent.
+// a row across the screen, a pawn on those on your move: your move first, or
+// by time left, the last move or the opponent, and only those on your move
+// if you like; then the seeks still waiting for an opponent. Sorted and
+// filtered here, from the games fetched - and laid out as one wrapping row
+// of cards, each keyed by its game, so a new order moves the cards rather
+// than drawing their boards again (a list's rows of two would each be new).
 const DailyGamesList: React.FC<DailyGamesListProps> = ({ navigation }) => {
   const themed = useStyles();
   const { dailyGames, reload } = useDailyGames();
@@ -52,6 +57,26 @@ const DailyGamesList: React.FC<DailyGamesListProps> = ({ navigation }) => {
   const now = useNow(TIME_LEFT_REFRESH_MS);
   const [sort, setSort] = useState<DailyGameSort>('yourMove');
   const [yourMoveOnly, setYourMoveOnly] = useState(false);
+  const refresh = usePullToRefresh(reload, reloadSeeks);
+  const { width } = useWindowDimensions();
+  const cardWidth = (width - 2 * GUTTER - (COLUMNS - 1) * GAP) / COLUMNS;
+  const allGames =
+    dailyGames.status === DAILY_GAMES_STATUS.READY ? dailyGames.games : null;
+  const games = useMemo(
+    () => allGames && sortDailyGames(allGames, sort, yourMoveOnly),
+    [allGames, sort, yourMoveOnly],
+  );
+  const openGame = useCallback(
+    (game: DailyGame) => navigation.navigate('DailyGame', { gameId: game.id }),
+    [navigation],
+  );
+  const { cancel } = dailySeeks;
+  const { show } = toast;
+  const cancelSeek = useCallback(
+    (seek: DailySeek) =>
+      cancel(seek.id).catch((error: Error) => show(error.message)),
+    [cancel, show],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -70,7 +95,7 @@ const DailyGamesList: React.FC<DailyGamesListProps> = ({ navigation }) => {
       </View>
     );
   }
-  if (dailyGames.status === DAILY_GAMES_STATUS.ERROR) {
+  if (!games) {
     return (
       <View style={[themed.screen, styles.centred]} testID="daily-games-error">
         <Text style={themed.message}>{"Couldn't load your games."}</Text>
@@ -79,16 +104,9 @@ const DailyGamesList: React.FC<DailyGamesListProps> = ({ navigation }) => {
     );
   }
 
-  const games = sortDailyGames(dailyGames.games, sort, yourMoveOnly);
-  const yourMoveCount = dailyGames.games.filter((game) => game.myTurn).length;
-  const items: Item[] = [
-    ...games.map((game) => ({ kind: 'game' as const, game })),
-    // Waiting for an opponent, none is on your move.
-    ...(yourMoveOnly ? [] : (dailySeeks.seeks ?? [])).map((seek) => ({
-      kind: 'seek' as const,
-      seek,
-    })),
-  ];
+  const yourMoveCount = allGames.filter((game) => game.myTurn).length;
+  // Waiting for an opponent, none is on your move.
+  const seeks = yourMoveOnly ? [] : (dailySeeks.seeks ?? []);
   return (
     <View style={themed.screen} testID="daily-games-list">
       <ListControls<DailyGameSort>
@@ -103,36 +121,12 @@ const DailyGamesList: React.FC<DailyGamesListProps> = ({ navigation }) => {
         onSortChange={setSort}
         testID="daily-games"
       />
-      <FlatList
-        data={items}
-        numColumns={COLUMNS}
-        keyExtractor={(item) =>
-          item.kind === 'game' ? item.game.id : `seek-${item.seek.id}`
-        }
-        renderItem={({ item }) =>
-          item.kind === 'game' ? (
-            <DailyGameCard
-              game={item.game}
-              now={now}
-              marksYourMove
-              onPress={(game) =>
-                navigation.navigate('DailyGame', { gameId: game.id })
-              }
-            />
-          ) : (
-            <WaitingSeekCard
-              seek={item.seek}
-              onCancel={(seek) =>
-                dailySeeks
-                  .cancel(seek.id)
-                  .catch((error: Error) => toast.show(error.message))
-              }
-            />
-          )
-        }
-        columnWrapperStyle={styles.row}
+      <ScrollView
         contentContainerStyle={styles.content}
-        ListEmptyComponent={
+        refreshControl={<RefreshControl {...refresh} />}
+        testID="daily-games-scroll"
+      >
+        {games.length === 0 && seeks.length === 0 ? (
           yourMoveOnly ? (
             <EmptyState
               illustration="games"
@@ -148,8 +142,29 @@ const DailyGamesList: React.FC<DailyGamesListProps> = ({ navigation }) => {
               testID="daily-games-empty"
             />
           )
-        }
-      />
+        ) : (
+          <View style={styles.grid}>
+            {games.map((game) => (
+              <DailyGameCard
+                key={game.id}
+                game={game}
+                now={now}
+                width={cardWidth}
+                marksYourMove
+                onPress={openGame}
+              />
+            ))}
+            {seeks.map((seek) => (
+              <WaitingSeekCard
+                key={`seek-${seek.id}`}
+                seek={seek}
+                width={cardWidth}
+                onCancel={cancelSeek}
+              />
+            ))}
+          </View>
+        )}
+      </ScrollView>
       <Toast toasts={toast.toasts} />
     </View>
   );
@@ -175,12 +190,14 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   content: {
-    paddingHorizontal: spacing.lg,
+    flexGrow: 1,
+    paddingHorizontal: GUTTER,
     paddingBottom: spacing.lg,
-    gap: spacing.md,
   },
-  // From the left, so a row of one lines up under the rows of two.
-  row: {
-    gap: spacing.md,
+  // Two cards fill a row; a row of one lines up under the left of them.
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: GAP,
   },
 });

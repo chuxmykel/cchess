@@ -6,11 +6,13 @@ import Icon from '../Icon';
 import { daysLabel } from '../../constants/timeControls';
 import { DailySeek } from '../../network/restClient';
 import { makeStyles } from '../../theme';
-import { DAILY_GAME_BOARD_WIDTH, DAILY_GAME_CARD_WIDTH } from './DailyGameCard';
+import { DAILY_GAME_CARD_WIDTH, dailyGameBoardWidth } from './DailyGameCard';
 
 interface WaitingSeekCardProps {
   seek: DailySeek;
   onCancel: (seek: DailySeek) => void;
+  /** Its width, Home's unless given - a game card's. */
+  width?: number;
 }
 
 // A daily seek still waiting for an opponent, the size of a game's card -
@@ -18,12 +20,13 @@ interface WaitingSeekCardProps {
 const WaitingSeekCard: React.FC<WaitingSeekCardProps> = ({
   seek,
   onCancel,
+  width = DAILY_GAME_CARD_WIDTH,
 }) => {
   const styles = useStyles();
   return (
-    <View style={styles.card} testID={`daily-seek-${seek.id}`}>
+    <View style={[styles.card, { width }]} testID={`daily-seek-${seek.id}`}>
       <View style={styles.board} pointerEvents="none">
-        <EmptyBoard width={DAILY_GAME_BOARD_WIDTH} coordinates={false} />
+        <EmptyBoard width={dailyGameBoardWidth(width)} coordinates={false} />
       </View>
       <Pressable
         style={styles.cancel}
@@ -58,8 +61,6 @@ const useStyles = makeStyles((t) => ({
     width: DAILY_GAME_CARD_WIDTH,
     padding: t.spacing.sm,
     borderRadius: t.radius.md,
-    borderWidth: 2,
-    borderColor: 'transparent',
     backgroundColor: t.colors.surface,
     ...t.elevation.sm,
     shadowColor: t.colors.shadow,
