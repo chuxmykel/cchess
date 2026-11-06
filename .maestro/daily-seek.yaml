@@ -3,7 +3,7 @@ tags:
   - needs-live-server
 ---
 # A daily game sought from New Game, posted and left: with nobody else
-# seeking those days, it waits under Home's Your games, and its cross
+# seeking those days, it waits under Home's Daily games, and its cross
 # withdraws it - the section going with it, having nothing else to show.
 # Needs only the game server, no opponent.
 - runFlow: common/to-new-game.yaml

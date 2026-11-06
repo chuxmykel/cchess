@@ -100,7 +100,7 @@ const DailyGamesList: React.FC<DailyGamesListProps> = ({ navigation }) => {
   if (!games) {
     return (
       <View style={[themed.screen, styles.centred]} testID="daily-games-error">
-        <Text style={themed.message}>{"Couldn't load your games."}</Text>
+        <Text style={themed.message}>{"Couldn't load your daily games."}</Text>
         <Button label="Try again" onPress={reload} variant="text" />
       </View>
     );

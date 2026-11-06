@@ -52,7 +52,7 @@ const MAGNUS = {
 
 describe('Home', () => {
   async function renderScreen(session = makeAuthSession()) {
-    // Your games listens for the server's pushes.
+    // Daily games listens for the server's pushes.
     (useAuthSession as jest.Mock).mockReturnValue(
       session.isReady && !('on' in session.socket)
         ? { ...session, socket: createFakeSocket().socket }
@@ -146,10 +146,10 @@ describe('Home', () => {
 
       expect(getDailyGames).toHaveBeenCalledWith('token-a', 10);
       const sections = screen
-        .getAllByText(/^(Friends|Your games|Recent Games)/)
+        .getAllByText(/^(Friends|Daily games|Recent Games)/)
         // A title, and any count beside it.
         .map((title) => [title.props.children].flat()[0]);
-      expect(sections).toEqual(['Friends', 'Your games', 'Recent Games']);
+      expect(sections).toEqual(['Friends', 'Daily games', 'Recent Games']);
       await fireEvent.press(screen.getByTestId('daily-game-daily-1'));
       expect(navigation.navigate).toHaveBeenCalledWith('DailyGame', {
         gameId: 'daily-1',
@@ -180,7 +180,7 @@ describe('Home', () => {
       const { screen } = await renderScreen(makeAuthSession({ user: MAGNUS }));
 
       expect(screen.queryByTestId('your-games')).toBeNull();
-      expect(screen.queryByText('Your games')).toBeNull();
+      expect(screen.queryByText('Daily games')).toBeNull();
     });
   });
 

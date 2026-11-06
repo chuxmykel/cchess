@@ -95,7 +95,7 @@ function withFriendStatus(
 // messages, kept current from the server's pushes.
 // onGameStarted opens a game a challenge started: one you accepted, or a
 // live one of yours accepted - not a daily one, which waits for you in
-// Your games rather than pulling you away from what you're doing.
+// Daily games rather than pulling you away from what you're doing.
 export function useSocial(
   onGameStarted: (gameId: string, gameType: GameType) => void,
 ): Social {

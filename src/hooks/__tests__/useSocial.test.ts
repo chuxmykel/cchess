@@ -188,7 +188,7 @@ describe('useSocial', () => {
     expect(result.current.challenges.outgoing).toEqual([]);
   });
 
-  it('leaves a daily game my challenge started to Your games, not opening it', async () => {
+  it('leaves a daily game my challenge started to Daily games, not opening it', async () => {
     const { result } = await renderSocial();
     const outgoing = makeChallenge({
       id: 'challenge-3',

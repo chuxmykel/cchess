@@ -50,7 +50,7 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
   }
 
   // A daily seek is posted and left: matched at once, the game opens;
-  // otherwise it waits on Home, under Your games, for an opponent.
+  // otherwise it waits on Home, under Daily games, for an opponent.
   async function startDailyGame() {
     if (isSeekingDaily) return;
     setIsSeekingDaily(true);

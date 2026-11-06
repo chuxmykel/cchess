@@ -130,7 +130,7 @@ const HomeStack: React.FC = () => {
                 component={DailyGamesList}
                 options={({ navigation }) => ({
                   ...plainHeaderOptions(navigation),
-                  title: 'Your games',
+                  title: 'Daily games',
                 })}
               />
               <Screen

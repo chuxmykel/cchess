@@ -31,7 +31,7 @@ interface YourGamesListProps {
 
 const LOADING_CARD_COUNT = 2;
 
-// Where Your games will be, while it's loading: a title and cards shaped as
+// Where Daily games will be, while it's loading: a title and cards shaped as
 // a game's are - the board, and the opponent under it with the time left -
 // gone if there turn out to be none.
 const LoadingCards: React.FC = () => {
@@ -65,7 +65,7 @@ const LoadingCards: React.FC = () => {
   );
 };
 
-// Home's "Your games": your daily games in progress, in the server's order -
+// Home's "Daily games": your daily games in progress, in the server's order -
 // those on your move first, then by time left - and after them any seeks
 // still waiting for an opponent. Shown only when there's one or the other,
 // and as a skeleton while they load.
@@ -94,7 +94,7 @@ const YourGamesList: React.FC<YourGamesListProps> = ({
   return (
     <View style={styles.container} testID="your-games">
       <SectionHeader
-        title="Your games"
+        title="Daily games"
         count={
           dailyGames.games.length > 0 ? dailyGames.games.length : undefined
         }
