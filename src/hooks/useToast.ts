@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type ToastItem = {
   id: number;
@@ -20,35 +20,38 @@ export function useToast(durationMs: number = DEFAULT_DURATION_MS): Toast {
     new Map(),
   );
 
-  function clearTimeoutFor(id: number) {
-    const timeout = timeoutsRef.current.get(id);
-    if (timeout) {
-      clearTimeout(timeout);
-      timeoutsRef.current.delete(id);
-    }
-  }
-
-  function dismiss(id: number) {
-    clearTimeoutFor(id);
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  }
-
-  function show(message: string, toastDurationMs: number = durationMs) {
-    const id = nextId.current++;
-    setToasts((prev) => {
-      const next = [...prev, { id, message }];
-      if (next.length <= MAX_TOASTS) {
-        return next;
+  // The same function every render, so a memoised list's items can be
+  // handed callbacks that show one.
+  const show = useCallback(
+    (message: string, toastDurationMs: number = durationMs) => {
+      const timeouts = timeoutsRef.current;
+      function clearTimeoutFor(id: number) {
+        const timeout = timeouts.get(id);
+        if (timeout) {
+          clearTimeout(timeout);
+          timeouts.delete(id);
+        }
       }
-      const [oldest, ...rest] = next;
-      clearTimeoutFor(oldest.id);
-      return rest;
-    });
-    timeoutsRef.current.set(
-      id,
-      setTimeout(() => dismiss(id), toastDurationMs),
-    );
-  }
+      const id = nextId.current++;
+      setToasts((prev) => {
+        const next = [...prev, { id, message }];
+        if (next.length <= MAX_TOASTS) {
+          return next;
+        }
+        const [oldest, ...rest] = next;
+        clearTimeoutFor(oldest.id);
+        return rest;
+      });
+      timeouts.set(
+        id,
+        setTimeout(() => {
+          clearTimeoutFor(id);
+          setToasts((prev) => prev.filter((toast) => toast.id !== id));
+        }, toastDurationMs),
+      );
+    },
+    [durationMs],
+  );
 
   useEffect(() => {
     const timeouts = timeoutsRef.current;
