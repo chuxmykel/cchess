@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 
+import { EXPLORER_FETCH_DELAY_MS } from '../constants/explorer';
 import { useAuthSession } from '../context/AuthSessionContext';
-import { ExplorerPosition, getExplorer } from '../network/restClient';
+import {
+  ExplorerPosition,
+  ExplorerQuery,
+  getExplorer,
+} from '../network/restClient';
 
 export type OpeningExplorerState =
   | { status: 'idle' }
@@ -9,40 +14,47 @@ export type OpeningExplorerState =
   | { status: 'ready'; position: ExplorerPosition }
   | { status: 'error' };
 
-type Fetched = { fen: string; result: ExplorerPosition | null };
-
 /**
  * The opening explorer's view of a position - the moves played from it in
- * games finished here - fetched while `enabled` (its sheet open), once a
- * position: each one asked for is kept, so stepping back and forth through
- * a line asks the server nothing more.
+ * the database `query` names - or nothing while `query` is null. A position
+ * is asked about once it's been shown 300ms, so stepping quickly through a
+ * line asks only where it stops; each answer is kept, so stepping back and
+ * forth asks nothing more. A failure isn't kept: coming back asks again.
+ * `query` is compared by value, so it needn't be memoised.
  */
 export function useOpeningExplorer(
   fen: string,
-  enabled: boolean,
+  query: ExplorerQuery | null,
 ): OpeningExplorerState {
   const { authorized } = useAuthSession();
-  const [cache, setCache] = useState<Map<string, Fetched>>(() => new Map());
-  const cached = cache.get(fen);
+  const [cache, setCache] = useState<Map<string, ExplorerPosition>>(
+    () => new Map(),
+  );
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+  const queryKey = query ? JSON.stringify(query) : null;
+  const key = queryKey ? `${queryKey}|${fen}` : null;
+  const cached = key ? cache.get(key) : undefined;
 
   useEffect(() => {
-    if (!enabled || cached) return;
+    if (!key || !queryKey || cached) return;
     let current = true;
-    authorized((token) => getExplorer(fen, token))
-      .then((position) => ({ fen, result: position }))
-      .catch(() => ({ fen, result: null }))
-      .then((fetched) => {
-        if (!current) return;
-        setCache((previous) => new Map(previous).set(fen, fetched));
-      });
+    const timer = setTimeout(() => {
+      authorized((token) => getExplorer(fen, token, JSON.parse(queryKey)))
+        .then((position) => {
+          if (current)
+            setCache((previous) => new Map(previous).set(key, position));
+        })
+        .catch(() => {
+          if (current) setFailedKey(key);
+        });
+    }, EXPLORER_FETCH_DELAY_MS);
     return () => {
       current = false;
+      clearTimeout(timer);
     };
-  }, [authorized, fen, enabled, cached]);
+  }, [authorized, fen, key, queryKey, cached]);
 
-  if (!enabled) return { status: 'idle' };
-  if (!cached) return { status: 'loading' };
-  return cached.result
-    ? { status: 'ready', position: cached.result }
-    : { status: 'error' };
+  if (!key) return { status: 'idle' };
+  if (cached) return { status: 'ready', position: cached };
+  return failedKey === key ? { status: 'error' } : { status: 'loading' };
 }

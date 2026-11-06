@@ -1,6 +1,7 @@
 import { AxiosError, create } from 'axios';
 import type { Color, Square } from 'chess.js';
 
+import type { LichessRating, LichessSpeed } from '../constants/explorer';
 import { GameType } from '../domain/types';
 import { SERVER_URL } from './env';
 import type { ColorChoice, GameSnapshot, RatingRange } from './socketEvents';
@@ -253,8 +254,7 @@ export async function cancelDailySeek(
   );
 }
 
-/** A move played from a position in finished games here, and how those
- * games ended. */
+/** A move played from a position, and how those games ended. */
 export type ExplorerMove = {
   san: string;
   uci: string;
@@ -264,22 +264,50 @@ export type ExplorerMove = {
   blackWins: number;
 };
 
+/** Where an answer came from: the database asked, or - lichess out of
+ * reach - `cchess`, the games played here. */
+export type ExplorerSource = 'masters' | 'lichess' | 'player' | 'cchess';
+
 export type ExplorerPosition = {
+  source: ExplorerSource;
+  /** Lichess's answer as the server kept it over 30 days ago - a fresh one
+   * is on its way. */
+  stale: boolean;
+  /** Games that reached the position and went on, and how they ended. */
   totalGames: number;
+  whiteWins: number;
+  draws: number;
+  blackWins: number;
   /** The most played first. */
   moves: ExplorerMove[];
 };
 
-/** The opening explorer, from the games finished here - games still being
- * played aren't in it. */
+/** Which games the explorer looks in - with none, the games finished
+ * here. */
+export type ExplorerQuery =
+  | { db: 'masters' }
+  | { db: 'lichess'; speeds: LichessSpeed[]; ratings: LichessRating[] }
+  | { db: 'player'; user: string; color: 'white' | 'black' };
+
+/** The opening explorer: lichess's Masters or Lichess database, one
+ * player's games here, or everyone's - finished games only. */
 export async function getExplorer(
   fen: string,
   accessToken: string,
+  query?: ExplorerQuery,
 ): Promise<ExplorerPosition> {
+  const params =
+    query?.db === 'lichess'
+      ? {
+          db: query.db,
+          speeds: query.speeds.join(','),
+          ratings: query.ratings.join(','),
+        }
+      : query;
   return (
     await apiClient.get<ExplorerPosition>('/explorer', {
       ...bearer(accessToken),
-      params: { fen },
+      params: { fen, ...params },
     })
   ).data;
 }

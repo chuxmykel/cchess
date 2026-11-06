@@ -169,8 +169,10 @@ lib/chessboard/  the board, written as a package of its own: outside the
   last 15 minutes, so every launch trades the stored refresh token for a
   fresh pair instead of keeping one), `analysisSettingsStorage.ts`
   (the analysis board's settings in AsyncStorage, over their defaults),
-  and `appearanceSettingsStorage.ts` (Appearance's, the same way - a
-  value no longer offered falls back to its default).
+  `appearanceSettingsStorage.ts` (Appearance's, the same way - a
+  value no longer offered falls back to its default), and
+  `explorerSettingsStorage.ts` (the opening explorer's database and
+  filters, the same way).
 
 - **`src/engine/`** - the analysis engine: Stockfish 19, the lite
   single-threaded WASM build of stockfish.js (GPL-3.0), **downloaded on
@@ -751,16 +753,36 @@ lib/chessboard/  the board, written as a package of its own: outside the
   - The opening explorer, from either analysis board's toolbar: the
     `OpeningExplorer` screen, a board of its own on the line to the
     position shown (`useExplorerLine`'s `lineTo`), the moves played along
-    the top, and `ExplorerMoveList` - the opening heading it, then the
-    book's moves only, numbered (`useBookExplorer`: `domain/openings.ts`'
-    `bookMovesFrom`, with `useOpeningExplorer`'s results from games
-    finished here - a count and a bar - the most played first; "No
-    results" out of the book). A tap plays one there. As the line
+    the top, and `ExplorerMoveList`. It reads, top to bottom:
+    - the opening heading it;
+    - the database's moves, numbered, the most played first - each with
+      a count, its share of the position's games and a bar - named from
+      the book where they're in it;
+    - the book's unplayed moves (`useExplorerMoves`: `domain/openings.ts`'
+      `bookMovesFrom`, with `useOpeningExplorer`'s answer);
+    - a Σ row, the position's own games;
+    - a note when lichess was out of reach and the games here answered
+      instead (the answer's `source`).
+
+    The database is lichess's Masters or Lichess, kept and rate-limited by
+    the server, or a player's games here (see cchess-be's README, "Opening
+    explorer"). It's chosen in `ExplorerSettingsSheet`, from the toolbar's
+    database button, captioned with it (`ToolbarButton`'s `caption`):
+    - Lichess's time controls and rating bands, as chips;
+    - the player, you or anyone searched for (`useUserSearch`), and the
+      side they played.
+
+    The choice is saved on the device (`useExplorerSettings`,
+    `network/explorerSettingsStorage.ts`, `constants/explorer.ts`) and
+    turned into the request by `explorerQuery`. A position is asked about
+    once it's been shown 300ms (`EXPLORER_FETCH_DELAY_MS`), each answer
+    kept by database and position. A tap plays a move there. As the line
     changes it's set on the analysis's route (`explorerLine`, by
     `returnKey` - not on leaving: an action dispatched from
     `beforeRemove` brought the removal round again, overflowing the
     stack), and the analysis, once focused again, goes along it
     (`useTakeExplorerLine`, the tree's `playLine`) and clears it.
+
   - Conditional moves: the `ConditionalMoves` screen, from the game's ☰
     while the opponent's to move - lines written on a board from the
     game's position (`domain/conditionalMoves.ts`' editor: `playMove`,
