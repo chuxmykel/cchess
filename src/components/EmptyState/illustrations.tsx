@@ -170,12 +170,54 @@ const Notifications: React.FC<IllustrationProps> = ({ size }) => {
   );
 };
 
+// A pawn whose way forward forks: their move either way, and the reply
+// waiting at the end of each - one picked out.
+const Branches: React.FC<IllustrationProps> = ({ size }) => {
+  const { colors } = useTheme();
+  return (
+    <Svg width={size} height={size * 0.8} viewBox="0 0 120 96">
+      <Circle cx={60} cy={52} r={40} fill={colors.illustration.pale} />
+      <Path
+        d="M60 66V50M60 50L38 30M60 50l22-20"
+        stroke={colors.illustration.grey}
+        strokeWidth={4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      <Circle cx={36} cy={27} r={9} fill={colors.illustration.grey} />
+      <Circle cx={84} cy={27} r={9} fill={colors.accent} />
+      <Path
+        d="M80 27l3 3 6-6"
+        stroke={colors.background}
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      <G transform="translate(60 64)">
+        <Circle cx={0} cy={4} r={6} fill={colors.illustration.dark} />
+        <Path d="M-4 10h8l3 10h-14z" fill={colors.illustration.dark} />
+        <Rect
+          x={-10}
+          y={20}
+          width={20}
+          height={5}
+          rx={2.5}
+          fill={colors.illustration.dark}
+        />
+      </G>
+    </Svg>
+  );
+};
+
 export const ILLUSTRATIONS = {
   friends: Friends,
   games: Games,
   messages: Messages,
   activity: Activity,
   notifications: Notifications,
+  branches: Branches,
 } satisfies Record<string, React.FC<IllustrationProps>>;
 
 export type IllustrationName = keyof typeof ILLUSTRATIONS;

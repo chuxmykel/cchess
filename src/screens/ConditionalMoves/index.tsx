@@ -12,7 +12,7 @@ import BottomBar from '../../components/BottomBar';
 import { GameBoard } from '../../components/Board';
 import ConditionalLinesList from '../../components/ConditionalLinesList';
 import { ToolbarButton } from '../../components/GameToolbar';
-import Icon from '../../components/Icon';
+import EmptyState from '../../components/EmptyState';
 import PromotionMenu from '../../components/PromotionMenu';
 import { ChessGameContext } from '../../context/ChessGameContext';
 import { useDailyGamePosition } from '../../context/DailyGamePositionsContext';
@@ -34,7 +34,7 @@ import {
 import { useChessGame } from '../../hooks/useChessGame';
 import { useConditionalMoves } from '../../hooks/useConditionalMoves';
 import { HomeStackParamList } from '../HomeStack/types';
-import { makeStyles, spacing, useTheme } from '../../theme';
+import { makeStyles, spacing } from '../../theme';
 
 type ConditionalMovesProps = NativeStackScreenProps<
   HomeStackParamList,
@@ -99,7 +99,6 @@ const ConditionalMovesEditor: React.FC<ConditionalMovesEditorProps> = ({
   onSaved,
 }) => {
   const themed = useStyles();
-  const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const [editor, setEditor] = useState<ConditionalEditor>(() =>
     editorFrom(saved),
@@ -168,13 +167,14 @@ const ConditionalMovesEditor: React.FC<ConditionalMovesEditorProps> = ({
       </View>
 
       {isEmpty ? (
-        <View style={styles.empty} testID="conditional-moves-empty">
-          <Icon name="shuffle-variant" size={40} color={colors.textMuted} />
-          <Text style={themed.emptyTitle}>No conditional moves</Text>
-          <Text style={themed.emptyText}>
-            Play their move and your reply on the board. When they play it, your
-            reply is played for you.
-          </Text>
+        <View style={styles.empty}>
+          <EmptyState
+            illustration="branches"
+            title="No conditional moves"
+            message="Play their move and your reply on the board. When they play it, your reply is played for you."
+            compact
+            testID="conditional-moves-empty"
+          />
         </View>
       ) : (
         <ConditionalLinesList
@@ -226,16 +226,6 @@ const useStyles = makeStyles((t) => ({
     flex: 1,
     backgroundColor: t.colors.background,
   },
-  emptyTitle: {
-    color: t.colors.text,
-    fontSize: t.fontSize.lg,
-    fontWeight: t.fontWeight.semibold,
-  },
-  emptyText: {
-    color: t.colors.textMuted,
-    fontSize: t.fontSize.base,
-    textAlign: 'center',
-  },
   error: {
     color: t.colors.danger,
     fontSize: t.fontSize.sm,
@@ -252,10 +242,7 @@ const styles = StyleSheet.create({
   },
   empty: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.xl,
   },
   toolbar: {
     width: '100%',
