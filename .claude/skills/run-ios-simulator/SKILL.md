@@ -180,7 +180,8 @@ resign or abort from the app (see `examples/resign.yaml` /
   `decline-friend-<id>`. Tap outside the popup to close it.
 - **Your games** (Home, between Friends and Recent Games - only with a
   daily game in progress or a seek waiting): `your-games`,
-  `your-games-header-count`, `daily-game-<gameId>` (opens the game) with
+  `your-games-see-all` (See All, → `daily-games-list`) with its `-count`,
+  `your-games-loading`, `daily-game-<gameId>` (opens the game) with
   `daily-game-<gameId>-board` (faded while it's the opponent's move) and
   `daily-game-<gameId>-time-left`, and `daily-seek-<seekId>` with its
   ✕ `daily-seek-<seekId>-cancel`. Daily time controls are
@@ -191,11 +192,14 @@ resign or abort from the app (see `examples/resign.yaml` /
   testIDs below; the toolbar's `game-menu-button`, `chat-button`,
   `toolbar-analysis-button`, ‹ ›. ☰ holds `next-game-action`,
   `offer-draw-action` / `accept-draw-action`, `resign-action` (or
-  `abort-game-action`), `daily-game-settings-action` and
-  `flip-board-action`. With moves confirmed, a move shows
+  `abort-game-action`), `conditional-moves-action` (on the opponent's
+  move), `daily-game-settings-action` and `flip-board-action`. With moves confirmed, a move shows
   `confirm-move-bar` with `cancel-move-button` / `confirm-move-button`
-  over the toolbar. `conditional-moves-note` opens
-  `conditional-moves-sheet` with `delete-conditional-moves-button`.
+  over the toolbar. Conditional moves (a screen): `conditional-moves`,
+  its board, `conditional-moves-empty` or `conditional-line-<n>` (tap to
+  edit) with `delete-conditional-line-<n>`, `conditional-moves-error`,
+  and `confirm-conditional-moves-button`, `add-conditional-line-button`,
+  `delete-conditional-move-button`.
   Once over, `rematch-button` sends a daily challenge (the opponent's
   `challenge-card-<id>` in 🔔); `rematch-status` then shows it.
   Settings: `daily-game-settings`, `daily-setting-confirmMoves`.
@@ -204,14 +208,14 @@ resign or abort from the app (see `examples/resign.yaml` /
   `daily-analysis-toolbar` with `opening-explorer-button`,
   `notes-button` (→ the `game-notes` screen: `notes-input`,
   `notes-status`; `header-back` saves and returns), `flip-board-button`,
-  `reset-analysis-button`, ‹ ›; `conditional-move-panel` with
-  `save-conditional-moves-button`, then `conditional-move-saved`.
+  `reset-analysis-button`, ‹ ›.
 - **Opening explorer** (a screen, from either analysis board's
   `opening-explorer-button`): `opening-explorer`, its own board,
-  `opening-name`, rows `explorer-move-<uci>` (book moves, with
-  `explorer-results-<uci>` where games here played it) or
-  `explorer-empty`, and `opening-explorer-toolbar` (`flip-board-button`,
-  ‹ ›). `header-back` takes the line back to the analysis.
+  the `move-list`, `explorer-opening`, rows `explorer-move-<uci>` (book
+  moves, with `explorer-games-<uci>` and `explorer-results-<uci>`) or
+  `explorer-empty` ("No results"), and `opening-explorer-toolbar`
+  (`flip-board-button`, ‹ ›). `header-back` returns to the analysis,
+  on the line explored.
 - **Challenge sheet**: `challenge-sheet`, `challenge-time-<label>` (e.g.
   `challenge-time-3+2`), `challenge-rated-switch`,
   `send-challenge-button`, `challenge-error`.
