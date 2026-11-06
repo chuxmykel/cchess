@@ -17,7 +17,7 @@ export type UserProfileState =
 // signed-in player sees them.
 export function useUserProfile(username: string): {
   state: UserProfileState;
-  reload: () => void;
+  reload: () => Promise<void>;
 } {
   const { authorized } = useAuthSession();
   const [state, setState] = useState<UserProfileState>({ status: 'loading' });
@@ -26,7 +26,7 @@ export function useUserProfile(username: string): {
   const reload = useCallback(() => {
     latestRequest.current += 1;
     const requestId = latestRequest.current;
-    authorized((token) =>
+    return authorized((token) =>
       Promise.all([
         getUserProfile(username, token),
         getUserActivity(username, token),

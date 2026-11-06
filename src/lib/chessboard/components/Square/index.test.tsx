@@ -19,6 +19,15 @@ describe('Square', () => {
     expect(Square).toBeDefined();
   });
 
+  it('shows no coordinates when they are turned off', async () => {
+    const screen = await render(
+      <Square colors={colors} rank={1} file={'a'} coordinates={false} />,
+    );
+
+    expect(screen.queryByText('a')).toBeNull();
+    expect(screen.queryByText('1')).toBeNull();
+  });
+
   describe("from white's perspective", () => {
     it("should display coordinates if it's an a file square", async () => {
       const screen = await renderChessBoardSquareWithCoordinates();

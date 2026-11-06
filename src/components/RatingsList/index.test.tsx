@@ -13,6 +13,7 @@ describe('RatingsList', () => {
       'rating-blitz',
       'rating-rapid',
       'rating-classical',
+      'rating-daily',
     ]);
   });
 

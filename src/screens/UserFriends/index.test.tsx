@@ -139,4 +139,14 @@ describe('UserFriends', () => {
     await act(async () => {});
     expect(screen.getByTestId('friend-row-bea')).toBeTruthy();
   });
+
+  it('fetches the friends again when pulled down', async () => {
+    const { screen } = await renderScreen([bea]);
+    (getUserFriends as jest.Mock).mockResolvedValue([bea, cal]);
+
+    const { refreshControl } = screen.getByTestId('user-friends-list').props;
+    await act(async () => refreshControl.props.onRefresh());
+
+    expect(screen.getByTestId('friend-row-cal')).toBeTruthy();
+  });
 });

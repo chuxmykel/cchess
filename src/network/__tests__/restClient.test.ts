@@ -8,8 +8,20 @@ import {
   getMe,
   isGameBookmarked,
   setGameBookmarked,
+  cancelDailySeek,
+  createDailySeek,
+  getConditionalMoves,
+  saveConditionalMoves,
+  getDailyGames,
+  getExplorer,
+  getGameNotes,
+  saveGameNotes,
   getMyActiveGame,
+  getMyGameCounts,
+  getUserGameCounts,
+  getMyDailySeeks,
   getMyGames,
+  getUserGames,
   isUsernameAvailable,
   refreshSession,
   register,
@@ -173,18 +185,50 @@ describe('restClient', () => {
       });
     });
 
-    it('fetches my most recent games, limited to the given count', async () => {
+    it('fetches my most recent finished games, limited to the given count', async () => {
       const transport = stubTransport(respondWith([]));
 
       await getMyGames('access-123', 10);
 
       const request = sentRequest(transport);
       expect(request.url).toBe('/games');
-      expect(request.params).toEqual({ limit: 10 });
+      expect(request.params).toEqual({ limit: 10, status: 'completed' });
       expect(request.headers.Authorization).toBe('Bearer access-123');
     });
 
-    it("finds the game you're in the middle of", async () => {
+    it("fetches a player's finished games, a page at a time", async () => {
+      const transport = stubTransport(respondWith([]));
+
+      await getUserGames(
+        'magnus',
+        { limit: 20, before: '2026-01-01T00:00:00.000Z' },
+        'access-123',
+      );
+
+      const request = sentRequest(transport);
+      expect(request.url).toBe('/users/magnus/games');
+      expect(request.params).toEqual({
+        limit: 20,
+        before: '2026-01-01T00:00:00.000Z',
+        status: 'completed',
+      });
+    });
+
+    it("counts my finished games, and a player's, by result and type", async () => {
+      const counts = [{ result: 'win', gameType: 'blitz', count: 3 }];
+      const transport = stubTransport(respondWith(counts));
+
+      await expect(getMyGameCounts('access-123')).resolves.toEqual(counts);
+      expect(sentRequest(transport).url).toBe('/games/counts');
+      expect(sentRequest(transport).headers.Authorization).toBe(
+        'Bearer access-123',
+      );
+
+      await getUserGameCounts('magnus', 'access-123');
+      expect(transport.mock.calls[1][0].url).toBe('/users/magnus/games/counts');
+    });
+
+    it("finds the live game you're in the middle of, not a daily one", async () => {
       const transport = stubTransport(respondWith([{ id: 'live-game' }]));
 
       await expect(getMyActiveGame('access-123')).resolves.toEqual({
@@ -193,7 +237,85 @@ describe('restClient', () => {
 
       const request = sentRequest(transport);
       expect(request.url).toBe('/games');
-      expect(request.params).toEqual({ status: 'active', limit: 1 });
+      expect(request.params).toEqual({
+        status: 'active',
+        kind: 'live',
+        limit: 1,
+      });
+    });
+
+    it('fetches your daily games in progress', async () => {
+      const transport = stubTransport(respondWith([{ id: 'daily-game' }]));
+
+      await expect(getDailyGames('access-123', 10)).resolves.toEqual([
+        { id: 'daily-game' },
+      ]);
+
+      const request = sentRequest(transport);
+      expect(request.url).toBe('/games/daily');
+      expect(request.params).toEqual({ limit: 10 });
+      expect(request.headers.Authorization).toBe('Bearer access-123');
+    });
+
+    it('asks the explorer about a position', async () => {
+      const transport = stubTransport(
+        respondWith({ totalGames: 0, moves: [] }),
+      );
+
+      await getExplorer('8/8/8/8/8/8/8/K6k w - - 0 1', 'access-123');
+
+      expect(sentRequest(transport).url).toBe('/explorer');
+      expect(sentRequest(transport).params).toEqual({
+        fen: '8/8/8/8/8/8/8/K6k w - - 0 1',
+      });
+    });
+
+    it('reads and saves conditional moves, all at once', async () => {
+      const reading = stubTransport(respondWith({ basePly: null, lines: [] }));
+      await getConditionalMoves('game-1', 'access-123');
+      expect(sentRequest(reading).url).toBe('/games/game-1/conditional-moves');
+
+      const saving = stubTransport(respondWith({ basePly: 3, lines: [] }));
+      await saveConditionalMoves('game-1', 3, [['e7e5', 'g1f3']], 'access-123');
+      expect(sentRequest(saving).method).toBe('put');
+      expect(JSON.parse(sentRequest(saving).data)).toEqual({
+        basePly: 3,
+        lines: [['e7e5', 'g1f3']],
+      });
+    });
+
+    it('reads and saves your notes on a game', async () => {
+      const reading = stubTransport(respondWith({ body: '', updatedAt: null }));
+      await getGameNotes('game-1', 'access-123');
+      expect(sentRequest(reading).url).toBe('/games/game-1/notes');
+
+      const saving = stubTransport(respondWith({ body: 'x', updatedAt: null }));
+      await saveGameNotes('game-1', 'x', 'access-123');
+      expect(sentRequest(saving).method).toBe('put');
+      expect(JSON.parse(sentRequest(saving).data)).toEqual({ body: 'x' });
+    });
+
+    it('posts, lists and withdraws daily seeks', async () => {
+      const seek = {
+        days: 3,
+        rated: true,
+        ratingRange: { below: 200, above: 200 },
+        color: 'random' as const,
+      };
+      const posting = stubTransport(respondWith({ status: 'queued' }));
+      await createDailySeek(seek, 'access-123');
+      expect(sentRequest(posting).method).toBe('post');
+      expect(sentRequest(posting).url).toBe('/daily-seeks');
+      expect(JSON.parse(sentRequest(posting).data)).toEqual(seek);
+
+      const listing = stubTransport(respondWith([]));
+      await getMyDailySeeks('access-123');
+      expect(sentRequest(listing).url).toBe('/daily-seeks');
+
+      const withdrawing = stubTransport(respondWith(null));
+      await cancelDailySeek('seek-1', 'access-123');
+      expect(sentRequest(withdrawing).method).toBe('delete');
+      expect(sentRequest(withdrawing).url).toBe('/daily-seeks/seek-1');
     });
 
     it('finds no game when none is in progress', async () => {

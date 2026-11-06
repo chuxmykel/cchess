@@ -15,7 +15,13 @@ interface RatingsListProps {
   onSelect?: (category: GameType) => void;
 }
 
-const CATEGORIES: GameType[] = ['bullet', 'blitz', 'rapid', 'classical'];
+const CATEGORIES: GameType[] = [
+  'bullet',
+  'blitz',
+  'rapid',
+  'classical',
+  'daily',
+];
 
 function gamesPlayedLabel(gamesPlayed: number): string {
   return gamesPlayed === 1 ? '1 game' : `${gamesPlayed} games`;

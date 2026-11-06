@@ -343,4 +343,17 @@ describe('UserProfile', () => {
     );
     expect(screen.getByTestId('profile-watch')).toBeTruthy();
   });
+
+  it('fetches the profile, friends and games again when pulled down', async () => {
+    const { screen } = await renderScreen(makeUserProfile());
+    jest.clearAllMocks();
+
+    const { refreshControl } = screen.getByTestId('user-profile-screen').props;
+    await act(async () => refreshControl.props.onRefresh());
+
+    expect(getUserProfile).toHaveBeenCalledTimes(1);
+    expect(getUserActivity).toHaveBeenCalledTimes(1);
+    expect(getUserFriends).toHaveBeenCalledTimes(1);
+    expect(getUserGames).toHaveBeenCalledTimes(1);
+  });
 });

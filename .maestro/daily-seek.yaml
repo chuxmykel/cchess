@@ -1,0 +1,30 @@
+appId: host.exp.Exponent
+tags:
+  - needs-live-server
+---
+# A daily game sought from New Game, posted and left: with nobody else
+# seeking those days, it waits under Home's Daily games, and its cross
+# withdraws it - the section going with it, having nothing else to show.
+# Needs only the game server, no opponent.
+- runFlow: common/to-new-game.yaml
+- tapOn:
+    id: "time-control-trigger"
+- tapOn:
+    id: "time-control-option-daily-14 days"
+- assertNotVisible:
+    id: "time-control-option-daily-14 days"
+- tapOn:
+    id: "start-new-game-button"
+# Back on Home, waiting for an opponent.
+- extendedWaitUntil:
+    visible:
+      text: "Finding opponent"
+    timeout: 10000
+- assertVisible:
+    id: "daily-games-section"
+- tapOn:
+    id: "daily-seek-.*-cancel"
+- extendedWaitUntil:
+    notVisible:
+      id: "daily-games-section"
+    timeout: 10000

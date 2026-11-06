@@ -53,6 +53,7 @@ describe('LiveGame', () => {
       goBack: jest.fn(),
       setOptions: jest.fn(),
       popToTop: jest.fn(),
+      replace: jest.fn(),
     };
     const props = {
       navigation,
@@ -289,6 +290,24 @@ describe('LiveGame', () => {
     expect(screen.queryByTestId('seeking-content')).toBeNull();
     expect(seekCount(socket)).toBe(0);
     expect(socket.emit).toHaveBeenCalledWith('game:join', { gameId: 'game-1' });
+  });
+
+  it('sends a daily game on to the daily game screen', async () => {
+    const { screenPromise, trigger, navigation } = renderScreen({
+      gameId: 'game-1',
+    });
+    await screenPromise;
+
+    await act(() =>
+      trigger(
+        'game:state',
+        makeGameSnapshot({ id: 'game-1', gameType: 'daily' }),
+      ),
+    );
+
+    expect(navigation.replace).toHaveBeenCalledWith('DailyGame', {
+      gameId: 'game-1',
+    });
   });
 
   it('plays a rematch in place once both players agree, colors swapped', async () => {

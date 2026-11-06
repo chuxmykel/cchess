@@ -176,6 +176,16 @@ describe('GameViewer', () => {
     });
   });
 
+  it('opens my own daily game in progress on the daily game screen', async () => {
+    const { navigation } = await renderScreen(
+      makeGameSnapshot({ gameType: 'daily', initialSeconds: 86400 }),
+    );
+
+    expect(navigation.replace).toHaveBeenCalledWith('DailyGame', {
+      gameId: 'game-1',
+    });
+  });
+
   it("watches someone else's game in progress", async () => {
     const { screen, socket } = await renderScreen(
       makeGameSnapshot(),

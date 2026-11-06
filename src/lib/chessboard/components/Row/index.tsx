@@ -10,6 +10,7 @@ interface RowProps {
   };
   rank: number;
   orientation?: Color;
+  coordinates?: boolean;
   onSquarePress?: (square: SquareName) => void;
 }
 
@@ -17,6 +18,7 @@ const Row: React.FC<RowProps> = ({
   colors,
   rank,
   orientation = 'w',
+  coordinates = true,
   onSquarePress = () => {},
 }) => {
   return (
@@ -25,12 +27,16 @@ const Row: React.FC<RowProps> = ({
         const fileIndex = orientation === 'b' ? BOARD_SQUARES - 1 - idx : idx;
         const file = String.fromCharCode(CHAR_CODE_FOR_LETTER_A + fileIndex);
         return (
+          // Keyed by where it's drawn, not the square it is: a flipped
+          // board's squares are the same colours in the same places, so
+          // turning it round re-renders them rather than making 64 anew.
           <Square
-            key={`${file}${rank}`}
+            key={idx}
             colors={colors}
             rank={rank}
             file={file}
             orientation={orientation}
+            coordinates={coordinates}
             onPress={() => onSquarePress(`${file}${rank}` as SquareName)}
           />
         );

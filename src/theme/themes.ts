@@ -69,6 +69,9 @@ export interface ThemeColors {
   warning: string;
   // An unread count's dot.
   badge: string;
+  // The pill behind a section's count: a see-through grey, the same in
+  // both modes, so it shows a shade off the page in either.
+  countPill: string;
   // A friend who isn't online.
   presenceOffline: string;
   // Captured pieces under a player's name, either side's, as lichess draws
@@ -91,9 +94,18 @@ export interface ThemeColors {
   ratingEven: string;
   // A category's results, in its stats and a player's activity.
   results: { win: string; draw: string; loss: string };
-  gameType: { bullet: string; blitz: string; rapid: string; classical: string };
+  gameType: {
+    bullet: string;
+    blitz: string;
+    rapid: string;
+    classical: string;
+    daily: string;
+  };
 
   chart: { selection: string; guide: string; grid: string };
+  // The opening explorer's bar of how a move's games ended: white's wins,
+  // draws, black's - as lichess draws it.
+  explorer: { white: string; draw: string; black: string };
   // EmptyState's drawings.
   illustration: { light: string; pale: string; grey: string; dark: string };
 
@@ -210,6 +222,7 @@ export const lightTheme: Theme = {
     success: '#4caf50',
     warning: '#c99a1c',
     badge: '#e53935',
+    countPill: 'rgba(120, 120, 128, 0.2)',
     presenceOffline: '#bbb',
     capturedPiece: '#888',
 
@@ -230,9 +243,11 @@ export const lightTheme: Theme = {
       blitz: '#E8601C',
       rapid: '#8E6E53',
       classical: '#3A3A3A',
+      daily: '#2E9C8F',
     },
 
     chart: { selection: '#A8C98A', guide: '#c4c4c4', grid: '#e0e0e0' },
+    explorer: { white: '#f5f5f5', draw: '#a3a3a3', black: '#3a3a3a' },
     illustration: {
       light: '#dfe8d3',
       pale: '#eef3e8',
@@ -293,6 +308,7 @@ export const darkTheme: Theme = {
     success: '#66bb6a',
     warning: '#d6a930',
     badge: '#e53935',
+    countPill: 'rgba(120, 120, 128, 0.2)',
     presenceOffline: '#6d6a65',
     capturedPiece: '#888',
 
@@ -313,9 +329,11 @@ export const darkTheme: Theme = {
       blitz: '#F0763A',
       rapid: '#B08F72',
       classical: '#bab7b2',
+      daily: '#4FB8AA',
     },
 
     chart: { selection: '#A8C98A', guide: '#5a5752', grid: '#33312d' },
+    explorer: { white: '#e8e6e3', draw: '#7a7772', black: '#161512' },
     illustration: {
       light: '#33402a',
       pale: '#232b1c',

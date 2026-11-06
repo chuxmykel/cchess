@@ -1,8 +1,9 @@
 import { AxiosError, create } from 'axios';
+import type { Color, Square } from 'chess.js';
 
 import { GameType } from '../domain/types';
 import { SERVER_URL } from './env';
-import type { ColorChoice, GameSnapshot } from './socketEvents';
+import type { ColorChoice, GameSnapshot, RatingRange } from './socketEvents';
 
 export class ApiError extends Error {
   status: number;
@@ -139,6 +140,11 @@ export type GameSummary = {
   endedAt: string | null;
 };
 
+// A history lists games played to an end: one in progress, a daily game
+// say, would take a place in the page and push a finished one out. (Aborted
+// games are left out of a history unless asked for.)
+const FINISHED = 'completed';
+
 export type GamesPage = {
   limit: number;
   /** Only games created before this ISO date. */
@@ -153,22 +159,239 @@ export async function getMyGames(
   return (
     await apiClient.get<GameSummary[]>('/games', {
       ...bearer(accessToken),
-      params: { limit, before },
+      params: { limit, before, status: FINISHED },
     })
   ).data;
 }
 
-/** The game you're in the middle of, if any. */
+/** The live game you're in the middle of, if any - not a daily one, of
+ * which you may have many, played whenever. */
 export async function getMyActiveGame(
   accessToken: string,
 ): Promise<GameSummary | null> {
   const games = (
     await apiClient.get<GameSummary[]>('/games', {
       ...bearer(accessToken),
-      params: { status: 'active', limit: 1 },
+      params: { status: 'active', kind: 'live', limit: 1 },
     })
   ).data;
   return games[0] ?? null;
+}
+
+export type DailyGameOpponent = {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarColor: string;
+};
+
+/** A daily game in progress, as your list of them shows it. */
+export type DailyGame = {
+  id: string;
+  fen: string;
+  turn: Color;
+  lastMove: { from: Square; to: Square } | null;
+  playedAsWhite: boolean;
+  myTurn: boolean;
+  daysPerMove: number;
+  /** When the side to move runs out of time. */
+  moveDeadlineAt: string;
+  rated: boolean;
+  opponent: DailyGameOpponent;
+};
+
+/** A daily game sought: matched at once with a seek already waiting that
+ * agrees, or left waiting - however long - for one that will. */
+export type NewDailySeek = {
+  days: number;
+  rated: boolean;
+  ratingRange: RatingRange;
+  color: ColorChoice;
+};
+
+export type DailySeek = {
+  id: string;
+  days: number;
+  rated: boolean;
+  ratingRange: RatingRange | null;
+  color: ColorChoice;
+  createdAt: string;
+};
+
+export type DailySeekResult =
+  | { status: 'queued'; seek: DailySeek }
+  | { status: 'matched'; game: GameSnapshot };
+
+export async function createDailySeek(
+  seek: NewDailySeek,
+  accessToken: string,
+): Promise<DailySeekResult> {
+  return (
+    await apiClient.post<DailySeekResult>(
+      '/daily-seeks',
+      seek,
+      bearer(accessToken),
+    )
+  ).data;
+}
+
+/** Your daily seeks still waiting, oldest first. */
+export async function getMyDailySeeks(
+  accessToken: string,
+): Promise<DailySeek[]> {
+  return (await apiClient.get<DailySeek[]>('/daily-seeks', bearer(accessToken)))
+    .data;
+}
+
+export async function cancelDailySeek(
+  seekId: string,
+  accessToken: string,
+): Promise<void> {
+  await apiClient.delete(
+    `/daily-seeks/${encodeURIComponent(seekId)}`,
+    bearer(accessToken),
+  );
+}
+
+/** A move played from a position in finished games here, and how those
+ * games ended. */
+export type ExplorerMove = {
+  san: string;
+  uci: string;
+  games: number;
+  whiteWins: number;
+  draws: number;
+  blackWins: number;
+};
+
+export type ExplorerPosition = {
+  totalGames: number;
+  /** The most played first. */
+  moves: ExplorerMove[];
+};
+
+/** The opening explorer, from the games finished here - games still being
+ * played aren't in it. */
+export async function getExplorer(
+  fen: string,
+  accessToken: string,
+): Promise<ExplorerPosition> {
+  return (
+    await apiClient.get<ExplorerPosition>('/explorer', {
+      ...bearer(accessToken),
+      params: { fen },
+    })
+  ).data;
+}
+
+/** Your conditional moves in a daily game: each line the opponent's move,
+ * your reply, theirs... in UCI, from the game's position after `basePly`
+ * moves - null, with no lines, when there are none. */
+export type ConditionalLines = { basePly: number | null; lines: string[][] };
+
+function conditionalMovesPath(gameId: string): string {
+  return `/games/${encodeURIComponent(gameId)}/conditional-moves`;
+}
+
+export async function getConditionalMoves(
+  gameId: string,
+  accessToken: string,
+): Promise<ConditionalLines> {
+  return (
+    await apiClient.get<ConditionalLines>(
+      conditionalMovesPath(gameId),
+      bearer(accessToken),
+    )
+  ).data;
+}
+
+/** Saves lines, from the game's position after `basePly` moves - the
+ * opponent to move - in place of any saved; none clears them. */
+export async function saveConditionalMoves(
+  gameId: string,
+  basePly: number,
+  lines: string[][],
+  accessToken: string,
+): Promise<ConditionalLines> {
+  return (
+    await apiClient.put<ConditionalLines>(
+      conditionalMovesPath(gameId),
+      { basePly, lines },
+      bearer(accessToken),
+    )
+  ).data;
+}
+
+/** Your own notes on a game, seen by nobody else. */
+export type GameNotes = { body: string; updatedAt: string | null };
+
+export async function getGameNotes(
+  gameId: string,
+  accessToken: string,
+): Promise<GameNotes> {
+  return (
+    await apiClient.get<GameNotes>(
+      `/games/${encodeURIComponent(gameId)}/notes`,
+      bearer(accessToken),
+    )
+  ).data;
+}
+
+/** Replaces your notes on a game; none clears them. */
+export async function saveGameNotes(
+  gameId: string,
+  body: string,
+  accessToken: string,
+): Promise<GameNotes> {
+  return (
+    await apiClient.put<GameNotes>(
+      `/games/${encodeURIComponent(gameId)}/notes`,
+      { body },
+      bearer(accessToken),
+    )
+  ).data;
+}
+
+/** Your daily games in progress: those on your move first, then each by
+ * when its move runs out. */
+export async function getDailyGames(
+  accessToken: string,
+  limit?: number,
+): Promise<DailyGame[]> {
+  return (
+    await apiClient.get<DailyGame[]>('/games/daily', {
+      ...bearer(accessToken),
+      params: { limit },
+    })
+  ).data;
+}
+
+/** How many finished games ended one way, in one game type, for the
+ * player whose games they are - one for each pair they've played. */
+export type GameCount = {
+  result: 'win' | 'draw' | 'loss';
+  gameType: GameType;
+  count: number;
+};
+
+export async function getMyGameCounts(
+  accessToken: string,
+): Promise<GameCount[]> {
+  return (
+    await apiClient.get<GameCount[]>('/games/counts', bearer(accessToken))
+  ).data;
+}
+
+export async function getUserGameCounts(
+  username: string,
+  accessToken: string,
+): Promise<GameCount[]> {
+  return (
+    await apiClient.get<GameCount[]>(
+      `${userPath(username)}/games/counts`,
+      bearer(accessToken),
+    )
+  ).data;
 }
 
 export async function getUserGames(
@@ -179,7 +402,7 @@ export async function getUserGames(
   return (
     await apiClient.get<GameSummary[]>(`${userPath(username)}/games`, {
       ...bearer(accessToken),
-      params: page,
+      params: { ...page, status: FINISHED },
     })
   ).data;
 }

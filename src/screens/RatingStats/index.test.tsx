@@ -138,4 +138,14 @@ describe('RatingStats', () => {
 
     expect(screen.getByTestId('rating-stats-screen')).toBeTruthy();
   });
+
+  it('fetches the stats again when pulled down', async () => {
+    (getRatingStats as jest.Mock).mockResolvedValue(makeRatingStats());
+    const { screen } = await renderScreen();
+
+    const { refreshControl } = screen.getByTestId('rating-stats-screen').props;
+    await act(async () => refreshControl.props.onRefresh());
+
+    expect(getRatingStats).toHaveBeenCalledTimes(2);
+  });
 });

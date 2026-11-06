@@ -202,4 +202,21 @@ describe('Friends', () => {
 
     expect(social.reload).toHaveBeenCalled();
   });
+
+  it.each([
+    ['tab-online', 'friends-list'],
+    ['tab-requests', 'friend-requests-scroll'],
+  ])(
+    'fetches friends and requests again when %s is pulled down',
+    async (tab, list) => {
+      const { screen, social } = await renderScreen();
+      await fireEvent.press(screen.getByTestId(tab));
+      (social.reload as jest.Mock).mockClear();
+
+      const { refreshControl } = screen.getByTestId(list).props;
+      await act(async () => refreshControl.props.onRefresh());
+
+      expect(social.reload).toHaveBeenCalledTimes(1);
+    },
+  );
 });

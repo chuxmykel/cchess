@@ -82,6 +82,9 @@ export interface ChessboardProps {
   animation?: BoardAnimation;
   // Drawn only, not touched: no gestures, and touches pass through.
   viewOnly?: boolean;
+  // The ranks and files in the squares' corners; on unless turned off - for
+  // a board too small to read them.
+  coordinates?: boolean;
   // Every piece has reached its square, after the board's first drawn or
   // given a new position.
   onSettled?: () => void;
@@ -117,6 +120,7 @@ const BoardCore = memo(function BoardCore({
   check = null,
   animation = DEFAULT_ANIMATION,
   viewOnly = false,
+  coordinates = true,
   onSettled,
   onDragLog,
   testID = 'chessboard',
@@ -349,6 +353,7 @@ const BoardCore = memo(function BoardCore({
       <BoardSurface
         colors={colors}
         orientation={orientation}
+        coordinates={coordinates}
         onSquarePress={viewOnly ? undefined : handleTap}
       />
 

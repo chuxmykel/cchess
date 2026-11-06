@@ -26,7 +26,7 @@ export function useRatingStats(
   username: string,
   category: GameType,
   period: RatingPeriod,
-): { state: RatingStatsState; reload: () => void } {
+): { state: RatingStatsState; reload: () => Promise<void> } {
   const { authorized } = useAuthSession();
   const [stats, setStats] = useState<RatingStats | null>(null);
   // Which category and period last failed to load, as `category:period`.
@@ -36,7 +36,9 @@ export function useRatingStats(
   const reload = useCallback(() => {
     latestRequest.current += 1;
     const requestId = latestRequest.current;
-    authorized((token) => getRatingStats(username, category, period, token))
+    return authorized((token) =>
+      getRatingStats(username, category, period, token),
+    )
       .then((loaded) => {
         if (requestId === latestRequest.current) {
           setStats(loaded);

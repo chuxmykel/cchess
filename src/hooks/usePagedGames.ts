@@ -14,7 +14,7 @@ export type PagedGames = {
   hasMore: boolean;
   isLoadingMore: boolean;
   loadMore: () => void;
-  reload: () => void;
+  reload: () => Promise<void>;
 };
 
 // A player's finished games, newest first, a page at a time.
@@ -30,10 +30,12 @@ export function usePagedGames(
   const latestRequest = useRef(0);
 
   const load = useCallback(
-    (before?: string) => {
+    (before?: string): Promise<void> => {
       latestRequest.current += 1;
       const requestId = latestRequest.current;
-      authorized((token) => fetchPage({ limit: pageSize, before }, token))
+      return authorized((token) =>
+        fetchPage({ limit: pageSize, before }, token),
+      )
         .then((page) => {
           if (requestId !== latestRequest.current) return;
           const finished = page.filter((game) => game.status !== 'active');

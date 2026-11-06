@@ -79,6 +79,55 @@ describe('useAnalysisTree', () => {
     ).toEqual(['e4', 'e5', 'c5', 'Nf3', 'Nf3']);
   });
 
+  it('keeps one line with singleLine, a different move replacing what followed', async () => {
+    const { result } = await renderHook(() =>
+      useAnalysisTree(
+        {
+          startFen: DEFAULT_POSITION,
+          uciMoves: ['e2e4', 'e7e5', 'g1f3'],
+          initialPly: 1,
+        },
+        { singleLine: true },
+      ),
+    );
+
+    await act(async () => result.current.recordMove({ from: 'c7', to: 'c5' }));
+
+    const sans = () =>
+      result.current.line
+        .slice(1)
+        .map((id) => result.current.tree.nodes[id].move?.san);
+    expect(sans()).toEqual(['e4', 'c5']);
+    expect(result.current.canGoForward).toBe(false);
+
+    // The move that followed, played again, keeps the line as it is.
+    await act(async () => result.current.recordMove({ from: 'g1', to: 'f3' }));
+    await act(async () => result.current.back());
+    await act(async () => result.current.recordMove({ from: 'g1', to: 'f3' }));
+    expect(sans()).toEqual(['e4', 'c5', 'Nf3']);
+  });
+
+  it('plays a line from the start, along the moves already there and on', async () => {
+    const { result } = await renderHook(() =>
+      useAnalysisTree({
+        startFen: DEFAULT_POSITION,
+        uciMoves: ['e2e4', 'e7e5'],
+        initialPly: 0,
+      }),
+    );
+
+    await act(async () =>
+      result.current.playLine([
+        { from: 'e2', to: 'e4' },
+        { from: 'e7', to: 'e5' },
+        { from: 'g1', to: 'f3' },
+      ]),
+    );
+
+    expect(sanOf(result)).toBe('Nf3');
+    expect(Object.keys(result.current.tree.nodes)).toHaveLength(4);
+  });
+
   it("goes to a move that's already there rather than adding it again", async () => {
     const { result } = await renderHook(() =>
       useAnalysisTree({

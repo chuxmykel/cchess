@@ -33,6 +33,12 @@ interface GameToolbarProps {
   /** Leave out to hide the chat button. */
   onOpenChat?: () => void;
   unreadChatCount?: number;
+  /** Leave out to hide the analysis button. */
+  onAnalyse?: () => void;
+  /** Leave out to hide the opening explorer button. */
+  onOpenExplorer?: () => void;
+  /** Leave out to hide the flip button. */
+  onFlip?: () => void;
   moveSteps: MoveSteps;
 }
 
@@ -129,6 +135,9 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
   canResign = false,
   onOpenChat,
   unreadChatCount = 0,
+  onAnalyse,
+  onOpenExplorer,
+  onFlip,
   moveSteps,
 }) => {
   const styles = useStyles();
@@ -158,6 +167,30 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
           onPress={onOpenChat}
           badgeCount={unreadChatCount}
           testID="chat-button"
+        />
+      )}
+      {onAnalyse && (
+        <ToolbarButton
+          icon="head-cog-outline"
+          label="Analysis"
+          onPress={onAnalyse}
+          testID="toolbar-analysis-button"
+        />
+      )}
+      {onOpenExplorer && (
+        <ToolbarButton
+          icon="book-open-variant"
+          label="Opening explorer"
+          onPress={onOpenExplorer}
+          testID="opening-explorer-button"
+        />
+      )}
+      {onFlip && (
+        <ToolbarButton
+          icon="rotate-3d-variant"
+          label="Flip board"
+          onPress={onFlip}
+          testID="flip-board-button"
         />
       )}
       <ToolbarButton

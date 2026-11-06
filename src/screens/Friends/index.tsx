@@ -1,6 +1,12 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { Alert, FlatList, View } from 'react-native';
+import {
+  Alert,
+  FlatList,
+  RefreshControl,
+  ScrollView,
+  View,
+} from 'react-native';
 
 import ChallengeSheet from '../../components/ChallengeSheet';
 import EmptyState from '../../components/EmptyState';
@@ -12,6 +18,7 @@ import UserSearchField from '../../components/UserSearchField';
 import UserSearchResults from '../../components/UserSearchResults';
 import { useSocialContext } from '../../context/SocialContext';
 import { useFriendActions } from '../../hooks/useFriendActions';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useToast } from '../../hooks/useToast';
 import { useUserSearch } from '../../hooks/useUserSearch';
 import { Friend } from '../../network/restClient';
@@ -47,7 +54,13 @@ const Friends: React.FC<FriendsProps> = ({ navigation, route }) => {
     toast.show(`Challenge sent to ${friend.displayName}`),
   );
   const [tab, setTab] = useState<FriendsTab>('online');
-  useFocusEffect(social.reload);
+  const reloadSocial = social.reload;
+  useFocusEffect(
+    useCallback(() => {
+      reloadSocial();
+    }, [reloadSocial]),
+  );
+  const refresh = usePullToRefresh(reloadSocial);
   const [searchQuery, setSearchQuery] = useState('');
   const userSearch = useUserSearch(searchQuery);
 
@@ -105,6 +118,18 @@ const Friends: React.FC<FriendsProps> = ({ navigation, route }) => {
   }
 
   function renderRequests() {
+    return (
+      <ScrollView
+        contentContainerStyle={styles.requestsContent}
+        refreshControl={<RefreshControl {...refresh} />}
+        testID="friend-requests-scroll"
+      >
+        {renderRequestCards()}
+      </ScrollView>
+    );
+  }
+
+  function renderRequestCards() {
     if (requestCount === 0) {
       return (
         <EmptyState
@@ -179,6 +204,9 @@ const Friends: React.FC<FriendsProps> = ({ navigation, route }) => {
           ) : (
             <FlatList
               data={shownFriends}
+              refreshControl={<RefreshControl {...refresh} />}
+              contentContainerStyle={styles.friendsContent}
+              testID="friends-list"
               keyExtractor={(friend) => friend.id}
               renderItem={renderFriend}
               ListEmptyComponent={
@@ -230,6 +258,12 @@ const useStyles = makeStyles((t) => ({
   },
   search: {
     padding: t.spacing.lg,
+  },
+  requestsContent: {
+    flexGrow: 1,
+  },
+  friendsContent: {
+    flexGrow: 1,
   },
   requests: {
     gap: t.spacing.sm,

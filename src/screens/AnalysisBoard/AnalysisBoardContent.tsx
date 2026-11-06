@@ -4,33 +4,29 @@ import { useIsFocused } from '@react-navigation/native';
 import { Color } from 'chess.js';
 
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
-import BottomBar from '../../components/BottomBar';
-import { GameBoard } from '../../components/Board';
+import AnalysisView from '../../components/AnalysisView';
 import EngineLines, {
   DEPTH_HEIGHT,
   LINE_HEIGHT,
 } from '../../components/EngineLines';
 import EvalBar, { EVAL_BAR_THICKNESS } from '../../components/EvalBar';
 import GameToolbar from '../../components/GameToolbar';
-import OpeningName from '../../components/OpeningName';
-import PromotionMenu from '../../components/PromotionMenu';
-import VariationMoveList from '../../components/VariationMoveList';
 import { THREAT_DEPTH } from '../../constants/analysis';
-import { ChessGameContext } from '../../context/ChessGameContext';
 import { useAnalysisSettingsContext } from '../../context/AnalysisSettingsContext';
 import { useEngine } from '../../context/EngineContext';
 import { uciToMoveSpec } from '../../domain/analysisTree';
 import { finalScore } from '../../domain/evalScore';
-import { openingAt } from '../../domain/openings';
 import { nullMoveFen } from '../../domain/threat';
-import { useAnalysisBoard } from '../../hooks/useAnalysisBoard';
-import { AnalysisStart, useAnalysisTree } from '../../hooks/useAnalysisTree';
+import { AnalysisStart } from '../../hooks/useAnalysisTree';
+import { useAnalysisWorkspace } from '../../hooks/useAnalysisWorkspace';
 import { useAppIsActive } from '../../hooks/useAppIsActive';
-import { useBoardOrientation } from '../../hooks/useBoardOrientation';
 import { useEngineAnalysis } from '../../hooks/useEngineAnalysis';
-import { useAnalysisSounds } from '../../hooks/useGameSounds';
+import {
+  ExplorerLine,
+  lineTo,
+  useTakeExplorerLine,
+} from '../../hooks/useExplorerLine';
 import { analysisArrows } from '../../utils/analysisArrows';
-import { flipBoardAction } from '../gameMenuActions';
 import { makeStyles, useTheme } from '../../theme';
 
 interface AnalysisBoardContentProps {
@@ -41,6 +37,11 @@ interface AnalysisBoardContentProps {
   // Opens the position editor on the position shown.
   onEditPosition: (fen: string) => void;
   onOpenSettings: () => void;
+  /** The opening explorer, on the line to the position shown. */
+  onOpenExplorer: (line: ExplorerLine, orientation: Color) => void;
+  /** The line the explorer handed back, to go along. */
+  explorerLine?: ExplorerLine;
+  onExplorerLineTaken: () => void;
 }
 
 // An analysis: a board either side can move on, the engine's view of the
@@ -53,22 +54,18 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
   onNewAnalysis,
   onEditPosition,
   onOpenSettings,
+  onOpenExplorer,
+  explorerLine,
+  onExplorerLineTaken,
 }) => {
   const styles = useStyles();
   const { colors } = useTheme();
 
-  const analysis = useAnalysisTree(start);
-  const {
-    game,
-    lastPlayedMove,
-    navigation: steps,
-  } = useAnalysisBoard(start.startFen, analysis);
+  const workspace = useAnalysisWorkspace(start, initialOrientation);
+  const { analysis, game, steps, orientation, flip } = workspace;
   const { settings } = useAnalysisSettingsContext();
-  const { orientation, flip } = useBoardOrientation(initialOrientation);
+  useTakeExplorerLine(analysis, explorerLine, onExplorerLineTaken);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // The move a long press picked, for its variation's menu.
-  const [variationMenuFor, setVariationMenuFor] = useState<string | null>(null);
-  useAnalysisSounds(analysis.current, settings.sounds);
 
   const { fen } = analysis.current;
   const over = useMemo(() => finalScore(fen), [fen]);
@@ -104,10 +101,6 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
     limit: THREAT_LIMIT,
   });
 
-  const opening = useMemo(
-    () => openingAt(analysis.pathFens),
-    [analysis.pathFens],
-  );
   const arrows = useMemo(
     () =>
       game.pendingPromotion
@@ -134,7 +127,6 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
   // Beside the board, the bar takes its width from the board's.
   const isBarBeside = evalBarAt === 'left' || evalBarAt === 'right';
   const boardWidth = isBarBeside ? width - EVAL_BAR_THICKNESS : width;
-  const pieceWidth = boardWidth / 8;
   const evalBar = (
     <EvalBar
       score={over ?? (best.stale ? null : best.lines[0]?.score) ?? null}
@@ -144,7 +136,6 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
   );
 
   const menuActions: ActionSheetAction[] = [
-    flipBoardAction(flip),
     {
       label: 'New analysis',
       onPress: onNewAnalysis,
@@ -162,105 +153,68 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
       testID: 'analysis-settings-action',
     },
   ];
-  const variationActions: ActionSheetAction[] = variationMenuFor
-    ? [
-        {
-          label: 'Promote variation',
-          onPress: () => analysis.promote(variationMenuFor),
-          immediate: true,
-          testID: 'promote-variation-action',
-        },
-        {
-          label: 'Delete from here',
-          onPress: () => analysis.deleteFrom(variationMenuFor),
-          destructive: true,
-          immediate: true,
-          testID: 'delete-variation-action',
-        },
-      ]
-    : [];
+  // The lines keep their room once the game's over - empty, so the board
+  // doesn't jump.
+  const lines = showsLines && (
+    <View
+      style={[
+        styles.lines,
+        { height: settings.engineLineCount * LINE_HEIGHT + DEPTH_HEIGHT },
+      ]}
+      testID="engine-lines-area"
+    >
+      {!over && (
+        <EngineLines
+          status={engine.status.kind}
+          downloadProgress={
+            engine.status.kind === 'downloading' ? engine.status.progress : 0
+          }
+          analysis={best}
+          onRetry={engine.retry}
+          onPlayLine={({ pv }) => {
+            const { from, to, promotion } = uciToMoveSpec(pv[0]);
+            game.attemptMove(from, to, promotion);
+          }}
+        />
+      )}
+    </View>
+  );
 
   return (
-    <View style={styles.screen} testID="analysis-board">
-      {evalBarAt === 'top' && evalBar}
-      {/* The lines keep their room once the game's over - empty, so the
-          board doesn't jump. */}
-      {showsLines && (
-        <View
-          style={[
-            styles.lines,
-            { height: settings.engineLineCount * LINE_HEIGHT + DEPTH_HEIGHT },
-          ]}
-          testID="engine-lines-area"
-        >
-          {!over && (
-            <EngineLines
-              status={engine.status.kind}
-              downloadProgress={
-                engine.status.kind === 'downloading'
-                  ? engine.status.progress
-                  : 0
-              }
-              analysis={best}
-              onRetry={engine.retry}
-              onPlayLine={({ pv }) => {
-                const { from, to, promotion } = uciToMoveSpec(pv[0]);
-                game.attemptMove(from, to, promotion);
-              }}
-            />
-          )}
-        </View>
-      )}
-
-      <View style={styles.boardRow}>
-        {evalBarAt === 'left' && evalBar}
-        <View style={{ width: boardWidth, height: boardWidth }}>
-          <ChessGameContext.Provider value={game}>
-            <GameBoard
-              width={boardWidth}
-              orientation={orientation}
-              lastPlayedMove={lastPlayedMove}
-              slideOnReset
-              arrows={arrows}
-            />
-          </ChessGameContext.Provider>
-          {game.pendingPromotion && (
-            <PromotionMenu
-              promotingColor={game.turn}
-              boardWidth={boardWidth}
-              pieceWidth={pieceWidth}
-              handlePromotion={game.promoteTo}
-              onCancel={game.cancelPromotion}
-            />
-          )}
-        </View>
-        {evalBarAt === 'right' && evalBar}
-      </View>
-      {evalBarAt === 'bottom' && evalBar}
-
-      <OpeningName opening={opening} />
-      <VariationMoveList
-        tokens={analysis.tokens}
-        currentId={analysis.current.id}
-        onSelect={steps.goTo}
-        onLongPress={setVariationMenuFor}
-      />
-
-      <BottomBar>
-        <GameToolbar onOpenMenu={() => setIsMenuOpen(true)} moveSteps={steps} />
-      </BottomBar>
-
+    <AnalysisView
+      workspace={workspace}
+      boardWidth={boardWidth}
+      arrows={arrows}
+      above={
+        <>
+          {evalBarAt === 'top' && evalBar}
+          {lines}
+        </>
+      }
+      left={evalBarAt === 'left' && evalBar}
+      right={evalBarAt === 'right' && evalBar}
+      below={evalBarAt === 'bottom' && evalBar}
+      toolbar={
+        <GameToolbar
+          onOpenMenu={() => setIsMenuOpen(true)}
+          onOpenExplorer={() =>
+            onOpenExplorer(
+              lineTo(analysis.tree, analysis.current.id),
+              orientation,
+            )
+          }
+          onFlip={flip}
+          moveSteps={steps}
+        />
+      }
+      testID="analysis-board"
+    >
       <ActionSheet
         visible={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         actions={menuActions}
       />
-      <ActionSheet
-        visible={variationMenuFor !== null}
-        onClose={() => setVariationMenuFor(null)}
-        actions={variationActions}
-      />
-    </View>
+    </AnalysisView>
   );
 };
 
@@ -269,14 +223,6 @@ export default AnalysisBoardContent;
 const THREAT_LIMIT = { depth: THREAT_DEPTH };
 
 const useStyles = makeStyles((t) => ({
-  screen: {
-    flex: 1,
-    width: '100%',
-    backgroundColor: t.colors.background,
-  },
-  boardRow: {
-    flexDirection: 'row',
-  },
   lines: {
     justifyContent: 'center',
   },

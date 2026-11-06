@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react-native';
 
 import { RECENT_GAMES_STATUS, useRecentGames } from '../useRecentGames';
 import { useAuthSession } from '../../context/AuthSessionContext';
-import { ApiError, getMyGames } from '../../network/restClient';
+import { ApiError, getMyGames, getUserProfile } from '../../network/restClient';
 import {
   makeAuthSession,
   makeBootstrappingAuthSession,
@@ -15,6 +15,7 @@ jest.mock('../../context/AuthSessionContext', () => ({
 jest.mock('../../network/restClient', () => ({
   ...jest.requireActual('../../network/restClient'),
   getMyGames: jest.fn(),
+  getUserProfile: jest.fn(),
 }));
 
 const FINISHED = makeGameSummary({ id: 'finished' });
@@ -37,6 +38,7 @@ function deferred<T>() {
 
 describe('useRecentGames', () => {
   beforeEach(() => {
+    (getUserProfile as jest.Mock).mockResolvedValue({ gamesPlayed: 42 });
     (useAuthSession as jest.Mock).mockReturnValue(
       makeAuthSession({ accessToken: 'token-a' }),
     );
@@ -61,12 +63,31 @@ describe('useRecentGames', () => {
     ]);
     const { result } = await renderHook(() => useRecentGames(10));
 
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
 
     expect(getMyGames).toHaveBeenCalledWith('token-a', 10);
     expect(result.current.recentGames).toEqual({
       status: RECENT_GAMES_STATUS.READY,
       games: [FINISHED, ABORTED],
+      total: 42,
+    });
+  });
+
+  it("shows the games without a total when it can't be had", async () => {
+    (getMyGames as jest.Mock).mockResolvedValue([FINISHED]);
+    (getUserProfile as jest.Mock).mockRejectedValue(new Error('offline'));
+    const { result } = await renderHook(() => useRecentGames(10));
+
+    await act(async () => {
+      result.current.reload();
+    });
+
+    expect(result.current.recentGames).toEqual({
+      status: RECENT_GAMES_STATUS.READY,
+      games: [FINISHED],
+      total: null,
     });
   });
 
@@ -74,7 +95,9 @@ describe('useRecentGames', () => {
     (getMyGames as jest.Mock).mockRejectedValue(new ApiError(500, 'boom'));
     const { result } = await renderHook(() => useRecentGames(10));
 
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
 
     expect(result.current.recentGames.status).toBe(RECENT_GAMES_STATUS.ERROR);
   });
@@ -85,19 +108,26 @@ describe('useRecentGames', () => {
       .mockRejectedValueOnce(new ApiError(0, 'Network Error'));
     const { result } = await renderHook(() => useRecentGames(10));
 
-    await act(async () => result.current.reload());
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
+    await act(async () => {
+      result.current.reload();
+    });
 
     expect(result.current.recentGames).toEqual({
       status: RECENT_GAMES_STATUS.READY,
       games: [FINISHED],
+      total: 42,
     });
   });
 
   it("goes back to loading when the account changes, instead of showing the last account's games", async () => {
     (getMyGames as jest.Mock).mockResolvedValue([FINISHED]);
     const { result, rerender } = await renderHook(() => useRecentGames(10));
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
 
     (useAuthSession as jest.Mock).mockReturnValue(
       makeAuthSession({ user: { id: 'another-user' } }),
@@ -110,7 +140,9 @@ describe('useRecentGames', () => {
   it('keeps showing the games when only the access token is refreshed', async () => {
     (getMyGames as jest.Mock).mockResolvedValue([FINISHED]);
     const { result, rerender } = await renderHook(() => useRecentGames(10));
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
 
     (useAuthSession as jest.Mock).mockReturnValue(
       makeAuthSession({ accessToken: 'refreshed-token' }),
@@ -120,6 +152,7 @@ describe('useRecentGames', () => {
     expect(result.current.recentGames).toEqual({
       status: RECENT_GAMES_STATUS.READY,
       games: [FINISHED],
+      total: 42,
     });
   });
 
@@ -130,13 +163,18 @@ describe('useRecentGames', () => {
       .mockResolvedValueOnce([ABORTED]);
     const { result } = await renderHook(() => useRecentGames(10));
 
-    await act(async () => result.current.reload());
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
+    await act(async () => {
+      result.current.reload();
+    });
     await act(async () => slow.resolve([FINISHED]));
 
     expect(result.current.recentGames).toEqual({
       status: RECENT_GAMES_STATUS.READY,
       games: [ABORTED],
+      total: 42,
     });
   });
 
@@ -146,7 +184,9 @@ describe('useRecentGames', () => {
     );
     const { result } = await renderHook(() => useRecentGames(10));
 
-    await act(async () => result.current.reload());
+    await act(async () => {
+      result.current.reload();
+    });
 
     expect(getMyGames).not.toHaveBeenCalled();
     expect(result.current.recentGames.status).toBe(RECENT_GAMES_STATUS.LOADING);

@@ -32,7 +32,7 @@ describe('ChallengeCard', () => {
     await act(() => jest.advanceTimersByTime(0));
 
     expect(screen.getByText('Judit Polgar challenges you')).toBeTruthy();
-    expect(screen.getByText('5+0 • Rated • 90s')).toBeTruthy();
+    expect(screen.getByText('5+0 • Rated • 2m')).toBeTruthy();
     await fireEvent.press(
       screen.getByTestId(`accept-challenge-${challenge.id}`),
     );
@@ -41,6 +41,42 @@ describe('ChallengeCard', () => {
     );
     expect(onAccept).toHaveBeenCalled();
     expect(onDecline).toHaveBeenCalled();
+  });
+
+  it('counts down in seconds only once under a minute is left', async () => {
+    const screen = await render(
+      <ChallengeCard
+        challenge={challenge}
+        direction="outgoing"
+        onCancel={jest.fn()}
+      />,
+    );
+    await act(() => jest.advanceTimersByTime(0));
+    expect(screen.getByText('5+0 • Rated • 2m')).toBeTruthy();
+
+    await act(() => jest.advanceTimersByTime(31_000));
+
+    expect(screen.getByText('5+0 • Rated • 59s')).toBeTruthy();
+  });
+
+  it("shows a daily challenge's days left, not seconds", async () => {
+    const screen = await render(
+      <ChallengeCard
+        challenge={makeChallenge({
+          initialSeconds: 3 * 24 * 60 * 60,
+          incrementSeconds: 0,
+          gameType: 'daily',
+          expiresAt: new Date(
+            NOW.getTime() + 3 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+        })}
+        direction="outgoing"
+        onCancel={jest.fn()}
+      />,
+    );
+    await act(() => jest.advanceTimersByTime(0));
+
+    expect(screen.getByText('3 days • Rated • 3 days')).toBeTruthy();
   });
 
   it('lets me cancel a challenge I sent', async () => {

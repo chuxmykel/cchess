@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { memo, useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -63,12 +63,24 @@ const PieceImage: React.FC<PieceImageProps> = ({
           ]}
           testID={inDanger ? 'danger-glow' : undefined}
         >
-          <SvgXml xml={svg} width={width} height={width} testID="drawing" />
+          <Drawing svg={svg} width={width} />
         </View>
       </Animated.View>
     </View>
   );
 };
+
+// The SVG itself, drawn again only for a new piece or size - not as the
+// board turns round, which every piece's upright turn follows.
+const Drawing = memo(function Drawing({
+  svg,
+  width,
+}: {
+  svg: string;
+  width: number;
+}) {
+  return <SvgXml xml={svg} width={width} height={width} testID="drawing" />;
+});
 
 export default PieceImage;
 

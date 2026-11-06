@@ -161,7 +161,8 @@ resign or abort from the app (see `examples/resign.yaml` /
   Analysis, Profile. Only Analysis has a testID (`analysis-tab`), and
   the labels aren't matched by text - tap Home at (67, 817) and Profile
   at (335, 817) (measured 2026-11-03 on iPhone 18 Pro).
-- **Home**: `avatar-button` (header, opens Profile), `recent-games-loading`,
+- **Home**: `avatar-button` (header, opens Profile), `friends-loading`,
+  `recent-games-loading`,
   `game-row-<gameId>` (opens the game viewer), `recent-games-retry`,
   `recent-games-see-all` (the full list), `recent-games-empty`. Guests
   see `sign-in-prompt` (with `sign-in-button` /
@@ -178,6 +179,49 @@ resign or abort from the app (see `examples/resign.yaml` /
   `decline-challenge-<id>` (✕) (or `cancel-challenge-<id>` for your
   own), and `friend-request-<id>` with `accept-friend-<id>` /
   `decline-friend-<id>`. Tap outside the popup to close it.
+- **Daily games** (Home, between Friends and Recent Games - only with a
+  daily game in progress or a seek waiting): `daily-games-section`,
+  `daily-games-section-see-all` (See All, → `daily-games-list`: its
+  `daily-games-your-move-filter` chip, the `daily-games-sort` dropdown
+  with `daily-games-sort-<yourMove|timeLeft|lastMove|opponent>`, and a
+  `daily-game-<gameId>-your-move` pawn on cards on your move) with its
+  `-count`,
+  `daily-games-section-loading`, `daily-game-<gameId>` (opens the game) with
+  `daily-game-<gameId>-board` (faded while it's the opponent's move) and
+  `daily-game-<gameId>-time-left`, and `daily-seek-<seekId>` with its
+  ✕ `daily-seek-<seekId>-cancel`. Daily time controls are
+  `time-control-option-daily-<n> day(s)` (e.g.
+  `time-control-option-daily-3 days`) in New Game, and
+  `challenge-time-<n> day(s)` in the challenge sheet.
+- **Daily game**: the LiveGame header, move list, player bars and board
+  testIDs below; the toolbar's `game-menu-button`, `chat-button`,
+  `toolbar-analysis-button`, ‹ ›. ☰ holds `next-game-action`,
+  `offer-draw-action` / `accept-draw-action`, `resign-action` (or
+  `abort-game-action`), `conditional-moves-action` (on the opponent's
+  move), `daily-game-settings-action` and `flip-board-action`. With moves confirmed, a move shows
+  `confirm-move-bar` with `cancel-move-button` / `confirm-move-button`
+  over the toolbar. Conditional moves (a screen): `conditional-moves`,
+  its board, `conditional-moves-empty` or `conditional-line-<n>` (tap to
+  edit) with `delete-conditional-line-<n>`, `conditional-moves-error`,
+  and `confirm-conditional-moves-button`, `add-conditional-line-button`,
+  `delete-conditional-move-button`.
+  Once over, `rematch-button` sends a daily challenge (the opponent's
+  `challenge-card-<id>` in 🔔); `rematch-status` then shows it.
+  Settings: `daily-game-settings`, `daily-setting-confirmMoves` (on by
+  default, so a fresh install confirms every move).
+- **Daily analysis**: `daily-analysis` - the game's `move-list` /
+  `move-<ply>` and `player-name-<color>` (no clocks) -
+  `daily-analysis-toolbar` with `opening-explorer-button`,
+  `notes-button` (→ the `game-notes` screen: `notes-input`,
+  `notes-status`; `header-back` saves and returns), `flip-board-button`,
+  `reset-analysis-button`, ‹ ›.
+- **Opening explorer** (a screen, from either analysis board's
+  `opening-explorer-button`): `opening-explorer`, its own board,
+  the `move-list`, `explorer-opening`, rows `explorer-move-<uci>` (book
+  moves, with `explorer-games-<uci>` and `explorer-results-<uci>`) or
+  `explorer-empty` ("No results"), and `opening-explorer-toolbar`
+  (`flip-board-button`, ‹ ›). `header-back` returns to the analysis,
+  on the line explored.
 - **Challenge sheet**: `challenge-sheet`, `challenge-time-<label>` (e.g.
   `challenge-time-3+2`), `challenge-rated-switch`,
   `send-challenge-button`, `challenge-error`.
@@ -207,7 +251,13 @@ resign or abort from the app (see `examples/resign.yaml` /
   `message-list`, `message-<id>`, `load-older-messages`,
   `message-input`, `send-message-button`, and
   `clear-conversation-button` (🗑, in the header; confirm "Delete").
-- **Game list**: `games-list`, `game-row-<gameId>`, `games-error`.
+- **Game list** ("Game history" for yours): `games-list`,
+  `game-row-<gameId>`, `games-error`, and the dropdowns
+  `games-result-filter` (`-all`, `-win`, `-draw`, `-loss`) and
+  `games-type-filter` (`-all`, `-bullet` ... `-daily`), each with its
+  count - the chosen one's `<filter>-count`, each option's
+  `<filter>-<key>-count`. Home's section counts are `friends-see-all-count`,
+  `daily-games-section-see-all-count` and `recent-games-see-all-count`.
 - **Game viewer**: `game-viewer`, `game-header-subtitle` ("2 minutes
   ago", or "Playing now" while watching), the LiveGame header, move
   list, player bars and toolbar testIDs below (no resign; no chat unless
@@ -239,9 +289,10 @@ resign or abort from the app (see `examples/resign.yaml` /
     `engine-error` (`engine-retry`), `arrow-<from><to>`, `opening-name`,
     the move list `analysis-move-<nodeId>` (long-press for
     `promote-variation-action` / `delete-variation-action`), and the
-    toolbar's `game-menu-button` (☰: `flip-board-action`,
-    `new-analysis-action`, `edit-position-action`,
-    `analysis-settings-action`, which opens the settings screen) and ‹ ›.
+    toolbar's `game-menu-button` (☰: `new-analysis-action`,
+    `edit-position-action`, `analysis-settings-action`, which opens the
+    settings screen), `opening-explorer-button`, `flip-board-button` and
+    ‹ ›.
     Tapping `engine-line-<n>` plays its first move. The board is over the
     tabs, so there's no tab bar there; `header-back` returns to the tab.
   - Settings (a screen, `analysis-settings`; `header-back` returns):

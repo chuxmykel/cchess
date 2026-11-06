@@ -11,6 +11,12 @@ import { SETTLE_MS } from '../../hooks/useEngineAnalysis';
 import { makeFakeEngine } from '../../testUtils/fakeEngine';
 import { settleAnimations } from '../../testUtils/pieceGestures';
 import { withSafeArea } from '../../testUtils/safeArea';
+import { ExplorerLine } from '../../hooks/useExplorerLine';
+
+jest.mock('../../context/AuthSessionContext', () => ({
+  useAuthSession: () =>
+    jest.requireActual('../../testUtils/authSession').makeAuthSession(),
+}));
 
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
@@ -30,9 +36,11 @@ describe('AnalysisBoardContent', () => {
     uciMoves = [] as string[],
     status,
     settings,
+    explorerLine,
   }: {
     uciMoves?: string[];
     status?: EngineStatus;
+    explorerLine?: ExplorerLine;
     // Saved before the board opens.
     settings?: Partial<AnalysisSettings>;
   } = {}) {
@@ -51,6 +59,8 @@ describe('AnalysisBoardContent', () => {
     };
     const onEditPosition = jest.fn();
     const onOpenSettings = jest.fn();
+    const onOpenExplorer = jest.fn();
+    const onExplorerLineTaken = jest.fn();
     const screen = await render(
       withSafeArea(
         <AnalysisSettingsProvider>
@@ -62,13 +72,24 @@ describe('AnalysisBoardContent', () => {
               onNewAnalysis={jest.fn()}
               onEditPosition={onEditPosition}
               onOpenSettings={onOpenSettings}
+              onOpenExplorer={onOpenExplorer}
+              explorerLine={explorerLine}
+              onExplorerLineTaken={onExplorerLineTaken}
             />
           </EngineContext.Provider>
         </AnalysisSettingsProvider>,
       ),
     );
     await act(async () => {});
-    return { screen, main, threat, onEditPosition, onOpenSettings };
+    return {
+      screen,
+      main,
+      threat,
+      onEditPosition,
+      onOpenSettings,
+      onOpenExplorer,
+      onExplorerLineTaken,
+    };
   }
 
   async function play(
@@ -199,6 +220,35 @@ describe('AnalysisBoardContent', () => {
     await settleAnimations();
 
     expect(onOpenSettings).toHaveBeenCalled();
+  });
+
+  it('opens the opening explorer on the line shown, and flips, from its toolbar', async () => {
+    const { screen, onOpenExplorer } = await renderAnalysis({
+      uciMoves: ['e2e4'],
+    });
+
+    await fireEvent.press(screen.getByTestId('opening-explorer-button'));
+    expect(onOpenExplorer).toHaveBeenCalledWith(
+      { startFen: DEFAULT_POSITION, uciMoves: ['e2e4'] },
+      'w',
+    );
+
+    await fireEvent.press(screen.getByTestId('flip-board-button'));
+    expect(boardTester(screen).orientation()).toBe('b');
+  });
+
+  it('goes along the line the explorer hands back', async () => {
+    const { screen, onExplorerLineTaken } = await renderAnalysis({
+      uciMoves: ['e2e4'],
+      explorerLine: {
+        startFen: DEFAULT_POSITION,
+        uciMoves: ['e2e4', 'e7e5', 'g1f3'],
+      },
+    });
+    await settleAnimations();
+
+    expect(boardTester(screen).pieceOn('f3')).toBe('wn');
+    expect(onExplorerLineTaken).toHaveBeenCalled();
   });
 
   it('searches for as long, and shows as many lines, as the settings say', async () => {

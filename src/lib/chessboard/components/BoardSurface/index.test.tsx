@@ -61,4 +61,16 @@ describe('BoardSurface', () => {
 
     expect(screen.getAllByTestId('chessboard-row')).toHaveLength(8);
   });
+
+  it('turns round by relabelling its squares, not making them anew', async () => {
+    const screen = await render(
+      <BoardSurface colors={colors} orientation="w" />,
+    );
+    const topLeft = screen.getByTestId('square-a8');
+
+    await screen.rerender(<BoardSurface colors={colors} orientation="b" />);
+
+    // The same square, drawn in the same place, is now h1.
+    expect(screen.getByTestId('square-h1')).toBe(topLeft);
+  });
 });

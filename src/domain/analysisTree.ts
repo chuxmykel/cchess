@@ -11,6 +11,8 @@ export type TreeMove = {
   uci: string;
   piece: PieceSymbol;
   color: Color;
+  /** The piece it took, if any - for the material a side's captured. */
+  captured?: PieceSymbol;
 };
 
 // A position in an analysis: the start, or one a move reached. Its first
@@ -91,6 +93,7 @@ export function addMove(
       uci: uciOf(played),
       piece: played.piece,
       color: played.color,
+      ...(played.captured && { captured: played.captured }),
     },
     fen: chess.fen(),
     ply: parent.ply + 1,
@@ -181,6 +184,37 @@ export function promoteVariation(tree: AnalysisTree, id: string): AnalysisTree {
     at = parent.id;
   }
   return tree;
+}
+
+// Whether the line from the tree's start to `id` is these moves from that
+// position - the tree being where they'd start it afresh.
+export function isLineTo(
+  tree: AnalysisTree,
+  id: string,
+  startFen: string,
+  uciMoves: string[],
+): boolean {
+  const path = pathTo(tree, id).slice(1);
+  return (
+    tree.nodes[tree.rootId].fen === new Chess(startFen).fen() &&
+    path.length === uciMoves.length &&
+    path.every(
+      (nodeId, index) => tree.nodes[nodeId].move?.uci === uciMoves[index],
+    )
+  );
+}
+
+// Keeps only one of a position's continuations, removing the others and
+// everything played from them - an analysis of a single line, where a new
+// move from a position replaces what followed it.
+export function keepOnlyChild(
+  tree: AnalysisTree,
+  parentId: string,
+  childId: string,
+): AnalysisTree {
+  return tree.nodes[parentId].children
+    .filter((id) => id !== childId)
+    .reduce(deleteFrom, tree);
 }
 
 // Removes a position and everything played from it. The start stays.

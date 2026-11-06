@@ -7,23 +7,30 @@ import {
   View,
 } from 'react-native';
 
+import { useIsFocused } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import Button from '../../components/Button';
 import {
   AnalysisSource,
   useAnalysisSource,
 } from '../../hooks/useAnalysisSource';
+import { ExplorerLine } from '../../hooks/useExplorerLine';
+import { HomeStackParamList } from '../HomeStack/types';
 import AnalysisBoardContent from './AnalysisBoardContent';
 import SetUpPositionView from './SetUpPositionView';
 import { makeStyles } from '../../theme';
 
 // The analysis board's route, in the Analysis tab or over a game.
 export type AnalysisBoardProps = {
-  route: { params: { source: AnalysisSource } };
-  navigation: {
-    setOptions: (options: { title: string }) => void;
-    goBack: () => void;
-    navigate: (route: 'AnalysisSettings') => void;
+  route: {
+    key: string;
+    params: { source: AnalysisSource; explorerLine?: ExplorerLine };
   };
+  navigation: Pick<
+    NativeStackNavigationProp<HomeStackParamList, 'AnalysisBoard'>,
+    'setOptions' | 'goBack' | 'navigate' | 'setParams'
+  >;
 };
 
 // What's being analysed changes in place - a new analysis, or a position set
@@ -35,6 +42,7 @@ const AnalysisBoard: React.FC<AnalysisBoardProps> = ({ route, navigation }) => {
   const styles = useStyles();
 
   const { width } = useWindowDimensions();
+  const isFocused = useIsFocused();
   const [session, setSession] = useState<Session>({
     source: route.params.source,
     key: 0,
@@ -75,6 +83,18 @@ const AnalysisBoard: React.FC<AnalysisBoardProps> = ({ route, navigation }) => {
       </View>
     );
   }
+  if (state.status === 'in-play') {
+    return (
+      <View style={styles.centred} testID="analysis-in-play">
+        <Text style={styles.message}>
+          {
+            "This game is still being played. Analyse it from the game's own board."
+          }
+        </Text>
+        <Button label="Back" onPress={navigation.goBack} variant="text" />
+      </View>
+    );
+  }
   if (state.status === 'loading') {
     return (
       <View style={styles.centred} testID="analysis-loading">
@@ -92,6 +112,18 @@ const AnalysisBoard: React.FC<AnalysisBoardProps> = ({ route, navigation }) => {
         onNewAnalysis={() => open({ kind: 'new' })}
         onEditPosition={setEditingFen}
         onOpenSettings={() => navigation.navigate('AnalysisSettings')}
+        onOpenExplorer={(line, orientation) =>
+          navigation.navigate('OpeningExplorer', {
+            ...line,
+            orientation,
+            returnKey: route.key,
+          })
+        }
+        // Taken once back from the explorer, which sets it as it goes.
+        explorerLine={isFocused ? route.params.explorerLine : undefined}
+        onExplorerLineTaken={() =>
+          navigation.setParams({ explorerLine: undefined })
+        }
       />
       <Modal
         visible={editingFen !== null}

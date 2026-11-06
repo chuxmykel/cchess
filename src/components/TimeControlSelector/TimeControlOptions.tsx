@@ -7,6 +7,7 @@ import {
   GAME_TYPE_LABELS,
 } from '../../constants/timeControls';
 import { makeStyles } from '../../theme';
+import { optionRows } from './optionRows';
 
 interface TimeControlOptionsProps {
   selected: TimeControl;
@@ -33,29 +34,36 @@ const TimeControlOptions: React.FC<TimeControlOptionsProps> = ({
               {GAME_TYPE_LABELS[group.type]}
             </Text>
           </View>
-          <View style={styles.optionsRow}>
-            {group.options.map((option) => {
-              const isSelected =
-                option.type === selected.type &&
-                option.label === selected.label;
-              return (
-                <Pressable
-                  key={option.label}
-                  style={[styles.option, isSelected && styles.optionSelected]}
-                  onPress={() => onSelect(option)}
-                  testID={`time-control-option-${option.type}-${option.label}`}
-                >
-                  <Text
-                    style={[
-                      styles.optionLabel,
-                      isSelected && styles.optionLabelSelected,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+          <View style={styles.rows}>
+            {optionRows(group.options).map((row) => (
+              <View key={row[0].label} style={styles.optionsRow}>
+                {row.map((option) => {
+                  const isSelected =
+                    option.type === selected.type &&
+                    option.label === selected.label;
+                  return (
+                    <Pressable
+                      key={option.label}
+                      style={[
+                        styles.option,
+                        isSelected && styles.optionSelected,
+                      ]}
+                      onPress={() => onSelect(option)}
+                      testID={`time-control-option-${option.type}-${option.label}`}
+                    >
+                      <Text
+                        style={[
+                          styles.optionLabel,
+                          isSelected && styles.optionLabelSelected,
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ))}
           </View>
         </View>
       ))}
@@ -90,6 +98,9 @@ const useStyles = makeStyles((t) => ({
     fontSize: t.fontSize.base,
     fontWeight: t.fontWeight.semibold,
     color: t.colors.textSecondary,
+  },
+  rows: {
+    gap: t.spacing.sm,
   },
   optionsRow: {
     flexDirection: 'row',

@@ -2,6 +2,7 @@ import { useLayoutEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  RefreshControl,
   StyleSheet,
   Text,
   View,
@@ -11,6 +12,7 @@ import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
 import FriendRow from '../../components/FriendRow';
 import FriendListControls from '../../components/FriendListControls';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useUserFriends } from '../../hooks/useUserFriends';
 import { FriendSort, isAround, sortFriends } from '../../utils/friendSort';
 import { HomeStackScreenProps } from '../HomeStack/types';
@@ -28,6 +30,7 @@ const UserFriends: React.FC<UserFriendsProps> = ({ navigation, route }) => {
 
   const { username, displayName } = route.params;
   const { state, reload } = useUserFriends(username);
+  const refresh = usePullToRefresh(reload);
   const [sort, setSort] = useState<FriendSort>('online');
   const [onlineOnly, setOnlineOnly] = useState(false);
 
@@ -65,6 +68,7 @@ const UserFriends: React.FC<UserFriendsProps> = ({ navigation, route }) => {
       )}
       <FlatList
         data={sortFriends(shown, sort)}
+        refreshControl={<RefreshControl {...refresh} />}
         keyExtractor={(friend) => friend.id}
         renderItem={({ item }) => (
           <FriendRow

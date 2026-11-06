@@ -2,7 +2,12 @@ import { FlatList, StyleSheet, View } from 'react-native';
 
 import EmptyState from '../EmptyState';
 import SectionHeader from '../SectionHeader';
-import FriendCard, { FriendCardProps } from './FriendCard';
+import Placeholder from '../Placeholder';
+import FriendCard, {
+  FRIEND_AVATAR_SIZE,
+  FriendCardProps,
+  useFriendCardStyles,
+} from './FriendCard';
 import { Friend } from '../../network/restClient';
 import { byPresence } from '../../utils/presence';
 import { spacing } from '../../theme';
@@ -18,6 +23,29 @@ interface FriendsCarouselProps extends FriendActions {
   onFindFriends: () => void;
 }
 
+const LOADING_CARD_COUNT = 3;
+
+// Cards shaped as a friend's are - the avatar, the name and what they're
+// up to - while the friends load.
+const LoadingCards: React.FC = () => {
+  const cardStyles = useFriendCardStyles();
+  return (
+    <View style={[styles.list, styles.loadingCards]} testID="friends-loading">
+      {Array.from({ length: LOADING_CARD_COUNT }, (_, index) => (
+        <View key={index} style={[cardStyles.card, styles.loadingCard]}>
+          <Placeholder
+            width={FRIEND_AVATAR_SIZE}
+            height={FRIEND_AVATAR_SIZE}
+            borderRadius={FRIEND_AVATAR_SIZE / 2}
+          />
+          <Placeholder width="75%" height={14} />
+          <Placeholder width="60%" height={10} />
+        </View>
+      ))}
+    </View>
+  );
+};
+
 const FriendsCarousel: React.FC<FriendsCarouselProps> = ({
   friends,
   unreadByUserId,
@@ -25,19 +53,18 @@ const FriendsCarousel: React.FC<FriendsCarouselProps> = ({
   onFindFriends,
   ...actions
 }) => {
-  if (friends === null) {
-    return null;
-  }
-
   return (
     <View style={styles.container}>
       <SectionHeader
         title="Friends"
+        count={friends?.length}
         actionLabel="See All"
         onActionPress={onSeeAll}
         testID="friends-see-all"
       />
-      {friends.length === 0 ? (
+      {friends === null ? (
+        <LoadingCards />
+      ) : friends.length === 0 ? (
         <EmptyState
           illustration="friends"
           title="No friends yet"
@@ -82,5 +109,12 @@ const styles = StyleSheet.create({
   },
   separator: {
     width: 12,
+  },
+  loadingCards: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  loadingCard: {
+    gap: spacing.sm,
   },
 });

@@ -1,6 +1,8 @@
 import {
   animatesMoves,
+  daysPerMove,
   findTimeControl,
+  isDailyTimeControl,
   TIME_CONTROL_GROUPS,
   timeControlOf,
 } from '../timeControls';
@@ -32,6 +34,18 @@ describe('findTimeControl', () => {
   it('labels a start of under a minute in seconds', () => {
     expect(findTimeControl(15, 0, 'bullet').label).toBe('15s+0');
   });
+
+  it("finds a daily game's preset by its days, in seconds", () => {
+    const sevenDays = findTimeControl(7 * 24 * 60 * 60, 0, 'daily');
+
+    expect(sevenDays.label).toBe('7 days');
+    expect(TIME_CONTROL_GROUPS[4].options).toContain(sevenDays);
+    expect(isDailyTimeControl(sevenDays)).toBe(true);
+    expect(daysPerMove(sevenDays)).toBe(7);
+    expect(isDailyTimeControl(findTimeControl(3600, 0, 'classical'))).toBe(
+      false,
+    );
+  });
 });
 
 describe('timeControlOf', () => {
@@ -51,7 +65,7 @@ describe('animatesMoves', () => {
     expect(animatesMoves('bullet')).toBe(false);
   });
 
-  it.each(['blitz', 'rapid', 'classical'] as const)(
+  it.each(['blitz', 'rapid', 'classical', 'daily'] as const)(
     'slides pieces in %s - 3+0 and up',
     (type) => {
       expect(animatesMoves(type)).toBe(true);

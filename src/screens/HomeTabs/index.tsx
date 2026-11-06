@@ -48,7 +48,7 @@ const HomeTabs: React.FC = () => {
           options={{
             tabBarLabel: 'Analysis',
             tabBarIcon: ({ color, size }) => (
-              <Icon name="magnify-scan" size={size} color={color} />
+              <Icon name="head-cog-outline" size={size} color={color} />
             ),
             tabBarButtonTestID: 'analysis-tab',
           }}

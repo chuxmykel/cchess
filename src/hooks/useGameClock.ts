@@ -28,11 +28,15 @@ type ServerClock = {
 // done directly during render (React's "adjusting state when a prop
 // changes" pattern) so the reset is visible in the same render it's
 // triggered by.
+//
+// tickMs: how often it ticks - a daily game's clock, in minutes, needs no
+// more than a tick a second.
 export function useGameClock(
   whiteTimeMs: number,
   blackTimeMs: number,
   turn: Color,
   isActive: boolean,
+  tickMs = TICK_MS,
 ): GameClockResult {
   const [serverClock, setServerClock] = useState<ServerClock>({
     whiteTimeMs,
@@ -58,10 +62,10 @@ export function useGameClock(
     const startedAt = Date.now();
     const interval = setInterval(
       () => setElapsedMs(Date.now() - startedAt),
-      TICK_MS,
+      tickMs,
     );
     return () => clearInterval(interval);
-  }, [isActive, serverClock]);
+  }, [isActive, serverClock, tickMs]);
 
   return {
     whiteMs:

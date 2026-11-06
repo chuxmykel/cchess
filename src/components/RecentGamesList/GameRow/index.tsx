@@ -9,7 +9,8 @@ import { GameSummary } from '../../../network/restClient';
 import { formatRating } from '../../../utils/rating';
 import { makeStyles } from '../../../theme';
 
-const ROW_ICON_SIZE = 26;
+export const ROW_ICON_SIZE = 26;
+export const AVATAR_SIZE = 36;
 
 interface GameRowProps {
   game: GameSummary;
@@ -40,7 +41,7 @@ const GameRow: React.FC<GameRowProps> = ({ game, onPress }) => {
         <Avatar
           name={game.opponentDisplayName}
           color={game.opponentAvatarColor}
-          size={36}
+          size={AVATAR_SIZE}
         />
       </View>
       <View style={styles.details}>

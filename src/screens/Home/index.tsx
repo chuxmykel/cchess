@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from 'react';
-import { View, ScrollView } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import HomeHeader from '../../components/HomeHeader';
 import FriendsCarousel from '../../components/FriendsCarousel';
 import RecentGamesList from '../../components/RecentGamesList';
+import DailyGamesList from '../../components/DailyGamesList';
 import SignInPrompt from '../../components/SignInPrompt';
 import Button from '../../components/Button';
 import ChallengeCard from '../../components/ChallengeCard';
@@ -16,11 +17,15 @@ import { useAuthSession } from '../../context/AuthSessionContext';
 import { useSocialContext } from '../../context/SocialContext';
 import { useFriendActions } from '../../hooks/useFriendActions';
 import { useRecentGames } from '../../hooks/useRecentGames';
+import { useDailyGames } from '../../hooks/useDailyGames';
+import { useMyDailySeeks } from '../../hooks/useMyDailySeeks';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useToast } from '../../hooks/useToast';
 import { HomeTabStackScreenProps } from '../HomeTabStack/types';
 import { makeStyles } from '../../theme';
 
 const HOME_SCREEN_GAME_LIMIT = 10;
+const HOME_SCREEN_DAILY_GAME_LIMIT = 10;
 
 type HomeProps = {
   navigation: Pick<HomeTabStackScreenProps<'Home'>['navigation'], 'navigate'>;
@@ -35,6 +40,11 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
   const user = session.isReady ? session.user : null;
   const isSignedIn = user !== null && !user.isGuest;
   const { recentGames, reload } = useRecentGames(HOME_SCREEN_GAME_LIMIT);
+  const { dailyGames, reload: reloadDailyGames } = useDailyGames(
+    HOME_SCREEN_DAILY_GAME_LIMIT,
+  );
+  const dailySeeks = useMyDailySeeks();
+  const reloadDailySeeks = dailySeeks.reload;
   const friendActions = useFriendActions(navigation, (friend) =>
     toast.show(`Challenge sent to ${friend.displayName}`),
   );
@@ -46,14 +56,22 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
     notificationCount > 0 || challenges.outgoing.length > 0;
 
   const reloadSocial = social.reload;
+  const refresh = usePullToRefresh(
+    reload,
+    reloadDailyGames,
+    reloadDailySeeks,
+    reloadSocial,
+  );
   useFocusEffect(
     useCallback(() => {
       reload();
+      reloadDailyGames();
+      reloadDailySeeks();
       reloadSocial();
       // Accepting a challenge navigates to the game, from here or from the
       // challenger's side; the popup is a modal and would stay over it.
       return () => setAreNotificationsOpen(false);
-    }, [reload, reloadSocial]),
+    }, [reload, reloadDailyGames, reloadDailySeeks, reloadSocial]),
   );
 
   // The popup is a modal, so a toast behind it couldn't be seen.
@@ -121,7 +139,11 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
           )
         }
       />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl {...refresh} />}
+        testID="home-scroll"
+      >
         {isSignedIn && (
           <FriendsCarousel
             friends={social.friends}
@@ -144,6 +166,19 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
             />
           </View>
         )}
+        <DailyGamesList
+          dailyGames={dailyGames}
+          seeks={dailySeeks.seeks}
+          onPressGame={(game) =>
+            navigation.navigate('DailyGame', { gameId: game.id })
+          }
+          onCancelSeek={(seek) =>
+            dailySeeks
+              .cancel(seek.id)
+              .catch((error: Error) => toast.show(error.message))
+          }
+          onSeeAll={() => navigation.navigate('DailyGamesList')}
+        />
         <RecentGamesList
           recentGames={recentGames}
           onRetry={reload}

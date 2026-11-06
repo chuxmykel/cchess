@@ -225,7 +225,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
     retries once, one refresh at a time since refresh tokens rotate, and a
     socket kicked by the server for a stale token is refreshed and
     reconnected once),
-    `useRecentGames` (the player's finished games, from `GET /games`),
+    `useRecentGames` (the player's finished games, from `GET /games`,
+    and how many they've finished in all - their profile's
+    `gamesPlayed`, shown without if it fails),
     `useResumeActiveGame` (once per account the app signs in as, asks for
     a game still in progress and reopens it - after the app restarts
     mid-game, say; `HomeStack` opens it in `LiveGame`),
@@ -324,6 +326,11 @@ lib/chessboard/  the board, written as a package of its own: outside the
     their game), `useUserProfile` (a player's profile and activity),
     `useUserFriends` (anyone's friends, for their profile and its list),
     `usePagedGames` (game history a page at a time, yours or a player's),
+    `usePullToRefresh` (a list's `RefreshControl`: every screen that
+    fetches from the server - Home, the game and daily game lists,
+    Friends, profiles, a player's friends, rating stats - fetches again
+    when pulled down, refreshing until its reloads, each returning its
+    request, have all finished),
     `useDirectMessages` (one conversation: paged history, new messages,
     marked read while open, sending and clearing), and `useUserSearch`
     (players matching what's typed in Friends' search, asked of
@@ -530,7 +537,14 @@ lib/chessboard/  the board, written as a package of its own: outside the
   (System/Light/Dark, and the board themes as swatches - the
   `Appearance` screen), and `GameHistoryList` (a
   player's finished games, paged - `GamesList` and the analysis game
-  picker share it).
+  picker share it; `GamesList`, titled "Game history" for yours, filters
+  them by result and game type with two `Dropdown`s - the games fetched,
+  so a choice shows at once, more pages fetched while fewer than a
+  page's worth match - each choice showing how many of all the games it
+  matches with the other (`useGameCounts`: the server's counts by result
+  and type, `GET /games/counts`, totalled by `utils/gameCounts.ts`)).
+  `Dropdown`'s options can carry a count, shown in a `CountPill` in the
+  menu and beside the chosen one.
 
 - **`src/components/`** (everything else) - also purely presentational,
   consuming hooks/context the same way: in-game UI (`GameHeader`,
@@ -607,7 +621,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
   Friends section: the count beside the title, up to ten friends online
   first, then - on your own, the Profile tab's - an Add friends tile, and
   View All), `FriendListControls`
-  (the friends list's "Online" filter and sort dropdown),
+  (the friends list's "Online" filter and sort dropdown - `ListControls`,
+  a filter chip and a sort `Dropdown`, which the daily games list uses
+  too),
   `MessageList`), rating stats UI (`RatingChart` - the rating as a line
   over the period, one point per day (the server sends each day's closing
   rating), drawn with `victory-native` on
@@ -629,8 +645,10 @@ lib/chessboard/  the board, written as a package of its own: outside the
   with `react-native-svg`, a title, a line on what will show up there,
   and an optional action;
   `SectionHeader`'s action is optional, and it can show a count beside
-  the title), and `Home`-screen-specific pieces
-  (`HomeHeader`, `RecentGamesList`, whose rows open the game viewer).
+  the title, in a `CountPill` - a small see-through grey pill, the theme's
+  `countPill`, the same in both modes), and `Home`-screen-specific pieces
+  (`HomeHeader`, `RecentGamesList`, whose rows open the game viewer; it,
+  Friends and Daily games count theirs beside their titles).
   `GameOverCard` names the winner instead of "You won" for a game you
   didn't play - and offers "Play 5+0" (the game's time control) rather
   than "New opponent", as does the viewer's ☰ - and can be dismissed,
@@ -654,10 +672,109 @@ lib/chessboard/  the board, written as a package of its own: outside the
   opens `Licenses`: the Stockfish build the app downloads, its GPL-3.0
   and where its source is, and credit for lichess's opening names.
 
+- **Daily games** - chess.com's: 1, 2, 3, 5, 7 or 14 days a move, a game
+  type and rating category of their own (`daily`), played alongside live
+  games and each other (see cchess-be's README, "Daily games"). A daily
+  time control is its days in `initialSeconds`, no increment
+  (`constants/timeControls.ts`' `DAILY_DAYS`, `isDailyTimeControl`,
+  `daysPerMove`) - New Game's panel and the challenge sheet offer them,
+  their row wrapped into threes (`TimeControlSelector/optionRows.ts`).
+  - Starting one: New Game's Start posts a daily seek
+    (`useSeekDailyGame`) - the game opens if one was waiting for it,
+    otherwise it's back to Home to wait. A daily challenge you accept
+    opens its game; one you sent, once accepted, doesn't pull you away
+    (`useSocial`'s `onGameStarted` has the game type). `useResumeActiveGame`
+    resumes live games only (`kind=live`), and a daily game reaching
+    `LiveGame` or `GameViewer` (yours, still on) is sent to `DailyGame`.
+  - Home's `DailyGamesList` (`components/`; "Daily games"), between
+    Friends and Recent Games, shown only
+    with a game in progress or a seek waiting: `useDailyGames` (the
+    server's order - your move first, then by time left - reloaded on
+    focus and on any push touching one) and `useMyDailySeeks`, each game a
+    `DailyGameCard` - its board without coordinates (the board's
+    `coordinates` prop), faded while it's the opponent's move, the
+    opponent and the time left (`useNow` ticking a
+    minute, in red under 10 hours - `DAILY_LOW_TIME_MS`, the clock's too)
+    - and each seek a `WaitingSeekCard` with ✕ to withdraw it. A skeleton
+      of cards shaped as a game's holds its place while the games load
+      (Friends and Recent Games load as cards and rows shaped as theirs,
+      too); See All opens the `DailyGamesList` screen: every game and seek, two to a
+      row across the screen (a row of one on the left), a grey pawn on
+      those on your move, filtered to your move and sorted by your move
+      first, time left, last move or opponent (`utils/dailyGameSort.ts` -
+      the last move's time is the deadline less the days a move gives) -
+      on the device, from the games fetched; laid out as one wrapping row
+      of memoised cards keyed by game, not a two-column `FlatList`, whose
+      rows - keyed by the games in them - remounted every board on a new
+      order. The filter hides the cards it leaves out (`display: 'none'`)
+      rather than removing them, so switching it off shows boards already
+      drawn.
+  - `DailyGame`: `useOnlineChessGame` with no pre-moves, its clocks the
+    time left on the move (`GameClock`'s `daily`, `utils/timeLeft.ts`'
+    `formatTimeLeft`: whole hours rounded up from an hour, minutes under
+    one, seconds in the last - the challenge card's countdown uses it
+    too), ticking once a second (`useGameClock`'s `tickMs`); Back always
+    works. Its toolbar: ☰, chat, Analysis (`GameToolbar`'s `onAnalyse`),
+    ‹ ›; ☰: Next game (`nextDailyGame`, through `useDailyGames`' order),
+    Offer/Accept draw, Resign or Abort, Conditional moves (N) while the
+    opponent's to move, Settings, Flip board. Its
+    finished game's Rematch is a daily challenge of the same days,
+    colors swapped (`useDailyRematch`, over `useSocial`'s challenges), so
+    it reaches the opponent's notifications; one either has sent the
+    other at those days shows on the result card as the rematch.
+    It keeps the game as it stands in `DailyGamePositionsContext`
+    (`useDailyGamePositions`, in `HomeStack`), for the analysis over it.
+  - Move confirmation: `DailyGameSettings` (`constants/dailyGame.ts`,
+    `network/dailyGameSettingsStorage.ts`, `useDailyGameSettings`,
+    `DailyGameSettingsContext` in `HomeStack`) - on by default,
+    `useOnlineChessGame`'s
+    `confirmMoves` option holds a move on the board, unsent
+    (`hasPendingMove`, against the last position the server confirmed,
+    taken from its moves), until `confirmMove` sends it or `cancelMove`
+    puts it back; `ConfirmMoveBar` is drawn over the toolbar, which keeps
+    its place hidden so the screen doesn't move.
+  - `DailyAnalysis`: an analysis with no engine (`useAnalysisWorkspace`,
+    which `AnalysisBoardContent` builds its engine onto too), laid out
+    as the game is - `MoveList` along the top, `PlayerBarsFrame` with no
+    clocks (`PlayerBar`'s `clock` left out), no opening name - and one
+    line of moves (the tree's `singleLine`: a different move replaces
+    those that followed). It starts from the game in
+    `DailyGamePositionsContext` - fetched, `useAnalysisSource`'s, only
+    when its screen isn't open - and Reset starts it afresh in place on
+    the game as it now stands (the tree's `reset`; nothing when it's
+    there already, `isLineTo`), the board turned as it was. Its toolbar:
+    the opening
+    explorer, notes (the `GameNotes` screen: `useGameNotes`, your own,
+    saved once typing pauses and on leaving), flip, reset and ‹ ›.
+    `useAnalysisSource` refuses your own daily game in play
+    (`'in-play'`) unless `allowDailyInPlay`, which only this screen asks.
+  - The opening explorer, from either analysis board's toolbar: the
+    `OpeningExplorer` screen, a board of its own on the line to the
+    position shown (`useExplorerLine`'s `lineTo`), the moves played along
+    the top, and `ExplorerMoveList` - the opening heading it, then the
+    book's moves only, numbered (`useBookExplorer`: `domain/openings.ts`'
+    `bookMovesFrom`, with `useOpeningExplorer`'s results from games
+    finished here - a count and a bar - the most played first; "No
+    results" out of the book). A tap plays one there. As the line
+    changes it's set on the analysis's route (`explorerLine`, by
+    `returnKey` - not on leaving: an action dispatched from
+    `beforeRemove` brought the removal round again, overflowing the
+    stack), and the analysis, once focused again, goes along it
+    (`useTakeExplorerLine`, the tree's `playLine`) and clears it.
+  - Conditional moves: the `ConditionalMoves` screen, from the game's ☰
+    while the opponent's to move - lines written on a board from the
+    game's position (`domain/conditionalMoves.ts`' editor: `playMove`,
+    `addLine`, `deleteMove`, `deleteLine`, at most 10 lines), listed by
+    `ConditionalLinesList`; Confirm saves them all in place of those
+    saved (`useConditionalMoves`' `save`, a PUT; refetched with each move
+    of the game, and as the game's screen is focused again).
+
 - **Navigation** (React Navigation, nested stacks/tabs):
   `App.tsx` (root native-stack, inside a `GestureHandlerRootView` for
   the chart's gestures - the board brings its own, so it works wherever
   it's rendered, tests included) -> `HomeStack` (`HomeTabs`, `LiveGame`,
+  `DailyGame`, `DailyAnalysis`, `OpeningExplorer`, `GameNotes`,
+  `ConditionalMoves`, `DailyGamesList`, `DailyGameSettings`,
   `GameViewer`, `AnalysisBoard`, `AnalysisSettings`, `UserProfile`, `Conversation`, `GamesList`,
   `RatingStats`, `UserFriends`, `FindFriends`, `SignIn`, `CreateAccount`,
   `Appearance`, `Licenses`) ->

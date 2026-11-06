@@ -62,10 +62,20 @@ describe('FriendsCarousel', () => {
     expect(screen.getByTestId('friend-unread-away')).toHaveTextContent('3');
   });
 
-  it('shows nothing while friends are loading', async () => {
+  it("shows cards shaped as a friend's while friends are loading", async () => {
     const { screenPromise } = renderCarousel({ friends: null });
     const screen = await screenPromise;
 
-    expect(screen.queryByTestId('friends-see-all')).toBeNull();
+    expect(screen.getByText('Friends')).toBeTruthy();
+    expect(screen.getByTestId('friends-loading')).toBeTruthy();
+    expect(screen.queryByTestId('friends-empty')).toBeNull();
+  });
+
+  it('counts my friends beside the title, once they have loaded', async () => {
+    const screen = await renderCarousel().screenPromise;
+    expect(screen.getByTestId('friends-see-all-count')).toHaveTextContent('2');
+
+    const loading = await renderCarousel({ friends: null }).screenPromise;
+    expect(loading.queryByTestId('friends-see-all-count')).toBeNull();
   });
 });

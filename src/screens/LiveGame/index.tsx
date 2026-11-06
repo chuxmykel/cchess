@@ -67,6 +67,17 @@ const LiveGame: React.FC<LiveGameProps> = ({ navigation, route }) => {
 
   useSwipeBackUntilGameLoads(navigation, isGameLoaded);
 
+  // A daily game reached here - by a link that didn't know - plays in its
+  // own screen.
+  const isDailyGame =
+    isGameLoaded && snapshotResult.snapshot.gameType === 'daily';
+  const playingGameId = session.phase === 'playing' ? session.gameId : null;
+  useEffect(() => {
+    if (isDailyGame && playingGameId) {
+      navigation.replace('DailyGame', { gameId: playingGameId });
+    }
+  }, [isDailyGame, playingGameId, navigation]);
+
   function renderContent() {
     if (session.phase === 'seeking') {
       return (
@@ -82,7 +93,7 @@ const LiveGame: React.FC<LiveGameProps> = ({ navigation, route }) => {
       );
     }
 
-    if (!isGameLoaded) {
+    if (!isGameLoaded || isDailyGame) {
       return (
         <LiveGameSkeleton
           width={width}

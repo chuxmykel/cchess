@@ -7,6 +7,7 @@ import { timeControlOf } from '../../constants/timeControls';
 import { useFirstMoveCountdown } from '../../hooks/useFirstMoveCountdown';
 import { Challenge } from '../../network/restClient';
 import { makeStyles } from '../../theme';
+import { formatTimeLeft } from '../../utils/timeLeft';
 
 type ChallengeCardProps =
   | {
@@ -42,7 +43,7 @@ const ChallengeCard: React.FC<ChallengeCardProps> = (props) => {
           <GameTypeIcon type={challenge.gameType} size={14} />
           <Text style={styles.subtitle}>
             {timeControl.label} • {challenge.rated ? 'Rated' : 'Casual'}
-            {secondsLeft !== null && ` • ${secondsLeft}s`}
+            {secondsLeft !== null && ` • ${formatTimeLeft(secondsLeft * 1000)}`}
           </Text>
         </View>
       </View>

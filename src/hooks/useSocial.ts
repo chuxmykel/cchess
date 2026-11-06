@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useAuthSession } from '../context/AuthSessionContext';
+import { GameType } from '../domain/types';
 import {
   acceptChallenge as acceptChallengeRequest,
   cancelChallenge as cancelChallengeRequest,
@@ -39,7 +40,7 @@ export type Social = {
   requests: FriendRequests;
   challenges: Challenges;
   unreadByUserId: Record<string, number>;
-  reload: () => void;
+  reload: () => Promise<void>;
   sendFriendRequest: (username: string) => Promise<void>;
   respondToFriendRequest: (requestId: string, accept: boolean) => Promise<void>;
   cancelFriendRequest: (requestId: string) => Promise<void>;
@@ -92,7 +93,12 @@ function withFriendStatus(
 
 // The signed-in player's friends, friend requests, challenges and unread
 // messages, kept current from the server's pushes.
-export function useSocial(onGameStarted: (gameId: string) => void): Social {
+// onGameStarted opens a game a challenge started: one you accepted, or a
+// live one of yours accepted - not a daily one, which waits for you in
+// Daily games rather than pulling you away from what you're doing.
+export function useSocial(
+  onGameStarted: (gameId: string, gameType: GameType) => void,
+): Social {
   const session = useAuthSession();
   const { authorized } = session;
   const user = session.isReady ? session.user : null;
@@ -123,11 +129,11 @@ export function useSocial(onGameStarted: (gameId: string) => void): Social {
 
   const reload = useCallback(() => {
     if (!userId) {
-      return;
+      return Promise.resolve();
     }
     latestLoad.current += 1;
     const loadId = latestLoad.current;
-    authorized((accessToken) =>
+    return authorized((accessToken) =>
       Promise.all([
         getFriends(accessToken),
         getFriendRequests(accessToken),
@@ -208,8 +214,8 @@ export function useSocial(onGameStarted: (gameId: string) => void): Social {
         ...current,
         challenges: withoutChallenge(current.challenges, challenge.id),
       }));
-      if (challenge.gameId) {
-        onGameStartedRef.current(challenge.gameId);
+      if (challenge.gameId && challenge.gameType !== 'daily') {
+        onGameStartedRef.current(challenge.gameId, challenge.gameType);
       }
     }
 
@@ -333,7 +339,7 @@ export function useSocial(onGameStarted: (gameId: string) => void): Social {
         const game = await authorized((token) =>
           acceptChallengeRequest(challengeId, token),
         );
-        onGameStartedRef.current(game.id);
+        onGameStartedRef.current(game.id, game.gameType);
       } finally {
         update((current) => ({
           ...current,

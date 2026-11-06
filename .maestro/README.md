@@ -65,6 +65,9 @@ on another's leftover state, and they can run in any order.
   (`tap-to-move.yaml`, `drag-and-drop.yaml`, `capture.yaml`,
   `off-board-drag.yaml`, `new-game-renders.yaml`,
   `time-control-selection.yaml`).
+- **Daily games** (`needs-live-server`, no opponent needed): seeking a
+  daily game from New Game, waiting under Home's Daily games, and
+  withdrawing the seek (`daily-seek.yaml`).
 - **New Game screen**: dismissing the time-control sheet via its backdrop
   without changing the selection (`bottom-sheet-dismiss.yaml`), and the
   "Coming Soon" buttons' disabled-look-but-still-tappable toast

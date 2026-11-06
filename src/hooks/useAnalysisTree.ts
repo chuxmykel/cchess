@@ -6,6 +6,7 @@ import {
   MoveSpec,
   addMove,
   deleteFrom,
+  keepOnlyChild,
   lineThrough,
   pathTo,
   promoteVariation,
@@ -19,6 +20,8 @@ type State = {
   // The line being followed: Forward goes along it, so going back and then
   // forward again returns the way you came, variation or not.
   line: string[];
+  // One line only: a move other than the one that followed replaces it.
+  singleLine: boolean;
 };
 
 // A step to another position in the tree, without a move.
@@ -31,6 +34,8 @@ export type TreeStep =
 
 type Action =
   | { type: 'MOVE'; move: MoveSpec }
+  | { type: 'PLAY_LINE'; moves: MoveSpec[] }
+  | { type: 'RESET'; start: AnalysisStart }
   | TreeStep
   | { type: 'PROMOTE'; id: string }
   | { type: 'DELETE'; id: string };
@@ -44,14 +49,31 @@ function goTo(state: State, id: string): State {
   };
 }
 
+// A move played from the position looked at, gone to.
+function play(state: State, move: MoveSpec): State {
+  const { tree, currentId } = state;
+  const added = addMove(tree, currentId, move);
+  if (!added) return state;
+  const next = state.singleLine
+    ? keepOnlyChild(added.tree, currentId, added.nodeId)
+    : added.tree;
+  return goTo({ ...state, tree: next }, added.nodeId);
+}
+
 function reducer(state: State, action: Action): State {
   const { tree, currentId, line } = state;
   switch (action.type) {
-    case 'MOVE': {
-      const added = addMove(tree, currentId, action.move);
-      if (!added) return state;
-      return goTo({ ...state, tree: added.tree }, added.nodeId);
-    }
+    case 'MOVE':
+      return play(state, action.move);
+    case 'PLAY_LINE':
+      // From the start, along the moves already there and on past them -
+      // as far as the moves are legal.
+      return action.moves.reduce(play, {
+        ...state,
+        currentId: tree.rootId,
+      });
+    case 'RESET':
+      return init({ start: action.start, singleLine: state.singleLine });
     case 'GO_TO':
       return goTo(state, action.id);
     case 'BACK': {
@@ -77,6 +99,7 @@ function reducer(state: State, action: Action): State {
         ? (tree.nodes[action.id].parentId as string)
         : currentId;
       return {
+        ...state,
         tree: pruned,
         currentId: at,
         line: line.every((id) => pruned.nodes[id])
@@ -97,20 +120,33 @@ export type AnalysisStart = {
   initialPly?: number;
 };
 
-function init({ startFen, uciMoves = [], initialPly }: AnalysisStart): State {
+export type AnalysisTreeOptions = {
+  /** Keep one line, no variations: a different move from a position
+   * replaces the moves that followed it. */
+  singleLine?: boolean;
+};
+
+function init({
+  start: { startFen, uciMoves = [], initialPly },
+  singleLine = false,
+}: { start: AnalysisStart } & AnalysisTreeOptions): State {
   const { tree, line } = treeFromMoves(startFen, uciMoves);
   const at = Math.min(initialPly ?? line.length, line.length);
   return {
     tree,
     currentId: at > 0 ? line[at - 1] : tree.rootId,
     line: [tree.rootId, ...line],
+    singleLine,
   };
 }
 
 // An analysis's moves as a tree - its main line and every variation tried -
 // and the position being looked at in it.
-export function useAnalysisTree(start: AnalysisStart) {
-  const [state, dispatch] = useReducer(reducer, start, init);
+export function useAnalysisTree(
+  start: AnalysisStart,
+  options: AnalysisTreeOptions = {},
+) {
+  const [state, dispatch] = useReducer(reducer, { start, ...options }, init);
   const { tree, currentId, line } = state;
   const current: AnalysisNode = tree.nodes[currentId];
   // The state as it is now, for `peek` - which a press calls before React
@@ -122,6 +158,14 @@ export function useAnalysisTree(start: AnalysisStart) {
 
   const recordMove = useCallback(
     (move: MoveSpec) => dispatch({ type: 'MOVE', move }),
+    [],
+  );
+  const playLine = useCallback(
+    (moves: MoveSpec[]) => dispatch({ type: 'PLAY_LINE', moves }),
+    [],
+  );
+  const reset = useCallback(
+    (start: AnalysisStart) => dispatch({ type: 'RESET', start }),
     [],
   );
   const goToId = useCallback(
@@ -164,9 +208,14 @@ export function useAnalysisTree(start: AnalysisStart) {
     current,
     pathFens,
     tokens,
+    // The line followed, from the start - the whole analysis, with
+    // `singleLine`.
+    line,
     canGoBack: current.parentId !== null,
     canGoForward: line.indexOf(currentId) < line.length - 1,
     recordMove,
+    playLine,
+    reset,
     peek,
     step,
     goTo: goToId,

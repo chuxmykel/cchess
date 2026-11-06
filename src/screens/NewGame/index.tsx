@@ -8,10 +8,14 @@ import Toast from '../../components/Toast';
 import { useToast } from '../../hooks/useToast';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { DEFAULT_RATING_RANGE, Seek } from '../../constants/seek';
+import { DAILY_SEEK_FAILED_MESSAGE } from '../../constants/errorMessages';
+import { useSeekDailyGame } from '../../hooks/useSeekDailyGame';
 import { ColorChoice } from '../../network/socketEvents';
 import {
   TimeControl,
   DEFAULT_TIME_CONTROL,
+  daysPerMove,
+  isDailyTimeControl,
 } from '../../constants/timeControls';
 import { makeStyles } from '../../theme';
 
@@ -33,10 +37,40 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
   const authSession = useAuthSession();
   const isGuest = !authSession.isReady || authSession.user.isGuest;
   const rated = !isGuest && chosenRated;
+  const seekDailyGame = useSeekDailyGame();
+  const [isSeekingDaily, setIsSeekingDaily] = useState(false);
 
   function startNewGame() {
+    if (isDailyTimeControl(timeControl)) {
+      startDailyGame();
+      return;
+    }
     const seek: Seek = { timeControl, rated, ratingRange, color };
     navigation.navigate('LiveGame', { seek });
+  }
+
+  // A daily seek is posted and left: matched at once, the game opens;
+  // otherwise it waits on Home, under Daily games, for an opponent.
+  async function startDailyGame() {
+    if (isSeekingDaily) return;
+    setIsSeekingDaily(true);
+    try {
+      const outcome = await seekDailyGame({
+        days: daysPerMove(timeControl),
+        rated,
+        ratingRange,
+        color,
+      });
+      if (outcome.status === 'matched') {
+        navigation.navigate('DailyGame', { gameId: outcome.gameId });
+      } else {
+        navigation.navigate('Home');
+      }
+    } catch (error) {
+      toast.show((error as Error).message || DAILY_SEEK_FAILED_MESSAGE);
+    } finally {
+      setIsSeekingDaily(false);
+    }
   }
 
   function challengeFriend() {
@@ -71,6 +105,7 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
         <Button
           label="Start New Game"
           onPress={startNewGame}
+          disabled={isSeekingDaily}
           variant="primary"
           style={styles.startButton}
           testID="start-new-game-button"

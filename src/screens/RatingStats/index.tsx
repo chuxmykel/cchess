@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { parseISO, subDays } from 'date-fns';
 
 import Button from '../../components/Button';
@@ -18,6 +18,7 @@ import {
   RATING_PERIOD_LABELS,
 } from '../../constants/ratingPeriods';
 import { GAME_TYPE_LABELS } from '../../constants/timeControls';
+import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useRatingStats } from '../../hooks/useRatingStats';
 import {
   RATING_PERIODS,
@@ -59,6 +60,7 @@ const RatingStatsScreen: React.FC<RatingStatsProps> = ({
   const { username, displayName, category } = route.params;
   const [period, setPeriod] = useState<RatingPeriod>(DEFAULT_RATING_PERIOD);
   const { state, reload } = useRatingStats(username, category, period);
+  const refresh = usePullToRefresh(reload);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -96,6 +98,7 @@ const RatingStatsScreen: React.FC<RatingStatsProps> = ({
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl {...refresh} />}
       testID="rating-stats-screen"
     >
       <View style={styles.header}>

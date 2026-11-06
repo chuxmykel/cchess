@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Color, Square } from 'chess.js';
 
 import { MoveResult } from '../domain/types';
@@ -56,7 +56,20 @@ export type UseOnlineChessGameResult = Omit<
   offerDraw: () => void;
   respondToDraw: (accept: boolean) => void;
   abort: () => void;
+  /** With moves confirmed: a move of mine played on the board but not yet
+   * sent, waiting for confirmMove or cancelMove. */
+  hasPendingMove: boolean;
+  /** Sends the move waiting to be confirmed. */
+  confirmMove: () => void;
+  /** Takes back the move waiting to be confirmed. */
+  cancelMove: () => void;
 } & PremoveControls;
+
+export type OnlineChessGameOptions = {
+  /** Each move of mine waits on the board for confirmMove before it's sent
+   * - or cancelMove, which takes it back. */
+  confirmMoves?: boolean;
+};
 
 export type DrawOfferStatus = 'none' | 'sent' | 'received';
 
@@ -69,8 +82,12 @@ export function useOnlineChessGame(
   snapshot: GameSnapshot,
   onError?: (message: string) => void,
   onRematchStarted?: (gameId: string) => void,
+  { confirmMoves = false }: OnlineChessGameOptions = {},
 ): UseOnlineChessGameResult {
   const game = useChessGame(snapshot.fen);
+  // Days apart, a daily game's moves take no pre-moves, nor start with the
+  // sound of a game beginning each time one not yet begun is opened.
+  const isDaily = snapshot.gameType === 'daily';
 
   const {
     gameStatus,
@@ -93,7 +110,7 @@ export function useOnlineChessGame(
     myColor,
     game.fen,
     game.turn,
-    gameStatus === 'active',
+    gameStatus === 'active' && !isDaily,
   );
   let drawOffer: DrawOfferStatus = 'none';
   if (drawOfferedBy === myColor) drawOffer = 'sent';
@@ -110,27 +127,55 @@ export function useOnlineChessGame(
     pliesPlayedIncludingOurUnconfirmedMove < SERVER_ABORT_PLY_LIMIT;
 
   useGameStartSound(
-    snapshot.status === 'active' && snapshot.moves.length === 0,
+    !isDaily && snapshot.status === 'active' && snapshot.moves.length === 0,
   );
   useMoveSounds(game.lastMove);
   useGameOverSound(gameStatus !== 'active', resultReason);
 
+  // The position the server last confirmed - ours runs a move ahead while
+  // one of ours is on its way, or waiting to be confirmed.
+  const confirmedFen = moves.at(-1)?.fenAfter ?? snapshot.fen;
+  // The position a move of ours, confirmed by its player, was sent from.
+  const [sentFen, setSentFen] = useState<string | null>(null);
+  const hasPendingMove =
+    confirmMoves &&
+    gameStatus === 'active' &&
+    game.lastMove?.color === myColor &&
+    game.fen !== confirmedFen &&
+    game.fen !== sentFen;
+
+  function sendMove(move: NonNullable<typeof game.lastMove>) {
+    socket.emit('game:move', {
+      gameId,
+      from: move.from,
+      to: move.to,
+      promotion: move.promotionPiece,
+    });
+  }
+
   useEffect(() => {
-    // Not one the server played for us - a pre-move - and sent back.
+    // Not one the server played for us - a pre-move - and sent back. With
+    // moves confirmed, it waits for confirmMove.
     if (
+      !confirmMoves &&
       game.lastMove &&
       game.lastMove.color === myColor &&
       !isConfirmed(game.fen)
     ) {
-      socket.emit('game:move', {
-        gameId,
-        from: game.lastMove.from,
-        to: game.lastMove.to,
-        promotion: game.lastMove.promotionPiece,
-      });
+      sendMove(game.lastMove);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [game.lastMove]);
+
+  function confirmMove(): void {
+    if (!hasPendingMove || !game.lastMove) return;
+    setSentFen(game.fen);
+    sendMove(game.lastMove);
+  }
+
+  function cancelMove(): void {
+    if (hasPendingMove) game.resetTo(confirmedFen);
+  }
 
   function canAct(): boolean {
     return gameStatus === 'active' && game.turn === myColor;
@@ -191,6 +236,9 @@ export function useOnlineChessGame(
     offerDraw,
     respondToDraw,
     abort,
+    hasPendingMove,
+    confirmMove,
+    cancelMove,
     premovable,
     setPremove,
     cancelPremove,

@@ -29,10 +29,16 @@ const ALL_OPTION_TEST_IDS = [
   'classical-30+0',
   'classical-30+20',
   'classical-60+0',
+  'daily-1 day',
+  'daily-2 days',
+  'daily-3 days',
+  'daily-5 days',
+  'daily-7 days',
+  'daily-14 days',
 ].map((suffix) => `${OPTION_TEST_ID_PREFIX}${suffix}`);
 
 describe('TimeControlOptions', () => {
-  it('renders all 16 time control options, since the set is fixed and a missing one is a regression', async () => {
+  it('renders all 22 time control options, since the set is fixed and a missing one is a regression', async () => {
     const screen = await render(
       <TimeControlOptions
         selected={DEFAULT_TIME_CONTROL}
@@ -45,6 +51,30 @@ describe('TimeControlOptions', () => {
       .map((option) => option.props.testID);
 
     expect(renderedTestIds.sort()).toEqual([...ALL_OPTION_TEST_IDS].sort());
+  });
+
+  it('offers daily games their days a move, wrapped into rows of three', async () => {
+    const onSelect = jest.fn();
+    const screen = await render(
+      <TimeControlOptions
+        selected={DEFAULT_TIME_CONTROL}
+        onSelect={onSelect}
+      />,
+    );
+
+    const oneDay = screen.getByTestId(`${OPTION_TEST_ID_PREFIX}daily-1 day`);
+    const fiveDays = screen.getByTestId(`${OPTION_TEST_ID_PREFIX}daily-5 days`);
+    expect(oneDay.parent).not.toBe(fiveDays.parent);
+    await fireEvent.press(
+      screen.getByTestId(`${OPTION_TEST_ID_PREFIX}daily-3 days`),
+    );
+
+    expect(onSelect).toHaveBeenCalledWith<[TimeControl]>({
+      type: 'daily',
+      label: '3 days',
+      initialSeconds: 3 * 24 * 60 * 60,
+      incrementSeconds: 0,
+    });
   });
 
   it('calls onSelect with the pressed option', async () => {

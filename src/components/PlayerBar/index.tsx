@@ -23,7 +23,9 @@ export interface PlayerBarProps {
   color: Color;
   white: GameUserSummary;
   black: GameUserSummary;
-  clock: GameClockResult;
+  /** Each side's time left - no clock shown without one, as on an
+   * analysis board. */
+  clock?: GameClockResult;
   turn: Color;
   isGameOver: boolean;
   /** Dims the bar - behind the result card. Defaults to once the game is
@@ -36,6 +38,8 @@ export interface PlayerBarProps {
   onPressPlayer?: (player: GameUserSummary) => void;
   /** A rematch series' score, shown as this side's points. */
   series?: SeriesScore | null;
+  /** A daily game: the clock shows the days and hours left on the move. */
+  daily?: boolean;
 }
 
 const PlayerBar: React.FC<PlayerBarProps> = ({
@@ -51,6 +55,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
   material,
   onPressPlayer,
   series = null,
+  daily = false,
 }) => {
   const styles = useStyles();
 
@@ -143,11 +148,14 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           )}
         </View>
       </View>
-      <GameClock
-        label={isWhite ? 'White' : 'Black'}
-        ms={isWhite ? clock.whiteMs : clock.blackMs}
-        isActive={!isGameOver && turn === color}
-      />
+      {clock && (
+        <GameClock
+          label={isWhite ? 'White' : 'Black'}
+          ms={isWhite ? clock.whiteMs : clock.blackMs}
+          isActive={!isGameOver && turn === color}
+          daily={daily}
+        />
+      )}
     </View>
   );
 };

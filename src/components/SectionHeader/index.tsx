@@ -1,11 +1,12 @@
 import { View, Text } from 'react-native';
 
 import Button from '../Button';
+import CountPill from '../CountPill';
 import { makeStyles } from '../../theme';
 
 interface SectionHeaderProps {
   title: string;
-  /** How many there are, shown beside the title. */
+  /** How many there are, in a small pill beside the title. */
   count?: number;
   actionLabel?: string;
   onActionPress?: () => void;
@@ -23,15 +24,12 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
 
   return (
     <View style={styles.row}>
-      <Text style={styles.title}>
-        {title}
+      <View style={styles.heading}>
+        <Text style={styles.title}>{title}</Text>
         {count !== undefined && (
-          <Text style={styles.count} testID={testID && `${testID}-count`}>
-            {'  '}
-            {count}
-          </Text>
+          <CountPill count={count} testID={testID && `${testID}-count`} />
         )}
-      </Text>
+      </View>
       {actionLabel && onActionPress && (
         <Button
           label={actionLabel}
@@ -55,13 +53,14 @@ const useStyles = makeStyles((t) => ({
     paddingHorizontal: t.spacing.lg,
     marginBottom: t.spacing.md,
   },
+  heading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.spacing.sm,
+  },
   title: {
     color: t.colors.text,
     fontSize: t.fontSize.xxl,
     fontWeight: t.fontWeight.semibold,
-  },
-  count: {
-    fontWeight: t.fontWeight.regular,
-    color: t.colors.textMuted,
   },
 }));

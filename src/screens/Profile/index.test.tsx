@@ -191,4 +191,29 @@ describe('Profile', () => {
     expect(screen.queryByTestId('sign-in-prompt')).toBeNull();
     expect(screen.queryByText('Ratings')).toBeNull();
   });
+
+  it('fetches the ratings and friends again when pulled down', async () => {
+    const { screenPromise, session } = renderScreen(
+      makeAuthSession({ user: MAGNUS }),
+    );
+    const screen = await screenPromise;
+    await act(async () => {});
+    jest.clearAllMocks();
+
+    const { refreshControl } = screen.getByTestId('profile-screen').props;
+    await act(async () => refreshControl.props.onRefresh());
+
+    expect(session.reloadUser).toHaveBeenCalledTimes(1);
+    expect(getUserFriends).toHaveBeenCalledTimes(1);
+  });
+
+  it("can't be pulled down by a guest, with nothing to fetch", async () => {
+    const { screenPromise } = renderScreen();
+    const screen = await screenPromise;
+
+    expect(screen.getByTestId('profile-screen').props.refreshControl).toBe(
+      undefined,
+    );
+    expect(getUserFriends).not.toHaveBeenCalled();
+  });
 });

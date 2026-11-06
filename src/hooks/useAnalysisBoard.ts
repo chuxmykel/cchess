@@ -52,9 +52,10 @@ export function useAnalysisBoard(
   useLayoutEffect(() => {
     if (fen === current.fen) return;
     resetTo(current.fen);
-    // Only a new position to look at moves the board.
+    // Only a new position to look at moves the board - a new node, since a
+    // tree started afresh numbers its nodes from the start again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current.id]);
+  }, [current]);
 
   const navigation = useMemo(
     () => ({

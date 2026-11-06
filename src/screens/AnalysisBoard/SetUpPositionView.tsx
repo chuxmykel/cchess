@@ -86,7 +86,7 @@ const SetUpPositionView: React.FC<SetUpPositionViewProps> = ({
             testID="set-up-flip"
           />
           <ToolbarButton
-            icon="magnify-scan"
+            icon="head-cog-outline"
             label="Analyse"
             hint="Analyse this position"
             onPress={() => onAnalyse(editor.fen)}

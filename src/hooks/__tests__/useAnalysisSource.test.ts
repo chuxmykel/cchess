@@ -26,6 +26,7 @@ describe('useAnalysisSource', () => {
       .mocked(useAuthSession)
       .mockReturnValue(makeAuthSession({ user: { id: 'me' } }));
   });
+  afterEach(() => jest.clearAllMocks());
 
   it('starts a new analysis from the starting position, at once', async () => {
     const { result } = await renderHook(() =>
@@ -54,6 +55,43 @@ describe('useAnalysisSource', () => {
     });
   });
 
+  it('refuses your own daily game still being played, unless asked to allow it', async () => {
+    const snapshot = makeGameSnapshot({ gameType: 'daily', status: 'active' });
+    jest.mocked(getGame).mockResolvedValue({
+      ...snapshot,
+      white: { ...snapshot.white, id: 'me' },
+    });
+
+    const refused = await renderHook(() =>
+      useAnalysisSource({ kind: 'game', gameId: 'game-1' }),
+    );
+    await act(async () => {});
+    expect(refused.result.current.state).toEqual({ status: 'in-play' });
+
+    const allowed = await renderHook(() =>
+      useAnalysisSource(
+        { kind: 'game', gameId: 'game-1' },
+        { allowDailyInPlay: true },
+      ),
+    );
+    await act(async () => {});
+    expect(allowed.result.current.state.status).toBe('ready');
+  });
+
+  it("lets anyone analyse someone else's daily game", async () => {
+    jest
+      .mocked(getGame)
+      .mockResolvedValue(
+        makeGameSnapshot({ gameType: 'daily', status: 'active' }),
+      );
+    const { result } = await renderHook(() =>
+      useAnalysisSource({ kind: 'game', gameId: 'game-1' }),
+    );
+    await act(async () => {});
+
+    expect(result.current.state.status).toBe('ready');
+  });
+
   it("fetches a game, starting at the move asked for, from the player's side", async () => {
     const snapshot = makeGameSnapshot();
     jest.mocked(getGame).mockResolvedValue({
@@ -75,6 +113,11 @@ describe('useAnalysisSource', () => {
         initialPly: 1,
       },
       orientation: 'b',
+      gameStatus: 'active',
+      players: {
+        white: snapshot.white,
+        black: { ...snapshot.black, id: 'me' },
+      },
     });
   });
 
@@ -109,5 +152,27 @@ describe('useAnalysisSource', () => {
     await act(async () => result.current.reload());
 
     expect(result.current.state).toMatchObject({ status: 'ready' });
+  });
+
+  it('keeps the game shown while fetching it again', async () => {
+    jest.mocked(getGame).mockResolvedValue(makeGameSnapshot());
+    const { result } = await renderHook(() =>
+      useAnalysisSource({ kind: 'game', gameId: 'game-1' }),
+    );
+    await act(async () => {});
+
+    jest.mocked(getGame).mockReturnValue(new Promise(() => {}));
+    await act(async () => result.current.reload());
+
+    expect(result.current.state).toMatchObject({ status: 'ready' });
+  });
+
+  it('fetches nothing with skip', async () => {
+    await renderHook(() =>
+      useAnalysisSource({ kind: 'game', gameId: 'game-1' }, { skip: true }),
+    );
+    await act(async () => {});
+
+    expect(getGame).not.toHaveBeenCalled();
   });
 });
