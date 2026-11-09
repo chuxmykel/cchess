@@ -117,10 +117,11 @@ const OpeningExplorer: React.FC<OpeningExplorerProps> = ({
         )}
       </View>
       <ExplorerMoveList
-        fen={analysis.current.fen}
+        fen={explorer.fen}
         opening={opening}
         moves={explorer.moves}
         status={explorer.status}
+        outdated={explorer.outdated}
         totals={explorer.totals}
         db={query?.db ?? null}
         source={explorer.source}

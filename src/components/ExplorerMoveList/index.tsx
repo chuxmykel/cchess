@@ -18,6 +18,9 @@ interface ExplorerMoveListProps {
   opening: Opening | null;
   moves: ExplorerMoveRow[];
   status: ExplorerMoves['status'];
+  /** The last position's moves while this one's come: greyed, and not
+   * played by a tap - they're not this position's. */
+  outdated?: boolean;
   /** The position's own games, for the Σ row and each move's share. */
   totals: ExplorerTotals | null;
   /** The database asked, and where the answer came from - when lichess was
@@ -40,12 +43,14 @@ function moveNumberAt(fen: string): string {
 // played it, its share of the position's, and a bar of how they ended -
 // white's wins, draws and black's - and under them, Σ, the position's
 // own. A tap plays a move. It fills the room it's given, moves or not, so
-// what's under it stays put.
+// what's under it stays put. The last position's, while this one's come,
+// are greyed and can't be tapped.
 const ExplorerMoveList: React.FC<ExplorerMoveListProps> = ({
   fen,
   opening,
   moves,
   status,
+  outdated = false,
   totals,
   db,
   source,
@@ -84,13 +89,17 @@ const ExplorerMoveList: React.FC<ExplorerMoveListProps> = ({
           </Text>
         )
       ) : (
-        <ScrollView style={styles.list} testID="explorer-moves">
+        <ScrollView
+          style={[styles.list, outdated && styles.outdated]}
+          testID="explorer-moves"
+        >
           {moves.map((move) => (
             <MoveRow
               key={move.uci}
               number={number}
               move={move}
               totalGames={totals?.games ?? null}
+              disabled={outdated}
               onPress={onPlayMove}
             />
           ))}
@@ -105,8 +114,9 @@ const MoveRow: React.FC<{
   number: string;
   move: ExplorerMoveRow;
   totalGames: number | null;
+  disabled: boolean;
   onPress: (uci: string) => void;
-}> = ({ number, move, totalGames, onPress }) => {
+}> = ({ number, move, totalGames, disabled, onPress }) => {
   const styles = useStyles();
   const games = move.results?.games ?? 0;
   const share =
@@ -115,7 +125,9 @@ const MoveRow: React.FC<{
     <Pressable
       style={styles.row}
       onPress={() => onPress(move.uci)}
+      disabled={disabled}
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
       accessibilityLabel={
         move.opening
           ? `${number} ${move.san}, ${move.opening.name}`
@@ -214,6 +226,9 @@ const useStyles = makeStyles((t) => ({
   },
   list: {
     flex: 1,
+  },
+  outdated: {
+    opacity: 0.4,
   },
   opening: {
     color: t.colors.textMuted,

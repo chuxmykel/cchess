@@ -108,4 +108,16 @@ describe('ExplorerMoveList', () => {
 
     expect(onPlayMove).toHaveBeenCalledWith('f1c4');
   });
+
+  it("greys the last position's moves while this one's come, and doesn't play them", async () => {
+    const { onPlayMove, ...screen } = await renderList({
+      status: 'loading',
+      outdated: true,
+    });
+
+    expect(screen.getByTestId('explorer-moves')).toHaveStyle({ opacity: 0.4 });
+    expect(screen.getByTestId('explorer-move-g1f3')).toBeDisabled();
+    fireEvent.press(screen.getByTestId('explorer-move-g1f3'));
+    expect(onPlayMove).not.toHaveBeenCalled();
+  });
 });

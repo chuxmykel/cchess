@@ -116,4 +116,52 @@ describe('useExplorerMoves', () => {
 
     expect(result.current.moves.map((move) => move.san)).toEqual(['Kd3']);
   });
+
+  it("keeps the last position's moves, outdated, until the next one's come", async () => {
+    const AFTER_NF3 =
+      'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2';
+    const answer = (uci: string, san: string) => ({
+      source: 'lichess',
+      stale: false,
+      totalGames: 4,
+      whiteWins: 4,
+      draws: 0,
+      blackWins: 0,
+      moves: [results(uci, san, 4)],
+    });
+    let respond: (value: unknown) => void = () => {};
+    (getExplorer as jest.Mock)
+      .mockResolvedValueOnce(answer('g1f3', 'Nf3'))
+      .mockReturnValueOnce(new Promise((resolve) => (respond = resolve)));
+    const { result, rerender } = await renderHook(
+      ({ fen }: { fen: string }) => useExplorerMoves(fen, LICHESS),
+      { initialProps: { fen: AFTER_E4_E5 } },
+    );
+    await act(async () => {
+      jest.advanceTimersByTime(EXPLORER_FETCH_DELAY_MS);
+    });
+    expect(result.current).toMatchObject({ status: 'ready', outdated: false });
+
+    await rerender({ fen: AFTER_NF3 });
+
+    expect(result.current).toMatchObject({
+      status: 'loading',
+      outdated: true,
+      fen: AFTER_E4_E5,
+      totals: { games: 4 },
+    });
+    expect(result.current.moves[0]).toMatchObject({ san: 'Nf3' });
+
+    await act(async () => {
+      jest.advanceTimersByTime(EXPLORER_FETCH_DELAY_MS);
+    });
+    await act(async () => respond(answer('b8c6', 'Nc6')));
+
+    expect(result.current).toMatchObject({
+      status: 'ready',
+      outdated: false,
+      fen: AFTER_NF3,
+    });
+    expect(result.current.moves[0]).toMatchObject({ san: 'Nc6' });
+  });
 });

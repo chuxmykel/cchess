@@ -776,7 +776,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
     `network/explorerSettingsStorage.ts`, `constants/explorer.ts`) and
     turned into the request by `explorerQuery`. A position is asked about
     once it's been shown 300ms (`EXPLORER_FETCH_DELAY_MS`), each answer
-    kept by database and position. A tap plays a move there. As the line
+    kept by database and position; until it's come, the last position's
+    moves stay, greyed and not tappable (`useExplorerMoves`' `outdated`). A tap plays a move there. As the line
     changes it's set on the analysis's route (`explorerLine`, by
     `returnKey` - not on leaving: an action dispatched from
     `beforeRemove` brought the removal round again, overflowing the
