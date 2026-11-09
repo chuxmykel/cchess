@@ -119,8 +119,12 @@ const MoveRow: React.FC<{
 }> = ({ number, move, totalGames, disabled, onPress }) => {
   const styles = useStyles();
   const games = move.results?.games ?? 0;
+  // None for a book move no one has played: "0%" beside its "0" says
+  // nothing more.
   const share =
-    totalGames !== null && totalGames > 0 ? percentOf(games, totalGames) : null;
+    move.results && totalGames !== null && totalGames > 0
+      ? percentOf(games, totalGames)
+      : null;
   return (
     <Pressable
       style={styles.row}

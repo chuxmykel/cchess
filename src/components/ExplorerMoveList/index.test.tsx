@@ -84,6 +84,16 @@ describe('ExplorerMoveList', () => {
     expect(screen.queryByTestId('explorer-totals')).toBeNull();
   });
 
+  it('shows a book move no one has played at 0, with no share', async () => {
+    const screen = await renderList({
+      moves: [row('g1f3', 'Nf3', 1500), row('b1c3', 'Nc3', null)],
+    });
+
+    expect(screen.getByTestId('explorer-games-b1c3')).toHaveTextContent('0');
+    expect(screen.getByTestId('explorer-share-b1c3')).toHaveTextContent('');
+    expect(screen.getByTestId('explorer-share-g1f3')).toHaveTextContent('100%');
+  });
+
   it('says when lichess was out of reach and the games here answered', async () => {
     const screen = await renderList({ db: 'masters', source: 'cchess' });
 
