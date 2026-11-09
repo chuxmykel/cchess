@@ -53,6 +53,8 @@ interface ToolbarButtonProps {
   // Held down, it presses again and again, until let go - so it has no
   // tooltip.
   repeatsWhileHeld?: boolean;
+  // A word under the icon - what it's set to, say.
+  caption?: string;
   testID: string;
 }
 
@@ -64,6 +66,7 @@ export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
   badgeCount = 0,
   hint,
   repeatsWhileHeld = false,
+  caption,
   testID,
 }) => {
   const { colors } = useTheme();
@@ -111,6 +114,15 @@ export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
         size={ICON_SIZE}
         color={disabled ? colors.disabled : colors.text}
       />
+      {caption !== undefined && (
+        <Text
+          style={[styles.caption, disabled && styles.captionDisabled]}
+          numberOfLines={1}
+          testID={`${testID}-caption`}
+        >
+          {caption}
+        </Text>
+      )}
       {badgeCount > 0 && (
         <View style={styles.badge} testID={`${testID}-badge`}>
           <Text style={styles.badgeText}>
@@ -228,6 +240,14 @@ const useStyles = makeStyles((t) => ({
     minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  caption: {
+    maxWidth: 88,
+    color: t.colors.text,
+    fontSize: t.fontSize.xxs,
+  },
+  captionDisabled: {
+    color: t.colors.disabled,
   },
   badge: {
     position: 'absolute',

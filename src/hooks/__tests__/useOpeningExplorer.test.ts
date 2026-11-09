@@ -1,8 +1,9 @@
 import { act, renderHook } from '@testing-library/react-native';
 
 import { useOpeningExplorer } from '../useOpeningExplorer';
+import { EXPLORER_FETCH_DELAY_MS } from '../../constants/explorer';
 import { useAuthSession } from '../../context/AuthSessionContext';
-import { ApiError, getExplorer } from '../../network/restClient';
+import { ApiError, ExplorerQuery, getExplorer } from '../../network/restClient';
 import { makeAuthSession } from '../../testUtils/authSession';
 
 jest.mock('../../context/AuthSessionContext', () => ({
@@ -13,44 +14,101 @@ jest.mock('../../network/restClient', () => ({
   getExplorer: jest.fn(),
 }));
 
-const POSITION = { totalGames: 3, moves: [] };
+const POSITION = {
+  source: 'masters',
+  stale: false,
+  totalGames: 3,
+  whiteWins: 1,
+  draws: 1,
+  blackWins: 1,
+  moves: [],
+};
+const MASTERS: ExplorerQuery = { db: 'masters' };
+
+const waitOutDelay = () =>
+  act(async () => {
+    jest.advanceTimersByTime(EXPLORER_FETCH_DELAY_MS);
+  });
 
 describe('useOpeningExplorer', () => {
   beforeEach(() => {
+    jest.useFakeTimers();
     (useAuthSession as jest.Mock).mockReturnValue(makeAuthSession());
     (getExplorer as jest.Mock).mockResolvedValue(POSITION);
   });
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    jest.useRealTimers();
+    jest.clearAllMocks();
+  });
 
-  it('asks nothing while closed', async () => {
-    const { result } = await renderHook(() => useOpeningExplorer('a', false));
+  it('asks nothing without a database', async () => {
+    const { result } = await renderHook(() => useOpeningExplorer('a', null));
+    await waitOutDelay();
 
     expect(result.current).toEqual({ status: 'idle' });
     expect(getExplorer).not.toHaveBeenCalled();
   });
 
-  it('asks about each position once, keeping what it was told', async () => {
-    const { result, rerender } = await renderHook(
-      ({ fen }) => useOpeningExplorer(fen, true),
-      { initialProps: { fen: 'a' } },
-    );
-    await act(async () => {});
+  it('asks once a position has been shown a moment, in the database given', async () => {
+    const { result } = await renderHook(() => useOpeningExplorer('a', MASTERS));
+    expect(result.current).toEqual({ status: 'loading' });
+    expect(getExplorer).not.toHaveBeenCalled();
+
+    await waitOutDelay();
+
+    expect(getExplorer).toHaveBeenCalledWith('a', 'access-token', MASTERS);
     expect(result.current).toEqual({ status: 'ready', position: POSITION });
-
-    await rerender({ fen: 'b' });
-    await act(async () => {});
-    await rerender({ fen: 'a' });
-    await act(async () => {});
-
-    expect(getExplorer).toHaveBeenCalledTimes(2);
-    expect(result.current.status).toBe('ready');
   });
 
-  it("says so when it couldn't ask", async () => {
-    (getExplorer as jest.Mock).mockRejectedValue(new ApiError(500, 'boom'));
-    const { result } = await renderHook(() => useOpeningExplorer('a', true));
-    await act(async () => {});
+  it('asks only where stepping stops', async () => {
+    const { rerender } = await renderHook(
+      ({ fen }) => useOpeningExplorer(fen, MASTERS),
+      { initialProps: { fen: 'a' } },
+    );
+    await rerender({ fen: 'b' });
+    await rerender({ fen: 'c' });
+    await waitOutDelay();
 
+    expect(getExplorer).toHaveBeenCalledTimes(1);
+    expect((getExplorer as jest.Mock).mock.calls[0][0]).toBe('c');
+  });
+
+  it('asks about each position once a database, keeping what it was told', async () => {
+    const { result, rerender } = await renderHook(
+      ({ fen, query }) => useOpeningExplorer(fen, query),
+      { initialProps: { fen: 'a', query: MASTERS } },
+    );
+    await waitOutDelay();
+    await rerender({ fen: 'b', query: { db: 'masters' } });
+    await waitOutDelay();
+    await rerender({ fen: 'a', query: { db: 'masters' } });
+
+    expect(result.current.status).toBe('ready');
+    expect(getExplorer).toHaveBeenCalledTimes(2);
+
+    await rerender({
+      fen: 'a',
+      query: { db: 'player', user: 'user-1', color: 'white' },
+    });
+    expect(result.current.status).toBe('loading');
+    await waitOutDelay();
+    expect(getExplorer).toHaveBeenCalledTimes(3);
+  });
+
+  it("says so when it couldn't ask, and asks again on coming back", async () => {
+    (getExplorer as jest.Mock).mockRejectedValueOnce(new ApiError(500, 'boom'));
+    const { result, rerender } = await renderHook(
+      ({ fen }) => useOpeningExplorer(fen, MASTERS),
+      { initialProps: { fen: 'a' } },
+    );
+    await waitOutDelay();
     expect(result.current).toEqual({ status: 'error' });
+
+    await rerender({ fen: 'b' });
+    await waitOutDelay();
+    await rerender({ fen: 'a' });
+    await waitOutDelay();
+
+    expect(result.current).toEqual({ status: 'ready', position: POSITION });
   });
 });

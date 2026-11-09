@@ -4,6 +4,10 @@ import { DEFAULT_POSITION } from 'chess.js';
 
 import OpeningExplorer from '.';
 import { boardTester } from '../../components/Board/boardTester';
+import {
+  DEFAULT_EXPLORER_SETTINGS,
+  EXPLORER_FETCH_DELAY_MS,
+} from '../../constants/explorer';
 import { AnalysisSettingsProvider } from '../../context/AnalysisSettingsContext';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { getExplorer } from '../../network/restClient';
@@ -26,7 +30,12 @@ describe('OpeningExplorer', () => {
       makeAuthSession({ accessToken: 'token-a' }),
     );
     (getExplorer as jest.Mock).mockResolvedValue({
+      source: 'lichess',
+      stale: false,
       totalGames: 4,
+      whiteWins: 2,
+      draws: 1,
+      blackWins: 1,
       moves: [
         {
           san: 'Nf3',
@@ -44,6 +53,11 @@ describe('OpeningExplorer', () => {
     jest.useRealTimers();
     jest.clearAllMocks();
   });
+
+  const waitOutDelay = () =>
+    act(async () => {
+      jest.advanceTimersByTime(EXPLORER_FETCH_DELAY_MS);
+    });
 
   async function renderExplorer(uciMoves = ['e2e4', 'e7e5']) {
     const navigation = { dispatch: jest.fn() };
@@ -69,6 +83,7 @@ describe('OpeningExplorer', () => {
       ),
     );
     await act(async () => {});
+    await waitOutDelay();
     return { screen, navigation };
   }
 
@@ -88,7 +103,16 @@ describe('OpeningExplorer', () => {
     expect(screen.queryByTestId('explorer-move-g2g4')).toBeNull();
   });
 
-  it('says so once out of the book', async () => {
+  it('says so when no one has played on from a position out of the book', async () => {
+    (getExplorer as jest.Mock).mockResolvedValue({
+      source: 'lichess',
+      stale: false,
+      totalGames: 0,
+      whiteWins: 0,
+      draws: 0,
+      blackWins: 0,
+      moves: [],
+    });
     const { screen } = await renderExplorer(['e2e4', 'e7e5', 'g2g4', 'g7g5']);
 
     expect(screen.getByTestId('explorer-empty')).toHaveTextContent(
@@ -96,12 +120,17 @@ describe('OpeningExplorer', () => {
     );
   });
 
-  it('puts the moves played in games here first, with how they went', async () => {
+  it("puts the database's moves first, with how they went", async () => {
     const { screen } = await renderExplorer();
 
     expect(getExplorer).toHaveBeenCalledWith(
       'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
       'token-a',
+      {
+        db: 'lichess',
+        speeds: DEFAULT_EXPLORER_SETTINGS.speeds,
+        ratings: DEFAULT_EXPLORER_SETTINGS.ratings,
+      },
     );
     const rows = screen.getAllByTestId(/^explorer-move-/);
     expect(rows[0].props.testID).toBe('explorer-move-g1f3');
@@ -114,10 +143,67 @@ describe('OpeningExplorer', () => {
 
     await fireEvent.press(screen.getByTestId('explorer-move-g1f3'));
     await settleAnimations();
-    await act(async () => {});
+    await waitOutDelay();
 
     expect(boardTester(screen).pieceOn('f3')).toBe('wn');
     expect(screen.getByTestId('explorer-move-b8c6')).toBeTruthy();
+  });
+
+  it('asks in the database chosen, and remembers it', async () => {
+    const { screen } = await renderExplorer();
+    expect(
+      screen.getByTestId('explorer-database-button-caption'),
+    ).toHaveTextContent('Lichess');
+
+    await fireEvent.press(screen.getByTestId('explorer-database-button'));
+    await fireEvent.press(screen.getByTestId('explorer-db-masters'));
+    await waitOutDelay();
+
+    expect(getExplorer).toHaveBeenLastCalledWith(
+      'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
+      'token-a',
+      { db: 'masters' },
+    );
+    expect(
+      screen.getByTestId('explorer-database-button-caption'),
+    ).toHaveTextContent('Masters');
+
+    await screen.unmount();
+    const again = await renderExplorer();
+    expect(
+      again.screen.getByTestId('explorer-database-button-caption'),
+    ).toHaveTextContent('Masters');
+  });
+
+  it('looks in your own games in the Player database', async () => {
+    const { screen } = await renderExplorer();
+
+    await fireEvent.press(screen.getByTestId('explorer-database-button'));
+    await fireEvent.press(screen.getByTestId('explorer-db-player'));
+    await waitOutDelay();
+
+    expect((getExplorer as jest.Mock).mock.lastCall[2]).toEqual({
+      db: 'player',
+      user: 'user-1', // makeAuthSession's own
+      color: 'white',
+    });
+  });
+
+  it('says when lichess was out of reach', async () => {
+    (getExplorer as jest.Mock).mockResolvedValue({
+      source: 'cchess',
+      stale: false,
+      totalGames: 0,
+      whiteWins: 0,
+      draws: 0,
+      blackWins: 0,
+      moves: [],
+    });
+    const { screen } = await renderExplorer();
+
+    expect(screen.getByTestId('explorer-fallback')).toHaveTextContent(
+      /^Lichess is out of reach/,
+    );
   });
 
   it('keeps the analysis it came from on the line explored', async () => {

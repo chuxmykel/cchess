@@ -6,13 +6,20 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import BottomBar from '../../components/BottomBar';
 import { GameBoard } from '../../components/Board';
 import ExplorerMoveList from '../../components/ExplorerMoveList';
+import ExplorerSettingsSheet from '../../components/ExplorerSettingsSheet';
 import { ToolbarButton } from '../../components/GameToolbar';
 import MoveList, { MoveListMove } from '../../components/MoveList';
 import PromotionMenu from '../../components/PromotionMenu';
 import { ChessGameContext } from '../../context/ChessGameContext';
+import { EXPLORER_DB_LABELS } from '../../constants/explorer';
 import { uciToMoveSpec } from '../../domain/analysisTree';
 import { useAnalysisWorkspace } from '../../hooks/useAnalysisWorkspace';
-import { useBookExplorer } from '../../hooks/useBookExplorer';
+import { useAuthSession } from '../../context/AuthSessionContext';
+import { useExplorerMoves } from '../../hooks/useExplorerMoves';
+import {
+  explorerQuery,
+  useExplorerSettings,
+} from '../../hooks/useExplorerSettings';
 import { lineTo } from '../../hooks/useExplorerLine';
 import { HomeStackParamList } from '../HomeStack/types';
 import { makeStyles, spacing } from '../../theme';
@@ -23,9 +30,9 @@ type OpeningExplorerProps = NativeStackScreenProps<
 >;
 
 // The opening explorer, on a board of its own: the moves played along the
-// top, and under the board the opening the position's in and the book's
-// moves from it - a tap playing one there, and listing the next
-// position's. The analysis it was opened from follows the line explored,
+// top, and under the board the opening the position's in and the moves
+// from it in the database chosen - a tap playing one there, and listing
+// the next position's. The analysis it was opened from follows the line explored,
 // so Back finds it there.
 const OpeningExplorer: React.FC<OpeningExplorerProps> = ({
   navigation,
@@ -41,7 +48,21 @@ const OpeningExplorer: React.FC<OpeningExplorerProps> = ({
     singleLine: true,
   });
   const { analysis, game, lastPlayedMove, steps, flip, opening } = workspace;
-  const moves = useBookExplorer(analysis.current.fen);
+  const session = useAuthSession();
+  const explorerSettings = useExplorerSettings();
+  const query = explorerSettings.loaded
+    ? explorerQuery(
+        explorerSettings.settings,
+        session.isReady ? session.user.id : null,
+      )
+    : null;
+  const explorer = useExplorerMoves(analysis.current.fen, query);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { settings } = explorerSettings;
+  const dbCaption =
+    settings.db === 'player' && settings.player
+      ? settings.player.username
+      : EXPLORER_DB_LABELS[settings.db];
 
   const lineMoves = useMemo(
     () =>
@@ -96,13 +117,26 @@ const OpeningExplorer: React.FC<OpeningExplorerProps> = ({
         )}
       </View>
       <ExplorerMoveList
-        fen={analysis.current.fen}
+        fen={explorer.fen}
         opening={opening}
-        moves={moves}
+        moves={explorer.moves}
+        status={explorer.status}
+        outdated={explorer.outdated}
+        totals={explorer.totals}
+        db={query?.db ?? null}
+        source={explorer.source}
         onPlayMove={playMove}
       />
       <BottomBar>
         <View style={styles.toolbar} testID="opening-explorer-toolbar">
+          <ToolbarButton
+            icon="database-outline"
+            label="Database"
+            hint="Choose the database"
+            caption={dbCaption}
+            onPress={() => setSettingsOpen(true)}
+            testID="explorer-database-button"
+          />
           <ToolbarButton
             icon="rotate-3d-variant"
             label="Flip board"
@@ -127,6 +161,12 @@ const OpeningExplorer: React.FC<OpeningExplorerProps> = ({
           />
         </View>
       </BottomBar>
+      <ExplorerSettingsSheet
+        visible={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        settings={settings}
+        onChange={explorerSettings.update}
+      />
     </View>
   );
 };

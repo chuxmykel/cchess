@@ -270,6 +270,44 @@ describe('restClient', () => {
       });
     });
 
+    it('asks in the Lichess database with its filters, comma-separated', async () => {
+      const transport = stubTransport(
+        respondWith({ totalGames: 0, moves: [] }),
+      );
+
+      await getExplorer('8/8/8/8/8/8/8/K6k w - - 0 1', 'access-123', {
+        db: 'lichess',
+        speeds: ['blitz', 'rapid'],
+        ratings: [1800, 2000],
+      });
+
+      expect(sentRequest(transport).params).toEqual({
+        fen: '8/8/8/8/8/8/8/K6k w - - 0 1',
+        db: 'lichess',
+        speeds: 'blitz,rapid',
+        ratings: '1800,2000',
+      });
+    });
+
+    it("asks in a player's games, from one side", async () => {
+      const transport = stubTransport(
+        respondWith({ totalGames: 0, moves: [] }),
+      );
+
+      await getExplorer('8/8/8/8/8/8/8/K6k w - - 0 1', 'access-123', {
+        db: 'player',
+        user: 'user-1',
+        color: 'black',
+      });
+
+      expect(sentRequest(transport).params).toEqual({
+        fen: '8/8/8/8/8/8/8/K6k w - - 0 1',
+        db: 'player',
+        user: 'user-1',
+        color: 'black',
+      });
+    });
+
     it('reads and saves conditional moves, all at once', async () => {
       const reading = stubTransport(respondWith({ basePly: null, lines: [] }));
       await getConditionalMoves('game-1', 'access-123');
