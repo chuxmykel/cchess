@@ -43,6 +43,9 @@ import { HomeStackScreenProps } from '../HomeStack/types';
 import { makeStyles } from '../../theme';
 
 const RECENT_GAMES_SHOWN = 5;
+/** The most recent activity a profile lists - the server sends the last
+ * 30 days, a long list for a busy player. */
+export const ACTIVITY_SHOWN = 10;
 const TITLE_FADE_MS = 200;
 
 type UserProfileProps = Pick<
@@ -331,7 +334,7 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
           <SectionHeader title="Activity" />
         </View>
         <ActivityList
-          activity={activity}
+          activity={activity.slice(0, ACTIVITY_SHOWN)}
           emptyMessage={
             isSelf
               ? 'Your games from the last 30 days will show up here.'
