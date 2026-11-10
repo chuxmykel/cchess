@@ -15,6 +15,13 @@ export const SocialProvider: React.FC<{
   );
 };
 
+/** The social state where there is one - null outside a SocialProvider,
+ * for something optional on a screen that can be shown without it (a
+ * game's "Send to a friend", in a test of the game alone). */
+export function useOptionalSocialContext(): Social | null {
+  return useContext(SocialContext);
+}
+
 export function useSocialContext(): Social {
   const context = useContext(SocialContext);
   if (!context) {

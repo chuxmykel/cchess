@@ -222,6 +222,9 @@ export interface ClientToServerEvents {
   'game:watch': (payload: { gameId: string }) => void;
   'game:unwatch': (payload: { gameId: string }) => void;
   'user:follow': (payload: { userId: string }) => void;
+  /** You're typing a message to this friend - sent every few seconds at
+   * most while you are. */
+  'dm:typing': (payload: { userId: string }) => void;
   'user:unfollow': (payload: { userId: string }) => void;
   'game:rematchOffer': (payload: { gameId: string }) => void;
   'game:rematchDecline': (payload: { gameId: string }) => void;
@@ -255,4 +258,8 @@ export interface ServerToClientEvents {
   'challenge:accepted': (payload: Challenge) => void;
   'challenge:resolved': (payload: Challenge) => void;
   'dm:message': (payload: DirectMessage) => void;
+  /** `userId` has read your messages with them, up to `readAt`. */
+  'dm:read': (payload: { userId: string; readAt: string }) => void;
+  /** `userId` is typing a message to you. */
+  'dm:typing': (payload: { userId: string }) => void;
 }
