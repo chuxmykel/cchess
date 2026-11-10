@@ -46,6 +46,7 @@ jest.mock('../../hooks/useFirstMoveCountdown', () =>
 
 const MAGNUS = {
   isGuest: false,
+  username: 'magnus',
   displayName: 'Magnus Carlsen',
   avatarColor: '#3b82f6',
 };
@@ -103,6 +104,14 @@ describe('Home', () => {
         ),
       ).toBeTruthy();
     });
+
+    it('opens the Menu tab from the avatar, a guest having no profile', async () => {
+      const { screen, navigation } = await renderScreen();
+
+      await fireEvent.press(screen.getByTestId('avatar-button'));
+
+      expect(navigation.navigate).toHaveBeenCalledWith('MenuStack');
+    });
   });
 
   describe('when signed in', () => {
@@ -119,6 +128,18 @@ describe('Home', () => {
       expect(
         within(screen.getByTestId('avatar-button')).getByText('MC'),
       ).toBeTruthy();
+    });
+
+    it('opens their own profile from the avatar', async () => {
+      const { screen, navigation } = await renderScreen(
+        makeAuthSession({ user: MAGNUS }),
+      );
+
+      await fireEvent.press(screen.getByTestId('avatar-button'));
+
+      expect(navigation.navigate).toHaveBeenCalledWith('UserProfile', {
+        username: MAGNUS.username,
+      });
     });
   });
 

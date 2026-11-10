@@ -1,4 +1,4 @@
-# The Analysis tab: a new analysis, a move for each side, then a different
+# A new analysis from the Menu tab, a move for each side, then a different
 # reply from the position before - kept as a variation - and the engine's
 # first line (downloaded on first use, so this needs the internet, not the
 # game server). Engine output varies, so only its presence is checked.
@@ -6,7 +6,7 @@ appId: host.exp.Exponent
 ---
 - runFlow: common/launch-fresh.yaml
 - tapOn:
-    id: "analysis-tab"
+    id: "menu-tab"
 - tapOn:
     id: "analysis-new"
 - tapOn:

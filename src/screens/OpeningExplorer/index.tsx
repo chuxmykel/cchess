@@ -79,6 +79,8 @@ const OpeningExplorer: React.FC<OpeningExplorerProps> = ({
   // was removed, it brought the removal round again, and again.)
   const { tree, current } = analysis;
   useEffect(() => {
+    // Opened on its own, from the Menu, there's no analysis to follow.
+    if (!returnKey) return;
     navigation.dispatch({
       ...CommonActions.setParams({ explorerLine: lineTo(tree, current.id) }),
       source: returnKey,

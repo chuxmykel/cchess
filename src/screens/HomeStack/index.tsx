@@ -33,6 +33,7 @@ import { GameType } from '../../domain/types';
 import SignIn from '../SignIn';
 import CreateAccount from '../CreateAccount';
 import Licenses from '../Licenses';
+import Settings from '../Settings';
 import Appearance from '../Appearance';
 import { plainHeaderOptions } from '../plainHeaderOptions';
 import { HomeStackParamList, RootStackParamList } from './types';
@@ -195,6 +196,14 @@ const HomeStack: React.FC = () => {
                 options={({ navigation }) => ({
                   ...plainHeaderOptions(navigation),
                   title: 'Daily Game Settings',
+                })}
+              />
+              <Screen
+                name="Settings"
+                component={Settings}
+                options={({ navigation }) => ({
+                  ...plainHeaderOptions(navigation),
+                  title: 'Settings',
                 })}
               />
               <Screen

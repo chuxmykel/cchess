@@ -59,7 +59,11 @@ describe('OpeningExplorer', () => {
       jest.advanceTimersByTime(EXPLORER_FETCH_DELAY_MS);
     });
 
-  async function renderExplorer(uciMoves = ['e2e4', 'e7e5']) {
+  async function renderExplorer(
+    uciMoves = ['e2e4', 'e7e5'],
+    // null: opened on its own, with no analysis behind it.
+    returnKey: string | null = 'analysis-route',
+  ) {
     const navigation = { dispatch: jest.fn() };
     const screen = await render(
       withSafeArea(
@@ -74,7 +78,7 @@ describe('OpeningExplorer', () => {
                   startFen: DEFAULT_POSITION,
                   uciMoves,
                   orientation: 'w',
-                  returnKey: 'analysis-route',
+                  returnKey: returnKey ?? undefined,
                 },
               } as never
             }
@@ -225,5 +229,12 @@ describe('OpeningExplorer', () => {
         },
       }),
     );
+  });
+
+  it('stands alone when opened from the Menu, handing no line back', async () => {
+    const { screen, navigation } = await renderExplorer([], null);
+
+    expect(boardTester(screen).pieceOn('e2')).toBe('wp');
+    expect(navigation.dispatch).not.toHaveBeenCalled();
   });
 });
