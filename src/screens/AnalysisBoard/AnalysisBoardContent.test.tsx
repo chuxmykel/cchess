@@ -12,6 +12,8 @@ import { makeFakeEngine } from '../../testUtils/fakeEngine';
 import { settleAnimations } from '../../testUtils/pieceGestures';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { ExplorerLine } from '../../hooks/useExplorerLine';
+import { sendMessage } from '../../network/restClient';
+import { makeFriend, makeSocial } from '../../testUtils/social';
 
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: () =>
@@ -23,6 +25,16 @@ jest.mock('@react-navigation/native', () => ({
   useIsFocused: () => true,
 }));
 
+// No friends to send to, unless a test gives some.
+let mockSocial: unknown = null;
+jest.mock('../../context/SocialContext', () => ({
+  useOptionalSocialContext: () => mockSocial,
+}));
+jest.mock('../../network/restClient', () => ({
+  ...jest.requireActual('../../network/restClient'),
+  sendMessage: jest.fn(),
+}));
+
 const width = 400;
 
 describe('AnalysisBoardContent', () => {
@@ -30,7 +42,10 @@ describe('AnalysisBoardContent', () => {
     jest.useFakeTimers();
     return AsyncStorage.clear();
   });
-  afterEach(() => jest.useRealTimers());
+  afterEach(() => {
+    jest.useRealTimers();
+    mockSocial = null;
+  });
 
   async function renderAnalysis({
     uciMoves = [] as string[],
@@ -297,5 +312,41 @@ describe('AnalysisBoardContent', () => {
     });
 
     expect(screen.getByText('Downloading engine… 25%')).toBeTruthy();
+  });
+
+  it('sends the position shown to a friend', async () => {
+    const friend = makeFriend();
+    mockSocial = makeSocial({ friends: [friend] });
+    (sendMessage as jest.Mock).mockResolvedValue({});
+    const { screen } = await renderAnalysis({ uciMoves: ['e2e4'] });
+
+    await fireEvent.press(screen.getByTestId('game-menu-button'));
+    await fireEvent.press(screen.getByTestId('send-position-action'));
+    await settleAnimations();
+    await fireEvent.press(screen.getByTestId(`friend-row-${friend.id}`));
+    await act(async () => {});
+
+    expect(sendMessage).toHaveBeenCalledWith(
+      friend.username,
+      {
+        text: '',
+        attachment: {
+          kind: 'position',
+          fen: expect.stringMatching(
+            /^rnbqkbnr\/pppppppp\/8\/8\/4P3\/8\/PPPP1PPP\/RNBQKBNR b /,
+          ),
+        },
+      },
+      'access-token',
+    );
+    expect(screen.getByText(`Sent to ${friend.displayName}`)).toBeTruthy();
+  });
+
+  it('offers no sending with no friends to send to', async () => {
+    const { screen } = await renderAnalysis();
+
+    await fireEvent.press(screen.getByTestId('game-menu-button'));
+
+    expect(screen.queryByTestId('send-position-action')).toBeNull();
   });
 });

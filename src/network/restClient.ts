@@ -814,12 +814,34 @@ export async function cancelChallenge(
   );
 }
 
+/** A game or a position sent with a message, drawn as a card. */
+export type MessageAttachment =
+  { kind: 'game'; gameId: string } | { kind: 'position'; fen: string };
+
 export type DirectMessage = {
   id: string;
   senderId: string;
   recipientId: string;
+  /** Empty when the message is only its attachment. */
   text: string;
+  attachment: MessageAttachment | null;
   createdAt: string;
+};
+
+/** One person you have messages with, for the inbox. */
+export type ConversationSummary = {
+  user: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarColor: string;
+  };
+  /** The newest message since you last cleared them. */
+  lastMessage: DirectMessage;
+  /** Theirs you haven't read. */
+  unreadCount: number;
+  /** When they last read yours - null until they have. */
+  theirLastReadAt: string | null;
 };
 
 export type UnreadCount = { userId: string; count: number };
@@ -842,18 +864,46 @@ export async function getMessages(
   ).data;
 }
 
+/** Sends `text` - which may be empty with an attachment. */
 export async function sendMessage(
   username: string,
-  text: string,
+  message: { text: string; attachment?: MessageAttachment },
   accessToken: string,
 ): Promise<DirectMessage> {
   return (
     await apiClient.post<DirectMessage>(
       messagesPath(username),
-      { text },
+      message,
       bearer(accessToken),
     )
   ).data;
+}
+
+/** Your conversations, the newest message first; `before` (the last one's
+ * `lastMessage.createdAt`) pages on. */
+export async function getConversations(
+  page: { limit: number; before?: string },
+  accessToken: string,
+): Promise<ConversationSummary[]> {
+  return (
+    await apiClient.get<ConversationSummary[]>('/messages', {
+      ...bearer(accessToken),
+      params: page,
+    })
+  ).data;
+}
+
+/** When `username` last read your messages - null until they have. */
+export async function getTheirLastReadAt(
+  username: string,
+  accessToken: string,
+): Promise<string | null> {
+  return (
+    await apiClient.get<{ theirLastReadAt: string | null }>(
+      `${messagesPath(username)}/seen`,
+      bearer(accessToken),
+    )
+  ).data.theirLastReadAt;
 }
 
 export async function markMessagesRead(

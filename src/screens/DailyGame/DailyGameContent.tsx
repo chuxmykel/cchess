@@ -364,7 +364,7 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
         timeControl={timeControl}
         rated={snapshot.rated}
         onBack={navigation.goBack}
-        onError={onMessage}
+        onMessage={onMessage}
       />
 
       <MoveList

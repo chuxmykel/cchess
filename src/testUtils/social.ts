@@ -106,6 +106,7 @@ export function makeDirectMessage(
     senderId: 'friend-1',
     recipientId: 'user-1',
     text: 'Hello',
+    attachment: null,
     createdAt: '2026-10-27T10:00:00.000Z',
     ...overrides,
   };

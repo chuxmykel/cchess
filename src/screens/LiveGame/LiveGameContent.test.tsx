@@ -29,6 +29,9 @@ jest.mock('../../hooks/useGameShare', () => ({
 }));
 
 const mockBookmark = { isBookmarked: false, toggleBookmark: jest.fn() };
+jest.mock('../../hooks/useSendToFriend', () =>
+  jest.requireActual('../../testUtils/sendToFriendStub'),
+);
 jest.mock('../../hooks/useGameBookmark', () => ({
   useGameBookmark: () => mockBookmark,
 }));

@@ -10,7 +10,9 @@ import EngineLines, {
   LINE_HEIGHT,
 } from '../../components/EngineLines';
 import EvalBar, { EVAL_BAR_THICKNESS } from '../../components/EvalBar';
+import FriendPickerSheet from '../../components/FriendPickerSheet';
 import GameToolbar from '../../components/GameToolbar';
+import Toast from '../../components/Toast';
 import { THREAT_DEPTH } from '../../constants/analysis';
 import { useAnalysisSettingsContext } from '../../context/AnalysisSettingsContext';
 import { useEngine } from '../../context/EngineContext';
@@ -21,6 +23,8 @@ import { AnalysisStart } from '../../hooks/useAnalysisTree';
 import { useAnalysisWorkspace } from '../../hooks/useAnalysisWorkspace';
 import { useAppIsActive } from '../../hooks/useAppIsActive';
 import { useEngineAnalysis } from '../../hooks/useEngineAnalysis';
+import { useSendToFriend } from '../../hooks/useSendToFriend';
+import { useToast } from '../../hooks/useToast';
 import {
   ExplorerLine,
   lineTo,
@@ -68,6 +72,8 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const { fen } = analysis.current;
+  const toast = useToast();
+  const sendToFriend = useSendToFriend(toast.show);
   const over = useMemo(() => finalScore(fen), [fen]);
   // Searching only while it's seen: not behind another screen, nor with the
   // app in the background.
@@ -147,6 +153,15 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
       onPress: () => onEditPosition(fen),
       testID: 'edit-position-action',
     },
+    ...(sendToFriend.isAvailable
+      ? [
+          {
+            label: 'Send position to a friend',
+            onPress: () => sendToFriend.open({ kind: 'position', fen }),
+            testID: 'send-position-action',
+          },
+        ]
+      : []),
     {
       label: 'Settings',
       onPress: onOpenSettings,
@@ -214,6 +229,14 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
         onClose={() => setIsMenuOpen(false)}
         actions={menuActions}
       />
+      <FriendPickerSheet
+        visible={sendToFriend.pending !== null}
+        title="Send this position to"
+        friends={sendToFriend.friends}
+        onPick={sendToFriend.sendTo}
+        onClose={sendToFriend.close}
+      />
+      <Toast toasts={toast.toasts} />
     </AnalysisView>
   );
 };

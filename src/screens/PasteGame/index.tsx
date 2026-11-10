@@ -9,14 +9,11 @@ import {
 
 import Button from '../../components/Button';
 import { parseImport } from '../../domain/pgnImport';
-import { AnalysisStackScreenProps } from '../AnalysisStack/types';
+import { MenuStackScreenProps } from '../MenuStack/types';
 import { makeStyles, useTheme } from '../../theme';
 
 type PasteGameProps = {
-  navigation: Pick<
-    AnalysisStackScreenProps<'PasteGame'>['navigation'],
-    'navigate'
-  >;
+  navigation: Pick<MenuStackScreenProps<'PasteGame'>['navigation'], 'navigate'>;
 };
 
 // More characters arriving at once than this is a paste.

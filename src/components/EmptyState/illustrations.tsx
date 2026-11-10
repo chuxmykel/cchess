@@ -211,6 +211,39 @@ const Branches: React.FC<IllustrationProps> = ({ size }) => {
   );
 };
 
+// A jigsaw piece with a pawn on it, a spark beside it - the "aha" of a
+// puzzle solved.
+const Puzzles: React.FC<IllustrationProps> = ({ size }) => {
+  const { colors } = useTheme();
+  return (
+    <Svg width={size} height={size * 0.8} viewBox="0 0 120 96">
+      <Circle cx={60} cy={52} r={40} fill={colors.illustration.pale} />
+      <Path
+        d="M34 34h14a8 8 0 1 1 16 0h14v14a8 8 0 1 1 0 16v14H64a8 8 0 1 0-16 0H34V64a8 8 0 1 0 0-16z"
+        fill={colors.accent}
+      />
+      <G transform="translate(56 50)">
+        <Circle cx={0} cy={-6} r={5} fill={colors.background} />
+        <Path d="M-3.5 -1h7l2.5 9h-12z" fill={colors.background} />
+        <Rect
+          x={-8}
+          y={8}
+          width={16}
+          height={4}
+          rx={2}
+          fill={colors.background}
+        />
+      </G>
+      <Path
+        d="M96 14v12M90 20h12M92 16l8 8M100 16l-8 8"
+        stroke={colors.illustration.dark}
+        strokeWidth={2.5}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+};
+
 export const ILLUSTRATIONS = {
   friends: Friends,
   games: Games,
@@ -218,6 +251,7 @@ export const ILLUSTRATIONS = {
   activity: Activity,
   notifications: Notifications,
   branches: Branches,
+  puzzles: Puzzles,
 } satisfies Record<string, React.FC<IllustrationProps>>;
 
 export type IllustrationName = keyof typeof ILLUSTRATIONS;

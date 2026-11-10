@@ -513,6 +513,11 @@ async function main() {
 
   socket.on('dm:message', (message) => {
     if (!friendMode || message.senderId === myUserId) return;
+    // A game or position shared with no text has nothing to echo.
+    if (!message.text) {
+      log('message: shared a', message.attachment?.kind ?? 'something');
+      return;
+    }
     log('message:', message.text);
     request('POST', `/messages/${args.friend}`, {
       token,

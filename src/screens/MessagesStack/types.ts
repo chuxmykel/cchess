@@ -5,18 +5,16 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { HomeStackParamList } from '../HomeStack/types';
 import { HomeTabsParamList } from '../HomeTabs/types';
 
-export type AnalysisStackParamList = {
-  AnalysisHome: undefined;
-  PasteGame: undefined;
-  PickGame: undefined;
+export type MessagesStackParamList = {
+  Messages: undefined;
 };
 
-/** An Analysis-tab screen's props, able to switch tabs and open the
- * screens shown over them. */
-export type AnalysisStackScreenProps<
-  RouteName extends keyof AnalysisStackParamList,
+/** A Messages-tab screen's props, able to switch tabs and open the screens
+ * shown over them - a conversation among them. */
+export type MessagesStackScreenProps<
+  RouteName extends keyof MessagesStackParamList,
 > = CompositeScreenProps<
-  NativeStackScreenProps<AnalysisStackParamList, RouteName>,
+  NativeStackScreenProps<MessagesStackParamList, RouteName>,
   CompositeScreenProps<
     BottomTabScreenProps<HomeTabsParamList>,
     NativeStackScreenProps<HomeStackParamList>

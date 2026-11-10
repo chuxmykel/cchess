@@ -35,3 +35,9 @@ export function plainHeaderOptions(
         : [],
   };
 }
+
+/** A tab's first screen: a back button there would only switch to the
+ * first tab, which the tab bar already does. */
+export const tabRootHeaderOptions: NativeStackNavigationOptions = {
+  unstable_headerLeftItems: () => [],
+};

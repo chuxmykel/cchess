@@ -7,20 +7,27 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
+import Button from '../../components/Button';
+import ChallengeSheet from '../../components/ChallengeSheet';
+import GamePickerSheet from '../../components/GamePickerSheet';
 import Icon from '../../components/Icon';
 import MessageList from '../../components/MessageList';
+import PresenceAvatar, { presenceOf } from '../../components/PresenceAvatar';
 import Toast from '../../components/Toast';
 import { MAX_DIRECT_MESSAGE_LENGTH } from '../../constants/chat';
-import { MESSAGE_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { useSocialContext } from '../../context/SocialContext';
 import { useDirectMessages } from '../../hooks/useDirectMessages';
+import { useFriendActions } from '../../hooks/useFriendActions';
 import { useKeyboardHeight } from '../../hooks/useKeyboardHeight';
 import { useToast } from '../../hooks/useToast';
-import { ApiError } from '../../network/restClient';
+import { useSendTyping, useTypingFriends } from '../../hooks/useTyping';
+import { MessageAttachment } from '../../network/restClient';
 import { presenceLabel } from '../../utils/presence';
 import { HomeStackScreenProps } from '../HomeStack/types';
 import { plainHeaderItem } from '../plainHeaderOptions';
@@ -35,20 +42,34 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
   const styles = useStyles();
   const { colors } = useTheme();
 
-  const { userId, username, displayName } = route.params;
+  const { userId, username, displayName, avatarColor } = route.params;
+  const partner = { id: userId, username, displayName, avatarColor };
   const session = useAuthSession();
   const social = useSocialContext();
   const toast = useToast();
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
   const [draft, setDraft] = useState('');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isPickingGame, setIsPickingGame] = useState(false);
   const markRead = useCallback(
     () => social.markConversationRead(userId),
     [social, userId],
   );
   const conversation = useDirectMessages(username, userId, markRead);
+  const typing = useTypingFriends();
+  const sendTyping = useSendTyping(userId);
+  const friendActions = useFriendActions(navigation, (friend) =>
+    toast.show(`Challenge sent to ${friend.displayName}`),
+  );
   const friend = social.friends?.find((candidate) => candidate.id === userId);
+  const presence = presenceOf(friend);
   const canSend = draft.trim().length > 0;
+
+  const openProfile = useCallback(
+    () => navigation.navigate('UserProfile', { username }),
+    [navigation, username],
+  );
 
   const confirmClear = useCallback(() => {
     Alert.alert(
@@ -70,36 +91,111 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: displayName,
+      headerTitle: () => (
+        <Pressable
+          style={styles.title}
+          onPress={openProfile}
+          accessibilityRole="button"
+          accessibilityLabel={`${displayName}'s profile`}
+          testID="conversation-title"
+        >
+          <PresenceAvatar
+            name={displayName}
+            color={avatarColor}
+            presence={presence}
+            size={32}
+          />
+          <View style={styles.titleText}>
+            <Text style={styles.titleName} numberOfLines={1}>
+              {displayName}
+            </Text>
+            {friend && (
+              <Text
+                style={styles.titlePresence}
+                numberOfLines={1}
+                testID="conversation-presence"
+              >
+                {typing.has(userId) ? 'typing…' : presenceLabel(friend)}
+              </Text>
+            )}
+          </View>
+        </Pressable>
+      ),
       unstable_headerRightItems: () => [
         plainHeaderItem(
           <Pressable
-            onPress={confirmClear}
+            onPress={() => setIsMenuOpen(true)}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel="Delete conversation"
-            testID="clear-conversation-button"
+            accessibilityLabel="More"
+            testID="conversation-menu-button"
           >
-            <Icon name="trash-can-outline" size={22} />
+            <Icon name="dots-horizontal" size={24} />
           </Pressable>,
         ),
       ],
     });
-  }, [navigation, displayName, confirmClear]);
+  }, [
+    navigation,
+    styles,
+    openProfile,
+    displayName,
+    avatarColor,
+    presence,
+    friend,
+    typing,
+    userId,
+  ]);
+
+  async function deliver(text: string, attachment?: MessageAttachment) {
+    const { failure } = await conversation.send(text, attachment);
+    if (failure) toast.show(failure);
+  }
 
   function send() {
     if (!canSend) return;
     const text = draft;
     setDraft('');
-    conversation.send(text).catch((error: unknown) => {
-      setDraft(text);
-      toast.show(
-        error instanceof ApiError && error.status !== 0
-          ? error.message
-          : MESSAGE_FAILED_MESSAGE,
-      );
-    });
+    void deliver(text);
   }
+
+  async function retry(messageId: string) {
+    const { failure } = await conversation.retry(messageId);
+    if (failure) toast.show(failure);
+  }
+
+  const menuActions: ActionSheetAction[] = [
+    {
+      label: 'View profile',
+      onPress: openProfile,
+      testID: 'conversation-action-profile',
+    },
+    ...(friend
+      ? [
+          {
+            label: 'Challenge',
+            onPress: () => friendActions.startChallenge(partner),
+            testID: 'conversation-action-challenge',
+          },
+        ]
+      : []),
+    ...(friend?.playingGameId
+      ? [
+          {
+            label: 'Watch game',
+            onPress: () =>
+              friendActions.watch(partner, friend.playingGameId as string),
+            testID: 'conversation-action-watch',
+          },
+        ]
+      : []),
+    {
+      label: 'Delete conversation',
+      destructive: true,
+      onPress: confirmClear,
+      testID: 'clear-conversation-button',
+    },
+  ];
 
   return (
     <KeyboardAvoidingView
@@ -108,10 +204,21 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
       keyboardVerticalOffset={insets.top + 44}
       testID="conversation-screen"
     >
-      {friend && (
-        <Text style={styles.presence} testID="conversation-presence">
-          {presenceLabel(friend)}
-        </Text>
+      {friend?.playingGameId && (
+        <View style={styles.playing} testID="conversation-playing">
+          <Icon name="chess-knight" size={18} color={colors.accentText} />
+          <Text style={styles.playingText} numberOfLines={1}>
+            {displayName} is playing right now
+          </Text>
+          <Button
+            label="Watch"
+            variant="text"
+            onPress={() =>
+              friendActions.watch(partner, friend.playingGameId as string)
+            }
+            testID="conversation-watch"
+          />
+        </View>
       )}
       {conversation.status === 'error' ? (
         <Text style={styles.error}>{"Messages couldn't be loaded."}</Text>
@@ -122,6 +229,15 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
           myUserId={session.isReady ? session.user.id : ''}
           hasOlder={conversation.hasOlder}
           onLoadOlder={conversation.loadOlder}
+          theirLastReadAt={conversation.theirLastReadAt}
+          isTyping={typing.has(userId)}
+          onRetry={retry}
+          onOpenGame={(gameId) => navigation.navigate('GameViewer', { gameId })}
+          onOpenPosition={(fen) =>
+            navigation.navigate('AnalysisBoard', {
+              source: { kind: 'setup', fen },
+            })
+          }
         />
       )}
       <Animated.View
@@ -138,12 +254,25 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
           },
         ]}
       >
+        <Pressable
+          onPress={() => setIsPickingGame(true)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Share a game"
+          testID="attach-button"
+        >
+          <Icon name="plus-circle-outline" size={26} color={colors.accent} />
+        </Pressable>
         <TextInput
           style={styles.input}
           value={draft}
-          onChangeText={setDraft}
+          onChangeText={(text) => {
+            setDraft(text);
+            sendTyping(text);
+          }}
           onSubmitEditing={send}
           placeholder="Message"
+          placeholderTextColor={colors.textFaint}
           maxLength={MAX_DIRECT_MESSAGE_LENGTH}
           returnKeyType="send"
           submitBehavior="submit"
@@ -165,6 +294,25 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
           />
         </Pressable>
       </Animated.View>
+      <ActionSheet
+        visible={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        actions={menuActions}
+      />
+      <GamePickerSheet
+        visible={isPickingGame}
+        onClose={() => setIsPickingGame(false)}
+        onPick={(game) => {
+          setIsPickingGame(false);
+          void deliver('', { kind: 'game', gameId: game.id });
+        }}
+      />
+      <ChallengeSheet
+        opponentName={friendActions.challengeTarget?.displayName ?? null}
+        canPlayRated={friendActions.canPlayRated}
+        onClose={friendActions.closeChallenge}
+        onSend={friendActions.sendChallenge}
+      />
       <Toast toasts={toast.toasts} />
     </KeyboardAvoidingView>
   );
@@ -177,11 +325,37 @@ const useStyles = makeStyles((t) => ({
     flex: 1,
     backgroundColor: t.colors.background,
   },
-  presence: {
-    paddingVertical: t.spacing.sm,
-    textAlign: 'center',
-    fontSize: t.fontSize.sm,
+  title: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.spacing.sm,
+    maxWidth: 240,
+  },
+  titleText: {
+    flexShrink: 1,
+  },
+  titleName: {
+    color: t.colors.text,
+    fontSize: t.fontSize.lg,
+    fontWeight: t.fontWeight.semibold,
+  },
+  titlePresence: {
     color: t.colors.textMuted,
+    fontSize: t.fontSize.xs,
+  },
+  playing: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.spacing.sm,
+    paddingLeft: t.spacing.lg,
+    paddingRight: t.spacing.sm,
+    backgroundColor: t.colors.accentSubtle,
+  },
+  playingText: {
+    flex: 1,
+    color: t.colors.accentText,
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.medium,
   },
   error: {
     flex: 1,

@@ -24,8 +24,8 @@ export type HomeStackParamList = {
   DailyAnalysis: { gameId: string; explorerLine?: ExplorerLine };
   /** The opening explorer, on a board of its own, from an analysis's
    * position - `returnKey` the analysis's route, which gets the line
-   * explored back on leaving. */
-  OpeningExplorer: ExplorerLine & { orientation: Color; returnKey: string };
+   * explored back on leaving - or from the Menu, on its own. */
+  OpeningExplorer: ExplorerLine & { orientation: Color; returnKey?: string };
   /** Your conditional moves in a daily game, the opponent to move. */
   ConditionalMoves: { gameId: string };
   /** Your own notes on a game. */
@@ -33,7 +33,7 @@ export type HomeStackParamList = {
   /** watchedUserId: the player whose game this is being watched for -
    * shown at the bottom, and followed into their next game. */
   GameViewer: { gameId: string; watchedUserId?: string };
-  /** The analysis board, over the tabs - opened from the Analysis tab, or
+  /** The analysis board, over the tabs - opened from the Menu tab, or
    * from a game, so Back returns there. */
   AnalysisBoard: { source: AnalysisSource; explorerLine?: ExplorerLine };
   UserProfile: { username: string };
@@ -51,6 +51,8 @@ export type HomeStackParamList = {
   RatingStats: { username: string; displayName: string; category: GameType };
   SignIn: undefined;
   CreateAccount: undefined;
+  /** Every setting, from the Menu tab. */
+  Settings: undefined;
   /** The analysis board's settings, over it. */
   AnalysisSettings: undefined;
   /** Daily games' settings, over one. */

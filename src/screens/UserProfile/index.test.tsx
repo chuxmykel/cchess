@@ -2,10 +2,11 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 
 import { Animated } from 'react-native';
 
-import UserProfile from '.';
+import UserProfile, { ACTIVITY_SHOWN } from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { useSocialContext } from '../../context/SocialContext';
 import {
+  ActivityDay,
   getUserActivity,
   getUserFriends,
   getUserGames,
@@ -42,13 +43,14 @@ describe('UserProfile', () => {
     social = makeSocial(),
     games = [makeGameSummary({ id: 'their-game' })],
     friends = [makeUserFriend({ id: 'their-friend', username: 'zsuzsa' })],
+    activity: ActivityDay[] = [],
   ) {
     (useAuthSession as jest.Mock).mockReturnValue(
       makeAuthSession({ user: { isGuest: false } }),
     );
     (useSocialContext as jest.Mock).mockReturnValue(social);
     (getUserProfile as jest.Mock).mockResolvedValue(profile);
-    (getUserActivity as jest.Mock).mockResolvedValue([]);
+    (getUserActivity as jest.Mock).mockResolvedValue(activity);
     (getUserGames as jest.Mock).mockResolvedValue(games);
     (getUserFriends as jest.Mock).mockResolvedValue(friends);
     const navigation = {
@@ -237,6 +239,7 @@ describe('UserProfile', () => {
 
     expect(screen.queryByTestId('profile-score')).toBeNull();
     expect(screen.queryByTestId('profile-add-friend')).toBeNull();
+    expect(screen.queryByTestId('profile-message')).toBeNull();
   });
 
   it('says their games and activity will show up once they play', async () => {
@@ -248,6 +251,32 @@ describe('UserProfile', () => {
     expect(screen.getByTestId('activity-empty')).toHaveTextContent(
       /Judit Polgar's games from the last 30 days/,
     );
+  });
+
+  it('lists only the most recent activity', async () => {
+    // A busy month: a day each, newest first, as the server sends them.
+    const activity: ActivityDay[] = Array.from({ length: 25 }, (_, index) => ({
+      date: `2026-10-${String(31 - index).padStart(2, '0')}`,
+      category: 'blitz',
+      games: 1,
+      wins: 1,
+      draws: 0,
+      losses: 0,
+      ratingAfter: null,
+      ratingDiff: null,
+    }));
+    const { screen } = await renderScreen(
+      makeUserProfile(),
+      makeSocial(),
+      undefined,
+      undefined,
+      activity,
+    );
+
+    const shown = screen.getAllByTestId(/^activity-2026/);
+    expect(shown).toHaveLength(ACTIVITY_SHOWN);
+    expect(shown[0].props.testID).toBe('activity-2026-10-31-blitz');
+    expect(screen.queryByTestId('activity-2026-10-21-blitz')).toBeNull();
   });
 
   it('speaks to me about my own empty profile', async () => {

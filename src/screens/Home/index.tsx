@@ -87,7 +87,11 @@ const Home: React.FC<HomeProps> = ({ navigation }) => {
       <HomeHeader
         avatarName={isSignedIn ? user.displayName : undefined}
         avatarColor={isSignedIn ? user.avatarColor : undefined}
-        onAvatarPress={() => navigation.navigate('Profile')}
+        onAvatarPress={() =>
+          isSignedIn
+            ? navigation.navigate('UserProfile', { username: user.username })
+            : navigation.navigate('MenuStack')
+        }
         accessory={
           isSignedIn && (
             <NotificationsMenu

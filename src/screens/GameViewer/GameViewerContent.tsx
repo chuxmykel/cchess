@@ -153,7 +153,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
         rated={snapshot.rated}
         subtitle={whenPlayed(snapshot)}
         onBack={onBack}
-        onError={onError}
+        onMessage={onError}
       />
 
       <MoveList

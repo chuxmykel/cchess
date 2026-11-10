@@ -157,7 +157,7 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `ApiError`s carrying the server's own message - auth: guest, sign in,
   register, refresh, logout; plus `/users/me`, game history (yours or a
   player's, a page at a time), a single game, PGN, bookmarks, player
-  search, profiles, a player's friends, activity and rating stats, friends and friend requests, challenges, and direct messages),
+  search, profiles, a player's friends, activity and rating stats, friends and friend requests, challenges, and direct messages - the inbox (`getConversations`), when they last read yours (`getTheirLastReadAt`), and a game or position sent along (`MessageAttachment`)),
   `accessToken.ts` (reads a JWT access token's expiry),
   `socketClient.ts` (the one `AppSocket` singleton - `connectSocket`/
   `disconnectSocket`/`getSocket`, plus `updateSocketToken` so later
@@ -334,7 +334,19 @@ lib/chessboard/  the board, written as a package of its own: outside the
     when pulled down, refreshing until its reloads, each returning its
     request, have all finished),
     `useDirectMessages` (one conversation: paged history, new messages,
-    marked read while open, sending and clearing), and `useUserSearch`
+    marked read while open, whether they've read yours (`dm:read`), and
+    sending - shown at once as `sending`, then `sent` or `failed` to
+    `retry`, a game or position attached if wanted - and clearing),
+    `useConversations` (the Messages tab's inbox: newest message first, a
+    page at a time, moved along by `dm:message` and `dm:read`; unread
+    counts are `SocialContext`'s, which the tab's badge shows too),
+    `useTyping` (`useTypingFriends`, who's typing to you from
+    `dm:typing`, each for 5s after they last said so; `useSendTyping`,
+    telling a friend at most every 3s), `useGameSummary` (a shared game's
+    card, each game fetched once), `useSendToFriend` (a game or position
+    sent to a friend picked in `FriendPickerSheet` - from a game's ⋯ and
+    the analysis board's ☰; nobody to send to outside a `SocialProvider`,
+    through `useOptionalSocialContext`), and `useUserSearch`
     (players matching what's typed in Friends' search, asked of
     `GET /users?search=` once typing pauses and at least two letters are
     in, then 20 more at a time as the list nears its end), and `useRatingStats` (a player's rating history and results in one
@@ -607,7 +619,7 @@ lib/chessboard/  the board, written as a package of its own: outside the
   at runtime through `expo-font` so it works in Expo Go, and kept in one
   place so the set can be swapped), account UI
   (`AccountForm`, the layout shared by Sign in and Create account;
-  `SignInPrompt`, shown to guests on Home and Profile; `RatingsList`;
+  `SignInPrompt`, shown to guests on Home, the Menu and Messages; `RatingsList`;
   `UsernameAvailabilityIndicator`, the ✓/✕ beside the sign-up username),
   friends UI (`FriendsCarousel`/`FriendCard` - status line, unread
   messages, watch while playing, Message/Challenge menu - `FriendRow`,
@@ -621,12 +633,20 @@ lib/chessboard/  the board, written as a package of its own: outside the
   drag and pages in more, each opening that player's profile, where
   they can be added), `ChallengeSheet`, `ActivityList`, `ProfileFriends` (a profile's
   Friends section: the count beside the title, up to ten friends online
-  first, then - on your own, the Profile tab's - an Add friends tile, and
+  first, then - on your own - an Add friends tile, and
   View All), `FriendListControls`
   (the friends list's "Online" filter and sort dropdown - `ListControls`,
   a filter chip and a sort `Dropdown`, which the daily games list uses
   too),
-  `MessageList`), rating stats UI (`RatingChart` - the rating as a line
+  messaging UI (`ConversationRow` - presence, last message or "typing…",
+  unread, ✓ / ✓✓ seen - `OnlineFriendsStrip`, `PresenceAvatar`,
+  `FriendPickerSheet`, `GamePickerSheet`, and `MessageList`: day
+  separators, each person's messages moments apart grouped, a message of
+  only emoji drawn large, "Seen" under your newest once read, a
+  `TypingIndicator`, and `MessageAttachmentCard`s - a shared game or
+  position on a mini board, a tap opening `GameViewer` or the analysis
+  board; `utils/messageTime.ts` and `utils/messageGrouping.ts` lay them
+  out)), rating stats UI (`RatingChart` - the rating as a line
   over the period, one point per day (the server sends each day's closing
   rating), drawn with `victory-native` on
   `@shopify/react-native-skia` (held at victory-native 42: 43 needs a
@@ -663,16 +683,18 @@ lib/chessboard/  the board, written as a package of its own: outside the
   status changes, so an offer is never hidden. A player's profile offers Watch game
   and Challenge to anyone, friend or not - Watch game is a `disabled`
   `ActionList` row while they aren't in a game - and Message only to
-  friends. Its `RatingsList` rows - and your own on the Profile tab -
+  friends; your own - the same screen, opened from Home's avatar or the
+  Menu - offers none of them. Its `RatingsList` rows
   open `RatingStats` for that category:
   the rating with what it gained or lost over the period, a 1W/1M/3M/1Y/All
   `SegmentedTabs`, the chart, and the two cards. Once a game is over,
   `GameOverCard` and the ☰ of `LiveGame` and `GameViewer` offer Analyse,
-  opening `AnalysisBoard` at the move shown. Profile's Appearance row
-  opens `Appearance` (anyone's, guests too: it's kept on the device), and
-  its Licenses row
-  opens `Licenses`: the Stockfish build the app downloads, its GPL-3.0
-  and where its source is, and credit for lichess's opening names.
+  opening `AnalysisBoard` at the move shown. `Settings` (from the Menu)
+  is every setting in one list: `Appearance`
+  (anyone's, guests too: it's kept on the device), `AnalysisSettings`,
+  `DailyGameSettings`, and `Licenses`: the Stockfish build the app
+  downloads, its GPL-3.0 and where its source is, and credit for
+  lichess's opening names. The Puzzles tab is a coming-soon page for now.
 
 - **Daily games** - chess.com's: 1, 2, 3, 5, 7 or 14 days a move, a game
   type and rating category of their own (`daily`), played alongside live
@@ -750,7 +772,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
     saved once typing pauses and on leaving), flip, reset and ‹ ›.
     `useAnalysisSource` refuses your own daily game in play
     (`'in-play'`) unless `allowDailyInPlay`, which only this screen asks.
-  - The opening explorer, from either analysis board's toolbar: the
+  - The opening explorer, from either analysis board's toolbar - or the
+    Menu, on its own from the starting position, with no `returnKey` and
+    so no analysis to hand its line back to: the
     `OpeningExplorer` screen, a board of its own on the line to the
     position shown (`useExplorerLine`'s `lineTo`), the moves played along
     the top, and `ExplorerMoveList`. It reads, top to bottom:
@@ -800,12 +824,18 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `ConditionalMoves`, `DailyGamesList`, `DailyGameSettings`,
   `GameViewer`, `AnalysisBoard`, `AnalysisSettings`, `UserProfile`, `Conversation`, `GamesList`,
   `RatingStats`, `UserFriends`, `FindFriends`, `SignIn`, `CreateAccount`,
-  `Appearance`, `Licenses`) ->
-  `HomeTabs` (bottom tabs: `HomeTabStack`, `AnalysisStack` - the
-  Analysis tab, testID `analysis-tab` - and `Profile`) -> `HomeTabStack`
-  (native-stack: `Home`, `NewGame`, `Friends`) and `AnalysisStack`
-  (native-stack: `AnalysisHome` - New analysis, Set up position, From
-  your games (`PickGame`), Paste PGN or FEN (`PasteGame`)). Each opens
+  `Settings`, `Appearance`, `Licenses`) ->
+  `HomeTabs` (bottom tabs, each with a testID: `HomeTabStack` -
+  `home-tab` - `PuzzlesStack` - `puzzles-tab` - `MessagesStack` -
+  `messages-tab`, its badge every unread message (`unreadBadge`) - and
+  `MenuStack` - `menu-tab`, labelled "More", its screen headed "Menu") -> `HomeTabStack` (native-stack: `Home`,
+  `NewGame`, `Friends`), `PuzzlesStack` (`Puzzles`), `MessagesStack`
+  (`Messages`, the inbox) and `MenuStack` (native-stack: `Menu` - your
+  profile (`UserProfile`, the same screen as anyone's), New analysis, the
+  opening explorer (`OpeningExplorer`, on its own), Set up position, From
+  your games (`PickGame`), Paste PGN or FEN (`PasteGame`), Players
+  (`FindFriends`, its search focused; signed in only), Settings, and
+  Sign out). Each other analysis item opens
   `AnalysisBoard`, which takes an `AnalysisSource`, over the tabs - so its
   own toolbar is the only one at the bottom (the position editor has its
   own too: a menu - starting position, clear - flip, Analyse, and a sheet
@@ -820,8 +850,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
   player's profile leaves its header title empty until the avatar block
   scrolls out of view, then fades the username in there. Its Friends
   section's View All opens `UserFriends`, every friend - or only those
-  online - sorted online first, by name or most recently added; the Profile
-  tab's Add friends opens `FindFriends` - the `Friends` screen again, over
+  online - sorted online first, by name or most recently added; your own
+  profile's Add friends opens `FindFriends` - the `Friends` screen again, over
   the tabs so Back returns there - with its search focused; a friend there or in the carousel is
   pushed as another `UserProfile`. Route params are typed in
   each navigator's `types.ts`; a tab-stack screen's
@@ -846,7 +876,7 @@ lib/chessboard/  the board, written as a package of its own: outside the
   it is today - a server-driven online game - not a generic "any game"
   screen; a future local/offline game would get its own screen rather than
   being folded into this one. Guests reach `SignIn`/`CreateAccount`
-  from the prompt on Home or Profile; both pop back on success. They're
+  from the prompt on Home, the Menu or Messages; both pop back on success. They're
   pushed over the tabs, so nobody can sign in or out mid-game -
   `LiveGame` covers the tabs and locks swipe-back while playing.
 

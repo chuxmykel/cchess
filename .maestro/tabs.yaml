@@ -1,0 +1,25 @@
+# The tabs as a guest: Puzzles says what's coming, Messages asks to sign in
+# (a guest has no friends to message), and the Menu opens the settings.
+appId: host.exp.Exponent
+tags:
+  - needs-live-server
+---
+- runFlow: common/launch-fresh.yaml
+- tapOn:
+    id: "puzzles-tab"
+- assertVisible:
+    id: "puzzles-coming-soon"
+- tapOn:
+    id: "messages-tab"
+- assertVisible:
+    id: "messages-screen"
+- assertVisible:
+    id: "sign-in-prompt"
+- tapOn:
+    id: "menu-tab"
+- assertVisible:
+    id: "analysis-new"
+- tapOn:
+    id: "menu-settings"
+- assertVisible:
+    id: "settings-screen"

@@ -157,11 +157,14 @@ resign or abort from the app (see `examples/resign.yaml` /
   `rated-switch` gets a "Sign in to play rated games." toast at the
   bottom, over the sheet's Done button, gone after 2s - a
   `takeScreenshot` step straight after the tap catches it; a separate
-  `simctl` screenshot is too late. The tab bar has three tabs - Home,
-  Analysis, Profile. Only Analysis has a testID (`analysis-tab`), and
-  the labels aren't matched by text - tap Home at (67, 817) and Profile
-  at (335, 817) (measured 2026-11-03 on iPhone 18 Pro).
-- **Home**: `avatar-button` (header, opens Profile), `friends-loading`,
+  `simctl` screenshot is too late. The tab bar has four tabs - Home,
+  Puzzles, Messages, More (its screen headed "Menu") - each with a testID: `home-tab`,
+  `puzzles-tab`, `messages-tab` (with the unread count as its badge)
+  and `menu-tab`. Your own profile is no longer a tab: it's
+  `UserProfile`, opened from Home's `avatar-button` or the Menu's
+  `menu-profile`.
+- **Home**: `avatar-button` (header, opens your own `UserProfile`, or
+  the Menu tab for a guest), `friends-loading`,
   `recent-games-loading`,
   `game-row-<gameId>` (opens the game viewer), `recent-games-retry`,
   `recent-games-see-all` (the full list), `recent-games-empty`. Guests
@@ -216,12 +219,13 @@ resign or abort from the app (see `examples/resign.yaml` /
   `notes-status`; `header-back` saves and returns), `flip-board-button`,
   `reset-analysis-button`, ‹ ›.
 - **Opening explorer** (a screen, from either analysis board's
-  `opening-explorer-button`): `opening-explorer`, its own board,
+  `opening-explorer-button`, or the Menu's `menu-opening-explorer` -
+  from the starting position, on its own): `opening-explorer`, its own board,
   the `move-list`, `explorer-opening`, rows `explorer-move-<uci>` (book
   moves, with `explorer-games-<uci>` and `explorer-results-<uci>`) or
   `explorer-empty` ("No results"), and `opening-explorer-toolbar`
   (`flip-board-button`, ‹ ›). `header-back` returns to the analysis,
-  on the line explored.
+  on the line explored (or to the Menu).
 - **Challenge sheet**: `challenge-sheet`, `challenge-time-<label>` (e.g.
   `challenge-time-3+2`), `challenge-rated-switch`,
   `send-challenge-button`, `challenge-error`.
@@ -237,7 +241,9 @@ resign or abort from the app (see `examples/resign.yaml` /
   friends `profile-message` and `profile-remove-friend`, otherwise
   `profile-add-friend` / `profile-cancel-request` /
   `profile-accept-request`, `activity-list`, `profile-games-see-all`.
-  Its `rating-<category>` rows open the rating stats.
+  Its `rating-<category>` rows open the rating stats. Your own is the
+  same screen, with none of those actions, and `profile-add-friends` on
+  its Friends section.
 - **Rating stats**: `rating-stats-screen`, `rating-stats-rating`,
   `rating-stats-change` (the ▲/▼ points for the period), the period tabs
   `tab-1w` / `tab-1m` / `tab-3m` / `tab-1y` / `tab-all`, `rating-chart`
@@ -247,10 +253,26 @@ resign or abort from the app (see `examples/resign.yaml` /
   `stats-worst-loss` (open the game), `stats-win-streak`,
   `stats-losing-streak`. The header title is `rating-category-picker`,
   opening `rating-category-<category>` options.
-- **Conversation**: `conversation-screen`, `conversation-presence`,
-  `message-list`, `message-<id>`, `load-older-messages`,
-  `message-input`, `send-message-button`, and
-  `clear-conversation-button` (🗑, in the header; confirm "Delete").
+- **Messages** (the tab): `messages-screen`, `messages-search`,
+  `online-friends` with `online-friend-<id>`, `conversation-list` with
+  `conversation-<userId>` (`-unread`, `-typing`, `-seen` / `-sent`; a
+  long press opens `conversation-menu-mark-read` / `-profile` /
+  `-delete`), `messages-no-match`, `messages-empty` (with
+  `messages-empty-new` or `messages-empty-find-friends`), and the
+  header's `new-message-button`, opening `friend-picker`
+  (`friend-picker-search`, `friend-row-<id>`). Guests see
+  `sign-in-prompt`.
+- **Conversation**: `conversation-screen`, the header's
+  `conversation-title` (opens their profile) with
+  `conversation-presence` ("typing…" while they are) and
+  `conversation-menu-button` (⋯: `conversation-action-profile`,
+  `conversation-action-challenge`, `conversation-action-watch` while
+  they're playing, and `clear-conversation-button` - confirm "Delete"),
+  `conversation-playing` with `conversation-watch`, `message-list`,
+  `message-<id>` (`-attachment` for a shared game or position, `-seen`,
+  `-retry` for one that wasn't sent), `typing-indicator`,
+  `load-older-messages`, `attach-button` (opens `game-picker`),
+  `message-input` and `send-message-button`.
 - **Game list** ("Game history" for yours): `games-list`,
   `game-row-<gameId>`, `games-error`, and the dropdowns
   `games-result-filter` (`-all`, `-win`, `-draw`, `-loss`) and
@@ -268,10 +290,13 @@ resign or abort from the app (see `examples/resign.yaml` /
   `all-friends-empty`, `requests-empty`, `games-empty`,
   `activity-empty`, `profile-games-empty`, `messages-empty`,
   `chat-empty`.
-- **Profile**: `profile-screen`, `rating-<category>` (opens your rating
-  stats), `sign-out-button`, `appearance-row` (opens Appearance),
-  `licenses-row` (opens `licenses-screen`); guests get the same
-  `sign-in-prompt`.
+- **Menu** (the tab): `menu-screen`, `menu-profile` (opens your own
+  `UserProfile`; guests get `sign-in-prompt` instead), the analysis items
+  below, `menu-opening-explorer`, `menu-players` (signed in only; opens
+  `FindFriends` with its search focused), `menu-settings` (opens `settings-screen`: `appearance-row`,
+  `analysis-settings-row`, `daily-game-settings-row`, `licenses-row` -
+  opens `licenses-screen`) and `sign-out-button`.
+- **Puzzles** (the tab): `puzzles-screen`, `puzzles-coming-soon`.
 - **Appearance**: `appearance-settings`, the radio buttons
   `color-scheme-<system|light|dark>`, and `board-theme-<name>` (`test` -
   the default blue - `chess.com`, `lichess.org`, `powderblue`,
@@ -280,7 +305,7 @@ resign or abort from the app (see `examples/resign.yaml` /
   the simulator with `xcrun simctl ui booted appearance dark` (and back
   with `light`).
 - **Analysis** (no backend needed, except to pick one of your games):
-  - `analysis-home` with `analysis-new`, `analysis-set-up`,
+  - On the Menu tab: `analysis-new`, `analysis-set-up`,
     `analysis-pick-game` (a `games-list`) and `analysis-paste`
     (`paste-game-input`, `paste-game-analyse`, `paste-game-error`).
   - The board, `analysis-board`: the usual `square-*`/`piece-*`, then
@@ -290,8 +315,8 @@ resign or abort from the app (see `examples/resign.yaml` /
     the move list `analysis-move-<nodeId>` (long-press for
     `promote-variation-action` / `delete-variation-action`), and the
     toolbar's `game-menu-button` (☰: `new-analysis-action`,
-    `edit-position-action`, `analysis-settings-action`, which opens the
-    settings screen), `opening-explorer-button`, `flip-board-button` and
+    `edit-position-action`, `send-position-action` with friends to send
+    to, `analysis-settings-action`, which opens the settings screen), `opening-explorer-button`, `flip-board-button` and
     ‹ ›.
     Tapping `engine-line-<n>` plays its first move. The board is over the
     tabs, so there's no tab bar there; `header-back` returns to the tab.
@@ -343,6 +368,7 @@ resign or abort from the app (see `examples/resign.yaml` /
   game's toolbar sits).
 - **LiveGame**:
   - Header: `game-header`, `game-header-menu` (⋯), with
+    `send-game-item` (with friends to send to - opens `friend-picker`),
     `share-game-item` and `bookmark-game-item` ("Bookmark this game" /
     "Remove bookmark") in that menu - tap them by testID, their text
     doesn't match - and `game-header-back` (only once the game is over).

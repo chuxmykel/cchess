@@ -1,9 +1,9 @@
-# Pasting a FEN into the Analysis tab analyses that position.
+# Pasting a FEN from the Menu tab analyses that position.
 appId: host.exp.Exponent
 ---
 - runFlow: common/launch-fresh.yaml
 - tapOn:
-    id: "analysis-tab"
+    id: "menu-tab"
 - tapOn:
     id: "analysis-paste"
 - tapOn:

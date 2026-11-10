@@ -2,13 +2,10 @@ import { useCallback } from 'react';
 
 import GameHistoryList from '../../components/GameHistoryList';
 import { getMyGames, GamesPage } from '../../network/restClient';
-import { AnalysisStackScreenProps } from '../AnalysisStack/types';
+import { MenuStackScreenProps } from '../MenuStack/types';
 
 type PickGameProps = {
-  navigation: Pick<
-    AnalysisStackScreenProps<'PickGame'>['navigation'],
-    'navigate'
-  >;
+  navigation: Pick<MenuStackScreenProps<'PickGame'>['navigation'], 'navigate'>;
 };
 
 // One of your finished games, to analyse from its last move.

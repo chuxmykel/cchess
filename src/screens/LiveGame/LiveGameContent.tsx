@@ -265,7 +265,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         timeControl={timeControl}
         rated={snapshot.rated}
         onBack={isGameOver ? leaveGame : undefined}
-        onError={onError}
+        onMessage={onError}
       />
 
       <MoveList
