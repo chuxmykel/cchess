@@ -109,7 +109,15 @@ EXIT STATUS
 ENVIRONMENT
        EXPO_PUBLIC_SERVER_URL
               The server to play on, as for the app itself
-              (src/network/env.ts). Default: http://localhost:3000.
+              (src/network/env.ts). npm run opponent reads it from .env,
+              as Expo does for the app, unless it's already set in the
+              environment. Default: http://localhost:3000.
+
+       NODE_EXTRA_CA_CERTS
+              A certificate authority to trust besides the usual ones -
+              Node's own variable, for an https server whose certificate
+              comes from its own local CA (a test server's Caddy). It
+              has to be set when Node starts, so not in .env.
 
 EXAMPLES
        Seek 5+0 and take either color:
@@ -273,6 +281,7 @@ async function signInAsBot() {
 }
 
 async function main() {
+  log('[EXPO_PUBLIC_SERVER_URL]: ', SERVER_URL);
   const session = args.guest
     ? await postJson('/auth/guest')
     : await signInAsBot();
