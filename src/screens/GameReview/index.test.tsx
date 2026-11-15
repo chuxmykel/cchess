@@ -3,7 +3,6 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 import * as Speech from 'expo-speech';
 
 import GameReview from '.';
-import { DRAG_STEP_PX } from '../../components/MoveList';
 import { REVIEW_FACT_MS } from '../../constants/review';
 import { EngineContext, EngineStatus } from '../../context/EngineContext';
 import { ReviewSettingsProvider } from '../../context/ReviewSettingsContext';
@@ -14,7 +13,6 @@ import {
   saveGameReview,
 } from '../../network/restClient';
 import { makeFakeEngine } from '../../testUtils/fakeEngine';
-import { dragSideways } from '../../testUtils/moveListDrag';
 import { makeFinishedGame } from '../../testUtils/gameSnapshot';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { settleAnimations } from '../../testUtils/pieceGestures';
@@ -210,12 +208,24 @@ describe('GameReview', () => {
     );
   });
 
-  it('steps through the moves as the list is dragged', async () => {
+  it('goes through the moves as the move list is scrolled by hand', async () => {
     const { screen } = await renderReview();
     await toBlunder(screen);
+    for (const [ply, x] of [
+      [1, 60],
+      [2, 160],
+      [3, 260],
+    ]) {
+      await fireEvent(screen.getByTestId(`move-${ply}`), 'layout', {
+        nativeEvent: { layout: { x, y: 0, width: 80, height: 32 } },
+      });
+    }
+    const list = screen.getByTestId('move-list');
 
-    // Finger to the right: back a move.
-    await dragSideways(DRAG_STEP_PX + 4);
+    await fireEvent(list, 'scrollBeginDrag');
+    await fireEvent.scroll(list, {
+      nativeEvent: { contentOffset: { x: 120, y: 0 } },
+    });
     await settleAnimations();
     expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
       'e5 is a book move',

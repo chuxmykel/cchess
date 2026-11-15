@@ -131,9 +131,11 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
   });
 
   // Each new thing said is read aloud, in place of the last - but not the
-  // moves played on the way to a key moment, only the moment itself.
+  // moves played on the way to a key moment, only the moment itself, nor
+  // those passed scrolling the move list.
   const { say } = voice;
-  const quiet = stepper.isPlaying;
+  const [scrubbing, setScrubbing] = useState(false);
+  const quiet = stepper.isPlaying || scrubbing;
   useEffect(() => {
     if (!quiet) say(view.spoken);
   }, [view.spoken, quiet, say]);
@@ -284,7 +286,8 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
               selected: stepper.card === card,
               onPress: () => stepper.goTo(lastIndex + 1 + i),
             }))}
-            onDragStep={stepper.stepBy}
+            onScrub={stepper.goTo}
+            onScrubbingChange={setScrubbing}
           />
         </View>
         <ToolbarButton

@@ -1,16 +1,12 @@
-import { Fragment, useEffect, useMemo, useRef } from 'react';
+import { Fragment, useCallback, useEffect, useRef } from 'react';
 import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   ScrollView,
   Text,
   Pressable,
   type ScrollViewInstance,
 } from 'react-native';
-import {
-  GestureDetector,
-  GestureHandlerRootView,
-  PanGestureConfig,
-  usePanGesture,
-} from 'react-native-gesture-handler';
 
 import Icon, { IconName } from '../Icon';
 import MoveClassIcon from '../MoveClassIcon';
@@ -31,10 +27,13 @@ interface MoveListProps {
   /** Items after the last move - a game review's closing cards - each an
    * icon, the one `selected` set off as the current move is. */
   endItems?: MoveListEndItem[];
-  /** Dragging the list steps through the moves instead of scrolling it:
-   * called with -1 or 1 for each step's worth of drag - toward the start as
-   * the finger moves right, as if pulling the earlier moves into view. */
-  onDragStep?: (step: -1 | 1) => void;
+  /** Scrolling the list by hand goes through the moves as it goes: called
+   * with the place come to - -1 before the first move, then each move by
+   * its index in `moves`, then each end item after them - as each passes
+   * the spot the current move is kept at. */
+  onScrub?: (position: number) => void;
+  /** A hand scroll starting, and ending once the list comes to rest. */
+  onScrubbingChange?: (scrubbing: boolean) => void;
 }
 
 export type MoveListEndItem = {
@@ -44,9 +43,6 @@ export type MoveListEndItem = {
   selected: boolean;
   onPress: () => void;
 };
-
-// How far a finger drags the list for each move it steps.
-export const DRAG_STEP_PX = 28;
 
 export const MOVE_LIST_HEIGHT = 32;
 
@@ -73,74 +69,100 @@ const MoveList: React.FC<MoveListProps> = ({
   onSelectPly,
   moveClasses,
   endItems,
-  onDragStep,
+  onScrub,
+  onScrubbingChange,
 }) => {
   const styles = useStyles();
   const { colors } = useTheme();
 
   const scrollRef = useRef<ScrollViewInstance>(null);
-  const moveXOffsetsByPly = useRef(new Map<number, number>());
-  const endItemXOffsets = useRef(new Map<string, number>());
-  const selectedEndItem = endItems?.find((item) => item.selected)?.key;
+  const moveXOffsets = useRef(new Map<number, number>());
+  const endItemXOffsets = useRef(new Map<number, number>());
+  const selectedEndItem = endItems?.findIndex((item) => item.selected) ?? -1;
+  // Scrolled by hand: the list goes where the finger takes it, not to the
+  // current move.
+  const scrubbing = useRef(false);
+  const scrubbedTo = useRef<number | null>(null);
 
-  useEffect(() => {
+  const scrollToCurrent = useCallback(() => {
     const currentX =
-      selectedEndItem !== undefined
+      selectedEndItem >= 0
         ? endItemXOffsets.current.get(selectedEndItem)
-        : moveXOffsetsByPly.current.get(currentPly);
+        : moveXOffsets.current.get(
+            moves.findIndex((move) => move.ply === currentPly),
+          );
     if (currentX !== undefined) {
       scrollRef.current?.scrollTo({
         x: Math.max(0, currentX - VISIBLE_WIDTH_BEFORE_CURRENT_MOVE),
         animated: true,
       });
     }
-  }, [currentPly, moves.length, selectedEndItem]);
+  }, [currentPly, moves, selectedEndItem]);
 
-  // Dragged sideways, the list steps through the moves - with Gesture
-  // Handler, which can take a drag from the moves under the finger, as the
-  // ScrollView it's in can't. How many steps the drag under way has taken.
-  const taken = useRef(0);
-  const onDragStepRef = useRef(onDragStep);
   useEffect(() => {
-    onDragStepRef.current = onDragStep;
-  }, [onDragStep]);
-  const dragEnabled = !!onDragStep;
-  const dragConfig = useMemo<PanGestureConfig>(
-    () => ({
-      testID: 'move-list-drag',
-      enabled: dragEnabled,
-      runOnJS: true,
-      // Sideways only: a drag that goes up or down first is left alone.
-      activeOffsetX: [-8, 8],
-      failOffsetY: [-16, 16],
-      onActivate: () => {
-        taken.current = 0;
-      },
-      onUpdate: (event) => {
-        // The finger moving left brings later moves in: forward.
-        const steps = Math.trunc(-event.translationX / DRAG_STEP_PX);
-        while (taken.current !== steps) {
-          const step = steps > taken.current ? 1 : -1;
-          taken.current += step;
-          onDragStepRef.current?.(step);
-        }
-      },
-    }),
-    [dragEnabled],
-  );
-  const drag = usePanGesture(dragConfig);
+    if (!scrubbing.current) scrollToCurrent();
+  }, [scrollToCurrent, moves.length]);
 
-  const list = (
+  // The place at the spot the current move is kept at: the last item
+  // starting before it.
+  const placeAt = (x: number): number => {
+    const spot = x + VISIBLE_WIDTH_BEFORE_CURRENT_MOVE + 1;
+    let place = -1;
+    let placeX = -Infinity;
+    const consider = (position: number, itemX: number | undefined) => {
+      if (itemX !== undefined && itemX <= spot && itemX > placeX) {
+        place = position;
+        placeX = itemX;
+      }
+    };
+    moves.forEach((_, index) =>
+      consider(index, moveXOffsets.current.get(index)),
+    );
+    endItems?.forEach((_, index) =>
+      consider(moves.length + index, endItemXOffsets.current.get(index)),
+    );
+    return place;
+  };
+
+  const startScrub = () => {
+    if (!onScrub) return;
+    scrubbing.current = true;
+    scrubbedTo.current = null;
+    onScrubbingChange?.(true);
+  };
+  const endScrub = () => {
+    if (!scrubbing.current) return;
+    scrubbing.current = false;
+    onScrubbingChange?.(false);
+    // Settled on the move now current.
+    scrollToCurrent();
+  };
+  const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (!scrubbing.current || !onScrub) return;
+    const place = placeAt(event.nativeEvent.contentOffset.x);
+    if (place === scrubbedTo.current) return;
+    scrubbedTo.current = place;
+    onScrub(place);
+  };
+
+  return (
     <ScrollView
       ref={scrollRef}
       horizontal
       showsHorizontalScrollIndicator={false}
-      scrollEnabled={!onDragStep}
       style={styles.list}
       contentContainerStyle={styles.content}
       testID="move-list"
+      scrollEventThrottle={16}
+      onScroll={onScroll}
+      onScrollBeginDrag={startScrub}
+      onScrollEndDrag={(event) => {
+        // Let go still: done; flicked, it's done once it comes to rest.
+        if (!event.nativeEvent.velocity?.x) endScrub();
+      }}
+      onMomentumScrollEnd={endScrub}
     >
-      {moves.map((move) => {
+      {moves.map((move, index) => {
         const isWhiteMove = move.color === 'w';
         const isCurrent = move.ply === currentPly;
         const moveClass = moveClasses?.[move.ply];
@@ -153,10 +175,7 @@ const MoveList: React.FC<MoveListProps> = ({
             <Pressable
               onPress={() => onSelectPly(move.ply)}
               onLayout={(event) =>
-                moveXOffsetsByPly.current.set(
-                  move.ply,
-                  event.nativeEvent.layout.x,
-                )
+                moveXOffsets.current.set(index, event.nativeEvent.layout.x)
               }
               style={[styles.move, isCurrent && styles.currentMove]}
               accessibilityRole="button"
@@ -180,12 +199,12 @@ const MoveList: React.FC<MoveListProps> = ({
           </Fragment>
         );
       })}
-      {endItems?.map((item) => (
+      {endItems?.map((item, index) => (
         <Pressable
           key={item.key}
           onPress={item.onPress}
           onLayout={(event) =>
-            endItemXOffsets.current.set(item.key, event.nativeEvent.layout.x)
+            endItemXOffsets.current.set(index, event.nativeEvent.layout.x)
           }
           style={[
             styles.move,
@@ -205,13 +224,6 @@ const MoveList: React.FC<MoveListProps> = ({
         </Pressable>
       ))}
     </ScrollView>
-  );
-  if (!onDragStep) return list;
-  // With its own root, as the board has, so it works wherever it's drawn.
-  return (
-    <GestureHandlerRootView style={styles.list}>
-      <GestureDetector gesture={drag}>{list}</GestureDetector>
-    </GestureHandlerRootView>
   );
 };
 

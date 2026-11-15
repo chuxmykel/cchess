@@ -1,8 +1,7 @@
 import { fireEvent, render } from '@testing-library/react-native';
 
-import MoveList, { DRAG_STEP_PX } from '.';
+import MoveList from '.';
 import { GameMoveSummary } from '../../network/socketEvents';
-import { dragSideways } from '../../testUtils/moveListDrag';
 
 function move(ply: number, san: string): GameMoveSummary {
   return {
@@ -111,29 +110,50 @@ describe('MoveList', () => {
     expect(onPress).toHaveBeenCalled();
   });
 
-  it('steps through the moves as it is dragged, in the drag direction', async () => {
-    const onDragStep = jest.fn();
+  it('goes through the moves as it is scrolled by hand', async () => {
+    const onScrub = jest.fn();
+    const onScrubbingChange = jest.fn();
     const screen = await render(
       <MoveList
         moves={THREE_MOVES}
-        currentPly={2}
+        currentPly={1}
         onSelectPly={jest.fn()}
-        onDragStep={onDragStep}
+        onScrub={onScrub}
+        onScrubbingChange={onScrubbingChange}
       />,
     );
-    // Finger to the left: on through the moves, a step per stretch.
-    await dragSideways(-DRAG_STEP_PX * 2 - 5);
-    expect(onDragStep.mock.calls).toEqual([[1], [1]]);
+    // The moves laid out 100pt apart, from 60.
+    for (const [ply, x] of [
+      [1, 60],
+      [2, 160],
+      [3, 260],
+    ]) {
+      await fireEvent(screen.getByTestId(`move-${ply}`), 'layout', {
+        nativeEvent: { layout: { x, y: 0, width: 80, height: 32 } },
+      });
+    }
+    const list = screen.getByTestId('move-list');
+    const scrollTo = (x: number) =>
+      fireEvent.scroll(list, { nativeEvent: { contentOffset: { x, y: 0 } } });
 
-    onDragStep.mockClear();
-    await dragSideways(DRAG_STEP_PX);
-    expect(onDragStep.mock.calls).toEqual([[-1]]);
-  });
+    await fireEvent(list, 'scrollBeginDrag');
+    expect(onScrubbingChange).toHaveBeenLastCalledWith(true);
+    // The spot the current move's kept at is 48pt in.
+    await scrollTo(120);
+    expect(onScrub).toHaveBeenLastCalledWith(1);
+    await scrollTo(220);
+    expect(onScrub).toHaveBeenLastCalledWith(2);
+    // Before the first move: the start.
+    await scrollTo(0);
+    expect(onScrub).toHaveBeenLastCalledWith(-1);
 
-  it('scrolls as usual when nothing steps on a drag', async () => {
-    const screen = await render(
-      <MoveList moves={THREE_MOVES} currentPly={2} onSelectPly={jest.fn()} />,
-    );
-    expect(screen.getByTestId('move-list').props.scrollEnabled).toBe(true);
+    await fireEvent(list, 'scrollEndDrag', {
+      nativeEvent: { velocity: { x: 0, y: 0 } },
+    });
+    expect(onScrubbingChange).toHaveBeenLastCalledWith(false);
+    // Scrolled by the app after that, not by hand: nothing more.
+    onScrub.mockClear();
+    await scrollTo(220);
+    expect(onScrub).not.toHaveBeenCalled();
   });
 });

@@ -134,17 +134,6 @@ describe('useReviewStepper', () => {
     expect(result.current.move?.san).toBe('Ba6');
   });
 
-  it('steps by more than one at once, from where it is', async () => {
-    const { result } = await renderStepper();
-    await act(async () => {
-      result.current.stepBy(1);
-      result.current.stepBy(1);
-    });
-    expect(result.current.index).toBe(1);
-    await act(async () => result.current.stepBy(-5));
-    expect(result.current.index).toBe(-1);
-  });
-
   it('steps back as far as the start, and no further', async () => {
     const { result } = await renderStepper();
     await act(async () => result.current.goTo(0));

@@ -70,9 +70,6 @@ export type ReviewStepper = {
   back: () => void;
   forward: () => void;
   goTo: (index: number) => void;
-  // A step or more from wherever the review is now - for a drag, which can
-  // take several before a render.
-  stepBy: (steps: number) => void;
   toggleLine: () => void;
   toggleBest: () => void;
   retry: () => void;
@@ -173,16 +170,6 @@ export function useReviewStepper(
       show(Math.max(-1, Math.min(end, at)));
     },
     [end, show],
-  );
-  const stepBy = useCallback(
-    (steps: number) => {
-      setStarted(true);
-      setPlaying(null);
-      setIndex((at) => Math.max(-1, Math.min(end, at + steps)));
-      setMode({ kind: 'move' });
-      setLineStep(null);
-    },
-    [end],
   );
   const back = useCallback(() => goTo(index - 1), [goTo, index]);
   const forward = useCallback(() => goTo(index + 1), [goTo, index]);
@@ -292,7 +279,6 @@ export function useReviewStepper(
     back,
     forward,
     goTo,
-    stepBy,
     toggleLine,
     toggleBest,
     retry,
