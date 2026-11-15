@@ -348,18 +348,20 @@ resign or abort from the app (see `examples/resign.yaml` /
 - **Game review** (a screen, from a finished game's `review-button` on
   the result card or `review-action` in ☰; verified 2026-11-15):
   `game-review-loading`, `game-review-unavailable`, `game-review-error`,
-  then `game-review-analysing` with `review-progress` (its
+  then `game-review-analysing` with `review-analysing-fact` (a chess fact,
+  every 6s) and `review-progress` (its
   `review-progress-label`, `review-progress-fill`,
   `review-progress-retry`); then `game-review-summary`: `review-intro`,
   `eval-graph` (`eval-graph-dot-<i>`, `eval-graph-cursor`),
-  `review-opening`, `review-accuracy-<w|b>`,
+  `review-opening`, `review-accuracy-<w|b>`, `review-rating-<w|b>` (the game rating),
   `review-count-<w|b>-<class>`, `review-start`. Stepping
   (`game-review-stepping`): `eval-bar`, `review-bubble` with
   `-title`, `-score`, `-text`, `-line`; `review-board` with
   `square-badge-<square>` and `move-class-<class>` marks (also in the
   move list); `review-back` / `review-forward` beside the `move-list`;
   `review-toolbar`: `review-retry`, `review-show`, `review-best` and
-  `review-next` (Next / Resume / Analyse); at the close,
+  `review-next` (Next / Skip while it plays the moves on to a key
+  moment - every 0.7s - / Resume / Analyse); at the close,
   `review-summary-button`. In Retry, tap a piece then a square (by
   testID) - the board is the usual `piece-*`/`square-*`. The header's
   `review-settings-button` opens `review-settings`
