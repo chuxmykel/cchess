@@ -92,6 +92,21 @@ async function renderReview({
   return { screen, navigation, main, threat, engine };
 }
 
+// On to the next key moment: Next plays the moves there, and tapped again
+// as they play, goes straight there.
+async function nextMoment(screen: Awaited<ReturnType<typeof render>>) {
+  await fireEvent.press(screen.getByTestId('review-next'));
+  await fireEvent.press(screen.getByTestId('review-next'));
+  await settleAnimations();
+}
+
+// From the summary to my blunder, the second key moment.
+async function toBlunder(screen: Awaited<ReturnType<typeof render>>) {
+  await fireEvent.press(screen.getByTestId('review-start'));
+  await fireEvent.press(screen.getByTestId('review-next'));
+  await nextMoment(screen);
+}
+
 describe('GameReview', () => {
   beforeEach(async () => {
     await AsyncStorage.clear();
@@ -117,18 +132,20 @@ describe('GameReview', () => {
     );
   });
 
-  it('steps through my key moments, then closes on what to take away', async () => {
+  it('plays through to my key moments, then closes on what to take away', async () => {
     const { screen, navigation } = await renderReview();
 
+    // Every move's played on the way - tapped while they play, Skip goes
+    // straight to where they stop.
     await fireEvent.press(screen.getByTestId('review-start'));
-    await settleAnimations();
+    expect(screen.getByTestId('review-next')).toHaveTextContent('Skip');
+    await fireEvent.press(screen.getByTestId('review-next'));
     // The book's last move first.
     expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
       'e5 is a book move',
     );
 
-    await fireEvent.press(screen.getByTestId('review-next'));
-    await settleAnimations();
+    await nextMoment(screen);
     expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
       'Ba6 is a blunder',
     );
@@ -139,8 +156,8 @@ describe('GameReview', () => {
     // In the bubble, and beside the move in the list.
     expect(screen.getAllByTestId('move-class-blunder')).toHaveLength(2);
 
-    await fireEvent.press(screen.getByTestId('review-next'));
-    await settleAnimations();
+    // The rest of the moves, then the close.
+    await nextMoment(screen);
     expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
       'Opening',
     );
@@ -157,9 +174,7 @@ describe('GameReview', () => {
 
   it('shows the best move, and the line answering the one played', async () => {
     const { screen } = await renderReview();
-    await fireEvent.press(screen.getByTestId('review-start'));
-    await fireEvent.press(screen.getByTestId('review-next'));
-    await settleAnimations();
+    await toBlunder(screen);
 
     await fireEvent.press(screen.getByTestId('review-show'));
     expect(screen.getByTestId('review-bubble-line')).toHaveTextContent(/bxa6/);
@@ -175,6 +190,7 @@ describe('GameReview', () => {
   it('returns to where it was after stepping away', async () => {
     const { screen } = await renderReview();
     await fireEvent.press(screen.getByTestId('review-start'));
+    await fireEvent.press(screen.getByTestId('review-next'));
 
     await fireEvent(screen.getByTestId('review-forward'), 'pressIn');
     await settleAnimations();
@@ -189,9 +205,7 @@ describe('GameReview', () => {
 
   it('offers to retry a slip, the board set for my move', async () => {
     const { screen } = await renderReview();
-    await fireEvent.press(screen.getByTestId('review-start'));
-    await fireEvent.press(screen.getByTestId('review-next'));
-    await settleAnimations();
+    await toBlunder(screen);
 
     await fireEvent.press(screen.getByTestId('review-retry'));
     await settleAnimations();
@@ -214,8 +228,15 @@ describe('GameReview', () => {
         .join(''),
     );
 
+    // Quiet while the moves play, then the moment.
     await fireEvent.press(screen.getByTestId('review-start'));
+    expect(Speech.speak).toHaveBeenLastCalledWith(intro, expect.anything());
     await fireEvent.press(screen.getByTestId('review-next'));
+    expect(Speech.speak).toHaveBeenLastCalledWith(
+      expect.stringMatching(/^e5 is a book move\./),
+      expect.anything(),
+    );
+    await nextMoment(screen);
     expect(Speech.speak).toHaveBeenLastCalledWith(
       expect.stringMatching(/^bishop a6 is a blunder\./),
       expect.anything(),

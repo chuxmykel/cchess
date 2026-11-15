@@ -1,6 +1,7 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Chess, Color, Square } from 'chess.js';
 
+import { REVIEW_PLAY_STEP_MS } from '../constants/review';
 import { bestMoveOf, BestMoveView } from '../domain/review/buildReview';
 import { keyMoments, nextKeyMoment } from '../domain/review/keyMoments';
 import type { GameReview, ReviewedMove } from '../domain/review/types';
@@ -30,12 +31,18 @@ export type RetryJudge = (
   fenAfter: string,
 ) => Promise<boolean>;
 
+// Where Next plays the moves to: a key moment to stop at, or the last move,
+// and then the review's close.
+type PlayTarget = { index: number; then: 'stop' | 'done' };
+
 export type ReviewStepper = {
   phase: ReviewPhase;
   // The move shown: -1 for the start, before any.
   index: number;
   move: ReviewedMove | null;
   moments: number[];
+  // The moves being played on to the next key moment.
+  isPlaying: boolean;
   // Stepped away from the moment the review was at - Next returns there.
   isOffPath: boolean;
   mode: ReviewMode;
@@ -53,9 +60,10 @@ export type ReviewStepper = {
   backToSummary: () => void;
 };
 
-// Stepping through a review the way a coach would: Next stops at each key
-// moment of the side reviewed, ‹ › go a move at a time, and from any move
-// the best one can be shown, or tried for.
+// Stepping through a review the way a coach would: Next plays the game on,
+// a move at a time, and stops at each key moment of the side reviewed -
+// tapped again while it plays, it goes straight there; ‹ › go a move at a
+// time, and from any move the best one can be shown, or tried for.
 export function useReviewStepper(
   review: GameReview | null,
   side: Color,
@@ -66,6 +74,9 @@ export function useReviewStepper(
   const [coachIndex, setCoachIndex] = useState(-1);
   const [mode, setMode] = useState<ReviewMode>({ kind: 'move' });
   const [showLine, setShowLine] = useState(false);
+  // Where the moves are being played to, one at a time - the next key
+  // moment, or the end, to close.
+  const [playing, setPlaying] = useState<PlayTarget | null>(null);
   const moves = useMemo(() => review?.moves ?? [], [review]);
   const moments = useMemo(() => keyMoments(moves, side), [moves, side]);
   const last = moves.length - 1;
@@ -75,32 +86,67 @@ export function useReviewStepper(
     setMode({ kind: 'move' });
   }, []);
 
+  // Arrived where the moves were played to: stop there.
+  const arrive = useCallback(
+    (target: PlayTarget) => {
+      setPlaying(null);
+      setCoachIndex(target.index);
+      show(target.index);
+      if (target.then === 'done') setPhase('done');
+    },
+    [show],
+  );
+
+  // The next stop after a move: its next key moment, or the end.
+  const playOnFrom = useCallback(
+    (from: number) => {
+      const upcoming = nextKeyMoment(moments, from);
+      const target: PlayTarget =
+        upcoming === null
+          ? { index: last, then: 'done' }
+          : { index: upcoming, then: 'stop' };
+      if (target.index <= from) arrive(target);
+      else setPlaying(target);
+    },
+    [moments, last, arrive],
+  );
+
+  // A move at a time, until the stop's reached.
+  useEffect(() => {
+    if (!playing) return;
+    const timer = setTimeout(() => {
+      const at = index + 1;
+      if (at >= playing.index) arrive(playing);
+      else show(at);
+    }, REVIEW_PLAY_STEP_MS);
+    return () => clearTimeout(timer);
+  }, [playing, index, arrive, show]);
+
+  // From the start, every move played up to the first key moment.
   const start = useCallback(() => {
-    const first = moments[0] ?? 0;
     setPhase('stepping');
-    setCoachIndex(first);
-    show(first);
-  }, [moments, show]);
+    setCoachIndex(-1);
+    show(-1);
+    playOnFrom(-1);
+  }, [show, playOnFrom]);
 
   const next = useCallback(() => {
+    // Played on to, already: straight there.
+    if (playing) {
+      arrive(playing);
+      return;
+    }
     if (index !== coachIndex) {
       show(coachIndex);
       return;
     }
-    const upcoming = nextKeyMoment(moments, index);
-    if (upcoming === null) {
-      setPhase('done');
-      show(last);
-      setCoachIndex(last);
-      return;
-    }
-    setCoachIndex(upcoming);
-    show(upcoming);
-  }, [index, coachIndex, moments, last, show]);
+    playOnFrom(index);
+  }, [playing, index, coachIndex, show, arrive, playOnFrom]);
 
   const goTo = useCallback(
     (at: number) => {
       if (phase === 'summary') setPhase('stepping');
+      setPlaying(null);
       show(Math.max(-1, Math.min(last, at)));
     },
     [phase, last, show],
@@ -163,6 +209,7 @@ export function useReviewStepper(
   const toggleLine = useCallback(() => setShowLine((shown) => !shown), []);
   const backToSummary = useCallback(() => {
     setPhase('summary');
+    setPlaying(null);
     show(-1);
   }, [show]);
 
@@ -171,7 +218,8 @@ export function useReviewStepper(
     index,
     move,
     moments,
-    isOffPath: phase === 'stepping' && index !== coachIndex,
+    isPlaying: playing !== null,
+    isOffPath: phase === 'stepping' && !playing && index !== coachIndex,
     mode,
     showLine,
     start,

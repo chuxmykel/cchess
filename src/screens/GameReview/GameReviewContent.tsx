@@ -121,11 +121,13 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
     intro,
   });
 
-  // Each new thing said is read aloud, in place of the last.
+  // Each new thing said is read aloud, in place of the last - but not the
+  // moves played on the way to a key moment, only the moment itself.
   const { say } = voice;
+  const quiet = stepper.isPlaying;
   useEffect(() => {
-    say(view.spoken);
-  }, [view.spoken, say]);
+    if (!quiet) say(view.spoken);
+  }, [view.spoken, quiet, say]);
 
   useMoveNavigationSounds(review.moves, stepper.index + 1, false);
 
@@ -195,9 +197,11 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
       ? themeIndex < themes.length - 1
         ? { label: 'Next', onPress: () => setThemeIndex((i) => i + 1) }
         : { label: 'Analyse', onPress: () => onAnalyse(stepper.index + 1) }
-      : stepper.isOffPath
-        ? { label: 'Resume', onPress: stepper.next }
-        : { label: 'Next', onPress: stepper.next };
+      : stepper.isPlaying
+        ? { label: 'Skip', onPress: stepper.next }
+        : stepper.isOffPath
+          ? { label: 'Resume', onPress: stepper.next }
+          : { label: 'Next', onPress: stepper.next };
 
   return (
     <View style={styles.screen} testID="game-review-stepping">

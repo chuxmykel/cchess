@@ -64,6 +64,9 @@ export const DEFAULT_REVIEW_SETTINGS: ReviewSettings = {
   strength: 'standard',
 };
 
+// Next plays the moves on to the next key moment, one this often.
+export const REVIEW_PLAY_STEP_MS = 700;
+
 // While a game's analysed, a new chess fact this often.
 export const REVIEW_FACT_MS = 6000;
 

@@ -3,6 +3,7 @@ import { DEFAULT_POSITION } from 'chess.js';
 
 import { buildReview } from '../../domain/review/buildReview';
 import type { PositionEval } from '../../domain/review/types';
+import { REVIEW_PLAY_STEP_MS } from '../../constants/review';
 import { RetryJudge, useReviewStepper } from '../useReviewStepper';
 
 const at = (cp: number, pv: string[]): PositionEval => ({
@@ -31,33 +32,84 @@ async function renderStepper(judge: RetryJudge = jest.fn()) {
   return renderHook(() => useReviewStepper(REVIEW, 'w', judge));
 }
 
+// Lets the moves play on, a step at a time.
+async function play(steps: number) {
+  for (let i = 0; i < steps; i++) {
+    await act(async () => jest.advanceTimersByTime(REVIEW_PLAY_STEP_MS));
+  }
+}
+
 describe('useReviewStepper', () => {
-  it('starts on the summary, then goes to the first key moment', async () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  it('starts on the summary, then plays every move to the first key moment', async () => {
     const { result } = await renderStepper();
     expect(result.current.phase).toBe('summary');
 
     await act(async () => result.current.start());
-
     expect(result.current.phase).toBe('stepping');
     expect(result.current.moments).toEqual([1, 2]);
+    expect(result.current.index).toBe(-1);
+    expect(result.current.isPlaying).toBe(true);
+
+    await play(1);
+    expect(result.current.move?.san).toBe('e4');
+    await play(1);
+    expect(result.current.move?.san).toBe('e5');
+    expect(result.current.isPlaying).toBe(false);
+
+    // Stopped there.
+    await play(3);
     expect(result.current.move?.san).toBe('e5');
   });
 
-  it('steps from key moment to key moment, then to the close', async () => {
+  it('plays on from key moment to key moment, then to the close', async () => {
+    const { result } = await renderStepper();
+    await act(async () => result.current.start());
+    await play(2);
+
+    await act(async () => result.current.next());
+    await play(1);
+    expect(result.current.move?.san).toBe('Ba6');
+    expect(result.current.isPlaying).toBe(false);
+
+    // The moves after the last moment are played too, then the close.
+    await act(async () => result.current.next());
+    await play(1);
+    expect(result.current.move?.san).toBe('bxa6');
+    expect(result.current.phase).toBe('stepping');
+    await play(1);
+    expect(result.current.move?.san).toBe('Nf3');
+    expect(result.current.phase).toBe('done');
+  });
+
+  it('goes straight to the key moment when Next is tapped as it plays', async () => {
     const { result } = await renderStepper();
     await act(async () => result.current.start());
 
     await act(async () => result.current.next());
-    expect(result.current.move?.san).toBe('Ba6');
 
-    await act(async () => result.current.next());
-    expect(result.current.phase).toBe('done');
-    expect(result.current.move?.san).toBe('Nf3');
+    expect(result.current.move?.san).toBe('e5');
+    expect(result.current.isPlaying).toBe(false);
+  });
+
+  it('stops playing when stepped by hand', async () => {
+    const { result } = await renderStepper();
+    await act(async () => result.current.start());
+    await play(1);
+
+    await act(async () => result.current.back());
+    await play(3);
+
+    expect(result.current.index).toBe(-1);
+    expect(result.current.isPlaying).toBe(false);
   });
 
   it('returns to where it was after stepping away', async () => {
     const { result } = await renderStepper();
     await act(async () => result.current.start());
+    await play(2);
     await act(async () => result.current.forward());
     await act(async () => result.current.forward());
 
