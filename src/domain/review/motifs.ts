@@ -98,16 +98,18 @@ export function lineMaterial(
 }
 
 // A piece the opponent can take for less than it's worth: attacked and not
-// defended, or attacked by something cheaper.
+// defended, or attacked by something cheaper - though never by a king, which
+// can't take a piece that's defended.
 export function isLoose(chess: Chess, square: Square): boolean {
   const piece = chess.get(square);
   if (!piece || piece.type === 'k') return false;
   const attackers = chess.attackers(square, otherColor(piece.color));
   if (attackers.length === 0) return false;
   if (chess.attackers(square, piece.color).length === 0) return true;
-  return attackers.some(
-    (from) => PIECE_VALUE[chess.get(from)!.type] < PIECE_VALUE[piece.type],
-  );
+  return attackers.some((from) => {
+    const attacker = chess.get(from)!.type;
+    return attacker !== 'k' && PIECE_VALUE[attacker] < PIECE_VALUE[piece.type];
+  });
 }
 
 // Every piece of a side that a piece on this square attacks.
@@ -306,18 +308,23 @@ function badMoveFacts(context: MoveContext): MoveFact[] {
   // What the opponent wins in answer, over what best play would have kept.
   const reply = lineMaterial(fenAfter, context.replyLine, color);
   const bestLine = lineMaterial(fenBefore, context.bestLine, color);
-  const playedGain =
-    reply.gain +
-    (move.captured ? PIECE_VALUE[move.captured] : 0) +
-    (move.promotion ? PIECE_VALUE[move.promotion] - 1 : 0);
+  const playedGain = gainOf(move, reply);
   if (reply.lost && playedGain < 0 && bestLine.gain - playedGain >= 2) {
     const lost = pieceName(reply.lost.type);
     const replyMoves = playLine(fenAfter, context.replyLine, LINE_PLIES);
     const afterReply = replyMoves[0] ? new Chess(replyMoves[0].after) : null;
     const lostAt =
       reply.lost.ply > 0 ? squareBeforeLine(replyMoves, reply.lost.ply) : null;
-    if (reply.lost.ply === 0 && replyMoves[0]?.captured) {
-      facts.push({ kind: 'hangs', piece: pieceName(replyMoves[0].captured) });
+    // Taken straight away, and not as a trade for what the move took.
+    const takenAtOnce = replyMoves[0]?.captured;
+    const hung =
+      takenAtOnce &&
+      PIECE_VALUE[takenAtOnce] >= (reply.lost.ply === 0 ? 1 : 3) &&
+      !(
+        move.captured && PIECE_VALUE[move.captured] >= PIECE_VALUE[takenAtOnce]
+      );
+    if (hung) {
+      facts.push({ kind: 'hangs', piece: pieceName(takenAtOnce) });
     } else if (afterReply && isFork(afterReply, replyMoves[0].to)) {
       facts.push({ kind: 'allowsFork', piece: pieceName(replyMoves[0].piece) });
     } else if (afterReply && pinnedOrSkewered(afterReply, replyMoves[0].to)) {
@@ -404,6 +411,28 @@ function goodMoveFacts(context: MoveContext): MoveFact[] {
   }
   if (move.san.includes('+')) facts.push({ kind: 'check' });
   return facts;
+}
+
+// What a move and the line answering it win, in pawns.
+function gainOf(move: Move, reply: LineMaterial): number {
+  return (
+    reply.gain +
+    (move.captured ? PIECE_VALUE[move.captured] : 0) +
+    (move.promotion ? PIECE_VALUE[move.promotion] - 1 : 0)
+  );
+}
+
+// How much material a move gives up over best play, in pawns: what the best
+// line would have kept, less what the move and its answer keep.
+export function materialGivenUp(
+  move: Move,
+  bestLine: string[],
+  replyLine: string[],
+): number {
+  if (bestLine[0] === move.lan) return 0;
+  const best = lineMaterial(move.before, bestLine, move.color);
+  const reply = lineMaterial(move.after, replyLine, move.color);
+  return Math.max(0, best.gain - gainOf(move, reply));
 }
 
 // A piece worth having left where the opponent can take it for less than it's

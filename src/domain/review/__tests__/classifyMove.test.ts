@@ -9,6 +9,8 @@ const base: ClassifyInput = {
   opponentLoss: 0,
   isSacrifice: false,
   isRecapture: false,
+  materialLoss: 0,
+  scoreLoss: 0,
 };
 
 const classOf = (input: Partial<ClassifyInput>) =>
@@ -75,5 +77,33 @@ describe('classifyMove', () => {
     expect(classOf({ opponentLoss: 25, winBefore: 80, winAfter: 20 })).toBe(
       'blunder',
     );
+  });
+
+  it('calls a piece given away a mistake, though the game was already lost', () => {
+    // Down six pawns already: dropping a bishop barely moves the chances.
+    expect(
+      classOf({ winBefore: 10, winAfter: 6.5, materialLoss: 3, scoreLoss: 92 }),
+    ).toBe('mistake');
+  });
+
+  it('calls a pawn given away at least an inaccuracy', () => {
+    expect(
+      classOf({ winBefore: 10, winAfter: 8, materialLoss: 1, scoreLoss: 60 }),
+    ).toBe('inaccuracy');
+  });
+
+  it('leaves a worse class as it is, and the best move alone', () => {
+    expect(classOf({ winAfter: 20, materialLoss: 3, scoreLoss: 400 })).toBe(
+      'blunder',
+    );
+    expect(classOf({ isBest: true, materialLoss: 3, scoreLoss: 100 })).toBe(
+      'best',
+    );
+  });
+
+  it('ignores material when the score hardly moves', () => {
+    expect(
+      classOf({ winBefore: 10, winAfter: 9, materialLoss: 3, scoreLoss: 30 }),
+    ).toBe('excellent');
   });
 });

@@ -91,6 +91,15 @@ describe('patterns', () => {
     );
     expect(isSacrifice(sac)).toBe(true);
   });
+
+  it("doesn't call a defended piece next to the king a sacrifice", () => {
+    // Bxh7+ with the knight on g5 guarding h7: the king can't take it.
+    const move = play(
+      'r2r2k1/1b1p1ppp/pp2p3/6N1/3P1n2/P1PB4/1PP2PPP/4RRK1 w - - 4 18',
+      'd3h7',
+    );
+    expect(isSacrifice(move)).toBe(false);
+  });
 });
 
 describe('moveFacts for a slip', () => {

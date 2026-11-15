@@ -5,7 +5,7 @@ import { bookOpeningAt, openingAt } from '../openings';
 import { gameAccuracy, moveAccuracy } from './accuracy';
 import { classifyMove } from './classifyMove';
 import { gameRating } from './gameRating';
-import { isSacrifice, moveFacts } from './motifs';
+import { isSacrifice, materialGivenUp, moveFacts } from './motifs';
 import { commentFor, seedOf } from './phrases';
 import {
   ClassCounts,
@@ -71,6 +71,8 @@ export function buildReview(
         !!move.captured &&
         !!played[i - 1]?.captured &&
         played[i - 1].to === move.to,
+      materialLoss: materialGivenUp(move, before.pv, after.pv),
+      scoreLoss: centipawnLoss(before.score, after.score, color),
     });
     const ply = plyOffset + i;
     const facts = moveFacts({
@@ -132,6 +134,20 @@ export function buildReview(
       99,
     ),
   };
+}
+
+// How much of the score a move gave away, in centipawns from the mover's
+// side - each score held to ±10 pawns, past which it's all the same; null
+// with a mate on either side.
+function centipawnLoss(
+  before: EngineScore,
+  after: EngineScore,
+  color: Color,
+): number | null {
+  if (before.kind !== 'cp' || after.kind !== 'cp') return null;
+  const sign = color === 'w' ? 1 : -1;
+  const held = (cp: number) => Math.max(-1000, Math.min(1000, cp * sign));
+  return Math.max(0, held(before.cp) - held(after.cp));
 }
 
 // The ply a game's first move is, counted as its FEN counts: 1 for white's
