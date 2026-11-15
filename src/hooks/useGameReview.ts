@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DEFAULT_POSITION } from 'chess.js';
+import { Color, DEFAULT_POSITION } from 'chess.js';
 
 import { ENGINE_VERSION } from '../constants/engine';
 import {
@@ -56,6 +56,12 @@ type Loaded = {
 // What's been worked out of each game so far, by game and strength - so
 // leaving a review half done and coming back carries on from there.
 const partialEvals = new Map<string, (PositionEval | null)[]>();
+
+// Each side's rating going into the game, which its game rating is anchored
+// on - none for a guest.
+function ratingsOf(snapshot: GameSnapshot): Record<Color, number | null> {
+  return { w: snapshot.white.rating, b: snapshot.black.rating };
+}
 
 // A review the server keeps is shown at once; otherwise the game's analysed
 // here, on the device - two positions at a time, one on each of the
@@ -132,6 +138,7 @@ export function useGameReview(
             loaded.uciMoves.map((uci) => ({ uci })),
             loaded.stored,
             gameId,
+            ratingsOf(loaded.snapshot),
           )
         : null,
     [loaded, unavailable, gameId],
@@ -173,6 +180,7 @@ export function useGameReview(
         loaded.uciMoves.map((uci) => ({ uci })),
         complete,
         gameId,
+        ratingsOf(loaded.snapshot),
       );
       partialEvals.delete(key);
       setAnalysedReview(built);

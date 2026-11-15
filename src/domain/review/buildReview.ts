@@ -30,6 +30,8 @@ export function buildReview(
   moves: ReviewMoveInput[],
   evals: PositionEval[],
   seed = '',
+  // Each side's rating going into the game, for its game rating.
+  ratings: Partial<Record<Color, number | null>> = {},
 ): GameReview {
   if (evals.length !== moves.length + 1) {
     throw new Error('A review needs an eval for every position');
@@ -119,7 +121,7 @@ export function buildReview(
   const accuracy = gameAccuracy(scores, firstToMove);
   const side = (color: Color): SideReview => ({
     accuracy: accuracy[color] ?? 100,
-    rating: gameRating(accuracy[color] ?? 100),
+    rating: gameRating(accuracy[color] ?? 100, ratings[color] ?? null),
     counts: countClasses(reviewed.filter((m) => m.color === color)),
   });
   return {

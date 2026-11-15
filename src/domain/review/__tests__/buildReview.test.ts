@@ -98,6 +98,15 @@ describe('buildReview', () => {
     expect(cards[1].text).toMatch(/pieces left \*hanging\*/);
   });
 
+  it('anchors each side’s game rating on its rating', () => {
+    const rated = buildReview(DEFAULT_POSITION, moves, evals, 'game', {
+      w: 2400,
+      b: null,
+    });
+    expect(rated.white.rating).toBeGreaterThan(review.white.rating);
+    expect(rated.black.rating).toBe(review.black.rating);
+  });
+
   it('says what the best move would have done', () => {
     const best = bestMoveOf(review.moves[2], 'game');
     expect(best).toMatchObject({ san: 'Nf3', uci: 'g1f3' });
