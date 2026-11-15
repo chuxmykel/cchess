@@ -4,6 +4,7 @@ import { EngineScore, pvToSan } from '../evalScore';
 import { bookOpeningAt, openingAt } from '../openings';
 import { gameAccuracy, moveAccuracy } from './accuracy';
 import { classifyMove } from './classifyMove';
+import { gameRating } from './gameRating';
 import { isSacrifice, moveFacts } from './motifs';
 import { commentFor, seedOf } from './phrases';
 import {
@@ -116,6 +117,7 @@ export function buildReview(
   const accuracy = gameAccuracy(scores, firstToMove);
   const side = (color: Color): SideReview => ({
     accuracy: accuracy[color] ?? 100,
+    rating: gameRating(accuracy[color] ?? 100),
     counts: countClasses(reviewed.filter((m) => m.color === color)),
   });
   return {

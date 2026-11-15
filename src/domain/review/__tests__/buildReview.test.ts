@@ -58,6 +58,7 @@ describe('buildReview', () => {
     expect(review.white.counts.book).toBe(1);
     expect(review.black.counts.best).toBe(1);
     expect(review.white.accuracy).toBeLessThan(review.black.accuracy);
+    expect(review.white.rating).toBeLessThan(review.black.rating);
   });
 
   it('names the opening and keeps every score', () => {

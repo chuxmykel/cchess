@@ -92,7 +92,13 @@ export type ReviewedMove = {
 
 export type ClassCounts = Record<MoveClass, number>;
 
-export type SideReview = { accuracy: number; counts: ClassCounts };
+// A side's accuracy, the rating it played at (see gameRating), and how
+// many of its moves fell in each class.
+export type SideReview = {
+  accuracy: number;
+  rating: number;
+  counts: ClassCounts;
+};
 
 // The themes a review closes on.
 export type ReviewTheme = 'opening' | 'tactics' | 'strategy' | 'endgame';
