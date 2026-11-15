@@ -75,7 +75,7 @@ describe('phrases', () => {
     }
   });
 
-  it('falls back on the class when there’s no fact', () => {
+  it("falls back on the class when there's no fact", () => {
     expect(
       commentFor({ san: 'Nf3', moveClass: 'best', bestPiece: null }, [], 0)
         .text,

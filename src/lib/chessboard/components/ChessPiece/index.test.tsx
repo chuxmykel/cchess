@@ -5,7 +5,7 @@ import { defaultPieceSet } from '../../defaultPieceSet';
 import { PieceSet } from '../../types';
 
 describe('ChessPiece', () => {
-  it('draws a piece from the board’s own set', async () => {
+  it("draws a piece from the board's own set", async () => {
     const screen = await render(
       <ChessPiece piece="bq" size={30} testID="queen" />,
     );

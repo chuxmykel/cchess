@@ -80,7 +80,7 @@ describe('bookOpeningAt', () => {
     expect(bookOpeningAt(afterE4)?.name).toBe("King's Pawn Game");
   });
 
-  it('has none for a position the book doesn’t name', () => {
+  it("has none for a position the book doesn't name", () => {
     const fens = fensAlong('e4', 'c5', 'Ke2', 'Qa5');
     expect(bookOpeningAt(fens[fens.length - 1])).toBeNull();
   });

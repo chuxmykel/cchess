@@ -68,20 +68,20 @@ const FACT_WORDS: Record<MoveFact['kind'], string[]> = {
     'That allows a *pin* that costs you a {piece}.',
     'This runs into a *pin*, and the {piece} is lost.',
     'Your {piece} gets caught in a *pin*.',
-    'A *pin* is coming, and the {piece} can’t escape it.',
+    "A *pin* is coming, and the {piece} can't escape it.",
   ],
   trapped: [
     'You permitted the opponent to win a {piece} by eventually *trapping* it.',
     'Your {piece} ends up *trapped* after this.',
     'The {piece} runs out of squares - it gets *trapped*.',
-    'Nowhere left for the {piece} to go: it’s *trapped*.',
+    "Nowhere left for the {piece} to go: it's *trapped*.",
   ],
   losesMaterial: [
     'You permitted the opponent to win a {piece}.',
     'This loses a {piece}.',
     'A {piece} goes down after this.',
     'This costs you a {piece} a few moves later.',
-    'The {piece} can’t be held after this.',
+    "The {piece} can't be held after this.",
   ],
   missesWin: [
     'You missed a chance to win a {piece}.',
@@ -105,7 +105,7 @@ const FACT_WORDS: Record<MoveFact['kind'], string[]> = {
     'That *pin* wins the {piece}.',
     'The {piece} is *pinned*, and it will fall.',
     'A *pin*, and the {piece} behind it is in trouble.',
-    'Pinning the {piece} - it can’t get out of the way.',
+    "Pinning the {piece} - it can't get out of the way.",
   ],
   winsMaterial: [
     'This wins a {piece}.',
@@ -146,7 +146,7 @@ const FACT_WORDS: Record<MoveFact['kind'], string[]> = {
   passedPawn: [
     'That pawn is *passed* now - only pieces can stop it.',
     'A *passed* pawn, and a real asset.',
-    'Nothing stands in this pawn’s way: it’s *passed*.',
+    "Nothing stands in this pawn's way: it's *passed*.",
     'A *passed* pawn to push - keep an eye on it.',
   ],
   trades: [
@@ -189,12 +189,12 @@ const SLIP_WORDS: Record<
     'Your opponent slipped, and this lets them off the hook.',
     'A chance to punish the last move went by.',
     'The last move left an opening. This walks past it.',
-    'There was more to take from the opponent’s mistake.',
+    "There was more to take from the opponent's mistake.",
   ],
   blunder: [
     'Ouch. This turns the game.',
     'A big one - this throws a lot away.',
-    'That’s a serious blunder.',
+    "That's a serious blunder.",
     'This changes everything, and not in your favor.',
     'One move, and the game swings.',
   ],
@@ -205,7 +205,7 @@ const SLIP_WORDS: Record<
 const HINT_WORDS = [
   'Look at what your {piece} could do.',
   'Your {piece} had a stronger idea.',
-  'Hint: it’s a {piece} move.',
+  "Hint: it's a {piece} move.",
   'Try a {piece} move - tap Retry.',
   'The answer starts with your {piece}.',
 ];
@@ -227,9 +227,9 @@ const CLASS_WORDS: Record<MoveClass, string[]> = {
     'The best move in the position.',
     'Spot on.',
     'Exactly right.',
-    'That’s the move.',
+    "That's the move.",
     'Precise - nothing better here.',
-    'Couldn’t ask for more.',
+    "Couldn't ask for more.",
     'Top move. Well played.',
   ],
   excellent: [

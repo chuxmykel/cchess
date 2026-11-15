@@ -21,7 +21,7 @@ describe('classifyMove', () => {
     expect(classOf({ isBook: true, isBest: true })).toBe('book');
   });
 
-  it('calls the engine’s choice best', () => {
+  it("calls the engine's choice best", () => {
     expect(classOf({ isBest: true })).toBe('best');
   });
 
@@ -43,7 +43,7 @@ describe('classifyMove', () => {
     expect(classOf({ isBest: true, winSecond: 30 })).toBe('great');
   });
 
-  it('doesn’t call an obvious recapture great', () => {
+  it("doesn't call an obvious recapture great", () => {
     expect(classOf({ isBest: true, winSecond: 30, isRecapture: true })).toBe(
       'best',
     );
@@ -55,7 +55,7 @@ describe('classifyMove', () => {
     );
   });
 
-  it('doesn’t call a sacrifice brilliant when the game was already won', () => {
+  it("doesn't call a sacrifice brilliant when the game was already won", () => {
     expect(
       classOf({
         isBest: true,
@@ -67,7 +67,7 @@ describe('classifyMove', () => {
     ).toBe('best');
   });
 
-  it('calls letting the opponent’s slip go a miss', () => {
+  it("calls letting the opponent's slip go a miss", () => {
     expect(classOf({ opponentLoss: 25, winBefore: 80, winAfter: 55 })).toBe(
       'miss',
     );

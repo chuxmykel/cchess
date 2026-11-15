@@ -159,7 +159,7 @@ describe('moveFacts for a slip', () => {
     ).toEqual({ kind: 'missesWin', piece: 'queen' });
   });
 
-  it('says only that it slipped when there’s nothing to name', () => {
+  it("says only that it slipped when there's nothing to name", () => {
     expect(factsOf(afterE5, 'a2a3', 'inaccuracy')).toEqual([{ kind: 'slips' }]);
   });
 });

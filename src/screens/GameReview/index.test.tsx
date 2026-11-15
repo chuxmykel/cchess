@@ -115,7 +115,7 @@ describe('GameReview', () => {
   });
   afterEach(() => jest.clearAllMocks());
 
-  it('opens on the summary: the graph, each side’s accuracy and moves', async () => {
+  it("opens on the summary: the graph, each side's accuracy and moves", async () => {
     const { screen } = await renderReview();
 
     expect(screen.getByTestId('game-review-summary')).toBeTruthy();

@@ -53,7 +53,7 @@ describe('buildReview', () => {
     expect(review.moves[2].replyLine).toEqual(['b7a6', 'g1f3']);
   });
 
-  it('counts each side’s classes and accuracy', () => {
+  it("counts each side's classes and accuracy", () => {
     expect(review.white.counts.blunder).toBe(1);
     expect(review.white.counts.book).toBe(1);
     expect(review.black.counts.best).toBe(1);
@@ -104,7 +104,7 @@ describe('buildReview', () => {
     expect(cards.map((c) => c.moveIndex)).toEqual([2, 2]);
   });
 
-  it('anchors each side’s game rating on its rating', () => {
+  it("anchors each side's game rating on its rating", () => {
     const rated = buildReview(DEFAULT_POSITION, moves, evals, 'game', {
       w: 2400,
       b: null,

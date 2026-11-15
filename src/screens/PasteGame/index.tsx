@@ -74,8 +74,8 @@ const PasteGame: React.FC<PasteGameProps> = ({ navigation }) => {
         </Text>
       )}
       <Text style={styles.hint}>
-        A PGN’s main line is analysed; its variations and comments aren’t
-        brought in.
+        A PGN&apos;s main line is analysed; its variations and comments
+        aren&apos;t brought in.
       </Text>
       <Button
         label="Analyse"

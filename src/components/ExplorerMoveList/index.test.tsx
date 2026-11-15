@@ -60,7 +60,7 @@ describe('ExplorerMoveList', () => {
     expect(screen.getByTestId('explorer-share-f1c4')).toHaveTextContent('20%');
   });
 
-  it('ends with Σ, the position’s own games and how they ended', async () => {
+  it("ends with Σ, the position's own games and how they ended", async () => {
     const screen = await renderList();
 
     expect(screen.getByTestId('explorer-totals')).toHaveTextContent(/^Σ/);

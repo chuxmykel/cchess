@@ -52,7 +52,7 @@ describe('MessageAttachmentCard', () => {
     (useGameSummary as jest.Mock).mockReturnValue('error');
     const { screen, onOpenGame } = await renderGameCard();
 
-    expect(screen.getByText('This game can’t be shown')).toBeTruthy();
+    expect(screen.getByText("This game can't be shown")).toBeTruthy();
     await fireEvent.press(screen.getByTestId('card'));
     expect(onOpenGame).not.toHaveBeenCalled();
   });

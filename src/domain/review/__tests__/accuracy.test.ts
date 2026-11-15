@@ -10,7 +10,7 @@ describe('winning chances', () => {
     expect(winPercent(cp(0), 'b')).toBe(50);
   });
 
-  it('follows lichess’s curve', () => {
+  it("follows lichess's curve", () => {
     // A pawn up is about 59%, as lichess has it.
     expect(winPercent(cp(100), 'w')).toBeCloseTo(59.1, 1);
     expect(winPercent(cp(100), 'b')).toBeCloseTo(40.9, 1);

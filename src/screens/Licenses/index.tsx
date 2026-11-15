@@ -23,9 +23,9 @@ const Licenses: React.FC = () => {
         <Text style={styles.body}>
           Analysis uses Stockfish 19, by the Stockfish developers, built for the
           web as stockfish.js by Nathan Rugg (the lite, single-threaded engine).
-          It isn’t part of this app: it’s downloaded the first time you open
-          Analysis, then kept on your device. Stockfish is free software under
-          the GNU General Public License, version 3.
+          It isn&apos;t part of this app: it&apos;s downloaded the first time
+          you open Analysis, then kept on your device. Stockfish is free
+          software under the GNU General Public License, version 3.
         </Text>
       </View>
       <ActionList
@@ -47,8 +47,8 @@ const Licenses: React.FC = () => {
       <View style={styles.section}>
         <Text style={styles.title}>Opening names</Text>
         <Text style={styles.body}>
-          The names of openings come from lichess.org’s opening list, which is
-          dedicated to the public domain (CC0).
+          The names of openings come from lichess.org&apos;s opening list, which
+          is dedicated to the public domain (CC0).
         </Text>
       </View>
       <ActionList
