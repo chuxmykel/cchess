@@ -99,4 +99,34 @@ describe('GameSettings', () => {
 
     expect(screen.queryByText('Sign in to play rated games.')).toBeNull();
   });
+
+  it('puts Rated before the color to play as', async () => {
+    const screen = await renderSettings();
+    await fireEvent.press(screen.getByText('Game Settings'));
+
+    const order = screen
+      .getAllByText(/^(Rated|Play as)$/)
+      .map((node) => node.props.children);
+    expect(order).toEqual(['Rated', 'Play as']);
+  });
+
+  it('keeps room for the rated color hint while casual, hidden', async () => {
+    const screen = await renderSettings({ rated: false });
+    await fireEvent.press(screen.getByText('Game Settings'));
+
+    const hint = screen.getByTestId('rated-color-hint', {
+      includeHiddenElements: true,
+    });
+    expect(hint).toHaveStyle({ opacity: 0 });
+    expect(screen.queryByTestId('rated-color-hint')).toBeNull();
+  });
+
+  it('shows the rated color hint while rated', async () => {
+    const screen = await renderSettings({ rated: true });
+    await fireEvent.press(screen.getByText('Game Settings'));
+
+    expect(screen.getByTestId('rated-color-hint')).not.toHaveStyle({
+      opacity: 0,
+    });
+  });
 });

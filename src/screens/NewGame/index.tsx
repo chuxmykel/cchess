@@ -10,13 +10,9 @@ import { useAuthSession } from '../../context/AuthSessionContext';
 import { DEFAULT_RATING_RANGE, Seek } from '../../constants/seek';
 import { DAILY_SEEK_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { useSeekDailyGame } from '../../hooks/useSeekDailyGame';
+import { useLastTimeControl } from '../../hooks/useLastTimeControl';
 import { ColorChoice } from '../../network/socketEvents';
-import {
-  TimeControl,
-  DEFAULT_TIME_CONTROL,
-  daysPerMove,
-  isDailyTimeControl,
-} from '../../constants/timeControls';
+import { daysPerMove, isDailyTimeControl } from '../../constants/timeControls';
 import { makeStyles } from '../../theme';
 
 interface NewGameProps {
@@ -28,15 +24,17 @@ interface NewGameProps {
 const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
   const styles = useStyles();
 
-  const [timeControl, setTimeControl] =
-    useState<TimeControl>(DEFAULT_TIME_CONTROL);
+  const [timeControl, setTimeControl] = useLastTimeControl();
   const [chosenRated, setChosenRated] = useState(true);
   const [ratingRange, setRatingRange] = useState(DEFAULT_RATING_RANGE);
-  const [color, setColor] = useState<ColorChoice>('random');
+  const [chosenColor, setColor] = useState<ColorChoice>('random');
   const toast = useToast();
   const authSession = useAuthSession();
   const isGuest = !authSession.isReady || authSession.user.isGuest;
   const rated = !isGuest && chosenRated;
+  // A rated game's colors are left to chance; the color chosen for a
+  // casual one is kept for when it's casual again.
+  const color: ColorChoice = rated ? 'random' : chosenColor;
   const seekDailyGame = useSeekDailyGame();
   const [isSeekingDaily, setIsSeekingDaily] = useState(false);
 

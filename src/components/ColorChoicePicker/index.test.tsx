@@ -25,4 +25,18 @@ describe('ColorChoicePicker', () => {
     expect(screen.getByLabelText('Play random')).toBeTruthy();
     expect(screen.getByLabelText('Play black')).toBeTruthy();
   });
+
+  it('offers only random when random only', async () => {
+    const onSelect = jest.fn();
+    const screen = await render(
+      <ColorChoicePicker selected="random" onSelect={onSelect} randomOnly />,
+    );
+
+    expect(screen.getByTestId('color-white')).toBeDisabled();
+    expect(screen.getByTestId('color-black')).toBeDisabled();
+    expect(screen.getByTestId('color-random')).toBeEnabled();
+    await fireEvent.press(screen.getByTestId('color-black'));
+
+    expect(onSelect).not.toHaveBeenCalled();
+  });
 });

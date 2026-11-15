@@ -214,8 +214,10 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `appearanceSettingsStorage.ts` (Appearance's, the same way - a
   value no longer offered falls back to its default), and
   `explorerSettingsStorage.ts` (the opening explorer's database and
-  filters, the same way), and `reviewSettingsStorage.ts` (the game
-  review's, the same way). `restClient.ts`'s `getGameReview` (null when
+  filters, the same way), `reviewSettingsStorage.ts` (the game
+  review's, the same way), and `newGameSettingsStorage.ts` (the time
+  control New Game last started with - `useLastTimeControl` - the default
+  if it's no longer offered). `restClient.ts`'s `getGameReview` (null when
   there's none) and `saveGameReview` keep reviews on the server; game
   summaries carry each side's `accuracy` once reviewed.
 
@@ -682,10 +684,14 @@ lib/chessboard/  the board, written as a package of its own: outside the
   re-reads where the keyboard is -
   `ActionSheet`, `Placeholder`, `Popover`/`PopoverMenu`, `SectionHeader`,
   `Toast`, `TimeControlSelector`, `GameSettings` (New Game's "Game
-  Settings" cog, opening a sheet with "Play as" - White, Random or Black,
-  a `ColorChoicePicker` the challenge sheet shares - a Rated switch (a guest pressing
+  Settings" cog, opening a sheet with a Rated switch (a guest pressing
   it gets a toast to sign in, rendered inside the sheet's modal through
-  its `overlay` slot) and a
+  its `overlay` slot), then "Play as" - White, Random or Black, a
+  `ColorChoicePicker` the challenge sheet shares (Rated before it there
+  too), Random the only choice while the game's rated (`randomOnly`; the
+  app's rule, not the server's - a casual choice is kept for when it's
+  casual again; the line saying so always laid out, hidden while casual,
+  so the sheet keeps its height) - and a
   `RatingRangeSelector` - two sliders, `@react-native-community/slider`
   (every slider in the app is a `NotchedSlider`: notched at its steps,
   with a haptic tick, `expo-haptics`, as the thumb reaches each),

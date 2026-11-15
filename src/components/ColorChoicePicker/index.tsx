@@ -8,6 +8,9 @@ import { makeStyles, useTheme } from '../../theme';
 interface ColorChoicePickerProps {
   selected: ColorChoice;
   onSelect: (color: ColorChoice) => void;
+  /** Only Random can be picked - white and black are shown disabled, as
+   * for a rated game. */
+  randomOnly?: boolean;
 }
 
 const CHOICES: { color: ColorChoice; label: string }[] = [
@@ -22,6 +25,7 @@ const ICON_SIZE = 28;
 const ColorChoicePicker: React.FC<ColorChoicePickerProps> = ({
   selected,
   onSelect,
+  randomOnly = false,
 }) => {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -29,13 +33,19 @@ const ColorChoicePicker: React.FC<ColorChoicePickerProps> = ({
     <View style={styles.row} accessibilityRole="radiogroup">
       {CHOICES.map(({ color, label }) => {
         const isSelected = color === selected;
+        const isDisabled = randomOnly && color !== 'random';
         return (
           <Pressable
             key={color}
-            style={[styles.option, isSelected && styles.selected]}
+            style={[
+              styles.option,
+              isSelected && styles.selected,
+              isDisabled && styles.disabled,
+            ]}
             onPress={() => onSelect(color)}
+            disabled={isDisabled}
             accessibilityRole="radio"
-            accessibilityState={{ selected: isSelected }}
+            accessibilityState={{ selected: isSelected, disabled: isDisabled }}
             accessibilityLabel={`Play ${label.toLowerCase()}`}
             testID={`color-${color}`}
           >
@@ -86,6 +96,9 @@ const useStyles = makeStyles((t) => ({
   selected: {
     borderColor: t.colors.accent,
     backgroundColor: t.colors.pieceChoiceSelected,
+  },
+  disabled: {
+    opacity: 0.4,
   },
   label: {
     fontSize: t.fontSize.md,

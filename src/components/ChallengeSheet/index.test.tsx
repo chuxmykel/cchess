@@ -100,15 +100,44 @@ describe('ChallengeSheet', () => {
     expect(props.onClose).not.toHaveBeenCalled();
   });
 
-  it('sends the color chosen', async () => {
+  it('sends the color chosen for a casual challenge', async () => {
     const { props, screenPromise } = renderSheet();
     const screen = await screenPromise;
 
+    await fireEvent(
+      screen.getByTestId('challenge-rated-switch'),
+      'valueChange',
+      false,
+    );
     await fireEvent.press(screen.getByTestId('color-white'));
     await fireEvent.press(screen.getByTestId('send-challenge-button'));
 
     expect(props.onSend).toHaveBeenCalledWith(
       expect.objectContaining({ color: 'white' }),
+    );
+  });
+
+  it('leaves the colors of a rated challenge to chance', async () => {
+    const { props, screenPromise } = renderSheet();
+    const screen = await screenPromise;
+
+    await fireEvent(
+      screen.getByTestId('challenge-rated-switch'),
+      'valueChange',
+      false,
+    );
+    await fireEvent.press(screen.getByTestId('color-white'));
+    await fireEvent(
+      screen.getByTestId('challenge-rated-switch'),
+      'valueChange',
+      true,
+    );
+
+    expect(screen.getByTestId('color-white')).toBeDisabled();
+    expect(screen.getByTestId('color-random')).toBeSelected();
+    await fireEvent.press(screen.getByTestId('send-challenge-button'));
+    expect(props.onSend).toHaveBeenCalledWith(
+      expect.objectContaining({ rated: true, color: 'random' }),
     );
   });
 });
