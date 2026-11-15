@@ -55,6 +55,20 @@ describe('UciEngine', () => {
     expect(transport.sent).toContain('go movetime 500');
   });
 
+  it('searches to a depth, but no longer than a time, given both', () => {
+    const { transport, engine } = readyEngine();
+    engine.analyse(
+      {
+        fen: DEFAULT_POSITION,
+        multiPv: 2,
+        limit: { depth: 14, movetimeMs: 1500 },
+      },
+      jest.fn(),
+    );
+
+    expect(transport.sent).toContain('go depth 14 movetime 1500');
+  });
+
   it('searches on until stopped when asked to', () => {
     const { transport, engine } = readyEngine();
     engine.analyse(

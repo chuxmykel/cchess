@@ -7,6 +7,7 @@ import {
   AnalysisRequest,
   EngineLine,
   EngineUpdate,
+  SearchLimit,
   UciTransport,
 } from './types';
 
@@ -67,13 +68,7 @@ export class UciEngine implements AnalysisEngine {
     const { fen, multiPv, limit } = search.request;
     this.transport.send(`setoption name MultiPV value ${multiPv}`);
     this.transport.send(`position fen ${fen}`);
-    this.transport.send(
-      limit.infinite
-        ? 'go infinite'
-        : limit.movetimeMs !== undefined
-          ? `go movetime ${limit.movetimeMs}`
-          : `go depth ${limit.depth ?? 18}`,
-    );
+    this.transport.send(goCommand(limit));
   }
 
   private handle(line: string) {
@@ -123,4 +118,15 @@ export class UciEngine implements AnalysisEngine {
       done,
     });
   }
+}
+
+// A search's `go`: on until stopped, to a depth, for a time - or to a depth
+// but no longer than a time, whichever comes first.
+function goCommand(limit: SearchLimit): string {
+  if (limit.infinite) return 'go infinite';
+  if (limit.depth !== undefined && limit.movetimeMs !== undefined) {
+    return `go depth ${limit.depth} movetime ${limit.movetimeMs}`;
+  }
+  if (limit.movetimeMs !== undefined) return `go movetime ${limit.movetimeMs}`;
+  return `go depth ${limit.depth ?? 18}`;
 }
