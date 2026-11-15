@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 // The board's own vocabulary. It knows squares and pieces, not the rules of
 // chess: which moves are legal is the app's to say (`Movable.dests`). The
 // unions are the same strings chess.js uses, so its values pass straight in.
@@ -81,6 +83,14 @@ export type BoardArrow = {
   color: string;
   // How thick, as a share of a square.
   weight: number;
+};
+
+// A round mark on a square's top-right corner - what the app makes of the
+// move made there, say - in a color, around whatever the app draws inside.
+export type SquareBadge = {
+  square: Square;
+  color: string;
+  content?: ReactNode;
 };
 
 export type BoardAnimation = {
