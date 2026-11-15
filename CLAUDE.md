@@ -164,13 +164,17 @@ lib/chessboard/  the board, written as a package of its own: outside the
     - `motifs.ts` - what a move did, with chess.js along the engine's
       lines: material over the line, mates allowed or missed, a piece left
       hanging, a fork, pin or skewer, a piece trapped; for a good one,
-      taking a free piece, saving one, castling, developing, the centre, a
-      passed pawn, trading when ahead. `phrases.ts` - the words, a few for
-      each fact, picked by a seed so a review always reads the same; ideas
-      marked `*like this*` (underlined in the bubble, unmarked aloud);
+      taking a free piece, saving one, castling, developing, the centre, a passed pawn, trading when ahead. `phrases.ts` - everything a review
+      says, none of it stored (made afresh from the evals): a few wordings
+      for each fact, picked by a seed so a review always reads the same;
+      the intro (`introLine`, fitting the game - won, lost, drawn or
+      watched, clean, short or long, its opening); the chess facts shown
+      while it's analysed; Retry's lines; and the closing themes' advice.
+      Ideas marked `*like this*` (underlined in the bubble, unmarked aloud);
       `spokenText.ts` - SAN as said ("knight takes e5, check").
-    - `buildReview.ts` - `buildReview(start, moves, evals, seed)`: every
-      move's class, facts and comment, each side's accuracy and counts;
+    - `buildReview.ts` - `buildReview(start, moves, evals, seed)`: every move's class, facts and comment, each side's accuracy, counts and
+      game rating (`gameRating.ts` - the rating it played at, our own
+      curve from accuracy);
       `bestMoveOf` - the best move where another was played, and what it'd
       have done. `keyMoments.ts` - where Next stops: the side's
       standouts and slips, after the book's last move; `themes.ts` - the
@@ -359,9 +363,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
     server keeps, shown at once, or else the game analysed here
     (`runReview`, the engine claimed only then, through `EngineContext`'s
     `useEngineWhen`), its progress, and the review sent to the server;
-    paused in the background, picking up where it left off.
-    `useReviewStepper` - the summary, then Next from key moment to key
-    moment (Resume after stepping away), ‹ ›, Show (the line answering the
+    paused in the background, picking up where it left off. `useReviewStepper` - the summary, then Next playing every move on the
+    board, a move every 0.7s, stopping at each key moment (tapped as they
+    play, Skip, straight there; Resume after stepping away), ‹ ›, Show (the line answering the
     move), Best (the best move in its place) and Retry (the position before
     a slip, to find a better move: the best one taken at once, another
     judged by `useRetryJudge`, a quick search). `reviewView.ts` - what the
@@ -758,9 +762,11 @@ lib/chessboard/  the board, written as a package of its own: outside the
 - **Game review** - the `GameReview` screen (from a finished game's
   result card - `GameOverCard`'s `onReview`, "Game review" - or ☰
   `reviewAction`, in `LiveGame`, `DailyGame` and `GameViewer`; not for an
-  aborted game): while it's analysed, the final position and
-  `ReviewProgress` (the engine's download, then the game); then
-  `ReviewSummary` (each side's accuracy and classes, under `EvalGraph` -
+  aborted game): while it's analysed, the final position, a
+  chess fact changing every 6s, and `ReviewProgress` (the engine's
+  download, then the game); then `ReviewSummary` (a column under each player's avatar - accuracy, each
+  class's count with its mark between the two, and the game rating -
+  under `EvalGraph` -
   white's winning chances drawn in SVG, dots at the standouts and slips,
   touched to go to a move - and the opening's name); then the moves:
   `EvalBar`, `ReviewBubble` (a lightbulb, not a face - the class's
