@@ -124,10 +124,15 @@ const ReviewSettingsForm: React.FC<ReviewSettingsFormProps> = ({
                 </View>
               );
             })}
-            <Text style={styles.hint}>
-              More natural voices can be downloaded in iOS Settings, under
-              Accessibility, Spoken Content, Voices.
-            </Text>
+            {!voices.some(
+              (voice) => voiceQualityLabel(voice) === 'Premium',
+            ) && (
+              <Text style={styles.hint} testID="review-voice-premium-hint">
+                For the most natural voice, download a Premium one - Zoe or Ava,
+                say - in iOS Settings: Accessibility, Spoken Content, Voices,
+                English. Once it&apos;s there, the review reads in it.
+              </Text>
+            )}
           </View>
         )}
       </View>

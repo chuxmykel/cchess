@@ -17,13 +17,16 @@ const ZOE = {
   language: 'en-US',
 } as Speech.Voice;
 
-async function renderForm(settings = DEFAULT_REVIEW_SETTINGS) {
+async function renderForm(
+  settings = DEFAULT_REVIEW_SETTINGS,
+  voices = [ZOE, SAMANTHA],
+) {
   const onChange = jest.fn();
   const screen = await render(
     <ReviewSettingsForm
       settings={settings}
       onChange={onChange}
-      voices={[ZOE, SAMANTHA]}
+      voices={voices}
     />,
   );
   return { screen, onChange };
@@ -59,6 +62,16 @@ describe('ReviewSettingsForm', () => {
       screen.getByTestId(`review-voice-${SAMANTHA.identifier}`),
     );
     expect(onChange).toHaveBeenLastCalledWith({ voiceId: SAMANTHA.identifier });
+  });
+
+  it('says where to get a Premium voice, until there is one', async () => {
+    const without = await renderForm(DEFAULT_REVIEW_SETTINGS, [SAMANTHA]);
+    expect(
+      without.screen.getByTestId('review-voice-premium-hint'),
+    ).toHaveTextContent(/Spoken Content/);
+
+    const { screen } = await renderForm();
+    expect(screen.queryByTestId('review-voice-premium-hint')).toBeNull();
   });
 
   it('plays a voice to hear it', async () => {
