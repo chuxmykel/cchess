@@ -767,8 +767,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
   open `RatingStats` for that category:
   the rating with what it gained or lost over the period, a 1W/1M/3M/1Y/All
   `SegmentedTabs`, the chart, and the two cards. Once a game is over,
-  `GameOverCard` and the ☰ of `LiveGame` and `GameViewer` offer Analyse,
-  opening `AnalysisBoard` at the move shown. `Settings` (from the Menu)
+  the ☰ of `LiveGame` and `GameViewer` offers Analyse, opening
+  `AnalysisBoard` at the move shown - the result card offers the game's
+  review instead, whose header has its own. `Settings` (from the Menu)
   is every setting in one list: `Appearance`
   (anyone's, guests too: it's kept on the device), `AnalysisSettings`,
   `DailyGameSettings`, and `Licenses`: the Stockfish build the app
@@ -778,9 +779,10 @@ lib/chessboard/  the board, written as a package of its own: outside the
 - **Game review** - the `GameReview` screen (from a finished game's
   result card - `GameOverCard`'s `onReview`, "Game review" - or ☰
   `reviewAction`, in `LiveGame`, `DailyGame` and `GameViewer`; not for an
-  aborted game): while it's analysed, the final position, a
-  chess fact changing every 6s, and `ReviewProgress` (the engine's
-  download, then the game); then `ReviewSummary` (a column under each player's avatar - accuracy, each
+  aborted game): while it's analysed, the game played through on the
+  board a move every 0.17s, no further than it's been analysed
+  (`useAnalysisPlayback`), a chess fact changing every 6s, and
+  `ReviewProgress` (the engine's download, then the game); then `ReviewSummary` (a column under each player's avatar - accuracy, each
   class's count with its mark between the two, and the game rating -
   under `EvalGraph` -
   white's winning chances drawn in SVG, dots at the standouts and slips,
@@ -800,7 +802,9 @@ reviewActions.ts`: Best where another move was better, out of the book;
   then Analyse. The eval bar's along the top, then room kept for two lines
   of the bubble: a longer one grows up over the eval bar, then down over
   the board, which never moves. A brilliant move
-  stopped on has its own sound (`useBrilliantSound`). Its ⚙ opens `ReviewSettings`
+  stopped on has its own sound (`useBrilliantSound`). Its header's 🔍
+  opens `AnalysisBoard` at the move shown (the game's end from the
+  summary), and its ⚙ `ReviewSettings`
   (`ReviewSettingsForm`: the voice and which one, each with a button to
   hear it, best-move arrows, the eval bar, whose moves to review - yours,
   white's or black's - and the strength: fast, standard or deep,
