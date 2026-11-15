@@ -16,6 +16,8 @@ import {
   getExplorer,
   getGameNotes,
   saveGameNotes,
+  getGameReview,
+  saveGameReview,
   getMyActiveGame,
   getMyGameCounts,
   getUserGameCounts,
@@ -331,6 +333,31 @@ describe('restClient', () => {
       await saveGameNotes('game-1', 'x', 'access-123');
       expect(sentRequest(saving).method).toBe('put');
       expect(JSON.parse(sentRequest(saving).data)).toEqual({ body: 'x' });
+    });
+
+    it("reads a game's review, none when there isn't one, and keeps one", async () => {
+      const stored = {
+        gameId: 'game-1',
+        engine: 'stockfish',
+        depth: 14,
+        whiteAccuracy: 90,
+        blackAccuracy: 80,
+        evals: [],
+        createdAt: '2026-11-15T00:00:00.000Z',
+      };
+      const reading = stubTransport(respondWith(stored));
+      expect(await getGameReview('game-1', 'access-123')).toEqual(stored);
+      expect(sentRequest(reading).url).toBe('/games/game-1/review');
+
+      stubTransport(failWith(404, { message: 'This game has no review yet' }));
+      expect(await getGameReview('game-1', 'access-123')).toBeNull();
+
+      const saving = stubTransport(respondWith(stored));
+      const { engine, depth, whiteAccuracy, blackAccuracy, evals } = stored;
+      const body = { engine, depth, whiteAccuracy, blackAccuracy, evals };
+      await saveGameReview('game-1', body, 'access-123');
+      expect(sentRequest(saving).method).toBe('put');
+      expect(JSON.parse(sentRequest(saving).data)).toEqual(body);
     });
 
     it('posts, lists and withdraws daily seeks', async () => {
