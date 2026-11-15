@@ -684,12 +684,28 @@ describe('LiveGameContent', () => {
       );
     });
 
+    it("opens the game's review, from the card or the menu", async () => {
+      const { screen, snapshot, trigger, navigation } =
+        await renderContent('w');
+      await finishGame(trigger, snapshot);
+
+      await fireEvent.press(screen.getByTestId('review-button'));
+      expect(navigation.navigate).toHaveBeenLastCalledWith('GameReview', {
+        gameId: snapshot.id,
+      });
+
+      await openGameMenu(screen);
+      await chooseMenuAction(screen, 'review-action');
+      expect(navigation.navigate).toHaveBeenCalledTimes(2);
+    });
+
     it("doesn't offer analysis while the game is on", async () => {
       const { screen } = await renderContent('w');
 
       await openGameMenu(screen);
 
       expect(screen.queryByTestId('analyse-action')).toBeNull();
+      expect(screen.queryByTestId('review-action')).toBeNull();
     });
 
     it('offers a new opponent from the menu once the game is over', async () => {

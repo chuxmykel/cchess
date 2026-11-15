@@ -45,7 +45,11 @@ import { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackParamList } from '../HomeStack/types';
 import { useOnlineChessGameContext } from '../../context/LiveGame/OnlineChessGameContext';
 import { DrawOfferStatus } from '../../hooks/useOnlineChessGame';
-import { analyseAction, flipBoardAction } from '../gameMenuActions';
+import {
+  analyseAction,
+  flipBoardAction,
+  reviewAction,
+} from '../gameMenuActions';
 import EarlierPositionOverlay from '../LiveGame/EarlierPositionOverlay';
 
 // A daily game's clock counts days and minutes - it needs no more than a
@@ -77,6 +81,8 @@ type DailyGameMenuOptions = {
   openSettings: () => void;
   flip: () => void;
   analyse: () => void;
+  /** The game's review - once it's played out, not aborted. */
+  review?: () => void;
   /** Brings the result card back; only while it's dismissed. */
   showResult?: () => void;
   /** Your conditional moves - how many are saved - offered while the
@@ -96,6 +102,7 @@ export function dailyGameMenuActions({
   openSettings,
   flip,
   analyse,
+  review,
   showResult,
   conditionalMoves,
 }: DailyGameMenuOptions): ActionSheetAction[] {
@@ -122,6 +129,7 @@ export function dailyGameMenuActions({
             },
           ]
         : []),
+      ...(review ? [reviewAction(review)] : []),
       analyseAction(analyse),
       settings,
       flipBoard,
@@ -295,6 +303,13 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
     });
   }
 
+  // The finished game's review; Back returns here. Only a game played out,
+  // not one aborted.
+  function review() {
+    navigation.navigate('GameReview', { gameId: snapshot.id });
+  }
+  const canReview = gameStatus === 'completed';
+
   function confirmAbort() {
     Alert.alert('Abort game?', 'Are you sure you want to abort?', [
       { text: 'Cancel', style: 'cancel' },
@@ -321,6 +336,7 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
     openSettings: () => navigation.navigate('DailyGameSettings'),
     flip,
     analyse,
+    review: canReview ? review : undefined,
     showResult: isResultDismissed
       ? () => setResultDismissedAt(null)
       : undefined,
@@ -425,6 +441,7 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
               }
               onDismiss={() => setResultDismissedAt(rematch.status)}
               onAnalyse={analyse}
+              onReview={canReview ? review : undefined}
             />
           </GameOverOverlay>
         )}

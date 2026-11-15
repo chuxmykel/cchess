@@ -300,6 +300,32 @@ describe('GameViewer', () => {
     });
   });
 
+  it("opens the finished game's review, from the card and the menu", async () => {
+    const { screen, navigation } = await renderScreen(finishedGame());
+
+    await fireEvent.press(screen.getByTestId('review-button'));
+    expect(navigation.navigate).toHaveBeenLastCalledWith('GameReview', {
+      gameId: 'game-1',
+    });
+
+    await fireEvent.press(screen.getByTestId('game-over-dismiss'));
+    await fireEvent.press(screen.getByTestId('game-menu-button'));
+    await fireEvent.press(screen.getByTestId('review-action'));
+    await waitForSheetToClose();
+    expect(navigation.navigate).toHaveBeenLastCalledWith('GameReview', {
+      gameId: 'game-1',
+    });
+  });
+
+  it("doesn't offer a review of an aborted game", async () => {
+    const { screen } = await renderScreen(
+      finishedGame({ status: 'aborted', result: null, resultReason: 'abort' }),
+    );
+
+    expect(screen.queryByTestId('review-button')).toBeNull();
+    expect(screen.getByTestId('analyse-button')).toBeTruthy();
+  });
+
   it("doesn't offer to analyse a game still being played", async () => {
     const { screen } = await renderScreen(
       makeGameSnapshot({ status: 'active', moves: MOVES, fen: AFTER_EXD5 }),
@@ -309,6 +335,7 @@ describe('GameViewer', () => {
     await fireEvent.press(screen.getByTestId('game-menu-button'));
 
     expect(screen.queryByTestId('analyse-action')).toBeNull();
+    expect(screen.queryByTestId('review-action')).toBeNull();
   });
 
   it('offers a new opponent after a game I played', async () => {

@@ -41,6 +41,7 @@ import {
   analyseAction,
   flipBoardAction,
   newOpponentAction,
+  reviewAction,
 } from '../gameMenuActions';
 
 interface GameViewerContentProps {
@@ -56,6 +57,8 @@ interface GameViewerContentProps {
   onOpenPlayer: (username: string) => void;
   // Opens the finished game in the analysis board, at the move shown.
   onAnalyse: (ply: number) => void;
+  // Opens the game's review.
+  onReview: () => void;
   onError: (message: string) => void;
 }
 
@@ -77,6 +80,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   onNewOpponent,
   onOpenPlayer,
   onAnalyse,
+  onReview,
   onError,
 }) => {
   // From your own side, or else that of the player being watched.
@@ -126,9 +130,13 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   const newGameLabel =
     viewerPlayedAs === null ? `Play ${timeControl.label}` : 'New opponent';
   const analyse = () => onAnalyse(moveNavigation.currentPly);
+  const canReview =
+    snapshot.status === 'completed' && snapshot.moves.length > 0;
   const menuActions: ActionSheetAction[] = [
     flipBoardAction(flip),
-    // A game still being played is analysed once it's over.
+    // A game still being played is reviewed and analysed once it's over -
+    // reviewed only once played out, not aborted.
+    ...(canReview ? [reviewAction(onReview)] : []),
     ...(isGameOver ? [analyseAction(analyse)] : []),
     newOpponentAction(() => onNewOpponent(timeControl), newGameLabel),
   ];
@@ -190,6 +198,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
               newGameLabel={newGameLabel}
               onDismiss={() => setIsResultDismissed(true)}
               onAnalyse={analyse}
+              onReview={canReview ? onReview : undefined}
             />
           </GameOverOverlay>
         )}

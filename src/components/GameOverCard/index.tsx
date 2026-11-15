@@ -34,6 +34,8 @@ interface GameOverCardProps {
   onDismiss?: () => void;
   /** Shows an Analyse button, to look through the game with the engine. */
   onAnalyse?: () => void;
+  /** Shows a Game review button, for the game's review. */
+  onReview?: () => void;
 }
 
 const WINNER_LABELS = { white: 'White won', black: 'Black won' } as const;
@@ -100,6 +102,7 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
   rematch,
   onDismiss,
   onAnalyse,
+  onReview,
 }) => {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -154,6 +157,16 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
         testID="new-opponent-button"
       />
       {rematch && <RematchControls {...rematch} />}
+      {onReview && (
+        <Button
+          label="Game review"
+          icon="lightbulb-on-outline"
+          onPress={onReview}
+          variant="outline"
+          style={styles.newOpponentButton}
+          testID="review-button"
+        />
+      )}
       {onAnalyse && (
         <Button
           label="Analyse"
