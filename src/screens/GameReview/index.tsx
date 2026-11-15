@@ -13,7 +13,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { Color } from 'chess.js';
+import { Color, DEFAULT_POSITION, Square } from 'chess.js';
 
 import { ReviewBoard } from '../../components/Board';
 import Button from '../../components/Button';
@@ -25,6 +25,8 @@ import { useAuthSession } from '../../context/AuthSessionContext';
 import { useReviewSettingsContext } from '../../context/ReviewSettingsContext';
 import { colorPlayedBy } from '../../domain/players';
 import { ANALYSING_WORDS, seedOf } from '../../domain/review/phrases';
+import { useAnalysisPlayback } from '../../hooks/useAnalysisPlayback';
+import { useMoveNavigationSounds } from '../../hooks/useGameSounds';
 import {
   GameReviewState,
   ReviewUnavailableReason,
@@ -35,6 +37,8 @@ import { HomeStackScreenProps } from '../HomeStack/types';
 import { plainHeaderItem } from '../plainHeaderOptions';
 import { makeStyles } from '../../theme';
 import GameReviewContent from './GameReviewContent';
+
+const NO_MOVES: GameSnapshot['moves'] = [];
 
 const UNAVAILABLE: Record<ReviewUnavailableReason, string> = {
   'in-play':
@@ -72,8 +76,9 @@ function progressLabel(
   }
 }
 
-// A finished game's review: worked out on the device the first time - or
-// fetched, when someone has already - then stepped through. Its 🔍 opens the analysis
+// A finished game's review: worked out on the device the first time - the
+// game played through on the board as it's analysed - or fetched, when
+// someone has already; then stepped through. Its 🔍 opens the analysis
 // board at the move shown, and its ⚙ the review's settings.
 const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
   navigation,
@@ -99,9 +104,21 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
     return () => clearInterval(timer);
   }, [analysing]);
 
+  // The game played through while it's analysed, keeping pace with it.
+  const moves = state.status === 'analysing' ? state.snapshot.moves : NO_MOVES;
+  const played = useAnalysisPlayback(
+    state.status === 'analysing'
+      ? Math.floor(state.progress * moves.length)
+      : 0,
+  );
+  useMoveNavigationSounds(moves, played, false);
+
   // The move shown, as a ply - where the analysis board opens. Read only
   // when 🔍's pressed.
   const shownPly = useRef<number | null>(null);
+  useEffect(() => {
+    if (analysing) shownPly.current = played;
+  }, [analysing, played]);
   const rememberShownPly = useCallback((ply: number) => {
     shownPly.current = ply;
   }, []);
@@ -183,7 +200,15 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
           />
         </View>
         <ReviewBoard
-          fen={state.snapshot.fen}
+          fen={played > 0 ? moves[played - 1].fenAfter : DEFAULT_POSITION}
+          lastMove={
+            played > 0
+              ? {
+                  from: moves[played - 1].from as Square,
+                  to: moves[played - 1].to as Square,
+                }
+              : null
+          }
           width={width}
           orientation={side}
         />

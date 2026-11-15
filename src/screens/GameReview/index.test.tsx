@@ -3,7 +3,7 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 import * as Speech from 'expo-speech';
 
 import GameReview from '.';
-import { REVIEW_FACT_MS } from '../../constants/review';
+import { REVIEW_FACT_MS, REVIEW_PLAY_STEP_MS } from '../../constants/review';
 import { EngineContext, EngineStatus } from '../../context/EngineContext';
 import { ReviewSettingsProvider } from '../../context/ReviewSettingsContext';
 import type { PositionEval } from '../../domain/review/types';
@@ -330,6 +330,8 @@ describe('GameReview', () => {
     expect(screen.getByTestId('review-progress-label')).toHaveTextContent(
       'Analysing the game...',
     );
+    // From the start, played through as it's analysed.
+    expect(screen.getByTestId('piece-e2')).toBeTruthy();
 
     for (let i = 0; i < EVALS.length; i++) {
       const engine = i % 2 === 0 ? main : threat;
@@ -346,6 +348,33 @@ describe('GameReview', () => {
 
     expect(screen.getByTestId('game-review-summary')).toBeTruthy();
     expect(saveGameReview).toHaveBeenCalled();
+  });
+
+  it('plays the game through as it analyses, no further than it has got', async () => {
+    jest.useFakeTimers();
+    (getGameReview as jest.Mock).mockResolvedValue(null);
+    const { screen, main, threat } = await renderReview();
+
+    // Three of the five positions analysed: two moves to play.
+    for (let i = 0; i < 3; i++) {
+      const engine = i % 2 === 0 ? main : threat;
+      const { score, pv } = EVALS[i];
+      await act(async () =>
+        engine.report({
+          depth: 14,
+          done: true,
+          lines: [{ multipv: 1, score, pv }],
+        }),
+      );
+      await act(async () => {});
+    }
+    for (let i = 0; i < 6; i++) await settleAnimations(REVIEW_PLAY_STEP_MS);
+
+    // 1. e4 e5, and no further.
+    expect(screen.getByTestId('piece-e4')).toBeTruthy();
+    expect(screen.getByTestId('piece-e5')).toBeTruthy();
+    expect(screen.getByTestId('piece-f1')).toBeTruthy();
+    jest.useRealTimers();
   });
 
   it('tells chess facts while it analyses, a new one every few seconds', async () => {
