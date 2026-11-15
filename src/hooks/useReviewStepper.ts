@@ -8,6 +8,10 @@ import {
 } from '../constants/review';
 import { bestMoveOf, BestMoveView } from '../domain/review/buildReview';
 import { keyMoments, nextKeyMoment } from '../domain/review/keyMoments';
+import {
+  hasBetterMove,
+  lineWorthShowing,
+} from '../domain/review/reviewActions';
 import { themeCards } from '../domain/review/themes';
 import type {
   GameReview,
@@ -65,6 +69,10 @@ export type ReviewStepper = {
   lineStep: number | null;
   // The line Show plays, and the position it's played from.
   line: { fen: string; moves: string[] } | null;
+  // What's offered here: Show where the line explains the move, Best
+  // where there was a better one.
+  canShowLine: boolean;
+  canShowBest: boolean;
   start: () => void;
   next: () => void;
   back: () => void;
@@ -274,6 +282,10 @@ export function useReviewStepper(
     mode,
     lineStep,
     line,
+    canShowLine:
+      !!line?.moves.length &&
+      (mode.kind === 'best' || (!!move && lineWorthShowing(move))),
+    canShowBest: mode.kind === 'best' || (!!move && hasBetterMove(move)),
     start,
     next,
     back,

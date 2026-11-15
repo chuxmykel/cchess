@@ -323,10 +323,10 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
             onRetry={isSlip ? stepper.retry : undefined}
             showingLine={stepper.lineStep !== null}
             onToggleLine={stepper.toggleLine}
-            canShowLine={!!stepper.line?.moves.length}
+            canShowLine={stepper.canShowLine}
             showingBest={stepper.mode.kind === 'best'}
             onToggleBest={stepper.toggleBest}
-            canShowBest={!!stepper.move?.bestLine.length}
+            canShowBest={stepper.canShowBest}
             primaryLabel={primary.label}
             onPrimary={primary.onPress}
           />

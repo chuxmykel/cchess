@@ -256,4 +256,24 @@ describe('useReviewStepper', () => {
     await act(async () => result.current.next());
     expect(result.current.card?.theme).toBe('tactics');
   });
+
+  it('offers Best only where another move was better', async () => {
+    const { result } = await renderStepper();
+    // 2. Ba6??, where Nf3 was best.
+    await act(async () => result.current.goTo(2));
+    expect(result.current.canShowBest).toBe(true);
+    // 2... bxa6, the best move.
+    await act(async () => result.current.goTo(3));
+    expect(result.current.canShowBest).toBe(false);
+  });
+
+  it('offers Show where the line explains the move, not after a quiet one', async () => {
+    const { result } = await renderStepper();
+    // The blunder, and how it's punished.
+    await act(async () => result.current.goTo(2));
+    expect(result.current.canShowLine).toBe(true);
+    // 3. Nf3, a quiet move.
+    await act(async () => result.current.goTo(4));
+    expect(result.current.canShowLine).toBe(false);
+  });
 });

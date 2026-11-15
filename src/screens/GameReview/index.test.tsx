@@ -232,6 +232,18 @@ describe('GameReview', () => {
     );
   });
 
+  it('offers Best and Show only where they say something', async () => {
+    const { screen } = await renderReview();
+    await toBlunder(screen);
+    expect(screen.getByTestId('review-best')).toBeEnabled();
+    expect(screen.getByTestId('review-show')).toBeEnabled();
+
+    // 2... bxa6, the best move, and a plain recapture.
+    await fireEvent(screen.getByTestId('review-forward'), 'pressIn');
+    await settleAnimations();
+    expect(screen.getByTestId('review-best')).toBeDisabled();
+  });
+
   it('shows the best move, and the line answering the one played', async () => {
     const { screen } = await renderReview();
     await toBlunder(screen);
