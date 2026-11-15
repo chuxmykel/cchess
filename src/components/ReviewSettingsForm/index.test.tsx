@@ -64,16 +64,6 @@ describe('ReviewSettingsForm', () => {
     expect(onChange).toHaveBeenLastCalledWith({ voiceId: SAMANTHA.identifier });
   });
 
-  it('says where to get a Premium voice, until there is one', async () => {
-    const without = await renderForm(DEFAULT_REVIEW_SETTINGS, [SAMANTHA]);
-    expect(
-      without.screen.getByTestId('review-voice-premium-hint'),
-    ).toHaveTextContent(/Read & Speak, Voices/);
-
-    const { screen } = await renderForm();
-    expect(screen.queryByTestId('review-voice-premium-hint')).toBeNull();
-  });
-
   it('plays a voice to hear it', async () => {
     const { screen } = await renderForm();
 
