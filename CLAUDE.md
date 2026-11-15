@@ -378,10 +378,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
     paused in the background, picking up where it left off. `useReviewStepper` - the summary, then Next playing every move on the
     board, a move every 0.17s as chess.com's does, stopping at each key moment (tapped as they
     play, Skip, straight there) and then through the closing cards, which
-    come after the last move; wherever ‹ ›, the move list or a drag along
+    come after the last move; wherever ‹ ›, the move list or a scroll along
     it go is where the review is, as chess.com's is - Next plays on from
-    there, as if it had come that way (`stepBy` for a drag, several steps
-    before a render), ‹ ›, Show (the line from the move -
+    there, as if it had come that way, ‹ ›, Show (the line from the move -
     answering it, or following Best - played out on the board a move every
     0.65s, 8 at most; Hide puts the board back), Best (the best move in its place) and Retry (the position before
     a slip, to find a better move: the best one taken at once, another
@@ -789,14 +788,18 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `EvalBar`, `ReviewBubble` (a lightbulb, not a face - the class's
   `MoveClassIcon`, the headline, the score, the words and the line),
   `ReviewBoard`, `MoveList` with its `moveClasses` marked - the theme
-  cards after its last move as icons (`endItems`), and dragged sideways it
-  steps through them (`onDragStep`: a Gesture Handler pan, with its own
-  root as the board has, a step every 28pt, toward the start as the finger
-  goes right) - and `ReviewToolbar` (Retry, Show, Best, Next), held a
-  little up from the bottom; and to close, the theme cards over the
-  game's last position, then Analyse. The eval bar's along the top; the
-  bubble is drawn over the top of the board's area under it, in room kept
-  for two lines: more runs on over the board, which never moves. A brilliant move
+  cards after its last move as icons (`endItems`), and scrolled by hand it
+  goes through them (`onScrub`: the list scrolls natively under the
+  finger, and the move at the spot the current one's kept at is the one
+  shown, the voice quiet until it comes to rest) - and `ReviewToolbar`
+  (Retry, Show, Best, Next), held a little up from the bottom: Show and
+  Best offered only where they say something (`domain/review/
+reviewActions.ts`: Best where another move was better, out of the book;
+  Show after a slip, a great or brilliant move, or a tactic - not a quiet
+  move); and to close, the theme cards over the game's last position,
+  then Analyse. The eval bar's along the top, then room kept for two lines
+  of the bubble: a longer one grows up over the eval bar, then down over
+  the board, which never moves. A brilliant move
   stopped on has its own sound (`useBrilliantSound`). Its ⚙ opens `ReviewSettings`
   (`ReviewSettingsForm`: the voice and which one, each with a button to
   hear it, best-move arrows, the eval bar, whose moves to review - yours,
