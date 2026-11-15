@@ -30,6 +30,7 @@ function loadPlayers(): Record<GameSound, AudioPlayer> {
       checkmate: createAudioPlayer(SOUNDS.checkmate),
       'game-start': createAudioPlayer(SOUNDS['game-start']),
       'game-end': createAudioPlayer(SOUNDS['game-end']),
+      brilliant: createAudioPlayer(SOUNDS.brilliant),
     };
   }
   return players;
@@ -95,6 +96,18 @@ export function useMoveNavigationSounds(
     // shouldn't play anything.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPly, moves.length]);
+}
+
+// Sounds a brilliant move as a game review stops on it - each time it's
+// come to, not again while it stays shown.
+export function useBrilliantSound(shownMoveId: string | null): void {
+  useEffect(() => {
+    loadPlayers();
+  }, []);
+
+  useEffect(() => {
+    if (shownMoveId) playSound('brilliant');
+  }, [shownMoveId]);
 }
 
 // Sounds a game starting, as its screen opens on it: only a game that's new

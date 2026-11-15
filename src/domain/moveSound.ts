@@ -1,7 +1,8 @@
 export type MoveSound = 'move' | 'capture' | 'castle' | 'check' | 'checkmate';
 
-/** Every sound a game makes: its moves', and its start's and end's. */
-export type GameSound = MoveSound | 'game-start' | 'game-end';
+/** Every sound a game makes: its moves', its start's and end's - and a
+ * brilliant move's, in a game review. */
+export type GameSound = MoveSound | 'game-start' | 'game-end' | 'brilliant';
 
 // The sound a move makes, read off its SAN - so a move applied here and one
 // in a game's history sound the same. When a move is more than one thing,

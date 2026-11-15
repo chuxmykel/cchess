@@ -448,6 +448,46 @@ function gameEnd() {
   return render(out, -5);
 }
 
+// A brilliant move, in a game review: a quick, bright arpeggio rising up a
+// major chord on small wooden bars, the top note ringing on with a soft
+// shimmer above it - a reward, where check and mate are warnings.
+function brilliant() {
+  const out = silence(1.2);
+  // C, E, G and the C above - an octave up, bright on a phone's speaker.
+  [
+    [523.3, 0, 0.22],
+    [659.3, 0.07, 0.22],
+    [784.0, 0.14, 0.24],
+    [1046.5, 0.21, 0.3],
+  ].forEach(([frequency, at, gain], i) =>
+    mixInto(
+      out,
+      woodenBar({
+        frequency,
+        seconds: i === 3 ? 0.95 : 0.4,
+        decay: i === 3 ? 0.3 : 0.12,
+        mallet: 0.001,
+        seed: 30 + i,
+      }),
+      at,
+      gain,
+    ),
+  );
+  // The shimmer: the top notes again, two octaves up, faint and slow.
+  [
+    [2093.0, 0.24, 0.05],
+    [3136.0, 0.3, 0.035],
+  ].forEach(([frequency, at, gain], i) =>
+    mixInto(
+      out,
+      woodenBar({ frequency, seconds: 0.8, decay: 0.35, seed: 40 + i }),
+      at,
+      gain,
+    ),
+  );
+  return render(out, -5);
+}
+
 fs.mkdirSync(OUT_DIR, { recursive: true });
 writeWav('move', move());
 writeWav('capture', capture());
@@ -456,3 +496,4 @@ writeWav('check', check());
 writeWav('checkmate', checkmate());
 writeWav('game-start', gameStart());
 writeWav('game-end', gameEnd());
+writeWav('brilliant', brilliant());

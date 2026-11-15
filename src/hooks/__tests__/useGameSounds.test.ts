@@ -5,6 +5,7 @@ import { SOUNDS } from '../../constants/sounds';
 import { GameSound } from '../../domain/moveSound';
 import {
   useAnalysisSounds,
+  useBrilliantSound,
   useGameOverSound,
   useGameStartSound,
   useMoveNavigationSounds,
@@ -138,6 +139,31 @@ describe('useMoveNavigationSounds', () => {
     await rerender({ shownMoves: [], ply: 0 });
 
     expect(playsOf('move')).toBe(0);
+  });
+});
+
+describe('useBrilliantSound', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('sounds each brilliant move stopped on, once', async () => {
+    const { rerender } = await renderHook(
+      ({ id }: { id: string | null }) => useBrilliantSound(id),
+      { initialProps: { id: null as string | null } },
+    );
+    expect(playsOf('brilliant')).toBe(0);
+
+    await rerender({ id: '12' });
+    await act(async () => {});
+    await rerender({ id: '12' });
+    await act(async () => {});
+    expect(playsOf('brilliant')).toBe(1);
+
+    await rerender({ id: null });
+    await rerender({ id: '20' });
+    await act(async () => {});
+    expect(playsOf('brilliant')).toBe(2);
   });
 });
 

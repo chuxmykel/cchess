@@ -62,6 +62,7 @@ jest.mock('./src/constants/sounds', () => ({
     checkmate: 'checkmate.wav',
     'game-start': 'game-start.wav',
     'game-end': 'game-end.wav',
+    brilliant: 'brilliant.wav',
   },
 }));
 
