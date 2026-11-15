@@ -114,7 +114,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
     through a game - forward, the move landed on, back, a plain move, or a
     check when the position landed on is one; and
     `gameOverSound(reason)`, a game's end - none for mate, which sounded
-    with its move. `stepSoundTo(fromPly, toPly, landedSan)` is the same
+    with its move. `GameSound` also has `brilliant`, a game review's
+    brilliant move (a rising chime, in `generate-sounds.js`). `stepSoundTo(fromPly, toPly, landedSan)` is the same
     step for an analysis, whose moves branch.
   - Analysis:
     - `analysisTree.ts` - an analysis's moves as an immutable tree:
@@ -158,27 +159,38 @@ lib/chessboard/  the board, written as a package of its own: outside the
     - `classifyMove.ts` - brilliant, great, best, excellent, good, book,
       inaccuracy, mistake, miss, blunder: by the winning chances the move
       gave away (2/5/10/20 points), the book (`bookOpeningAt`, every move
-      before it in it too), a sacrifice that's best (brilliant), the only
-      good move, not a recapture (great), and the opponent's slip let go
-      (miss).
+      before it in it too), a sacrifice that's best (brilliant - a piece
+      left where it's taken for less, never counting a king, which can't
+      take a defended one), the only good move, not a recapture (great),
+      and the opponent's slip let go (miss). Winning chances barely move
+      once a game's decided, so a move giving away material over best play
+      (`materialGivenUp`) and enough of the score is at least an inaccuracy
+      (a pawn) or a mistake (a piece) whatever the chances.
     - `motifs.ts` - what a move did, with chess.js along the engine's
       lines: material over the line, mates allowed or missed, a piece left
       hanging, a fork, pin or skewer, a piece trapped; for a good one,
       taking a free piece, saving one, castling, developing, the centre, a passed pawn, trading when ahead. `phrases.ts` - everything a review
-      says, none of it stored (made afresh from the evals): a few wordings
-      for each fact, picked by a seed so a review always reads the same;
+      says, none of it stored (made afresh from the evals): several
+      wordings for each fact and each class of slip, picked by a seed so a
+      review always reads the same - never naming the better move, which
+      Retry is for, only hinting at the piece that had it, and never
+      talking about "the engine";
       the intro (`introLine`, fitting the game - won, lost, drawn or
       watched, clean, short or long, its opening); the chess facts shown
       while it's analysed; Retry's lines; and the closing themes' advice.
       Ideas marked `*like this*` (underlined in the bubble, unmarked aloud);
       `spokenText.ts` - SAN as said ("knight takes e5, check").
     - `buildReview.ts` - `buildReview(start, moves, evals, seed)`: every move's class, facts and comment, each side's accuracy, counts and
-      game rating (`gameRating.ts` - the rating it played at, our own
-      curve from accuracy);
-      `bestMoveOf` - the best move where another was played, and what it'd
-      have done. `keyMoments.ts` - where Next stops: the side's
-      standouts and slips, after the book's last move; `themes.ts` - the
-      closing cards (opening, tactics, strategy, endgame).
+      game rating (`gameRating.ts` - the rating it played at: as
+      chess.com describes its own, the player's rating going into the game
+      - `buildReview`'s `ratings` - moved halfway toward what their
+        accuracy alone reads as on our own curve, so over many games it
+        averages out near their rating; the curve alone for a guest);
+        `bestMoveOf` - the best move where another was played, and what it'd
+        have done. `keyMoments.ts` - where Next stops: the side's
+        standouts and slips, after the book's last move; `themes.ts` - the
+        closing cards (opening, tactics, strategy, endgame), each with the
+        move it's about (`moveIndex`, the worst of its slips).
 
 - **`src/network/`** - a second framework-agnostic layer, mirroring
   `domain/`'s pure-infra style but for talking to `cchess-be` (the
@@ -306,7 +318,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
     then plays in place), the game sounds (`useGameSounds.ts`,
     with `expo-audio` - one player per sound, shared app-wide; muted by the
     silent switch, mixing with other apps' audio: `useMoveSounds`, each
-    move's as it's applied, either side's; `useMoveNavigationSounds`,
+    move's as it's applied, either side's - and a game review's Show
+    line's; `useMoveNavigationSounds`,
     stepping through a game's moves, in `LiveGame` and `GameViewer`, plus a
     watched game's moves as they arrive; `useGameStartSound`, a new game
     opening; and `useGameOverSound`, a game ending while it's shown),
@@ -364,9 +377,11 @@ lib/chessboard/  the board, written as a package of its own: outside the
     (`runReview`, the engine claimed only then, through `EngineContext`'s
     `useEngineWhen`), its progress, and the review sent to the server;
     paused in the background, picking up where it left off. `useReviewStepper` - the summary, then Next playing every move on the
-    board, a move every 0.7s, stopping at each key moment (tapped as they
-    play, Skip, straight there; Resume after stepping away), ‹ ›, Show (the line answering the
-    move), Best (the best move in its place) and Retry (the position before
+    board, a move every 0.17s as chess.com's does, stopping at each key moment (tapped as they
+    play, Skip, straight there; Resume after stepping away - from the
+    closing cards too, back to them), ‹ ›, Show (the line from the move -
+    answering it, or following Best - played out on the board a move every
+    0.65s, 8 at most; Hide puts the board back), Best (the best move in its place) and Retry (the position before
     a slip, to find a better move: the best one taken at once, another
     judged by `useRetryJudge`, a quick search). `reviewView.ts` - what the
     board and the bubble show at each of those, and what's said.
@@ -772,8 +787,13 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `EvalBar`, `ReviewBubble` (a lightbulb, not a face - the class's
   `MoveClassIcon`, the headline, the score, the words and the line),
   `ReviewBoard`, `MoveList` with its `moveClasses` marked, and
-  `ReviewToolbar` (Retry, Show, Best, Next); and to close, the theme
-  cards, then Analyse. Its ⚙ opens `ReviewSettings`
+  `ReviewToolbar` (Retry, Show, Best, Next), held a little up from the
+  bottom; and to close, the theme cards, picked from `SegmentedTabs`, each
+  with the board on its move - a move picked from there goes back to
+  reviewing - then Analyse, at the move shown. The bubble is drawn over
+  the top of the board's area, in room kept for two lines: more runs on
+  over the eval bar and the board, which never moves. A brilliant move
+  stopped on has its own sound (`useBrilliantSound`). Its ⚙ opens `ReviewSettings`
   (`ReviewSettingsForm`: the voice and which one, each with a button to
   hear it, best-move arrows, the eval bar, whose moves to review - yours,
   white's or black's - and the strength: fast, standard or deep,
