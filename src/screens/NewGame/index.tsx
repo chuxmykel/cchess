@@ -27,11 +27,14 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
   const [timeControl, setTimeControl] = useLastTimeControl();
   const [chosenRated, setChosenRated] = useState(true);
   const [ratingRange, setRatingRange] = useState(DEFAULT_RATING_RANGE);
-  const [color, setColor] = useState<ColorChoice>('random');
+  const [chosenColor, setColor] = useState<ColorChoice>('random');
   const toast = useToast();
   const authSession = useAuthSession();
   const isGuest = !authSession.isReady || authSession.user.isGuest;
   const rated = !isGuest && chosenRated;
+  // A rated game's colors are left to chance; the color chosen for a
+  // casual one is kept for when it's casual again.
+  const color: ColorChoice = rated ? 'random' : chosenColor;
   const seekDailyGame = useSeekDailyGame();
   const [isSeekingDaily, setIsSeekingDaily] = useState(false);
 

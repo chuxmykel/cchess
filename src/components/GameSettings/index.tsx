@@ -66,10 +66,6 @@ const GameSettings: React.FC<GameSettingsProps> = ({
       >
         <Text style={styles.title}>Game Settings</Text>
 
-        <Text style={[styles.sectionLabel, styles.firstSection]}>Play as</Text>
-        <ColorChoicePicker selected={color} onSelect={onChangeColor} />
-        <View style={styles.sectionGap} />
-
         <View style={styles.switchRow}>
           <Text style={styles.switchLabel}>Rated</Text>
           <Switch
@@ -80,8 +76,28 @@ const GameSettings: React.FC<GameSettingsProps> = ({
             testID="rated-switch"
           />
         </View>
+        {!canPlayRated && (
+          <Text style={styles.hint}>{SIGN_IN_TO_PLAY_RATED}</Text>
+        )}
 
-        {canPlayRated ? (
+        <Text style={styles.sectionLabel}>Play as</Text>
+        <ColorChoicePicker
+          selected={color}
+          onSelect={onChangeColor}
+          randomOnly={rated}
+        />
+        {/* Always laid out, only hidden while casual, so the sheet keeps
+            its height as Rated is switched. */}
+        <Text
+          style={[styles.hint, !rated && styles.hidden]}
+          accessibilityElementsHidden={!rated}
+          importantForAccessibility={rated ? 'auto' : 'no-hide-descendants'}
+          testID="rated-color-hint"
+        >
+          Rated games are played as a random color.
+        </Text>
+
+        {canPlayRated && (
           <>
             <Text style={styles.sectionLabel}>Rating Range</Text>
             <RatingRangeSelector
@@ -89,8 +105,6 @@ const GameSettings: React.FC<GameSettingsProps> = ({
               onChange={onChangeRatingRange}
             />
           </>
-        ) : (
-          <Text style={styles.hint}>{SIGN_IN_TO_PLAY_RATED}</Text>
         )}
 
         <Button
@@ -146,16 +160,13 @@ const useStyles = makeStyles((t) => ({
     marginTop: t.spacing.xl,
     marginBottom: t.spacing.md,
   },
-  firstSection: {
-    marginTop: 0,
-  },
-  sectionGap: {
-    height: 20,
-  },
   hint: {
     marginTop: t.spacing.sm,
     fontSize: t.fontSize.md,
     color: t.colors.textMuted,
+  },
+  hidden: {
+    opacity: 0,
   },
   doneButton: {
     marginTop: t.spacing.xxl,

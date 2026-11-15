@@ -41,9 +41,12 @@ const ChallengeSheet: React.FC<ChallengeSheetProps> = ({
 
   const [timeControl, setTimeControl] = useState(DEFAULT_TIME_CONTROL);
   const [rated, setRated] = useState(canPlayRated);
-  const [color, setColor] = useState<ColorChoice>('random');
+  const [chosenColor, setColor] = useState<ColorChoice>('random');
+  const isRated = rated && canPlayRated;
+  // A rated game's colors are left to chance.
+  const color: ColorChoice = isRated ? 'random' : chosenColor;
   const sending = useAsyncAction(
-    () => onSend({ timeControl, rated: rated && canPlayRated, color }),
+    () => onSend({ timeControl, rated: isRated, color }),
     CHALLENGE_FAILED_MESSAGE,
   );
 
@@ -92,10 +95,6 @@ const ChallengeSheet: React.FC<ChallengeSheetProps> = ({
             </View>
           </View>
         ))}
-        <View style={styles.group}>
-          <Text style={styles.groupLabel}>Play as</Text>
-          <ColorChoicePicker selected={color} onSelect={setColor} />
-        </View>
         {canPlayRated && (
           <View style={styles.switchRow}>
             <Text style={styles.switchLabel}>Rated</Text>
@@ -108,6 +107,14 @@ const ChallengeSheet: React.FC<ChallengeSheetProps> = ({
             />
           </View>
         )}
+        <View style={styles.group}>
+          <Text style={styles.groupLabel}>Play as</Text>
+          <ColorChoicePicker
+            selected={color}
+            onSelect={setColor}
+            randomOnly={isRated}
+          />
+        </View>
         {sending.errorMessage && (
           <Text style={styles.error} testID="challenge-error">
             {sending.errorMessage}
@@ -173,6 +180,7 @@ const useStyles = makeStyles((t) => ({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: t.spacing.sm,
+    marginBottom: t.spacing.md,
   },
   switchLabel: {
     color: t.colors.text,

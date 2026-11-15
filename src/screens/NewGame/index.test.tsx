@@ -186,6 +186,36 @@ describe('NewGame', () => {
     expect(screen.getByText('Sign in to challenge friends.')).toBeTruthy();
   });
 
+  it('plays a rated game as a random color, keeping the casual choice', async () => {
+    const { screenPromise, navigation } = renderScreen({ isGuest: false });
+    const screen = await screenPromise;
+
+    await fireEvent.press(screen.getByTestId('game-settings-trigger'));
+    await fireEvent(screen.getByTestId('rated-switch'), 'valueChange', false);
+    await fireEvent.press(screen.getByTestId('color-black'));
+    await fireEvent(screen.getByTestId('rated-switch'), 'valueChange', true);
+
+    expect(screen.getByTestId('color-black')).toBeDisabled();
+    expect(screen.getByTestId('color-white')).toBeDisabled();
+    expect(screen.getByTestId('color-random')).toBeSelected();
+    expect(
+      screen.getByText('Rated games are played as a random color.'),
+    ).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('game-settings-done'));
+    await waitForSheetToClose();
+    await fireEvent.press(screen.getByTestId('start-new-game-button'));
+    expect(navigation.navigate).toHaveBeenLastCalledWith(
+      'LiveGame',
+      expect.objectContaining({
+        seek: expect.objectContaining({ rated: true, color: 'random' }),
+      }),
+    );
+
+    await fireEvent.press(screen.getByTestId('game-settings-trigger'));
+    await fireEvent(screen.getByTestId('rated-switch'), 'valueChange', false);
+    expect(screen.getByTestId('color-black')).toBeSelected();
+  });
+
   it('starts on the time control chosen last time', async () => {
     await AsyncStorage.setItem(
       'cchess.lastTimeControl',
