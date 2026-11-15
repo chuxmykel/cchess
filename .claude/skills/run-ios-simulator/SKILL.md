@@ -375,7 +375,7 @@ resign or abort from the app (see `examples/resign.yaml` /
   they've nothing to say (Best on a book or best move, Show on a quiet
   one). In Retry, tap a piece then a square (by
   testID) - the board is the usual `piece-*`/`square-*`. The header's
-  `review-analyse-button` (🔍) opens the analysis board at the move shown
+  `review-analyse-button` (the head icon, beside the ⚙) opens the analysis board at the move shown
   (the result card has no Analyse any more - ☰ `analyse-action` in a
   game), and `review-settings-button` opens `review-settings`
   (`review-setting-<voice|showBestMoves|evalBar>`,
