@@ -780,8 +780,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
   result card - `GameOverCard`'s `onReview`, "Game review" - or ☰
   `reviewAction`, in `LiveGame`, `DailyGame` and `GameViewer`; not for an
   aborted game): while it's analysed, the game played through on the
-  board a move every 0.17s, no further than it's been analysed
-  (`useAnalysisPlayback`), a chess fact changing every 6s, and
+  board as far into it as the progress bar is (half way at 50%), a chess
+  fact changing every 6s, and
   `ReviewProgress` (the engine's download, then the game); then `ReviewSummary` (a column under each player's avatar - accuracy, each
   class's count with its mark between the two, and the game rating -
   under `EvalGraph` -
@@ -802,8 +802,9 @@ reviewActions.ts`: Best where another move was better, out of the book;
   then Analyse. The eval bar's along the top, then room kept for two lines
   of the bubble: a longer one grows up over the eval bar, then down over
   the board, which never moves. A brilliant move
-  stopped on has its own sound (`useBrilliantSound`). Its header's 🔍
-  opens `AnalysisBoard` at the move shown (the game's end from the
+  stopped on has its own sound (`useBrilliantSound`). Its header's
+  analysis button (the app's `head-cog-outline`, beside the ⚙ in one
+  header item, so they sit close) opens `AnalysisBoard` at the move shown (the game's end from the
   summary), and its ⚙ `ReviewSettings`
   (`ReviewSettingsForm`: the voice and which one, each with a button to
   hear it, best-move arrows, the eval bar, whose moves to review - yours,
