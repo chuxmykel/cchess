@@ -40,8 +40,9 @@ interface GameReviewContentProps {
   onAnalyse: (ply: number) => void;
 }
 
-// The room kept above the board for the bubble: its heading and two lines of
-// words - more runs on over the board.
+// The room kept above the board for the bubble, under the eval bar: its
+// heading and two lines of words - more grows up over the eval bar, then
+// down over the board.
 const BUBBLE_ROOM = 104;
 
 const THEME_ICONS = {
@@ -100,6 +101,9 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
   const styles = useStyles();
   const { colors } = useTheme();
   const [retrying, setRetrying] = useState(false);
+  // The eval bar and the room above the board, which the bubble fills from
+  // the bottom up.
+  const [topRoom, setTopRoom] = useState(BUBBLE_ROOM);
   const judge = useRetryJudge(retrying);
   const stepper = useReviewStepper(review, side, judge);
   const isRetrying = stepper.mode.kind === 'retry';
@@ -227,14 +231,20 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
 
   return (
     <View style={styles.screen} testID="game-review-stepping">
-      {settings.evalBar && (
-        <EvalBar score={view.score} direction="horizontal" orientation={side} />
-      )}
-      {/* The bubble sits over the top of this, in room kept for it: words
-          longer than that run on over the board, rather than pushing it
-          down. */}
+      {/* The bubble sits over the top of this, at the foot of the room kept
+          for it above the board: words longer than that grow up over the
+          eval bar, then on over the board - never pushing it down. */}
       <View>
-        <View style={styles.bubbleRoom} />
+        <View onLayout={(event) => setTopRoom(event.nativeEvent.layout.height)}>
+          {settings.evalBar && (
+            <EvalBar
+              score={view.score}
+              direction="horizontal"
+              orientation={side}
+            />
+          )}
+          <View style={styles.bubbleRoom} />
+        </View>
         <ReviewBoard
           fen={view.fen}
           width={width}
@@ -250,7 +260,10 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
               : null
           }
         />
-        <View style={styles.bubble} pointerEvents="box-none">
+        <View
+          style={[styles.bubble, { minHeight: topRoom }]}
+          pointerEvents="box-none"
+        >
           <ReviewBubble
             moveClass={view.bubble.moveClass}
             icon={theme ? THEME_ICONS[theme.theme] : undefined}
@@ -357,12 +370,13 @@ const useStyles = makeStyles((t) => ({
   bubbleRoom: {
     height: BUBBLE_ROOM,
   },
+  // As tall as the eval bar and the room together, the bubble at its foot
+  // - or, a longer one, from the top down.
   bubble: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    minHeight: BUBBLE_ROOM,
     justifyContent: 'flex-end',
     paddingHorizontal: t.spacing.md,
     paddingVertical: t.spacing.sm,
