@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fireEvent, render } from '@testing-library/react-native';
 
 import NewGame from '.';
@@ -17,6 +18,8 @@ jest.mock('../../hooks/useSeekDailyGame', () => ({
 }));
 
 describe('NewGame', () => {
+  beforeEach(() => AsyncStorage.clear());
+
   function renderScreen({ isGuest }: { isGuest: boolean }) {
     (useAuthSession as jest.Mock).mockReturnValue(
       makeAuthSession({ user: { isGuest } }),
@@ -181,5 +184,21 @@ describe('NewGame', () => {
 
     expect(navigation.navigate).not.toHaveBeenCalled();
     expect(screen.getByText('Sign in to challenge friends.')).toBeTruthy();
+  });
+
+  it('starts on the time control chosen last time', async () => {
+    await AsyncStorage.setItem(
+      'cchess.lastTimeControl',
+      JSON.stringify({ initialSeconds: 3 * 24 * 60 * 60, incrementSeconds: 0 }),
+    );
+    mockSeekDailyGame.mockResolvedValue({ status: 'queued' });
+    const { screenPromise } = renderScreen({ isGuest: false });
+    const screen = await screenPromise;
+
+    expect(await screen.findByText('Daily · 3 days')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('start-new-game-button'));
+    expect(mockSeekDailyGame).toHaveBeenCalledWith(
+      expect.objectContaining({ days: 3 }),
+    );
   });
 });
