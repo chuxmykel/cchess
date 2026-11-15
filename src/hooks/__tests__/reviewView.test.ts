@@ -30,7 +30,8 @@ const viewAt = (input: Partial<ReviewViewInput>) =>
     phase: 'stepping',
     index: 2,
     mode: { kind: 'move' },
-    showLine: false,
+    line: null,
+    lineStep: null,
     showBestMoves: false,
     theme: null,
     intro: "Nice win! Let's see how you *got* there.",
@@ -61,11 +62,23 @@ describe('reviewView', () => {
     expect(view.arrows).toEqual([]);
   });
 
-  it('shows the line that answers it, and its first move as an arrow', () => {
-    const view = viewAt({ showLine: true });
+  it('plays out the line that answers it, a move at a time', () => {
+    const move = REVIEW.moves[2];
+    const line = { fen: move.fenAfter, moves: move.replyLine };
+    const first = viewAt({ line, lineStep: 1 });
 
-    expect(view.bubble.line?.map((m) => m.san)).toEqual(['bxa6', 'Nf3']);
-    expect(view.arrows).toEqual([{ from: 'b7', to: 'a6', kind: 'reply' }]);
+    // bxa6 on the board, its class's mark gone.
+    expect(first.lastMove).toEqual({ from: 'b7', to: 'a6' });
+    expect(first.moveClass).toBeNull();
+    expect(first.bubble.line?.map((m) => m.san)).toEqual(['bxa6', 'Nf3']);
+    expect(first.bubble.lineAt).toBe(0);
+
+    const second = viewAt({ line, lineStep: 2 });
+    expect(second.lastMove).toEqual({ from: 'g1', to: 'f3' });
+    expect(second.bubble.lineAt).toBe(1);
+
+    // Hidden: the move played again.
+    expect(viewAt({ line, lineStep: null }).fen).toBe(move.fenAfter);
   });
 
   it('marks the best move, when asked to every time', () => {
@@ -125,7 +138,12 @@ describe('reviewView', () => {
     const view = viewAt({
       phase: 'done',
       index: 3,
-      theme: { theme: 'tactics', title: 'Tactics', text: 'Watch for *forks*.' },
+      theme: {
+        theme: 'tactics',
+        title: 'Tactics',
+        text: 'Watch for *forks*.',
+        moveIndex: 2,
+      },
     });
 
     expect(view.bubble).toMatchObject({

@@ -11,13 +11,22 @@ import MoveList from '../../components/MoveList';
 import ReviewBubble from '../../components/ReviewBubble';
 import ReviewSummary from '../../components/ReviewSummary';
 import ReviewToolbar from '../../components/ReviewToolbar';
+import SegmentedTabs from '../../components/SegmentedTabs';
 import { ReviewSettings } from '../../constants/review';
 import { defeatedColor } from '../../domain/players';
 import { introLine, IntroContext, seedOf } from '../../domain/review/phrases';
 import { themeCards } from '../../domain/review/themes';
-import type { GameReview, MoveClass } from '../../domain/review/types';
+import type {
+  GameReview,
+  MoveClass,
+  ReviewTheme,
+} from '../../domain/review/types';
 import { reviewView } from '../../hooks/reviewView';
-import { useMoveNavigationSounds } from '../../hooks/useGameSounds';
+import {
+  useBrilliantSound,
+  useMoveNavigationSounds,
+  useMoveSounds,
+} from '../../hooks/useGameSounds';
 import { useRetryJudge } from '../../hooks/useRetryJudge';
 import { useReviewStepper } from '../../hooks/useReviewStepper';
 import { useReviewVoice } from '../../hooks/useReviewVoice';
@@ -36,6 +45,10 @@ interface GameReviewContentProps {
   // Opens the analysis board at a move - the number of moves in.
   onAnalyse: (ply: number) => void;
 }
+
+// The room kept above the board for the bubble: its heading and two lines of
+// words - more runs on over the eval bar and the board.
+const BUBBLE_ROOM = 104;
 
 const THEME_ICONS = {
   opening: 'book-open-page-variant',
@@ -101,6 +114,8 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
   const themes = useMemo(() => themeCards(review, side), [review, side]);
   const [themeIndex, setThemeIndex] = useState(0);
   const theme = stepper.phase === 'done' ? (themes[themeIndex] ?? null) : null;
+  // The move shown: on a closing card, the move it's about.
+  const shownIndex = theme?.moveIndex ?? stepper.index;
   const intro = useMemo(
     () =>
       introLine(
@@ -113,9 +128,10 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
   const view = reviewView({
     review,
     phase: stepper.phase,
-    index: stepper.index,
+    index: shownIndex,
     mode: stepper.mode,
-    showLine: stepper.showLine,
+    line: stepper.line,
+    lineStep: stepper.lineStep,
     showBestMoves: settings.showBestMoves,
     theme,
     intro,
@@ -129,17 +145,32 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
     if (!quiet) say(view.spoken);
   }, [view.spoken, quiet, say]);
 
-  useMoveNavigationSounds(review.moves, stepper.index + 1, false);
+  useMoveNavigationSounds(review.moves, shownIndex + 1, false);
+  // Show's line sounds each of its moves as it's played out.
+  const lineMoveSan =
+    view.bubble.lineAt !== null
+      ? (view.bubble.line?.[view.bubble.lineAt]?.san ?? null)
+      : null;
+  const lineMove = useMemo(
+    () => (lineMoveSan ? { san: lineMoveSan, step: stepper.lineStep } : null),
+    [lineMoveSan, stepper.lineStep],
+  );
+  useMoveSounds(lineMove);
+  // A brilliant move gets a sound of its own when the review stops on it.
+  const stoppedOnBrilliant =
+    stepper.phase !== 'summary' &&
+    !stepper.isPlaying &&
+    stepper.mode.kind === 'move' &&
+    stepper.lineStep === null &&
+    view.moveClass === 'brilliant';
+  useBrilliantSound(stoppedOnBrilliant ? String(shownIndex) : null);
 
   const arrows = useMemo<BoardArrow[]>(
     () =>
       view.arrows.map((arrow) => ({
         from: arrow.from,
         to: arrow.to,
-        color:
-          arrow.kind === 'best'
-            ? colors.board.arrows[0]
-            : colors.board.threatArrow,
+        color: colors.board.arrows[0],
         weight: 0.15,
       })),
     [view.arrows, colors],
@@ -152,7 +183,7 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
     [review],
   );
   const players = { white: snapshot.white, black: snapshot.black };
-  const atLastMove = stepper.index === review.moves.length - 1;
+  const atLastMove = shownIndex === review.moves.length - 1;
 
   if (stepper.phase === 'summary') {
     return (
@@ -196,7 +227,7 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
     stepper.phase === 'done'
       ? themeIndex < themes.length - 1
         ? { label: 'Next', onPress: () => setThemeIndex((i) => i + 1) }
-        : { label: 'Analyse', onPress: () => onAnalyse(stepper.index + 1) }
+        : { label: 'Analyse', onPress: () => onAnalyse(shownIndex + 1) }
       : stepper.isPlaying
         ? { label: 'Skip', onPress: stepper.next }
         : stepper.isOffPath
@@ -205,43 +236,58 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
 
   return (
     <View style={styles.screen} testID="game-review-stepping">
-      {settings.evalBar && (
-        <EvalBar score={view.score} direction="horizontal" orientation={side} />
-      )}
-      <View style={styles.bubble}>
-        <ReviewBubble
-          moveClass={view.bubble.moveClass}
-          icon={theme ? THEME_ICONS[theme.theme] : undefined}
-          title={view.bubble.title ?? undefined}
-          score={view.bubble.score}
-          text={view.bubble.text}
-          line={view.bubble.line}
+      {/* The bubble sits over the top of this, in room kept for it: words
+          longer than that run on over the eval bar and the board, rather
+          than pushing the board down. */}
+      <View>
+        <View style={styles.bubbleRoom} />
+        {settings.evalBar && (
+          <EvalBar
+            score={view.score}
+            direction="horizontal"
+            orientation={side}
+          />
+        )}
+        <ReviewBoard
+          fen={view.fen}
+          width={width}
+          orientation={side}
+          lastMove={view.lastMove}
+          moveClass={view.moveClass}
+          arrows={arrows}
+          movableColor={view.movableColor}
+          onMove={stepper.tryMove}
+          defeated={
+            atLastMove && stepper.lineStep === null
+              ? defeatedColor(snapshot.result)
+              : null
+          }
         />
+        <View style={styles.bubble} pointerEvents="box-none">
+          <ReviewBubble
+            moveClass={view.bubble.moveClass}
+            icon={theme ? THEME_ICONS[theme.theme] : undefined}
+            title={view.bubble.title ?? undefined}
+            score={view.bubble.score}
+            text={view.bubble.text}
+            line={view.bubble.line}
+            lineAt={view.bubble.lineAt}
+          />
+        </View>
       </View>
-      <ReviewBoard
-        fen={view.fen}
-        width={width}
-        orientation={side}
-        lastMove={view.lastMove}
-        moveClass={view.moveClass}
-        arrows={arrows}
-        movableColor={view.movableColor}
-        onMove={stepper.tryMove}
-        defeated={atLastMove ? defeatedColor(snapshot.result) : null}
-      />
       <View style={styles.moves}>
         <ToolbarButton
           icon="chevron-left"
           label="Back"
-          onPress={stepper.back}
-          disabled={stepper.index < 0}
+          onPress={() => stepper.goTo(shownIndex - 1)}
+          disabled={shownIndex < 0}
           repeatsWhileHeld
           testID="review-back"
         />
         <View style={styles.moveList}>
           <MoveList
             moves={review.moves}
-            currentPly={stepper.move?.ply ?? 0}
+            currentPly={review.moves[shownIndex]?.ply ?? 0}
             onSelectPly={(ply) =>
               stepper.goTo(review.moves.findIndex((m) => m.ply === ply))
             }
@@ -251,7 +297,7 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
         <ToolbarButton
           icon="chevron-right"
           label="Forward"
-          onPress={stepper.forward}
+          onPress={() => stepper.goTo(shownIndex + 1)}
           disabled={atLastMove}
           repeatsWhileHeld
           testID="review-forward"
@@ -259,29 +305,44 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
       </View>
       <View style={styles.footer}>
         {stepper.phase === 'done' ? (
-          <View style={styles.doneBar}>
-            <Button
-              label="Summary"
-              variant="outline"
-              onPress={() => {
-                setThemeIndex(0);
-                stepper.backToSummary();
-              }}
-              style={styles.doneButton}
-              testID="review-summary-button"
-            />
-            <Button
-              label={primary.label}
-              onPress={primary.onPress}
-              style={styles.doneButton}
-              testID="review-next"
-            />
-          </View>
+          <>
+            {themes.length > 1 && (
+              <SegmentedTabs<ReviewTheme>
+                tabs={themes.map((card) => ({
+                  key: card.theme,
+                  label: card.title,
+                }))}
+                selected={themes[themeIndex]?.theme ?? themes[0].theme}
+                onSelect={(key) =>
+                  setThemeIndex(themes.findIndex((card) => card.theme === key))
+                }
+              />
+            )}
+            <View style={styles.doneBar}>
+              <Button
+                label="Summary"
+                variant="outline"
+                onPress={() => {
+                  setThemeIndex(0);
+                  stepper.backToSummary();
+                }}
+                style={styles.doneButton}
+                testID="review-summary-button"
+              />
+              <Button
+                label={primary.label}
+                onPress={primary.onPress}
+                style={styles.doneButton}
+                testID="review-next"
+              />
+            </View>
+          </>
         ) : (
           <ReviewToolbar
             onRetry={isSlip ? stepper.retry : undefined}
-            showingLine={stepper.showLine}
+            showingLine={stepper.lineStep !== null}
             onToggleLine={stepper.toggleLine}
+            canShowLine={!!stepper.line?.moves.length}
             showingBest={stepper.mode.kind === 'best'}
             onToggleBest={stepper.toggleBest}
             canShowBest={!!stepper.move?.bestLine.length}
@@ -311,11 +372,20 @@ const useStyles = makeStyles((t) => ({
     color: t.colors.textMuted,
     textAlign: 'center',
   },
+  // Room above the board for a comment of a few lines.
+  bubbleRoom: {
+    height: BUBBLE_ROOM,
+  },
   bubble: {
-    minHeight: 112,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    minHeight: BUBBLE_ROOM,
     justifyContent: 'flex-end',
     paddingHorizontal: t.spacing.md,
     paddingVertical: t.spacing.sm,
+    zIndex: 1,
   },
   moves: {
     flexDirection: 'row',
@@ -325,9 +395,12 @@ const useStyles = makeStyles((t) => ({
   moveList: {
     flex: 1,
   },
+  // The controls sit a little up from the bottom, in easy reach.
   footer: {
     flex: 1,
     justifyContent: 'flex-end',
+    gap: t.spacing.sm,
+    paddingBottom: t.spacing.xxl,
   },
   doneBar: {
     flexDirection: 'row',

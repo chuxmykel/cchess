@@ -16,8 +16,10 @@ interface ReviewBubbleProps {
   score?: string | null;
   // The words - an idea worth knowing marked *like this*, underlined.
   text: string;
-  // A line of moves to show under them: the engine's, after the move.
+  // A line of moves to show under them - the one played out on the board -
+  // and the move of it on the board, set off.
   line?: NumberedMove[] | null;
+  lineAt?: number | null;
   testID?: string;
 }
 
@@ -45,6 +47,7 @@ const ReviewBubble: React.FC<ReviewBubbleProps> = ({
   score,
   text,
   line,
+  lineAt = null,
   testID = 'review-bubble',
 }) => {
   const styles = useStyles();
@@ -94,7 +97,20 @@ const ReviewBubble: React.FC<ReviewBubbleProps> = ({
                 {move.label && (
                   <Text style={styles.moveNumber}>{move.label} </Text>
                 )}
-                {move.san}{' '}
+                <Text
+                  style={
+                    index === lineAt
+                      ? styles.lineMoveCurrent
+                      : lineAt !== null && index > lineAt
+                        ? styles.lineMoveAhead
+                        : undefined
+                  }
+                  testID={
+                    index === lineAt ? `${testID}-line-current` : undefined
+                  }
+                >
+                  {move.san}
+                </Text>{' '}
               </Text>
             ))}
           </Text>
@@ -109,9 +125,11 @@ export default ReviewBubble;
 const COACH_SIZE = 40;
 
 const useStyles = makeStyles((t) => ({
+  // The coach at the top, beside the heading: a long comment grows down
+  // over the board, and the coach stays clear of it.
   row: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
     gap: t.spacing.sm,
     width: '100%',
   },
@@ -128,7 +146,7 @@ const useStyles = makeStyles((t) => ({
     gap: t.spacing.xs,
     padding: t.spacing.md,
     borderRadius: t.radius.lg,
-    borderBottomLeftRadius: t.radius.xs,
+    borderTopLeftRadius: t.radius.xs,
     backgroundColor: t.colors.reviewBubble,
     ...t.elevation.sm,
     shadowColor: t.colors.shadow,
@@ -172,6 +190,14 @@ const useStyles = makeStyles((t) => ({
     color: t.colors.text,
   },
   moveNumber: {
+    color: t.colors.textMuted,
+  },
+  lineMoveCurrent: {
+    fontWeight: t.fontWeight.bold,
+    color: t.colors.text,
+  },
+  // Still to come.
+  lineMoveAhead: {
     color: t.colors.textMuted,
   },
 }));

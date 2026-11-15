@@ -41,6 +41,15 @@ function isOpening(moves: ReviewedMove[], index: number): boolean {
   return index <= Math.max(lastBook, 0) + 20;
 }
 
+type Indexed = { move: ReviewedMove; index: number };
+
+// The worst of some moves: the one that gave away the most.
+function worst(moves: Indexed[]): number | null {
+  if (moves.length === 0) return null;
+  return moves.reduce((a, b) => (b.move.winLoss > a.move.winLoss ? b : a))
+    .index;
+}
+
 export function themeCards(review: GameReview, side: Color): ThemeCard[] {
   const mine = review.moves
     .map((move, index) => ({ move, index }))
@@ -59,21 +68,28 @@ export function themeCards(review: GameReview, side: Color): ThemeCard[] {
         openingSlips.length > 1
           ? THEME_WORDS.opening.slips
           : THEME_WORDS.opening.oneSlip,
+      moveIndex: worst(openingSlips),
     });
   } else if (mine.length > 0) {
     cards.push({
       theme: 'opening',
       title: THEME_WORDS.opening.title,
       text: THEME_WORDS.opening.clean,
+      // Where the opening ends: its last move by the side.
+      moveIndex:
+        mine.filter(({ index }) => isOpening(review.moves, index)).at(-1)
+          ?.index ?? null,
     });
   }
 
-  const tactical = slips.flatMap(({ move }) =>
-    move.facts.filter((fact) => TACTICAL.includes(fact.kind)),
+  const tactical = slips.flatMap(({ move, index }) =>
+    move.facts
+      .filter((fact) => TACTICAL.includes(fact.kind))
+      .map((fact) => ({ fact, move, index })),
   );
   if (tactical.length > 0) {
     const counts = new Map<MoveFact['kind'], number>();
-    for (const fact of tactical) {
+    for (const { fact } of tactical) {
       counts.set(fact.kind, (counts.get(fact.kind) ?? 0) + 1);
     }
     const [commonest] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
@@ -84,6 +100,7 @@ export function themeCards(review: GameReview, side: Color): ThemeCard[] {
         '{cause}',
         THEME_WORDS.tactics.causes[commonest] ?? 'tactics',
       ),
+      moveIndex: worst(tactical.filter(({ fact }) => fact.kind === commonest)),
     });
   }
 
@@ -97,6 +114,7 @@ export function themeCards(review: GameReview, side: Color): ThemeCard[] {
       theme: 'strategy',
       title: THEME_WORDS.strategy.title,
       text: THEME_WORDS.strategy.text,
+      moveIndex: worst(quiet),
     });
   }
 
@@ -107,6 +125,7 @@ export function themeCards(review: GameReview, side: Color): ThemeCard[] {
       theme: 'endgame',
       title: THEME_WORDS.endgame.title,
       text: ahead ? THEME_WORDS.endgame.ahead : THEME_WORDS.endgame.behind,
+      moveIndex: worst(endgameSlips),
     });
   }
 

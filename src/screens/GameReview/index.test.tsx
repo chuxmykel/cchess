@@ -167,9 +167,47 @@ describe('GameReview', () => {
       'Tactics',
     );
     await fireEvent.press(screen.getByTestId('review-next'));
+    // At the move the card's about: 2. Ba6.
     expect(navigation.navigate).toHaveBeenCalledWith('AnalysisBoard', {
-      source: { kind: 'game', gameId: 'game-1', ply: 4 },
+      source: { kind: 'game', gameId: 'game-1', ply: 3 },
     });
+  });
+
+  it('shows each closing card with its move, picked from the tabs', async () => {
+    const { screen } = await renderReview();
+    await toBlunder(screen);
+    await nextMoment(screen);
+
+    await fireEvent.press(screen.getByTestId('tab-tactics'));
+    expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+      'Tactics',
+    );
+    // The board on the blunder it's about.
+    expect(screen.getByTestId('square-badge-a6')).toBeTruthy();
+
+    await fireEvent.press(screen.getByTestId('tab-opening'));
+    expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+      'Opening',
+    );
+  });
+
+  it('goes back to reviewing from the close, a move picked', async () => {
+    const { screen } = await renderReview();
+    await toBlunder(screen);
+    await nextMoment(screen);
+
+    await fireEvent.press(screen.getByTestId('move-1'));
+    await settleAnimations();
+    expect(screen.getByTestId('review-toolbar')).toBeTruthy();
+    expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+      'e4 is a book move',
+    );
+    expect(screen.getByTestId('review-next')).toHaveTextContent('Resume');
+
+    await fireEvent.press(screen.getByTestId('review-next'));
+    expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+      'Opening',
+    );
   });
 
   it('shows the best move, and the line answering the one played', async () => {
@@ -177,8 +215,16 @@ describe('GameReview', () => {
     await toBlunder(screen);
 
     await fireEvent.press(screen.getByTestId('review-show'));
+    await settleAnimations();
     expect(screen.getByTestId('review-bubble-line')).toHaveTextContent(/bxa6/);
-    expect(screen.getByTestId('arrow-b7a6')).toBeTruthy();
+    // Played out on the board: the pawn has taken on a6.
+    expect(screen.getByTestId('piece-a6')).toBeTruthy();
+    expect(screen.queryByTestId('piece-b7')).toBeNull();
+
+    // Hidden, the board's back on the move played.
+    await fireEvent.press(screen.getByTestId('review-show'));
+    await settleAnimations();
+    expect(screen.getByTestId('piece-b7')).toBeTruthy();
 
     await fireEvent.press(screen.getByTestId('review-best'));
     await settleAnimations();

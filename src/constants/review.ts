@@ -68,6 +68,11 @@ export const DEFAULT_REVIEW_SETTINGS: ReviewSettings = {
 // quickly as chess.com's review does.
 export const REVIEW_PLAY_STEP_MS = 170;
 
+// Show plays out the line from a move, one move this often - slower, to
+// follow what it does - this many moves of it.
+export const REVIEW_LINE_STEP_MS = 650;
+export const REVIEW_LINE_SHOWN = 8;
+
 // While a game's analysed, a new chess fact this often.
 export const REVIEW_FACT_MS = 6000;
 

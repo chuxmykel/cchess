@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Chess, Color, Square } from 'chess.js';
 
-import { REVIEW_PLAY_STEP_MS } from '../constants/review';
+import {
+  REVIEW_LINE_SHOWN,
+  REVIEW_LINE_STEP_MS,
+  REVIEW_PLAY_STEP_MS,
+} from '../constants/review';
 import { bestMoveOf, BestMoveView } from '../domain/review/buildReview';
 import { keyMoments, nextKeyMoment } from '../domain/review/keyMoments';
 import type { GameReview, ReviewedMove } from '../domain/review/types';
@@ -46,8 +50,12 @@ export type ReviewStepper = {
   // Stepped away from the moment the review was at - Next returns there.
   isOffPath: boolean;
   mode: ReviewMode;
-  // The engine's line shown, from the move played.
-  showLine: boolean;
+  // Show: the line from the move on the board - the one answering the move
+  // played, or following the best move - played out a move at a time: how
+  // many of its moves are on the board, or null while it's hidden.
+  lineStep: number | null;
+  // The line Show plays, and the position it's played from.
+  line: { fen: string; moves: string[] } | null;
   start: () => void;
   next: () => void;
   back: () => void;
@@ -63,7 +71,8 @@ export type ReviewStepper = {
 // Stepping through a review the way a coach would: Next plays the game on,
 // a move at a time, and stops at each key moment of the side reviewed -
 // tapped again while it plays, it goes straight there; ‹ › go a move at a
-// time, and from any move the best one can be shown, or tried for.
+// time, and from any move the best one can be shown, or tried for, and the
+// line from it played out.
 export function useReviewStepper(
   review: GameReview | null,
   side: Color,
@@ -73,7 +82,9 @@ export function useReviewStepper(
   const [index, setIndex] = useState(-1);
   const [coachIndex, setCoachIndex] = useState(-1);
   const [mode, setMode] = useState<ReviewMode>({ kind: 'move' });
-  const [showLine, setShowLine] = useState(false);
+  const [lineStep, setLineStep] = useState<number | null>(null);
+  // Stepped away from the closing cards: Next goes back to them.
+  const [returnToDone, setReturnToDone] = useState(false);
   // Where the moves are being played to, one at a time - the next key
   // moment, or the end, to close.
   const [playing, setPlaying] = useState<PlayTarget | null>(null);
@@ -84,6 +95,7 @@ export function useReviewStepper(
   const show = useCallback((at: number) => {
     setIndex(at);
     setMode({ kind: 'move' });
+    setLineStep(null);
   }, []);
 
   // Arrived where the moves were played to: stop there.
@@ -125,6 +137,7 @@ export function useReviewStepper(
   // From the start, every move played up to the first key moment.
   const start = useCallback(() => {
     setPhase('stepping');
+    setReturnToDone(false);
     setCoachIndex(-1);
     show(-1);
     playOnFrom(-1);
@@ -136,16 +149,27 @@ export function useReviewStepper(
       arrive(playing);
       return;
     }
+    if (returnToDone) {
+      setReturnToDone(false);
+      setPhase('done');
+      show(coachIndex);
+      return;
+    }
     if (index !== coachIndex) {
       show(coachIndex);
       return;
     }
     playOnFrom(index);
-  }, [playing, index, coachIndex, show, arrive, playOnFrom]);
+  }, [playing, returnToDone, index, coachIndex, show, arrive, playOnFrom]);
 
   const goTo = useCallback(
     (at: number) => {
       if (phase === 'summary') setPhase('stepping');
+      // Off the closing cards, back to the moves - Next returns to them.
+      if (phase === 'done') {
+        setPhase('stepping');
+        setReturnToDone(true);
+      }
       setPlaying(null);
       show(Math.max(-1, Math.min(last, at)));
     },
@@ -158,6 +182,7 @@ export function useReviewStepper(
 
   const toggleBest = useCallback(() => {
     if (!move) return;
+    setLineStep(null);
     if (mode.kind === 'best') {
       setMode({ kind: 'move' });
       return;
@@ -167,7 +192,9 @@ export function useReviewStepper(
   }, [move, mode, review]);
 
   const retry = useCallback(() => {
-    if (move) setMode({ kind: 'retry', tried: null });
+    if (!move) return;
+    setLineStep(null);
+    setMode({ kind: 'retry', tried: null });
   }, [move]);
 
   const tryMove = useCallback(
@@ -206,10 +233,37 @@ export function useReviewStepper(
     [move, mode, judge],
   );
 
-  const toggleLine = useCallback(() => setShowLine((shown) => !shown), []);
+  const line = useMemo(() => {
+    if (!move) return null;
+    if (mode.kind === 'best') {
+      return { fen: mode.best.fenAfter, moves: move.bestLine.slice(1) };
+    }
+    if (mode.kind === 'move') {
+      return { fen: move.fenAfter, moves: move.replyLine };
+    }
+    return null;
+  }, [move, mode]);
+  const lineLength = Math.min(line?.moves.length ?? 0, REVIEW_LINE_SHOWN);
+
+  // Shown, the line's first move at once; hidden, the board back as it was.
+  const toggleLine = useCallback(() => {
+    setLineStep((step) => (step === null && lineLength > 0 ? 1 : null));
+  }, [lineLength]);
+
+  // Then the rest of it, a move at a time.
+  useEffect(() => {
+    if (lineStep === null || lineStep >= lineLength) return;
+    const timer = setTimeout(
+      () => setLineStep((step) => (step === null ? null : step + 1)),
+      REVIEW_LINE_STEP_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [lineStep, lineLength]);
+
   const backToSummary = useCallback(() => {
     setPhase('summary');
     setPlaying(null);
+    setReturnToDone(false);
     show(-1);
   }, [show]);
 
@@ -219,9 +273,13 @@ export function useReviewStepper(
     move,
     moments,
     isPlaying: playing !== null,
-    isOffPath: phase === 'stepping' && !playing && index !== coachIndex,
+    isOffPath:
+      phase === 'stepping' &&
+      !playing &&
+      (returnToDone || index !== coachIndex),
     mode,
-    showLine,
+    lineStep,
+    line,
     start,
     next,
     back,

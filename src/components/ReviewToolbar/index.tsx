@@ -9,6 +9,7 @@ interface ReviewToolbarProps {
   onRetry?: () => void;
   showingLine: boolean;
   onToggleLine: () => void;
+  canShowLine: boolean;
   showingBest: boolean;
   onToggleBest: () => void;
   canShowBest: boolean;
@@ -17,12 +18,14 @@ interface ReviewToolbarProps {
   onPrimary: () => void;
 }
 
-// Under a review's board: Retry, Show (the engine's line) and Best, and
-// Next - on to the next key moment.
+// Under a review's board: Retry, Show (the line from here, played out on
+// the board - Hide puts it back) and Best, and Next - on to the next key
+// moment.
 const ReviewToolbar: React.FC<ReviewToolbarProps> = ({
   onRetry,
   showingLine,
   onToggleLine,
+  canShowLine,
   showingBest,
   onToggleBest,
   canShowBest,
@@ -45,8 +48,9 @@ const ReviewToolbar: React.FC<ReviewToolbarProps> = ({
         icon={showingLine ? 'eye-off-outline' : 'eye-outline'}
         label={showingLine ? 'Hide' : 'Show'}
         caption={showingLine ? 'Hide' : 'Show'}
-        hint="The engine's line from here"
+        hint="Play out the line from here"
         onPress={onToggleLine}
+        disabled={!canShowLine && !showingLine}
         testID="review-show"
       />
       <ToolbarButton

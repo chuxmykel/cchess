@@ -3,7 +3,10 @@ import { DEFAULT_POSITION } from 'chess.js';
 
 import { buildReview } from '../../domain/review/buildReview';
 import type { PositionEval } from '../../domain/review/types';
-import { REVIEW_PLAY_STEP_MS } from '../../constants/review';
+import {
+  REVIEW_LINE_STEP_MS,
+  REVIEW_PLAY_STEP_MS,
+} from '../../constants/review';
 import { RetryJudge, useReviewStepper } from '../useReviewStepper';
 
 const at = (cp: number, pv: string[]): PositionEval => ({
@@ -185,10 +188,57 @@ describe('useReviewStepper', () => {
     });
   });
 
-  it('shows the engine line when asked', async () => {
+  it('plays out the line from a move, and puts the board back on Hide', async () => {
     const { result } = await renderStepper();
-    expect(result.current.showLine).toBe(false);
+    await act(async () => result.current.goTo(2));
+    expect(result.current.lineStep).toBeNull();
+    expect(result.current.line).toEqual({
+      fen: REVIEW.moves[2].fenAfter,
+      moves: ['b7a6', 'g1f3'],
+    });
+
     await act(async () => result.current.toggleLine());
-    expect(result.current.showLine).toBe(true);
+    expect(result.current.lineStep).toBe(1);
+    await act(async () => jest.advanceTimersByTime(REVIEW_LINE_STEP_MS));
+    expect(result.current.lineStep).toBe(2);
+    // The end of the line: it stays there.
+    await act(async () => jest.advanceTimersByTime(REVIEW_LINE_STEP_MS * 3));
+    expect(result.current.lineStep).toBe(2);
+
+    await act(async () => result.current.toggleLine());
+    expect(result.current.lineStep).toBeNull();
+  });
+
+  it('plays the line on from the best move, once shown', async () => {
+    const { result } = await renderStepper();
+    await act(async () => result.current.goTo(2));
+    await act(async () => result.current.toggleBest());
+    expect(result.current.line?.moves).toEqual(['b8c6']);
+  });
+
+  it('hides the line on another move', async () => {
+    const { result } = await renderStepper();
+    await act(async () => result.current.goTo(2));
+    await act(async () => result.current.toggleLine());
+    await act(async () => result.current.forward());
+    expect(result.current.lineStep).toBeNull();
+  });
+
+  it('goes back to the moves from the close, and Resume returns there', async () => {
+    const { result } = await renderStepper();
+    await act(async () => result.current.start());
+    await play(2);
+    await act(async () => result.current.next());
+    await play(1);
+    await act(async () => result.current.next());
+    await play(2);
+    expect(result.current.phase).toBe('done');
+
+    await act(async () => result.current.goTo(1));
+    expect(result.current.phase).toBe('stepping');
+    expect(result.current.isOffPath).toBe(true);
+
+    await act(async () => result.current.next());
+    expect(result.current.phase).toBe('done');
   });
 });
