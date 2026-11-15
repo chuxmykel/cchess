@@ -38,6 +38,12 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
             onPress: () => navigation.navigate('DailyGameSettings'),
             testID: 'daily-game-settings-row',
           },
+          {
+            label: 'Game review',
+            icon: 'lightbulb-on-outline',
+            onPress: () => navigation.navigate('ReviewSettings'),
+            testID: 'review-settings-row',
+          },
         ]}
       />
       <ActionList

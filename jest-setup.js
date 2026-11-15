@@ -27,6 +27,30 @@ jest.mock('expo-audio', () => {
   };
 });
 
+// expo-speech's native module isn't there under Jest: what's said is kept
+// by the mock's `speak`, and the voices are a basic and an enhanced one.
+jest.mock('expo-speech', () => ({
+  speak: jest.fn(),
+  stop: jest.fn(() => Promise.resolve()),
+  getAvailableVoicesAsync: jest.fn(() =>
+    Promise.resolve([
+      {
+        identifier: 'com.apple.voice.compact.en-US.Samantha',
+        name: 'Samantha',
+        quality: 'Default',
+        language: 'en-US',
+      },
+      {
+        identifier: 'com.apple.voice.enhanced.en-GB.Daniel',
+        name: 'Daniel',
+        quality: 'Enhanced',
+        language: 'en-GB',
+      },
+    ]),
+  ),
+  VoiceQuality: { Default: 'Default', Enhanced: 'Enhanced' },
+}));
+
 // jest-expo makes every asset `1`; tell the sounds apart, so a test can
 // see which one played.
 jest.mock('./src/constants/sounds', () => ({

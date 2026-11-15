@@ -6,8 +6,10 @@ import {
   type ScrollViewInstance,
 } from 'react-native';
 
+import MoveClassIcon from '../MoveClassIcon';
+import type { MoveClass } from '../../domain/review/types';
 import { GameMoveSummary } from '../../network/socketEvents';
-import { makeStyles } from '../../theme';
+import { makeStyles, useTheme } from '../../theme';
 
 /** What the list shows of each move. */
 export type MoveListMove = Pick<GameMoveSummary, 'ply' | 'color' | 'san'>;
@@ -16,9 +18,23 @@ interface MoveListProps {
   moves: readonly MoveListMove[];
   currentPly: number;
   onSelectPly: (ply: number) => void;
+  /** A review's class for each move, by ply: the standouts and slips
+   * marked, in their colors. */
+  moveClasses?: Partial<Record<number, MoveClass>>;
 }
 
 export const MOVE_LIST_HEIGHT = 32;
+
+// The classes worth marking in a list - the rest read as plain moves.
+const MARKED_CLASSES: MoveClass[] = [
+  'brilliant',
+  'great',
+  'book',
+  'inaccuracy',
+  'mistake',
+  'miss',
+  'blunder',
+];
 
 const VISIBLE_WIDTH_BEFORE_CURRENT_MOVE = 48;
 
@@ -30,8 +46,10 @@ const MoveList: React.FC<MoveListProps> = ({
   moves,
   currentPly,
   onSelectPly,
+  moveClasses,
 }) => {
   const styles = useStyles();
+  const { colors } = useTheme();
 
   const scrollRef = useRef<ScrollViewInstance>(null);
   const moveXOffsetsByPly = useRef(new Map<number, number>());
@@ -58,6 +76,8 @@ const MoveList: React.FC<MoveListProps> = ({
       {moves.map((move) => {
         const isWhiteMove = move.color === 'w';
         const isCurrent = move.ply === currentPly;
+        const moveClass = moveClasses?.[move.ply];
+        const isMarked = !!moveClass && MARKED_CLASSES.includes(moveClass);
         return (
           <Fragment key={move.ply}>
             {isWhiteMove && (
@@ -76,7 +96,17 @@ const MoveList: React.FC<MoveListProps> = ({
               accessibilityState={{ selected: isCurrent }}
               testID={`move-${move.ply}`}
             >
-              <Text style={[styles.san, isCurrent && styles.currentSan]}>
+              {isMarked && <MoveClassIcon moveClass={moveClass} size={16} />}
+              <Text
+                style={[
+                  styles.san,
+                  isCurrent && styles.currentSan,
+                  isMarked &&
+                    moveClass !== 'book' && {
+                      color: colors.moveClass[moveClass],
+                    },
+                ]}
+              >
                 {move.san}
               </Text>
             </Pressable>
@@ -105,6 +135,9 @@ const useStyles = makeStyles((t) => ({
     marginLeft: t.spacing.sm,
   },
   move: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.spacing.xs,
     paddingHorizontal: t.spacing.sm,
     paddingVertical: t.spacing.xs,
     borderRadius: t.radius.xs,

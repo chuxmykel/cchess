@@ -62,4 +62,19 @@ describe('MoveList', () => {
     expect(screen.getByTestId('move-list')).toBeTruthy();
     expect(screen.queryByTestId(/^move-\d/)).toBeNull();
   });
+
+  it("marks a review's standouts and slips, not its ordinary moves", async () => {
+    const screen = await render(
+      <MoveList
+        moves={THREE_MOVES}
+        currentPly={3}
+        onSelectPly={jest.fn()}
+        moveClasses={{ 1: 'book', 2: 'best', 3: 'blunder' }}
+      />,
+    );
+
+    expect(screen.getByTestId('move-class-book')).toBeTruthy();
+    expect(screen.queryByTestId('move-class-best')).toBeNull();
+    expect(screen.getByTestId('move-class-blunder')).toBeTruthy();
+  });
 });

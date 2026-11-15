@@ -1,4 +1,6 @@
-import { GameSnapshot } from '../network/socketEvents';
+import { Chess } from 'chess.js';
+
+import { GameMoveSummary, GameSnapshot } from '../network/socketEvents';
 
 export const STARTING_FEN =
   'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -54,4 +56,42 @@ export function makeGameSnapshot(
     rematchGameId: null,
     ...overrides,
   };
+}
+
+// A game's moves as the server sends them, from SAN played out from the
+// start.
+export function movesFromSan(sans: string[]): GameMoveSummary[] {
+  const chess = new Chess();
+  return sans.map((san, index) => {
+    const move = chess.move(san);
+    return {
+      ply: index + 1,
+      from: move.from,
+      to: move.to,
+      piece: move.piece,
+      color: move.color,
+      san: move.san,
+      captured: move.captured ?? null,
+      promotion: move.promotion ?? null,
+      fenAfter: move.after,
+      clockAfterMs: 300_000,
+    };
+  });
+}
+
+// A game played to its end - resigned, unless overridden - with these moves.
+export function makeFinishedGame(
+  sans: string[],
+  overrides: Partial<GameSnapshot> = {},
+): GameSnapshot {
+  const moves = movesFromSan(sans);
+  return makeGameSnapshot({
+    status: 'completed',
+    result: 'black',
+    resultReason: 'resignation',
+    moves,
+    fen: moves[moves.length - 1]?.fenAfter ?? STARTING_FEN,
+    endedAt: '2026-01-01T00:10:00.000Z',
+    ...overrides,
+  });
 }
