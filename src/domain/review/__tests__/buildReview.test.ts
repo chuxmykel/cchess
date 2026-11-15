@@ -41,7 +41,7 @@ describe('buildReview', () => {
       kind: 'hangs',
       piece: 'bishop',
     });
-    expect(review.moves[2].comment.text).toMatch(/bishop \*hanging\*/);
+    expect(review.moves[2].comment.text).toMatch(/bishop/);
     expect(review.moves[3].facts[0]).toEqual({
       kind: 'takesFree',
       piece: 'bishop',

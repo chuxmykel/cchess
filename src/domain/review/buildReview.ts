@@ -1,11 +1,11 @@
-import { Chess, Color, Move } from 'chess.js';
+import { Chess, Color, Move, Square } from 'chess.js';
 
 import { EngineScore, pvToSan } from '../evalScore';
 import { bookOpeningAt, openingAt } from '../openings';
 import { gameAccuracy, moveAccuracy } from './accuracy';
 import { classifyMove } from './classifyMove';
 import { gameRating } from './gameRating';
-import { isSacrifice, materialGivenUp, moveFacts } from './motifs';
+import { isSacrifice, materialGivenUp, moveFacts, pieceName } from './motifs';
 import { commentFor, seedOf } from './phrases';
 import {
   ClassCounts,
@@ -109,7 +109,11 @@ export function buildReview(
       moveClass,
       facts,
       comment: commentFor(
-        { san: move.san, moveClass, bestSan },
+        {
+          san: move.san,
+          moveClass,
+          bestPiece: bestPieceOf(move.before, before.pv[0]),
+        },
         facts,
         seedOf(`${seed}:${ply}`),
       ),
@@ -136,6 +140,14 @@ export function buildReview(
       99,
     ),
   };
+}
+
+// The piece that makes a move, by name - a hint at the better move.
+function bestPieceOf(fen: string, uci: string | undefined): string | null {
+  if (!uci) return null;
+  const piece = new Chess(fen).get(uci.slice(0, 2) as Square);
+  if (!piece) return null;
+  return piece.type === 'k' ? 'king' : pieceName(piece.type);
 }
 
 // How much of the score a move gave away, in centipawns from the mover's
@@ -214,7 +226,7 @@ export function bestMoveOf(move: ReviewedMove, seed = ''): BestMoveView | null {
     fenAfter: played.after,
     facts,
     comment: commentFor(
-      { san: played.san, moveClass: 'best', bestSan: null },
+      { san: played.san, moveClass: 'best', bestPiece: null },
       facts,
       seedOf(`${seed}:best:${move.ply}`),
     ),

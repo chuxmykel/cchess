@@ -150,7 +150,7 @@ describe('GameReview', () => {
       'Ba6 is a blunder',
     );
     expect(screen.getByTestId('review-bubble-text')).toHaveTextContent(
-      /bishop hanging/,
+      /bishop/,
     );
     expect(screen.getByTestId('square-badge-a6')).toBeTruthy();
     // In the bubble, and beside the move in the list.

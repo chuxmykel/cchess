@@ -16,7 +16,7 @@ describe('phrases', () => {
 
   it('says the first fact, filled in', () => {
     const comment = commentFor(
-      { san: 'Bg3', moveClass: 'mistake', bestSan: 'Nd2' },
+      { san: 'Bg3', moveClass: 'mistake', bestPiece: 'knight' },
       [{ kind: 'trapped', piece: 'bishop' }],
       0,
     );
@@ -31,27 +31,54 @@ describe('phrases', () => {
   it('chooses among wordings by the seed', () => {
     const say = (seed: number) =>
       commentFor(
-        { san: 'Bg3', moveClass: 'blunder', bestSan: null },
+        { san: 'Bg3', moveClass: 'blunder', bestPiece: null },
         [{ kind: 'hangs', piece: 'rook' }],
         seed,
       ).text;
     expect(say(0)).not.toBe(say(1));
-    expect(say(0)).toBe(say(2));
+    expect(say(0)).toBe(say(5));
   });
 
-  it('names the better move for a slip with nothing more to say', () => {
+  it('hints at the better move for a slip, without naming it', () => {
     const comment = commentFor(
-      { san: 'a3', moveClass: 'inaccuracy', bestSan: 'Nf3' },
+      { san: 'a3', moveClass: 'inaccuracy', bestPiece: 'knight' },
       [{ kind: 'slips' }],
       0,
     );
-    expect(comment.text).toMatch(/Nf3 was best\.$/);
-    expect(comment.spoken).toMatch(/knight f3 was best\.$/);
+    expect(comment.text).toContain('knight');
+    expect(comment.text).not.toMatch(/Nf3|f3/);
+    expect(comment.spoken).toContain('knight');
+  });
+
+  it('words each kind of slip its own way', () => {
+    const say = (moveClass: 'inaccuracy' | 'blunder') =>
+      commentFor({ san: 'a3', moveClass, bestPiece: null }, [], 0).text;
+    expect(say('inaccuracy')).not.toBe(say('blunder'));
+  });
+
+  it('never talks about an engine', () => {
+    for (let seed = 0; seed < 40; seed++) {
+      for (const moveClass of [
+        'best',
+        'great',
+        'excellent',
+        'good',
+        'mistake',
+      ] as const) {
+        const { text } = commentFor(
+          { san: 'Nf3', moveClass, bestPiece: 'bishop' },
+          [{ kind: 'slips' }],
+          seed,
+        );
+        expect(text).not.toMatch(/engine/i);
+      }
+    }
   });
 
   it('falls back on the class when there’s no fact', () => {
     expect(
-      commentFor({ san: 'Nf3', moveClass: 'best', bestSan: 'Nf3' }, [], 0).text,
+      commentFor({ san: 'Nf3', moveClass: 'best', bestPiece: null }, [], 0)
+        .text,
     ).toBe('The best move in the position.');
   });
 
