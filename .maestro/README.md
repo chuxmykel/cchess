@@ -80,6 +80,12 @@ on another's leftover state, and they can run in any order.
   (`analysis-variations.yaml` - it checks a line is there, never what it
   says, since engine output varies), and a pasted FEN analysed
   (`analysis-paste-fen.yaml`).
+- **Game review** (`needs-live-server`, signed in, with a finished game
+  on Home - a fresh launch keeps the account, see the header of
+  `game-review.yaml`): the newest game's review, analysed on the device
+  or fetched, its summary, Next to a key moment, Show, Best and stepping
+  away to Resume (`game-review.yaml` - like the analysis flows, it never
+  checks what the engine said, which varies).
 - **The tabs** (`needs-live-server`, as a guest): Puzzles' coming-soon
   page, Messages asking a guest to sign in, and the Menu opening the
   settings (`tabs.yaml`). Messaging itself needs two signed-in accounts
