@@ -68,7 +68,7 @@ describe('ReviewSettingsForm', () => {
     const without = await renderForm(DEFAULT_REVIEW_SETTINGS, [SAMANTHA]);
     expect(
       without.screen.getByTestId('review-voice-premium-hint'),
-    ).toHaveTextContent(/Spoken Content/);
+    ).toHaveTextContent(/search for Voices/);
 
     const { screen } = await renderForm();
     expect(screen.queryByTestId('review-voice-premium-hint')).toBeNull();
