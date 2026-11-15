@@ -1,7 +1,8 @@
 import { fireEvent, render } from '@testing-library/react-native';
 
-import MoveList from '.';
+import MoveList, { DRAG_STEP_PX } from '.';
 import { GameMoveSummary } from '../../network/socketEvents';
+import { dragSideways } from '../../testUtils/moveListDrag';
 
 function move(ply: number, san: string): GameMoveSummary {
   return {
@@ -76,5 +77,63 @@ describe('MoveList', () => {
     expect(screen.getByTestId('move-class-book')).toBeTruthy();
     expect(screen.queryByTestId('move-class-best')).toBeNull();
     expect(screen.getByTestId('move-class-blunder')).toBeTruthy();
+  });
+
+  it('lists items after the last move, the selected one set off', async () => {
+    const onPress = jest.fn();
+    const screen = await render(
+      <MoveList
+        moves={THREE_MOVES}
+        currentPly={0}
+        onSelectPly={jest.fn()}
+        endItems={[
+          {
+            key: 'opening',
+            icon: 'book-open-page-variant',
+            label: 'Opening',
+            selected: true,
+            onPress: jest.fn(),
+          },
+          {
+            key: 'tactics',
+            icon: 'target',
+            label: 'Tactics',
+            selected: false,
+            onPress,
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByTestId('move-list-end-opening')).toBeSelected();
+    expect(screen.getByTestId('move-list-end-tactics')).not.toBeSelected();
+    await fireEvent.press(screen.getByTestId('move-list-end-tactics'));
+    expect(onPress).toHaveBeenCalled();
+  });
+
+  it('steps through the moves as it is dragged, in the drag direction', async () => {
+    const onDragStep = jest.fn();
+    const screen = await render(
+      <MoveList
+        moves={THREE_MOVES}
+        currentPly={2}
+        onSelectPly={jest.fn()}
+        onDragStep={onDragStep}
+      />,
+    );
+    // Finger to the left: on through the moves, a step per stretch.
+    await dragSideways(-DRAG_STEP_PX * 2 - 5);
+    expect(onDragStep.mock.calls).toEqual([[1], [1]]);
+
+    onDragStep.mockClear();
+    await dragSideways(DRAG_STEP_PX);
+    expect(onDragStep.mock.calls).toEqual([[-1]]);
+  });
+
+  it('scrolls as usual when nothing steps on a drag', async () => {
+    const screen = await render(
+      <MoveList moves={THREE_MOVES} currentPly={2} onSelectPly={jest.fn()} />,
+    );
+    expect(screen.getByTestId('move-list').props.scrollEnabled).toBe(true);
   });
 });
