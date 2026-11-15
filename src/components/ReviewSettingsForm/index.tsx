@@ -129,10 +129,9 @@ const ReviewSettingsForm: React.FC<ReviewSettingsFormProps> = ({
             ) && (
               <Text style={styles.hint} testID="review-voice-premium-hint">
                 For the most natural voice, download a Premium one - Zoe or Ava,
-                say. In the Settings app, search for Voices, then choose
-                English. (Its menu is Spoken Content or Read &amp; Speak under
-                Accessibility, depending on your iOS version.) Once it&apos;s
-                there, the review reads in it.
+                say - in iOS Settings: Accessibility, Read &amp; Speak, Voices,
+                English. (On older iOS, Read &amp; Speak is called Spoken
+                Content.) Once it&apos;s there, the review reads in it.
               </Text>
             )}
           </View>
