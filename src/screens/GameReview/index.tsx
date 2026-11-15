@@ -78,7 +78,7 @@ function progressLabel(
 
 // A finished game's review: worked out on the device the first time - the
 // game played through on the board as it's analysed - or fetched, when
-// someone has already; then stepped through. Its 🔍 opens the analysis
+// someone has already; then stepped through. Its analysis button opens the analysis
 // board at the move shown, and its ⚙ the review's settings.
 const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
   navigation,
@@ -114,7 +114,7 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
   useMoveNavigationSounds(moves, played, false);
 
   // The move shown, as a ply - where the analysis board opens. Read only
-  // when 🔍's pressed.
+  // when the analysis button's pressed.
   const shownPly = useRef<number | null>(null);
   useEffect(() => {
     if (analysing) shownPly.current = played;
@@ -125,40 +125,42 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
 
   useLayoutEffect(() => {
     navigation.setOptions({
+      // One item, so the two sit close together rather than spaced as
+      // separate header buttons are.
       unstable_headerRightItems: () => [
         plainHeaderItem(
-          <Pressable
-            onPress={() =>
-              navigation.navigate('AnalysisBoard', {
-                source: {
-                  kind: 'game',
-                  gameId,
-                  ...(shownPly.current !== null && { ply: shownPly.current }),
-                },
-              })
-            }
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Analyse"
-            testID="review-analyse-button"
-          >
-            <Icon name="magnify" size={24} />
-          </Pressable>,
-        ),
-        plainHeaderItem(
-          <Pressable
-            onPress={() => navigation.navigate('ReviewSettings')}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Review settings"
-            testID="review-settings-button"
-          >
-            <Icon name="cog-outline" size={24} />
-          </Pressable>,
+          <View style={styles.headerButtons}>
+            <Pressable
+              onPress={() =>
+                navigation.navigate('AnalysisBoard', {
+                  source: {
+                    kind: 'game',
+                    gameId,
+                    ...(shownPly.current !== null && { ply: shownPly.current }),
+                  },
+                })
+              }
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Analyse"
+              testID="review-analyse-button"
+            >
+              <Icon name="head-cog-outline" size={24} />
+            </Pressable>
+            <Pressable
+              onPress={() => navigation.navigate('ReviewSettings')}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Review settings"
+              testID="review-settings-button"
+            >
+              <Icon name="cog-outline" size={24} />
+            </Pressable>
+          </View>,
         ),
       ],
     });
-  }, [navigation, gameId]);
+  }, [navigation, gameId, styles]);
 
   if (state.status === 'loading') {
     return (
@@ -246,6 +248,11 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
 export default GameReview;
 
 const useStyles = makeStyles((t) => ({
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.spacing.lg,
+  },
   screen: {
     flex: 1,
     backgroundColor: t.colors.background,

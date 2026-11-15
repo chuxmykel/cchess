@@ -38,7 +38,7 @@ interface GameReviewContentProps {
   width: number;
   // Opens the analysis board at a move - the number of moves in.
   onAnalyse: (ply: number) => void;
-  // The move shown, as a ply, each time it changes - for the header's 🔍;
+  // The move shown, as a ply, each time it changes - for the header's analysis button;
   // the game's end on the summary.
   onShownPly: (ply: number) => void;
 }

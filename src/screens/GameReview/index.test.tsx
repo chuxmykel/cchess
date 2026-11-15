@@ -417,18 +417,16 @@ describe('GameReview', () => {
     );
   });
 
-  // One of the header's items, drawn on its own: 0 the 🔍, 1 the ⚙.
-  async function headerItem(
-    navigation: { setOptions: jest.Mock },
-    index: 0 | 1,
-  ) {
+  // The header's buttons, drawn on their own.
+  async function headerButtons(navigation: { setOptions: jest.Mock }) {
     const [options] = navigation.setOptions.mock.calls.at(-1);
-    return render(options.unstable_headerRightItems()[index].element);
+    const [item] = options.unstable_headerRightItems();
+    return render(item.element);
   }
 
   it('opens its settings from the header', async () => {
     const { navigation } = await renderReview();
-    const settings = await headerItem(navigation, 1);
+    const settings = await headerButtons(navigation);
 
     await fireEvent.press(settings.getByTestId('review-settings-button'));
     expect(navigation.navigate).toHaveBeenCalledWith('ReviewSettings');
@@ -437,7 +435,7 @@ describe('GameReview', () => {
   it('opens the analysis board at the move shown, from the header', async () => {
     const { screen, navigation } = await renderReview();
     await toBlunder(screen);
-    const analyse = await headerItem(navigation, 0);
+    const analyse = await headerButtons(navigation);
 
     await fireEvent.press(analyse.getByTestId('review-analyse-button'));
     // 2. Ba6, the third move.
