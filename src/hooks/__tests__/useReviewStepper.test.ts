@@ -84,7 +84,15 @@ describe('useReviewStepper', () => {
     expect(result.current.phase).toBe('stepping');
     await play(1);
     expect(result.current.move?.san).toBe('Nf3');
+    expect(result.current.phase).toBe('stepping');
+
+    // Then the closing cards, one at a time, after the last move.
+    await play(1);
     expect(result.current.phase).toBe('done');
+    expect(result.current.card?.theme).toBe('opening');
+    expect(result.current.move).toBeNull();
+    await act(async () => result.current.next());
+    expect(result.current.card?.theme).toBe('tactics');
   });
 
   it('goes straight to the key moment when Next is tapped as it plays', async () => {
@@ -109,19 +117,32 @@ describe('useReviewStepper', () => {
     expect(result.current.isPlaying).toBe(false);
   });
 
-  it('returns to where it was after stepping away', async () => {
+  it('plays on from wherever it was stepped to', async () => {
     const { result } = await renderStepper();
     await act(async () => result.current.start());
     await play(2);
-    await act(async () => result.current.forward());
-    await act(async () => result.current.forward());
+    // On past the blunder, then back to before it.
+    await act(async () => result.current.goTo(3));
+    await act(async () => result.current.goTo(0));
 
-    expect(result.current.move?.san).toBe('bxa6');
-    expect(result.current.isOffPath).toBe(true);
-
+    // Next plays on from e4, as if the review had come that way: to e5.
     await act(async () => result.current.next());
+    await play(1);
     expect(result.current.move?.san).toBe('e5');
-    expect(result.current.isOffPath).toBe(false);
+    await act(async () => result.current.next());
+    await play(1);
+    expect(result.current.move?.san).toBe('Ba6');
+  });
+
+  it('steps by more than one at once, from where it is', async () => {
+    const { result } = await renderStepper();
+    await act(async () => {
+      result.current.stepBy(1);
+      result.current.stepBy(1);
+    });
+    expect(result.current.index).toBe(1);
+    await act(async () => result.current.stepBy(-5));
+    expect(result.current.index).toBe(-1);
   });
 
   it('steps back as far as the start, and no further', async () => {
@@ -224,21 +245,26 @@ describe('useReviewStepper', () => {
     expect(result.current.lineStep).toBeNull();
   });
 
-  it('goes back to the moves from the close, and Resume returns there', async () => {
+  it('goes back to the moves from the close, and plays on from there', async () => {
     const { result } = await renderStepper();
-    await act(async () => result.current.start());
-    await play(2);
-    await act(async () => result.current.next());
-    await play(1);
-    await act(async () => result.current.next());
-    await play(2);
+    await act(async () => result.current.goTo(5));
     expect(result.current.phase).toBe('done');
 
-    await act(async () => result.current.goTo(1));
+    await act(async () => result.current.goTo(2));
     expect(result.current.phase).toBe('stepping');
-    expect(result.current.isOffPath).toBe(true);
+    expect(result.current.move?.san).toBe('Ba6');
 
+    // On through the last moves, then the first card again.
     await act(async () => result.current.next());
-    expect(result.current.phase).toBe('done');
+    await play(3);
+    expect(result.current.card?.theme).toBe('opening');
+  });
+
+  it('goes no further than the last card', async () => {
+    const { result } = await renderStepper();
+    await act(async () => result.current.goTo(99));
+    expect(result.current.card?.theme).toBe('tactics');
+    await act(async () => result.current.next());
+    expect(result.current.card?.theme).toBe('tactics');
   });
 });

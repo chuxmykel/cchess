@@ -11,16 +11,10 @@ import MoveList from '../../components/MoveList';
 import ReviewBubble from '../../components/ReviewBubble';
 import ReviewSummary from '../../components/ReviewSummary';
 import ReviewToolbar from '../../components/ReviewToolbar';
-import SegmentedTabs from '../../components/SegmentedTabs';
 import { ReviewSettings } from '../../constants/review';
 import { defeatedColor } from '../../domain/players';
 import { introLine, IntroContext, seedOf } from '../../domain/review/phrases';
-import { themeCards } from '../../domain/review/themes';
-import type {
-  GameReview,
-  MoveClass,
-  ReviewTheme,
-} from '../../domain/review/types';
+import type { GameReview, MoveClass } from '../../domain/review/types';
 import { reviewView } from '../../hooks/reviewView';
 import {
   useBrilliantSound,
@@ -47,7 +41,7 @@ interface GameReviewContentProps {
 }
 
 // The room kept above the board for the bubble: its heading and two lines of
-// words - more runs on over the eval bar and the board.
+// words - more runs on over the board.
 const BUBBLE_ROOM = 104;
 
 const THEME_ICONS = {
@@ -111,11 +105,10 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
   const isRetrying = stepper.mode.kind === 'retry';
   if (isRetrying !== retrying) setRetrying(isRetrying);
   const voice = useReviewVoice(settings.voice, settings.voiceId);
-  const themes = useMemo(() => themeCards(review, side), [review, side]);
-  const [themeIndex, setThemeIndex] = useState(0);
-  const theme = stepper.phase === 'done' ? (themes[themeIndex] ?? null) : null;
-  // The move shown: on a closing card, the move it's about.
-  const shownIndex = theme?.moveIndex ?? stepper.index;
+  const theme = stepper.card;
+  const lastIndex = review.moves.length - 1;
+  // The move on the board: on a closing card, the last.
+  const shownIndex = Math.min(stepper.index, lastIndex);
   const intro = useMemo(
     () =>
       introLine(
@@ -223,31 +216,23 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
     ['inaccuracy', 'mistake', 'miss', 'blunder'].includes(
       stepper.move.moveClass,
     );
-  const primary =
-    stepper.phase === 'done'
-      ? themeIndex < themes.length - 1
-        ? { label: 'Next', onPress: () => setThemeIndex((i) => i + 1) }
-        : { label: 'Analyse', onPress: () => onAnalyse(shownIndex + 1) }
-      : stepper.isPlaying
-        ? { label: 'Skip', onPress: stepper.next }
-        : stepper.isOffPath
-          ? { label: 'Resume', onPress: stepper.next }
-          : { label: 'Next', onPress: stepper.next };
+  const atEnd = stepper.index >= lastIndex + stepper.cards.length;
+  const primary = atEnd
+    ? { label: 'Analyse', onPress: () => onAnalyse(shownIndex + 1) }
+    : stepper.isPlaying
+      ? { label: 'Skip', onPress: stepper.next }
+      : { label: 'Next', onPress: stepper.next };
 
   return (
     <View style={styles.screen} testID="game-review-stepping">
+      {settings.evalBar && (
+        <EvalBar score={view.score} direction="horizontal" orientation={side} />
+      )}
       {/* The bubble sits over the top of this, in room kept for it: words
-          longer than that run on over the eval bar and the board, rather
-          than pushing the board down. */}
+          longer than that run on over the board, rather than pushing it
+          down. */}
       <View>
         <View style={styles.bubbleRoom} />
-        {settings.evalBar && (
-          <EvalBar
-            score={view.score}
-            direction="horizontal"
-            orientation={side}
-          />
-        )}
         <ReviewBoard
           fen={view.fen}
           width={width}
@@ -279,26 +264,34 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
         <ToolbarButton
           icon="chevron-left"
           label="Back"
-          onPress={() => stepper.goTo(shownIndex - 1)}
-          disabled={shownIndex < 0}
+          onPress={stepper.back}
+          disabled={stepper.index < 0}
           repeatsWhileHeld
           testID="review-back"
         />
         <View style={styles.moveList}>
           <MoveList
             moves={review.moves}
-            currentPly={review.moves[shownIndex]?.ply ?? 0}
+            currentPly={stepper.card ? 0 : (review.moves[shownIndex]?.ply ?? 0)}
             onSelectPly={(ply) =>
               stepper.goTo(review.moves.findIndex((m) => m.ply === ply))
             }
             moveClasses={moveClasses}
+            endItems={stepper.cards.map((card, i) => ({
+              key: card.theme,
+              icon: THEME_ICONS[card.theme],
+              label: card.title,
+              selected: stepper.card === card,
+              onPress: () => stepper.goTo(lastIndex + 1 + i),
+            }))}
+            onDragStep={stepper.stepBy}
           />
         </View>
         <ToolbarButton
           icon="chevron-right"
           label="Forward"
-          onPress={() => stepper.goTo(shownIndex + 1)}
-          disabled={atLastMove}
+          onPress={stepper.forward}
+          disabled={atEnd}
           repeatsWhileHeld
           testID="review-forward"
         />
@@ -306,26 +299,11 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
       <View style={styles.footer}>
         {stepper.phase === 'done' ? (
           <>
-            {themes.length > 1 && (
-              <SegmentedTabs<ReviewTheme>
-                tabs={themes.map((card) => ({
-                  key: card.theme,
-                  label: card.title,
-                }))}
-                selected={themes[themeIndex]?.theme ?? themes[0].theme}
-                onSelect={(key) =>
-                  setThemeIndex(themes.findIndex((card) => card.theme === key))
-                }
-              />
-            )}
             <View style={styles.doneBar}>
               <Button
                 label="Summary"
                 variant="outline"
-                onPress={() => {
-                  setThemeIndex(0);
-                  stepper.backToSummary();
-                }}
+                onPress={stepper.backToSummary}
                 style={styles.doneButton}
                 testID="review-summary-button"
               />

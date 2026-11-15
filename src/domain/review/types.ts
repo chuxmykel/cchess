@@ -103,14 +103,7 @@ export type SideReview = {
 // The themes a review closes on.
 export type ReviewTheme = 'opening' | 'tactics' | 'strategy' | 'endgame';
 
-export type ThemeCard = {
-  theme: ReviewTheme;
-  title: string;
-  text: string;
-  // The move it's about, shown on the board with it - an index into the
-  // review's moves - or null for none in particular.
-  moveIndex: number | null;
-};
+export type ThemeCard = { theme: ReviewTheme; title: string; text: string };
 
 export type GameReview = {
   startFen: string;

@@ -84,7 +84,7 @@ on another's leftover state, and they can run in any order.
   on Home - a fresh launch keeps the account, see the header of
   `game-review.yaml`): the newest game's review, analysed on the device
   or fetched, its summary, Next to a key moment, Show, Best and stepping
-  away to Resume (`game-review.yaml` - like the analysis flows, it never
+  back, the review going on from there (`game-review.yaml` - like the analysis flows, it never
   checks what the engine said, which varies).
 - **The tabs** (`needs-live-server`, as a guest): Puzzles' coming-soon
   page, Messages asking a guest to sign in, and the Menu opening the

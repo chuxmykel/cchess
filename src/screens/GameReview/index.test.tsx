@@ -3,6 +3,7 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 import * as Speech from 'expo-speech';
 
 import GameReview from '.';
+import { DRAG_STEP_PX } from '../../components/MoveList';
 import { REVIEW_FACT_MS } from '../../constants/review';
 import { EngineContext, EngineStatus } from '../../context/EngineContext';
 import { ReviewSettingsProvider } from '../../context/ReviewSettingsContext';
@@ -13,6 +14,7 @@ import {
   saveGameReview,
 } from '../../network/restClient';
 import { makeFakeEngine } from '../../testUtils/fakeEngine';
+import { dragSideways } from '../../testUtils/moveListDrag';
 import { makeFinishedGame } from '../../testUtils/gameSnapshot';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { settleAnimations } from '../../testUtils/pieceGestures';
@@ -167,31 +169,28 @@ describe('GameReview', () => {
       'Tactics',
     );
     await fireEvent.press(screen.getByTestId('review-next'));
-    // At the move the card's about: 2. Ba6.
+    // From the game's last position.
     expect(navigation.navigate).toHaveBeenCalledWith('AnalysisBoard', {
-      source: { kind: 'game', gameId: 'game-1', ply: 3 },
+      source: { kind: 'game', gameId: 'game-1', ply: 4 },
     });
   });
 
-  it('shows each closing card with its move, picked from the tabs', async () => {
+  it('lists the closing cards after the last move, each picked there', async () => {
     const { screen } = await renderReview();
     await toBlunder(screen);
     await nextMoment(screen);
 
-    await fireEvent.press(screen.getByTestId('tab-tactics'));
+    expect(screen.getByTestId('move-list-end-opening')).toBeSelected();
+    await fireEvent.press(screen.getByTestId('move-list-end-tactics'));
     expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
       'Tactics',
     );
-    // The board on the blunder it's about.
-    expect(screen.getByTestId('square-badge-a6')).toBeTruthy();
-
-    await fireEvent.press(screen.getByTestId('tab-opening'));
-    expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
-      'Opening',
-    );
+    expect(screen.getByTestId('move-list-end-tactics')).toBeSelected();
+    // On the game's last position.
+    expect(screen.getByTestId('piece-a6')).toBeTruthy();
   });
 
-  it('goes back to reviewing from the close, a move picked', async () => {
+  it('goes back to reviewing from the close, playing on from there', async () => {
     const { screen } = await renderReview();
     await toBlunder(screen);
     await nextMoment(screen);
@@ -202,11 +201,24 @@ describe('GameReview', () => {
     expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
       'e4 is a book move',
     );
-    expect(screen.getByTestId('review-next')).toHaveTextContent('Resume');
 
-    await fireEvent.press(screen.getByTestId('review-next'));
+    // Next plays on from e4, as if the review had come that way.
+    expect(screen.getByTestId('review-next')).toHaveTextContent('Next');
+    await nextMoment(screen);
     expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
-      'Opening',
+      'e5 is a book move',
+    );
+  });
+
+  it('steps through the moves as the list is dragged', async () => {
+    const { screen } = await renderReview();
+    await toBlunder(screen);
+
+    // Finger to the right: back a move.
+    await dragSideways(DRAG_STEP_PX + 4);
+    await settleAnimations();
+    expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+      'e5 is a book move',
     );
   });
 
@@ -233,20 +245,19 @@ describe('GameReview', () => {
     );
   });
 
-  it('returns to where it was after stepping away', async () => {
+  it('reviews a move stepped to as if it had come that way', async () => {
     const { screen } = await renderReview();
-    await fireEvent.press(screen.getByTestId('review-start'));
-    await fireEvent.press(screen.getByTestId('review-next'));
+    await toBlunder(screen);
 
+    // Past the blunder, then back to it: Retry's there as before.
     await fireEvent(screen.getByTestId('review-forward'), 'pressIn');
-    await settleAnimations();
-    expect(screen.getByTestId('review-next')).toHaveTextContent('Resume');
-
-    await fireEvent.press(screen.getByTestId('review-next'));
+    await fireEvent(screen.getByTestId('review-back'), 'pressIn');
     await settleAnimations();
     expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
-      'e5 is a book move',
+      'Ba6 is a blunder',
     );
+    expect(screen.getByTestId('review-retry')).toBeEnabled();
+    expect(screen.getByTestId('review-next')).toHaveTextContent('Next');
   });
 
   it('offers to retry a slip, the board set for my move', async () => {

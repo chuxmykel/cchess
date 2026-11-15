@@ -142,7 +142,6 @@ describe('reviewView', () => {
         theme: 'tactics',
         title: 'Tactics',
         text: 'Watch for *forks*.',
-        moveIndex: 2,
       },
     });
 

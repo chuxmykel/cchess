@@ -44,7 +44,9 @@ tags:
     id: "review-best"
 - assertVisible:
     text: ".* is best"
+# A move stepped back to is where the review is: Next plays on from there.
 - tapOn:
     id: "review-back"
 - assertVisible:
-    text: "Resume"
+    id: "review-next"
+    text: "Next"

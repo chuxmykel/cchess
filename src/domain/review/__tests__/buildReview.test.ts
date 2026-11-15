@@ -98,12 +98,6 @@ describe('buildReview', () => {
     expect(cards[1].text).toMatch(/pieces left \*hanging\*/);
   });
 
-  it('shows each closing card with the move it is about', () => {
-    const cards = themeCards(review, 'w');
-    // 2. Ba6??, the bishop left hanging.
-    expect(cards.map((c) => c.moveIndex)).toEqual([2, 2]);
-  });
-
   it("anchors each side's game rating on its rating", () => {
     const rated = buildReview(DEFAULT_POSITION, moves, evals, 'game', {
       w: 2400,
