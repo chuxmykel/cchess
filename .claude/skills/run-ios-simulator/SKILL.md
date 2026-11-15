@@ -294,7 +294,8 @@ resign or abort from the app (see `examples/resign.yaml` /
   `UserProfile`; guests get `sign-in-prompt` instead), the analysis items
   below, `menu-opening-explorer`, `menu-players` (signed in only; opens
   `FindFriends` with its search focused), `menu-settings` (opens `settings-screen`: `appearance-row`,
-  `analysis-settings-row`, `daily-game-settings-row`, `licenses-row` -
+  `analysis-settings-row`, `daily-game-settings-row`,
+  `review-settings-row`, `licenses-row` -
   opens `licenses-screen`) and `sign-out-button`.
 - **Puzzles** (the tab): `puzzles-screen`, `puzzles-coming-soon`.
 - **Appearance**: `appearance-settings`, the radio buttons
@@ -344,6 +345,30 @@ resign or abort from the app (see `examples/resign.yaml` /
   - The engine downloads the first time it's used. `clearState` wipes
     it, so a fresh launch downloads it again: give `engine-line-0` up to
     30s.
+- **Game review** (a screen, from a finished game's `review-button` on
+  the result card or `review-action` in ☰; verified 2026-11-15):
+  `game-review-loading`, `game-review-unavailable`, `game-review-error`,
+  then `game-review-analysing` with `review-progress` (its
+  `review-progress-label`, `review-progress-fill`,
+  `review-progress-retry`); then `game-review-summary`: `review-intro`,
+  `eval-graph` (`eval-graph-dot-<i>`, `eval-graph-cursor`),
+  `review-opening`, `review-accuracy-<w|b>`,
+  `review-count-<w|b>-<class>`, `review-start`. Stepping
+  (`game-review-stepping`): `eval-bar`, `review-bubble` with
+  `-title`, `-score`, `-text`, `-line`; `review-board` with
+  `square-badge-<square>` and `move-class-<class>` marks (also in the
+  move list); `review-back` / `review-forward` beside the `move-list`;
+  `review-toolbar`: `review-retry`, `review-show`, `review-best` and
+  `review-next` (Next / Resume / Analyse); at the close,
+  `review-summary-button`. In Retry, tap a piece then a square (by
+  testID) - the board is the usual `piece-*`/`square-*`. The header's
+  `review-settings-button` opens `review-settings`
+  (`review-setting-<voice|showBestMoves|evalBar>`,
+  `review-voice-<identifier>`, `review-voice-hear-<identifier>`,
+  `review-as-<me|white|black>`, `review-strength-<fast|standard|deep>`);
+  Settings has `review-settings-row`. A 53-ply game took ~10s and a
+  130-ply one ~18s to analyse on the simulator (the Mac's CPU - a phone
+  is slower); `.maestro/game-review.yaml` is the happy path.
 - **Sign in / Create account**: `sign-in-screen` / `create-account-screen`,
   inputs `username-or-email-input`, `username-input`, `email-input`,
   `password-input` (its eye button, which shows or hides the password, is
