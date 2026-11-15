@@ -25,7 +25,6 @@ import { useAuthSession } from '../../context/AuthSessionContext';
 import { useReviewSettingsContext } from '../../context/ReviewSettingsContext';
 import { colorPlayedBy } from '../../domain/players';
 import { ANALYSING_WORDS, seedOf } from '../../domain/review/phrases';
-import { useAnalysisPlayback } from '../../hooks/useAnalysisPlayback';
 import { useMoveNavigationSounds } from '../../hooks/useGameSounds';
 import {
   GameReviewState,
@@ -104,13 +103,13 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
     return () => clearInterval(timer);
   }, [analysing]);
 
-  // The game played through while it's analysed, keeping pace with it.
+  // The game played through while it's analysed, as far into it as the
+  // progress bar is: half way at 50%, its last move at 100%.
   const moves = state.status === 'analysing' ? state.snapshot.moves : NO_MOVES;
-  const played = useAnalysisPlayback(
+  const played =
     state.status === 'analysing'
-      ? Math.floor(state.progress * moves.length)
-      : 0,
-  );
+      ? Math.round(state.progress * moves.length)
+      : 0;
   useMoveNavigationSounds(moves, played, false);
 
   // The move shown, as a ply - where the analysis board opens. Read only

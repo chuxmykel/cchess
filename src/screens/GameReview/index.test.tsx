@@ -3,7 +3,7 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 import * as Speech from 'expo-speech';
 
 import GameReview from '.';
-import { REVIEW_FACT_MS, REVIEW_PLAY_STEP_MS } from '../../constants/review';
+import { REVIEW_FACT_MS } from '../../constants/review';
 import { EngineContext, EngineStatus } from '../../context/EngineContext';
 import { ReviewSettingsProvider } from '../../context/ReviewSettingsContext';
 import type { PositionEval } from '../../domain/review/types';
@@ -350,8 +350,7 @@ describe('GameReview', () => {
     expect(saveGameReview).toHaveBeenCalled();
   });
 
-  it('plays the game through as it analyses, no further than it has got', async () => {
-    jest.useFakeTimers();
+  it('plays the game through as it analyses, as far as the progress bar', async () => {
     (getGameReview as jest.Mock).mockResolvedValue(null);
     const { screen, main, threat } = await renderReview();
 
@@ -368,13 +367,11 @@ describe('GameReview', () => {
       );
       await act(async () => {});
     }
-    for (let i = 0; i < 6; i++) await settleAnimations(REVIEW_PLAY_STEP_MS);
-
-    // 1. e4 e5, and no further.
+    // 60% analysed: 60% of the game's four moves, 1. e4 e5, and no further.
+    expect(screen.getByTestId('review-progress-label')).toBeTruthy();
     expect(screen.getByTestId('piece-e4')).toBeTruthy();
     expect(screen.getByTestId('piece-e5')).toBeTruthy();
     expect(screen.getByTestId('piece-f1')).toBeTruthy();
-    jest.useRealTimers();
   });
 
   it('tells chess facts while it analyses, a new one every few seconds', async () => {
