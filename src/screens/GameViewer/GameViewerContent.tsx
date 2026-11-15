@@ -197,7 +197,6 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
               onNewOpponent={() => onNewOpponent(timeControl)}
               newGameLabel={newGameLabel}
               onDismiss={() => setIsResultDismissed(true)}
-              onAnalyse={analyse}
               onReview={canReview ? onReview : undefined}
             />
           </GameOverOverlay>

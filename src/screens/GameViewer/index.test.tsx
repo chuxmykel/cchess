@@ -284,11 +284,8 @@ describe('GameViewer', () => {
 
   it('opens the finished game in the analysis board, at the move shown', async () => {
     const { screen, navigation } = await renderScreen(finishedGame());
-
-    await fireEvent.press(screen.getByTestId('analyse-button'));
-    expect(navigation.navigate).toHaveBeenLastCalledWith('AnalysisBoard', {
-      source: { kind: 'game', gameId: 'game-1', ply: 3 },
-    });
+    // The result card offers a review, not the analysis board.
+    expect(screen.queryByTestId('analyse-button')).toBeNull();
 
     await fireEvent.press(screen.getByTestId('game-over-dismiss'));
     await fireEvent(screen.getByTestId('previous-move-button'), 'pressIn');
@@ -323,7 +320,6 @@ describe('GameViewer', () => {
     );
 
     expect(screen.queryByTestId('review-button')).toBeNull();
-    expect(screen.getByTestId('analyse-button')).toBeTruthy();
   });
 
   it("doesn't offer to analyse a game still being played", async () => {

@@ -440,7 +440,6 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
                   : undefined
               }
               onDismiss={() => setResultDismissedAt(rematch.status)}
-              onAnalyse={analyse}
               onReview={canReview ? review : undefined}
             />
           </GameOverOverlay>

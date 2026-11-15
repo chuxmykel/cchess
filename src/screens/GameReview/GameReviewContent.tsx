@@ -38,6 +38,9 @@ interface GameReviewContentProps {
   width: number;
   // Opens the analysis board at a move - the number of moves in.
   onAnalyse: (ply: number) => void;
+  // The move shown, as a ply, each time it changes - for the header's 🔍;
+  // the game's end on the summary.
+  onShownPly: (ply: number) => void;
 }
 
 // The room kept above the board for the bubble, under the eval bar: its
@@ -97,6 +100,7 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
   settings,
   width,
   onAnalyse,
+  onShownPly,
 }) => {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -145,6 +149,11 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
   }, [view.spoken, quiet, say]);
 
   useMoveNavigationSounds(review.moves, shownIndex + 1, false);
+  const shownPly =
+    stepper.phase === 'summary' ? review.moves.length : shownIndex + 1;
+  useEffect(() => {
+    onShownPly(shownPly);
+  }, [onShownPly, shownPly]);
   // Show's line sounds each of its moves as it's played out.
   const lineMoveSan =
     view.bubble.lineAt !== null

@@ -388,13 +388,32 @@ describe('GameReview', () => {
     );
   });
 
+  // One of the header's items, drawn on its own: 0 the 🔍, 1 the ⚙.
+  async function headerItem(
+    navigation: { setOptions: jest.Mock },
+    index: 0 | 1,
+  ) {
+    const [options] = navigation.setOptions.mock.calls.at(-1);
+    return render(options.unstable_headerRightItems()[index].element);
+  }
+
   it('opens its settings from the header', async () => {
     const { navigation } = await renderReview();
-    const [options] = navigation.setOptions.mock.calls[0];
-    const [item] = options.unstable_headerRightItems();
-    const settings = await render(item.element);
+    const settings = await headerItem(navigation, 1);
 
     await fireEvent.press(settings.getByTestId('review-settings-button'));
     expect(navigation.navigate).toHaveBeenCalledWith('ReviewSettings');
+  });
+
+  it('opens the analysis board at the move shown, from the header', async () => {
+    const { screen, navigation } = await renderReview();
+    await toBlunder(screen);
+    const analyse = await headerItem(navigation, 0);
+
+    await fireEvent.press(analyse.getByTestId('review-analyse-button'));
+    // 2. Ba6, the third move.
+    expect(navigation.navigate).toHaveBeenCalledWith('AnalysisBoard', {
+      source: { kind: 'game', gameId: 'game-1', ply: 3 },
+    });
   });
 });

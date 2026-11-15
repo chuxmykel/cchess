@@ -340,7 +340,6 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
                   : undefined
               }
               onDismiss={() => setResultDismissedAt(rematch.status)}
-              onAnalyse={analyse}
               onReview={canReview ? review : undefined}
             />
           </GameOverOverlay>

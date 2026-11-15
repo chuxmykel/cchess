@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -67,8 +73,8 @@ function progressLabel(
 }
 
 // A finished game's review: worked out on the device the first time - or
-// fetched, when someone has already - then stepped through. Its ⚙ opens the
-// review's settings.
+// fetched, when someone has already - then stepped through. Its 🔍 opens the analysis
+// board at the move shown, and its ⚙ the review's settings.
 const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
   navigation,
   route,
@@ -93,9 +99,35 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
     return () => clearInterval(timer);
   }, [analysing]);
 
+  // The move shown, as a ply - where the analysis board opens. Read only
+  // when 🔍's pressed.
+  const shownPly = useRef<number | null>(null);
+  const rememberShownPly = useCallback((ply: number) => {
+    shownPly.current = ply;
+  }, []);
+
   useLayoutEffect(() => {
     navigation.setOptions({
       unstable_headerRightItems: () => [
+        plainHeaderItem(
+          <Pressable
+            onPress={() =>
+              navigation.navigate('AnalysisBoard', {
+                source: {
+                  kind: 'game',
+                  gameId,
+                  ...(shownPly.current !== null && { ply: shownPly.current }),
+                },
+              })
+            }
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Analyse"
+            testID="review-analyse-button"
+          >
+            <Icon name="magnify" size={24} />
+          </Pressable>,
+        ),
         plainHeaderItem(
           <Pressable
             onPress={() => navigation.navigate('ReviewSettings')}
@@ -109,7 +141,7 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
         ),
       ],
     });
-  }, [navigation]);
+  }, [navigation, gameId]);
 
   if (state.status === 'loading') {
     return (
@@ -176,6 +208,7 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
       viewerColor={userId ? colorPlayedBy(state.snapshot, userId) : null}
       settings={settings}
       width={width}
+      onShownPly={rememberShownPly}
       onAnalyse={(ply) =>
         navigation.navigate('AnalysisBoard', {
           source: { kind: 'game', gameId, ply },

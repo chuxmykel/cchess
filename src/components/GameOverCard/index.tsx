@@ -32,8 +32,6 @@ interface GameOverCardProps {
   };
   /** Shows a close button that hides the card. */
   onDismiss?: () => void;
-  /** Shows an Analyse button, to look through the game with the engine. */
-  onAnalyse?: () => void;
   /** Shows a Game review button, for the game's review. */
   onReview?: () => void;
 }
@@ -101,7 +99,6 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
   newGameLabel = 'New opponent',
   rematch,
   onDismiss,
-  onAnalyse,
   onReview,
 }) => {
   const styles = useStyles();
@@ -165,15 +162,6 @@ const GameOverCard: React.FC<GameOverCardProps> = ({
           variant="outline"
           style={styles.newOpponentButton}
           testID="review-button"
-        />
-      )}
-      {onAnalyse && (
-        <Button
-          label="Analyse"
-          onPress={onAnalyse}
-          variant="outline"
-          style={styles.newOpponentButton}
-          testID="analyse-button"
         />
       )}
     </View>

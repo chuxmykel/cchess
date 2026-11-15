@@ -661,7 +661,7 @@ describe('LiveGameContent', () => {
       );
     });
 
-    it('opens the game in the analysis board, from the card or the menu', async () => {
+    it('opens the game in the analysis board from the menu', async () => {
       const { screen, snapshot, trigger, navigation } =
         await renderContent('w');
       await finishGame(trigger, snapshot);
@@ -669,15 +669,11 @@ describe('LiveGameContent', () => {
         source: { kind: 'game', gameId: snapshot.id, ply: 0 },
       };
 
-      await fireEvent.press(screen.getByTestId('analyse-button'));
-      expect(navigation.navigate).toHaveBeenLastCalledWith(
-        'AnalysisBoard',
-        analysis,
-      );
+      expect(screen.queryByTestId('analyse-button')).toBeNull();
 
       await openGameMenu(screen);
       await chooseMenuAction(screen, 'analyse-action');
-      expect(navigation.navigate).toHaveBeenCalledTimes(2);
+      expect(navigation.navigate).toHaveBeenCalledTimes(1);
       expect(navigation.navigate).toHaveBeenLastCalledWith(
         'AnalysisBoard',
         analysis,
