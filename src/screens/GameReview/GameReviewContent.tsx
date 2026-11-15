@@ -13,6 +13,7 @@ import ReviewSummary from '../../components/ReviewSummary';
 import ReviewToolbar from '../../components/ReviewToolbar';
 import { ReviewSettings } from '../../constants/review';
 import { defeatedColor } from '../../domain/players';
+import { introLine, IntroContext, seedOf } from '../../domain/review/phrases';
 import { themeCards } from '../../domain/review/themes';
 import type { GameReview, MoveClass } from '../../domain/review/types';
 import { reviewView } from '../../hooks/reviewView';
@@ -26,8 +27,10 @@ import { makeStyles, useTheme } from '../../theme';
 interface GameReviewContentProps {
   snapshot: GameSnapshot;
   review: GameReview;
-  // The side whose moves the review stops at, at the bottom of the board.
+  // The side whose moves the review stops at, at the bottom of the board -
+  // and the side the viewer played, null if they only watched.
   side: Color;
+  viewerColor: Color | null;
   settings: ReviewSettings;
   width: number;
   // Opens the analysis board at a move - the number of moves in.
@@ -41,6 +44,40 @@ const THEME_ICONS = {
   endgame: 'chess-king',
 } as const;
 
+// What the review's intro is chosen by: how the game went for the side
+// reviewed - or that it was only watched - its opening, length and slips.
+function introContext(
+  snapshot: GameSnapshot,
+  review: GameReview,
+  side: Color,
+  viewerColor: Color | null,
+): IntroContext {
+  const winner =
+    snapshot.result === 'white'
+      ? 'w'
+      : snapshot.result === 'black'
+        ? 'b'
+        : null;
+  const mine = side === 'w' ? review.white : review.black;
+  return {
+    outcome:
+      viewerColor === null
+        ? null
+        : winner === null
+          ? 'draw'
+          : winner === side
+            ? 'win'
+            : 'loss',
+    white: snapshot.white.displayName,
+    black: snapshot.black.displayName,
+    opponent: (side === 'w' ? snapshot.black : snapshot.white).displayName,
+    opening: review.opening?.name ?? null,
+    moves: Math.ceil(review.moves.length / 2),
+    accuracy: mine.accuracy,
+    slips: mine.counts.mistake + mine.counts.miss + mine.counts.blunder,
+  };
+}
+
 // A finished game, reviewed: its summary - the graph, each side's accuracy
 // and classes of move - then its key moments one at a time, each with what
 // the review makes of it, read aloud; and to close, what to take from it.
@@ -48,6 +85,7 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
   snapshot,
   review,
   side,
+  viewerColor,
   settings,
   width,
   onAnalyse,
@@ -63,6 +101,14 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
   const themes = useMemo(() => themeCards(review, side), [review, side]);
   const [themeIndex, setThemeIndex] = useState(0);
   const theme = stepper.phase === 'done' ? (themes[themeIndex] ?? null) : null;
+  const intro = useMemo(
+    () =>
+      introLine(
+        introContext(snapshot, review, side, viewerColor),
+        seedOf(snapshot.id),
+      ),
+    [snapshot, review, side, viewerColor],
+  );
 
   const view = reviewView({
     review,
@@ -72,6 +118,7 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
     showLine: stepper.showLine,
     showBestMoves: settings.showBestMoves,
     theme,
+    intro,
   });
 
   // Each new thing said is read aloud, in place of the last.

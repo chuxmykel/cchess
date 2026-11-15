@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -14,10 +14,11 @@ import Button from '../../components/Button';
 import Icon from '../../components/Icon';
 import ReviewBubble from '../../components/ReviewBubble';
 import ReviewProgress from '../../components/ReviewProgress';
-import { ReviewAs } from '../../constants/review';
+import { REVIEW_FACT_MS, ReviewAs } from '../../constants/review';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { useReviewSettingsContext } from '../../context/ReviewSettingsContext';
 import { colorPlayedBy } from '../../domain/players';
+import { ANALYSING_WORDS, seedOf } from '../../domain/review/phrases';
 import {
   GameReviewState,
   ReviewUnavailableReason,
@@ -79,6 +80,18 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
   const userId = session.isReady ? session.user.id : null;
   const { settings } = useReviewSettingsContext();
   const state = useGameReview(gameId, settings.strength);
+  // A chess fact to read while the game's analysed, the next every few
+  // seconds - the first picked by the game.
+  const [factIndex, setFactIndex] = useState(() => seedOf(gameId));
+  const analysing = state.status === 'analysing';
+  useEffect(() => {
+    if (!analysing) return;
+    const timer = setInterval(
+      () => setFactIndex((index) => index + 1),
+      REVIEW_FACT_MS,
+    );
+    return () => clearInterval(timer);
+  }, [analysing]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -132,7 +145,10 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
         testID="game-review-analysing"
       >
         <View style={styles.padded}>
-          <ReviewBubble text="Give me a moment to go through this game - every position, both sides." />
+          <ReviewBubble
+            text={ANALYSING_WORDS[factIndex % ANALYSING_WORDS.length]}
+            testID="review-analysing-fact"
+          />
         </View>
         <ReviewBoard
           fen={state.snapshot.fen}
@@ -157,6 +173,7 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
       snapshot={state.snapshot}
       review={state.review}
       side={side}
+      viewerColor={userId ? colorPlayedBy(state.snapshot, userId) : null}
       settings={settings}
       width={width}
       onAnalyse={(ply) =>

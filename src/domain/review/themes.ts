@@ -1,6 +1,7 @@
 import { Color } from 'chess.js';
 
 import { materialBalance, PIECE_VALUE } from './motifs';
+import { THEME_WORDS } from './phrases';
 import type { GameReview, MoveFact, ReviewedMove, ThemeCard } from './types';
 
 // What a review closes on: a few things to take from the game, for the side
@@ -17,17 +18,6 @@ const TACTICAL: MoveFact['kind'][] = [
   'losesMaterial',
   'missesWin',
 ];
-
-const TACTIC_NAMES: Partial<Record<MoveFact['kind'], string>> = {
-  hangs: 'pieces left hanging',
-  allowsFork: 'forks',
-  allowsPin: 'pins',
-  trapped: 'pieces getting trapped',
-  allowsMate: 'mating attacks',
-  missesMate: 'mates you could have given',
-  missesWin: 'material you could have won',
-  losesMaterial: 'material slipping away',
-};
 
 const SLIPS = ['inaccuracy', 'mistake', 'miss', 'blunder'];
 
@@ -64,17 +54,17 @@ export function themeCards(review: GameReview, side: Color): ThemeCard[] {
   if (openingSlips.length > 0) {
     cards.push({
       theme: 'opening',
-      title: 'Opening',
+      title: THEME_WORDS.opening.title,
       text:
         openingSlips.length > 1
-          ? 'Mistakes in the opening held you back. Get your pieces out, castle, and fight for the center before going after anything.'
-          : 'One slip in the opening cost you. Before each move there, check what your opponent is threatening.',
+          ? THEME_WORDS.opening.slips
+          : THEME_WORDS.opening.oneSlip,
     });
   } else if (mine.length > 0) {
     cards.push({
       theme: 'opening',
-      title: 'Opening',
-      text: 'You came out of the opening without a slip. Keep playing it that way.',
+      title: THEME_WORDS.opening.title,
+      text: THEME_WORDS.opening.clean,
     });
   }
 
@@ -89,8 +79,11 @@ export function themeCards(review: GameReview, side: Color): ThemeCard[] {
     const [commonest] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
     cards.push({
       theme: 'tactics',
-      title: 'Tactics',
-      text: `Most of what went wrong came down to ${TACTIC_NAMES[commonest]}. Before every move, look at what each of your pieces can be attacked by, and what the opponent's last move threatens.`,
+      title: THEME_WORDS.tactics.title,
+      text: THEME_WORDS.tactics.text.replace(
+        '{cause}',
+        THEME_WORDS.tactics.causes[commonest] ?? 'tactics',
+      ),
     });
   }
 
@@ -102,8 +95,8 @@ export function themeCards(review: GameReview, side: Color): ThemeCard[] {
   if (quiet.length >= 2) {
     cards.push({
       theme: 'strategy',
-      title: 'Strategy',
-      text: "When there isn't a tactic to play, find your piece doing the least and move it to a more active square.",
+      title: THEME_WORDS.strategy.title,
+      text: THEME_WORDS.strategy.text,
     });
   }
 
@@ -112,10 +105,8 @@ export function themeCards(review: GameReview, side: Color): ThemeCard[] {
     const ahead = materialBalance(endgameSlips[0].move.fenBefore, side) > 0;
     cards.push({
       theme: 'endgame',
-      title: 'Endgame',
-      text: ahead
-        ? 'You had the endgame in hand and let some of it go. Activate your king and push your extra material home.'
-        : 'The endgame is where it slipped. With fewer pieces, your king becomes a fighting piece - bring it in.',
+      title: THEME_WORDS.endgame.title,
+      text: ahead ? THEME_WORDS.endgame.ahead : THEME_WORDS.endgame.behind,
     });
   }
 

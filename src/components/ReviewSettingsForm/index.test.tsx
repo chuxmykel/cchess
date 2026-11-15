@@ -69,7 +69,7 @@ describe('ReviewSettingsForm', () => {
     );
 
     expect(Speech.speak).toHaveBeenCalledWith(
-      expect.stringMatching(/key moments/),
+      expect.stringMatching(/Knight f3 is best/),
       expect.objectContaining({ voice: SAMANTHA.identifier }),
     );
   });

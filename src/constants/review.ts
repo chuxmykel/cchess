@@ -64,5 +64,8 @@ export const DEFAULT_REVIEW_SETTINGS: ReviewSettings = {
   strength: 'standard',
 };
 
+// While a game's analysed, a new chess fact this often.
+export const REVIEW_FACT_MS = 6000;
+
 // A comment's voice, a little quicker than speech's own default.
 export const REVIEW_SPEECH_RATE = 1.05;

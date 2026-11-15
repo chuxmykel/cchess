@@ -18,7 +18,7 @@ import {
   ReviewAs,
   ReviewSettings,
 } from '../../constants/review';
-import { INTRO } from '../../domain/review/phrases';
+import { VOICE_SAMPLE } from '../../domain/review/phrases';
 import { makeStyles, useTheme } from '../../theme';
 import { voiceQualityLabel } from '../../utils/voices';
 
@@ -40,10 +40,10 @@ const STRENGTH_OPTIONS = REVIEW_STRENGTHS.map((key) => ({
   label: REVIEW_STRENGTH_LABELS[key],
 }));
 
-// A voice tried out: the review's own first line.
+// A voice tried out.
 function hear(voice: Speech.Voice) {
   Speech.stop().catch(() => {});
-  Speech.speak(INTRO, {
+  Speech.speak(VOICE_SAMPLE, {
     voice: voice.identifier,
     language: voice.language,
     rate: REVIEW_SPEECH_RATE,

@@ -7,7 +7,7 @@ import {
   numberMoves,
   pvToSan,
 } from '../domain/evalScore';
-import { headline, INTRO } from '../domain/review/phrases';
+import { headline, RETRY_TITLE, retryLine } from '../domain/review/phrases';
 import { sanToSpeech, textToSpeech } from '../domain/review/spokenText';
 import type { GameReview, MoveClass, ThemeCard } from '../domain/review/types';
 import { MoveSquares } from '../domain/types';
@@ -41,7 +41,7 @@ export type ReviewView = {
 };
 
 const LINE_SHOWN = 8;
-const SIDE_NAMES: Record<Color, string> = { w: 'White', b: 'Black' };
+const SIDE_NAMES = { w: 'White', b: 'Black' } as const;
 
 function squaresOf(uci: string | undefined): MoveSquares | null {
   if (!uci) return null;
@@ -61,6 +61,8 @@ export type ReviewViewInput = {
   showBestMoves: boolean;
   // The closing theme shown, once the moves are done.
   theme: ThemeCard | null;
+  // What the review opens with (see introLine).
+  intro: string;
 };
 
 export function reviewView({
@@ -71,6 +73,7 @@ export function reviewView({
   showLine,
   showBestMoves,
   theme,
+  intro,
 }: ReviewViewInput): ReviewView {
   const move = index >= 0 ? review.moves[index] : null;
 
@@ -86,10 +89,10 @@ export function reviewView({
         moveClass: null,
         title: null,
         score: null,
-        text: INTRO,
+        text: intro,
         line: null,
       },
-      spoken: INTRO,
+      spoken: textToSpeech(intro),
     };
   }
 
@@ -118,15 +121,10 @@ export function reviewView({
     const { tried } = mode;
     const side = SIDE_NAMES[move.color];
     const stillTrying = !tried || tried.verdict === 'wrong';
-    let text = `Find a better move for ${side}.`;
-    if (tried?.verdict === 'checking') text = `Let's see about ${tried.san}...`;
-    if (tried?.verdict === 'right') text = `${tried.san} works. Well found!`;
-    if (tried?.verdict === 'wrong') {
-      text =
-        tried.uci === move.uci
-          ? "That's the move played. Try another."
-          : `Not quite - ${tried.san} isn't it. Try again.`;
-    }
+    const text = retryLine(
+      side,
+      tried && { ...tried, isPlayed: tried.uci === move.uci },
+    );
     const spoken = tried
       ? text.replace(tried.san, sanToSpeech(tried.san))
       : text;
@@ -139,7 +137,7 @@ export function reviewView({
       score: move.scoreBefore,
       bubble: {
         moveClass: tried?.verdict === 'right' ? 'best' : null,
-        title: 'Retry',
+        title: RETRY_TITLE,
         score: null,
         text,
         line: null,

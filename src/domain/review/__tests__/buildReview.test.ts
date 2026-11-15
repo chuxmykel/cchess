@@ -95,7 +95,7 @@ describe('buildReview', () => {
   it('closes on what to take from the game', () => {
     const cards = themeCards(review, 'w');
     expect(cards.map((c) => c.theme)).toEqual(['opening', 'tactics']);
-    expect(cards[1].text).toMatch(/pieces left hanging/);
+    expect(cards[1].text).toMatch(/pieces left \*hanging\*/);
   });
 
   it('says what the best move would have done', () => {

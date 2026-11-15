@@ -3,6 +3,7 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 import * as Speech from 'expo-speech';
 
 import GameReview from '.';
+import { REVIEW_FACT_MS } from '../../constants/review';
 import { EngineContext, EngineStatus } from '../../context/EngineContext';
 import { ReviewSettingsProvider } from '../../context/ReviewSettingsContext';
 import type { PositionEval } from '../../domain/review/types';
@@ -202,9 +203,15 @@ describe('GameReview', () => {
   it('reads each comment aloud, with the voice on', async () => {
     const { screen } = await renderReview({ voice: true });
     await act(async () => {});
-    expect(Speech.speak).toHaveBeenLastCalledWith(
-      expect.stringMatching(/key moments/),
-      expect.anything(),
+    // An intro fitting the game: a short one, my loss, its opening.
+    const [intro] = (Speech.speak as jest.Mock).mock.calls.at(-1);
+    expect(intro).toBe(
+      screen
+        .getByTestId('review-intro-text')
+        .props.children.map(
+          (part: { props: { children: string } }) => part.props.children,
+        )
+        .join(''),
     );
 
     await fireEvent.press(screen.getByTestId('review-start'));
@@ -239,6 +246,26 @@ describe('GameReview', () => {
 
     expect(screen.getByTestId('game-review-summary')).toBeTruthy();
     expect(saveGameReview).toHaveBeenCalled();
+  });
+
+  it('tells chess facts while it analyses, a new one every few seconds', async () => {
+    jest.useFakeTimers();
+    (getGameReview as jest.Mock).mockResolvedValue(null);
+    const { screen } = await renderReview();
+    const fact = () =>
+      screen
+        .getByTestId('review-analysing-fact-text')
+        .props.children.map(
+          (part: { props: { children: string } }) => part.props.children,
+        )
+        .join('');
+    const first = fact();
+    expect(first).toMatch(/\w/);
+
+    await act(async () => jest.advanceTimersByTime(REVIEW_FACT_MS));
+
+    expect(fact()).not.toBe(first);
+    jest.useRealTimers();
   });
 
   it('says so while the engine downloads', async () => {

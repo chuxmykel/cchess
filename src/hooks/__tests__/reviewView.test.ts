@@ -33,6 +33,7 @@ const viewAt = (input: Partial<ReviewViewInput>) =>
     showLine: false,
     showBestMoves: false,
     theme: null,
+    intro: "Nice win! Let's see how you *got* there.",
     ...input,
   });
 
@@ -42,8 +43,8 @@ describe('reviewView', () => {
 
     expect(view.fen).toBe(DEFAULT_POSITION);
     expect(view.lastMove).toBeNull();
-    expect(view.bubble.text).toMatch(/key moments/);
-    expect(view.spoken).toBe(view.bubble.text);
+    expect(view.bubble.text).toBe("Nice win! Let's see how you *got* there.");
+    expect(view.spoken).toBe("Nice win! Let's see how you got there.");
   });
 
   it('shows a move played, marked with its class and what it did', () => {
