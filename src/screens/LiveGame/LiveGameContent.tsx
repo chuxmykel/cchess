@@ -43,6 +43,7 @@ import {
   analyseAction,
   flipBoardAction,
   newOpponentAction,
+  reviewAction,
 } from '../gameMenuActions';
 import EarlierPositionOverlay from './EarlierPositionOverlay';
 
@@ -69,6 +70,8 @@ type GameMenuOptions = {
   offerDraw: () => void;
   findNewOpponent: () => void;
   analyse: () => void;
+  /** The game's review - once it's played out, not aborted. */
+  review?: () => void;
   /** Brings the result card back; only while it's dismissed. */
   showResult?: () => void;
 };
@@ -83,6 +86,7 @@ function gameMenuActions({
   offerDraw,
   findNewOpponent,
   analyse,
+  review,
   showResult,
 }: GameMenuOptions): ActionSheetAction[] {
   const flipBoard = flipBoardAction(flip);
@@ -98,6 +102,7 @@ function gameMenuActions({
             },
           ]
         : []),
+      ...(review ? [reviewAction(review)] : []),
       analyseAction(analyse),
       newOpponentAction(findNewOpponent),
     ];
@@ -200,6 +205,13 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     });
   }
 
+  // The finished game's review; Back returns here.
+  function review() {
+    navigation.navigate('GameReview', { gameId: snapshot.id });
+  }
+  // Only a game played out, not one aborted.
+  const canReview = gameStatus === 'completed';
+
   function confirmAbort() {
     Alert.alert('Abort game?', 'Are you sure you want to abort?', [
       { text: 'Cancel', style: 'cancel' },
@@ -226,6 +238,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     offerDraw,
     findNewOpponent,
     analyse,
+    review: canReview ? review : undefined,
     showResult: isResultDismissed
       ? () => setResultDismissedAt(null)
       : undefined,
@@ -327,7 +340,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
                   : undefined
               }
               onDismiss={() => setResultDismissedAt(rematch.status)}
-              onAnalyse={analyse}
+              onReview={canReview ? review : undefined}
             />
           </GameOverOverlay>
         )}

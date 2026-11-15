@@ -20,3 +20,9 @@ export function tintColor(
   );
   return `rgb(${r}, ${g}, ${b})`;
 }
+
+// A hex color seen through: `alpha` from 0 (clear) to 1 (solid).
+export function alphaColor(hex: string, alpha: number): string {
+  const [r, g, b] = channels(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}

@@ -1,0 +1,52 @@
+appId: host.exp.Exponent
+tags:
+  - needs-live-server
+---
+# A finished game's review, from Home's newest recent game: analysed on the
+# device (the engine downloaded first, launch-fresh having cleared it) - or
+# fetched, when the server keeps one - then its summary, its key moments,
+# and Show, Best and Retry at one of them. Needs the game server and an
+# account signed in (a fresh launch keeps it - the keychain isn't cleared)
+# with a finished game whose side had a slip - most do; no opponent.
+- runFlow: common/launch-fresh.yaml
+- extendedWaitUntil:
+    visible:
+      id: "game-row-.*"
+    timeout: 20000
+- tapOn:
+    id: "game-row-.*"
+    index: 0
+- tapOn:
+    id: "review-button"
+# The engine's download and the analysis: about a minute at most.
+- extendedWaitUntil:
+    visible:
+      id: "game-review-summary"
+    timeout: 180000
+- assertVisible:
+    id: "eval-graph"
+- assertVisible:
+    id: "review-accuracy-w"
+- tapOn:
+    id: "review-start"
+- assertVisible:
+    id: "review-bubble-title"
+# On to the first key moment after the book.
+- tapOn:
+    id: "review-next"
+- assertVisible:
+    id: "review-board"
+- tapOn:
+    id: "review-show"
+- assertVisible:
+    id: "review-bubble-line"
+- tapOn:
+    id: "review-best"
+- assertVisible:
+    text: ".* is best"
+# A move stepped back to is where the review is: Next plays on from there.
+- tapOn:
+    id: "review-back"
+- assertVisible:
+    id: "review-next"
+    text: "Next"

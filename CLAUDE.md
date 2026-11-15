@@ -114,7 +114,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
     through a game - forward, the move landed on, back, a plain move, or a
     check when the position landed on is one; and
     `gameOverSound(reason)`, a game's end - none for mate, which sounded
-    with its move. `stepSoundTo(fromPly, toPly, landedSan)` is the same
+    with its move. `GameSound` also has `brilliant`, a game review's
+    brilliant move (a rising chime, in `generate-sounds.js`). `stepSoundTo(fromPly, toPly, landedSan)` is the same
     step for an analysis, whose moves branch.
   - Analysis:
     - `analysisTree.ts` - an analysis's moves as an immutable tree:
@@ -145,9 +146,50 @@ lib/chessboard/  the board, written as a package of its own: outside the
       ranks, at most 16 a side, the side not to move not in check).
     - `openings.ts` - `openingAt(fens)`: the opening a line is in, the
       deepest named position along it, keyed by EPD so transpositions
-      match - from `openings.json`, lichess's CC0 opening list built by
+      match (`bookOpeningAt(fen)`, a single position's) - from `openings.json`, lichess's CC0 opening list built by
       `node scripts/build-openings.js` (pinned to a commit; kept out of
       Prettier).
+  - Game review (`review/`): a finished game's moves judged from the
+    engine's word on each position (`PositionEval` - its score, best line
+    and next best score; all a review keeps, and what the server stores, so
+    the rest is worked out afresh):
+    - `winChances.ts` - lichess's winning-chances curve (`evalBarFraction`
+      shares it), a mate counted as ten pawns; `accuracy.ts` - lichess's
+      move and game accuracy (volatility-weighted and harmonic means).
+    - `classifyMove.ts` - brilliant, great, best, excellent, good, book,
+      inaccuracy, mistake, miss, blunder: by the winning chances the move
+      gave away (2/5/10/20 points), the book (`bookOpeningAt`, every move
+      before it in it too), a sacrifice that's best (brilliant - a piece
+      left where it's taken for less, never counting a king, which can't
+      take a defended one), the only good move, not a recapture (great),
+      and the opponent's slip let go (miss). Winning chances barely move
+      once a game's decided, so a move giving away material over best play
+      (`materialGivenUp`) and enough of the score is at least an inaccuracy
+      (a pawn) or a mistake (a piece) whatever the chances.
+    - `motifs.ts` - what a move did, with chess.js along the engine's
+      lines: material over the line, mates allowed or missed, a piece left
+      hanging, a fork, pin or skewer, a piece trapped; for a good one,
+      taking a free piece, saving one, castling, developing, the centre, a passed pawn, trading when ahead. `phrases.ts` - everything a review
+      says, none of it stored (made afresh from the evals): several
+      wordings for each fact and each class of slip, picked by a seed so a
+      review always reads the same - never naming the better move, which
+      Retry is for, only hinting at the piece that had it, and never
+      talking about "the engine";
+      the intro (`introLine`, fitting the game - won, lost, drawn or
+      watched, clean, short or long, its opening); the chess facts shown
+      while it's analysed; Retry's lines; and the closing themes' advice.
+      Ideas marked `*like this*` (underlined in the bubble, unmarked aloud);
+      `spokenText.ts` - SAN as said ("knight takes e5, check").
+    - `buildReview.ts` - `buildReview(start, moves, evals, seed)`: every move's class, facts and comment, each side's accuracy, counts and
+      game rating (`gameRating.ts` - the rating it played at: as
+      chess.com describes its own, the player's rating going into the game
+      - `buildReview`'s `ratings` - moved halfway toward what their
+        accuracy alone reads as on our own curve, so over many games it
+        averages out near their rating; the curve alone for a guest);
+        `bestMoveOf` - the best move where another was played, and what it'd
+        have done. `keyMoments.ts` - where Next stops: the side's
+        standouts and slips, after the book's last move; `themes.ts` - the
+        closing cards (opening, tactics, strategy, endgame).
 
 - **`src/network/`** - a second framework-agnostic layer, mirroring
   `domain/`'s pure-infra style but for talking to `cchess-be` (the
@@ -172,7 +214,10 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `appearanceSettingsStorage.ts` (Appearance's, the same way - a
   value no longer offered falls back to its default), and
   `explorerSettingsStorage.ts` (the opening explorer's database and
-  filters, the same way).
+  filters, the same way), and `reviewSettingsStorage.ts` (the game
+  review's, the same way). `restClient.ts`'s `getGameReview` (null when
+  there's none) and `saveGameReview` keep reviews on the server; game
+  summaries carry each side's `accuracy` once reviewed.
 
 - **`src/engine/`** - the analysis engine: Stockfish 19, the lite
   single-threaded WASM build of stockfish.js (GPL-3.0), **downloaded on
@@ -184,7 +229,14 @@ lib/chessboard/  the board, written as a package of its own: outside the
   - `UciEngine.ts` - analysis over UCI: a new position stops the search
     running and waits for its `bestmove` before starting, so a line from
     the old position is never shown for the new; of several asked for
-    meanwhile, only the latest runs.
+    meanwhile, only the latest runs. A limit with a depth and a time
+    stops at whichever comes first.
+  - `reviewRunner.ts` - a game review's analysis: `analyseOnce` (one
+    search to its end, as a Promise), and `runReview`, each engine taking
+    the next position waiting as it finishes the last - both slots at
+    once - positions with no moves left needing none, those already known
+    skipped, so a run cut short (the WebView restarted, the app in the
+    background) carries on.
   - `engineFiles.ts` - `ensureEngineFiles(store, files, onProgress)`:
     each file kept only if its SHA-256 matches the pin, from its sources
     in turn (the author's GitHub release, then unpkg - jsDelivr refuses
@@ -265,7 +317,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
     then plays in place), the game sounds (`useGameSounds.ts`,
     with `expo-audio` - one player per sound, shared app-wide; muted by the
     silent switch, mixing with other apps' audio: `useMoveSounds`, each
-    move's as it's applied, either side's; `useMoveNavigationSounds`,
+    move's as it's applied, either side's - and a game review's Show
+    line's; `useMoveNavigationSounds`,
     stepping through a game's moves, in `LiveGame` and `GameViewer`, plus a
     watched game's moves as they arrive; `useGameStartSound`, a new game
     opening; and `useGameOverSound`, a game ending while it's shown),
@@ -318,6 +371,26 @@ lib/chessboard/  the board, written as a package of its own: outside the
     the hand, which drags pieces), `useAnalysisSounds` (in
     `useGameSounds.ts`) and `useAppIsActive` (searches pause in the
     background; iOS can say 'unknown' at first, counted as active).
+  - Game review: `useGameReview(gameId, strength)` - the review the
+    server keeps, shown at once, or else the game analysed here
+    (`runReview`, the engine claimed only then, through `EngineContext`'s
+    `useEngineWhen`), its progress, and the review sent to the server;
+    paused in the background, picking up where it left off. `useReviewStepper` - the summary, then Next playing every move on the
+    board, a move every 0.17s as chess.com's does, stopping at each key moment (tapped as they
+    play, Skip, straight there) and then through the closing cards, which
+    come after the last move; wherever ‹ ›, the move list or a scroll along
+    it go is where the review is, as chess.com's is - Next plays on from
+    there, as if it had come that way, ‹ ›, Show (the line from the move -
+    answering it, or following Best - played out on the board a move every
+    0.65s, 8 at most; Hide puts the board back), Best (the best move in its place) and Retry (the position before
+    a slip, to find a better move: the best one taken at once, another
+    judged by `useRetryJudge`, a quick search). `reviewView.ts` - what the
+    board and the bubble show at each of those, and what's said.
+    `useReviewVoice` - each comment read aloud with `expo-speech` (iOS's own
+    voices, in the app's audio session, stopped in the background and on
+    leaving), the best English voice there is unless one's chosen
+    (`utils/voices.ts`); `useSpeechVoices`, the voices to choose from.
+    `useReviewSettings`.
   - Friends and everything around them: `useSocial` (backs
     `SocialContext`: friends with their live status, friend requests,
     challenges and unread message counts, kept current from the
@@ -403,7 +476,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
     wrapper.
   - `AnalysisSettingsContext.tsx` - wraps `useAnalysisSettings`, mounted
     in `HomeStack`, so the analysis board and the settings screen over it
-    share one set.
+    share one set. `ReviewSettingsContext.tsx` does the same for
+    `useReviewSettings`.
   - `EngineContext.tsx` - `EngineProvider`, mounted in `App.tsx`, and
     `useEngine()`: the analysis engine for the whole app, started while a
     screen uses it (downloading its files the first time, with progress),
@@ -429,6 +503,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `colors.premove`), `lastMove`
   (the squares marked), `promotion` (a pawn held on its promotion square),
   `check` (a king glowing red, tipped over once `fallen`), `arrows`,
+  `squareBadges` (a round mark on a square's top-right corner, in a
+  color, around what the app draws in it),
   `animation` and `viewOnly`, and calls back `onMove(from, to)` - return
   false to refuse it - `onPremove(from, to)` (the piece stays home),
   `onPremoveCancel` (anything else touched while one's queued), `onDropOff`, `onSquarePress`, `onSettled` and
@@ -514,7 +590,10 @@ lib/chessboard/  the board, written as a package of its own: outside the
   the live board while stepping back (`EarlierPositionOverlay`), staying up
   when stepping onto the live position until that last move has slid
   there (`onSettled`). `EmptyBoard` is the squares alone, while a game is
-  on its way; `SetupBoard` is the position editor's, tapped with its tool,
+  on its way; `ReviewBoard` is a game review's - the move shown marked in
+  its class's color with the class's badge on its square, the engine's
+  arrows, or for Retry, the position before a slip with its side's pieces
+  movable; `SetupBoard` is the position editor's, tapped with its tool,
   or with the hand its pieces dragged freely, off the board to take them
   away; `BoardPieceIcon` is a piece drawn off the board in the chosen set -
   `PromotionMenu`'s choices, `CapturedPieces` (one grey silhouette),
@@ -688,13 +767,52 @@ lib/chessboard/  the board, written as a package of its own: outside the
   open `RatingStats` for that category:
   the rating with what it gained or lost over the period, a 1W/1M/3M/1Y/All
   `SegmentedTabs`, the chart, and the two cards. Once a game is over,
-  `GameOverCard` and the ☰ of `LiveGame` and `GameViewer` offer Analyse,
-  opening `AnalysisBoard` at the move shown. `Settings` (from the Menu)
+  the ☰ of `LiveGame` and `GameViewer` offers Analyse, opening
+  `AnalysisBoard` at the move shown - the result card offers the game's
+  review instead, whose header has its own. `Settings` (from the Menu)
   is every setting in one list: `Appearance`
   (anyone's, guests too: it's kept on the device), `AnalysisSettings`,
   `DailyGameSettings`, and `Licenses`: the Stockfish build the app
   downloads, its GPL-3.0 and where its source is, and credit for
   lichess's opening names. The Puzzles tab is a coming-soon page for now.
+
+- **Game review** - the `GameReview` screen (from a finished game's
+  result card - `GameOverCard`'s `onReview`, "Game review" - or ☰
+  `reviewAction`, in `LiveGame`, `DailyGame` and `GameViewer`; not for an
+  aborted game): while it's analysed, the game played through on the
+  board as far into it as the progress bar is (half way at 50%), a chess
+  fact changing every 6s, and
+  `ReviewProgress` (the engine's download, then the game); then `ReviewSummary` (a column under each player's avatar - accuracy, each
+  class's count with its mark between the two, and the game rating -
+  under `EvalGraph` -
+  white's winning chances drawn in SVG, dots at the standouts and slips,
+  touched to go to a move - and the opening's name); then the moves:
+  `EvalBar`, `ReviewBubble` (a lightbulb, not a face - the class's
+  `MoveClassIcon`, the headline, the score, the words and the line),
+  `ReviewBoard`, `MoveList` with its `moveClasses` marked - the theme
+  cards after its last move as icons (`endItems`), and scrolled by hand it
+  goes through them (`onScrub`: the list scrolls natively under the
+  finger, and the move at the spot the current one's kept at is the one
+  shown, the voice quiet until it comes to rest) - and `ReviewToolbar`
+  (Retry, Show, Best, Next), held a little up from the bottom: Show and
+  Best offered only where they say something (`domain/review/
+reviewActions.ts`: Best where another move was better, out of the book;
+  Show after a slip, a great or brilliant move, or a tactic - not a quiet
+  move); and to close, the theme cards over the game's last position,
+  then Analyse. The eval bar's along the top, then room kept for two lines
+  of the bubble: a longer one grows up over the eval bar, then down over
+  the board, which never moves. A brilliant move
+  stopped on has its own sound (`useBrilliantSound`). Its header's
+  analysis button (the app's `head-cog-outline`, beside the ⚙ in one
+  header item, so they sit close) opens `AnalysisBoard` at the move shown (the game's end from the
+  summary), and its ⚙ `ReviewSettings`
+  (`ReviewSettingsForm`: the voice and which one, each with a button to
+  hear it, best-move arrows, the eval bar, whose moves to review - yours,
+  white's or black's - and the strength: fast, standard or deep,
+  `constants/review.ts`), also in Settings. Accuracy shows in Recent Games
+  and game history (`GameRow`) once a game's been reviewed. See
+  cchess-be's README, "Game review", for why the engine runs on the
+  device.
 
 - **Daily games** - chess.com's: 1, 2, 3, 5, 7 or 14 days a move, a game
   type and rating category of their own (`daily`), played alongside live
@@ -822,7 +940,7 @@ lib/chessboard/  the board, written as a package of its own: outside the
   it's rendered, tests included) -> `HomeStack` (`HomeTabs`, `LiveGame`,
   `DailyGame`, `DailyAnalysis`, `OpeningExplorer`, `GameNotes`,
   `ConditionalMoves`, `DailyGamesList`, `DailyGameSettings`,
-  `GameViewer`, `AnalysisBoard`, `AnalysisSettings`, `UserProfile`, `Conversation`, `GamesList`,
+  `GameViewer`, `GameReview`, `ReviewSettings`, `AnalysisBoard`, `AnalysisSettings`, `UserProfile`, `Conversation`, `GamesList`,
   `RatingStats`, `UserFriends`, `FindFriends`, `SignIn`, `CreateAccount`,
   `Settings`, `Appearance`, `Licenses`) ->
   `HomeTabs` (bottom tabs, each with a testID: `HomeTabStack` -
@@ -891,6 +1009,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `danger`, `separator`, the `board`'s overlays, the `gameType`s, ...), not
   what they look like, so each mode gives every role its own value.
   `boardThemes.ts`: the boards' square colors, chosen apart from the mode.
+  `colors.moveClass` is a game review's classes' colors, the same in both
+  modes (they're drawn on the board).
   `makeStyles((t) => ({...}))` returns a `useStyles()` hook giving the
   component's StyleSheet for the theme in use, made once per theme; a
   sheet with no colors stays a plain `StyleSheet.create` using the scales
@@ -909,7 +1029,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
   the server (`account.ts`) and the chat and direct message limits
   (`chat.ts`), the rating stats periods (`ratingPeriods.ts`), user-facing error-message fallbacks (`errorMessages.ts`),
   the analysis board's settings and their defaults (`analysis.ts`), the
-  pinned engine download (`engine.ts`), etc.
+  game review's (`review.ts`: its settings, each strength's search, the
+  speech rate), the pinned engine download (`engine.ts`), etc.
 
 - **`src/utils/`** - `dragLog.ts` (`logDrag`: with
   `EXPO_PUBLIC_DEBUG_DRAG=1`, a line in the Metro terminal for every drop -
@@ -938,7 +1059,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
   for black included (`boardPosition.ts`), a text-based
   board visualizer for debugging board state in test failures, a fake
   `AppSocket` for hooks that talk to the server (`fakeSocket.ts`), a
-  `GameSnapshot` fixture builder (`gameSnapshot.ts`), `makeAuthSession`/
+  `GameSnapshot` fixture builder (`gameSnapshot.ts`, with
+  `makeFinishedGame(sans)` for a game played out), `makeAuthSession`/
   `makeBootstrappingAuthSession` for mocking `useAuthSession`
   (`authSession.ts`), `makeAccessToken` for a JWT that expires when a test
   needs (`accessToken.ts`), a `GameSummary` builder (`gameSummary.ts`),
@@ -961,7 +1083,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
   renders the slider as a plain `View` keeping its props too, so tests
   fire `valueChange` on it directly, and victory-native's
   `CartesianChart` the same way (testID `cartesian-chart`), so tests check
-  what a chart was given to plot - Skia can't draw under Jest. And it mocks
+  what a chart was given to plot - Skia can't draw under Jest. It mocks `expo-speech` (a basic voice and an
+  enhanced one; what's spoken kept by `speak`). And it mocks
   `expo-audio` with one player per sound, and names the sounds
   (`move.wav`, ...) since jest-expo makes every asset `1` - so tests check
   which sound's player played. The engine's WebView is a plain `View`
@@ -1021,6 +1144,10 @@ Two deliberately separate layers - don't let one re-do the other's job:
   board's size, an avatar's) aside. A new color is a new role in
   `ThemeColors`, given a value in both themes. Every text style sets a
   color, since React Native's default black disappears in dark mode.
+- Apostrophes are plain ASCII `'`, never the curly right quote (U+2019), which
+  editors flag as confusable with a backtick: a string holding one is
+  double-quoted (`"it's"`), and JSX text writes `&apos;` - which
+  `react/no-unescaped-entities` asks for in place of a bare `'`.
 - Board color themes live in `src/theme/boardThemes.ts`
   (`chess.com`, `lichess.org`, `monochrome`, `powderblue`, `test` - shown
   as Green, Wood, Monochrome, Powder blue and Blue), chosen in Appearance;

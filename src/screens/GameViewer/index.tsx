@@ -91,6 +91,8 @@ const GameViewer: React.FC<GameViewerProps> = ({ navigation, route }) => {
         navigation.navigate('AnalysisBoard', {
           source: { kind: 'game', gameId: snapshot.id, ply },
         }),
+      onReview: () =>
+        navigation.navigate('GameReview', { gameId: snapshot.id }),
       onError: (message: string) => toast.show(message),
     };
     if (viewerPlayedAs && session.isReady) {

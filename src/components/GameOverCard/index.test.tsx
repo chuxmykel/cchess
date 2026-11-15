@@ -266,8 +266,8 @@ describe('GameOverCard', () => {
     expect(onDismiss).toHaveBeenCalled();
   });
 
-  it('offers to analyse the game only when it can be', async () => {
-    const onAnalyse = jest.fn();
+  it('offers a review of the game, beside Analyse, when it can have one', async () => {
+    const onReview = jest.fn();
     const props = {
       result: 'white' as const,
       myColor: 'w' as const,
@@ -277,13 +277,12 @@ describe('GameOverCard', () => {
       onNewOpponent: jest.fn(),
     };
     const without = await render(<GameOverCard {...props} />);
-    expect(without.queryByTestId('analyse-button')).toBeNull();
+    expect(without.queryByTestId('review-button')).toBeNull();
 
     const screen = await render(
-      <GameOverCard {...props} onAnalyse={onAnalyse} />,
+      <GameOverCard {...props} onReview={onReview} />,
     );
-    await fireEvent.press(screen.getByTestId('analyse-button'));
-
-    expect(onAnalyse).toHaveBeenCalled();
+    await fireEvent.press(screen.getByTestId('review-button'));
+    expect(onReview).toHaveBeenCalled();
   });
 });

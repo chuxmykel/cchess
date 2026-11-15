@@ -7,6 +7,7 @@ describe('Settings', () => {
     ['appearance-row', 'Appearance'],
     ['analysis-settings-row', 'AnalysisSettings'],
     ['daily-game-settings-row', 'DailyGameSettings'],
+    ['review-settings-row', 'ReviewSettings'],
     ['licenses-row', 'Licenses'],
   ])('%s opens %s', async (testID, route) => {
     const navigation = { navigate: jest.fn() };

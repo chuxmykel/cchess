@@ -10,4 +10,5 @@ export const SOUNDS: Record<GameSound, number> = {
   checkmate: require('../../assets/sounds/checkmate.wav'),
   'game-start': require('../../assets/sounds/game-start.wav'),
   'game-end': require('../../assets/sounds/game-end.wav'),
+  brilliant: require('../../assets/sounds/brilliant.wav'),
 };

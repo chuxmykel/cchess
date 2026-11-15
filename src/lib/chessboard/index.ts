@@ -21,4 +21,5 @@ export type {
   PieceSymbol,
   Premovable,
   Square,
+  SquareBadge,
 } from './types';

@@ -2,6 +2,7 @@ import { AxiosError, create } from 'axios';
 import type { Color, Square } from 'chess.js';
 
 import type { LichessRating, LichessSpeed } from '../constants/explorer';
+import type { PositionEval } from '../domain/review/types';
 import { GameType } from '../domain/types';
 import { SERVER_URL } from './env';
 import type { ColorChoice, GameSnapshot, RatingRange } from './socketEvents';
@@ -137,6 +138,9 @@ export type GameSummary = {
   opponentProvisional: boolean;
   ratingDiff: number | null;
   playedAsWhite: boolean;
+  // Each side's accuracy, yours first, once the game has been reviewed.
+  accuracy: number | null;
+  opponentAccuracy: number | null;
   createdAt: string;
   endedAt: string | null;
 };
@@ -375,6 +379,52 @@ export async function saveGameNotes(
     await apiClient.put<GameNotes>(
       `/games/${encodeURIComponent(gameId)}/notes`,
       { body },
+      bearer(accessToken),
+    )
+  ).data;
+}
+
+/** A finished game's review as the server keeps it: the engine's evals of
+ * every position, the start first, worked out on a player's device. */
+export type StoredGameReview = {
+  gameId: string;
+  engine: string;
+  depth: number;
+  whiteAccuracy: number;
+  blackAccuracy: number;
+  evals: PositionEval[];
+  createdAt: string;
+};
+
+/** A game's review, or null when nobody has reviewed it yet. */
+export async function getGameReview(
+  gameId: string,
+  accessToken: string,
+): Promise<StoredGameReview | null> {
+  try {
+    return (
+      await apiClient.get<StoredGameReview>(
+        `/games/${encodeURIComponent(gameId)}/review`,
+        bearer(accessToken),
+      )
+    ).data;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+/** Keeps a review for everyone - unless one searched as deep is kept
+ * already, which comes back instead. */
+export async function saveGameReview(
+  gameId: string,
+  review: Omit<StoredGameReview, 'gameId' | 'createdAt'>,
+  accessToken: string,
+): Promise<StoredGameReview> {
+  return (
+    await apiClient.put<StoredGameReview>(
+      `/games/${encodeURIComponent(gameId)}/review`,
+      review,
       bearer(accessToken),
     )
   ).data;

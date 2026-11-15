@@ -215,12 +215,20 @@ export const EngineProvider: React.FC<{ children: React.ReactNode }> = ({
 // The engine, for a screen that analyses: it's started while the screen is
 // mounted (see EngineProvider).
 export function useEngine(): Omit<EngineContextValue, 'acquire'> {
+  return useEngineWhen(true);
+}
+
+// The engine, started only while `needed` - a game review, whose engine
+// isn't wanted once the review's been worked out, or fetched.
+export function useEngineWhen(
+  needed: boolean,
+): Omit<EngineContextValue, 'acquire'> {
   const context = useContext(EngineContext);
   if (!context) {
     throw new Error('useEngine must be used within an EngineProvider');
   }
   const { acquire, status, retry } = context;
-  useEffect(() => acquire(), [acquire]);
+  useEffect(() => (needed ? acquire() : undefined), [acquire, needed]);
   return { status, retry };
 }
 

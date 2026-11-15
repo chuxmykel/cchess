@@ -294,7 +294,8 @@ resign or abort from the app (see `examples/resign.yaml` /
   `UserProfile`; guests get `sign-in-prompt` instead), the analysis items
   below, `menu-opening-explorer`, `menu-players` (signed in only; opens
   `FindFriends` with its search focused), `menu-settings` (opens `settings-screen`: `appearance-row`,
-  `analysis-settings-row`, `daily-game-settings-row`, `licenses-row` -
+  `analysis-settings-row`, `daily-game-settings-row`,
+  `review-settings-row`, `licenses-row` -
   opens `licenses-screen`) and `sign-out-button`.
 - **Puzzles** (the tab): `puzzles-screen`, `puzzles-coming-soon`.
 - **Appearance**: `appearance-settings`, the radio buttons
@@ -344,6 +345,45 @@ resign or abort from the app (see `examples/resign.yaml` /
   - The engine downloads the first time it's used. `clearState` wipes
     it, so a fresh launch downloads it again: give `engine-line-0` up to
     30s.
+- **Game review** (a screen, from a finished game's `review-button` on
+  the result card or `review-action` in ☰; verified 2026-11-15):
+  `game-review-loading`, `game-review-unavailable`, `game-review-error`,
+  then `game-review-analysing` with `review-analysing-fact` (a chess fact,
+  every 6s) and `review-progress` (its
+  `review-progress-label`, `review-progress-fill`,
+  `review-progress-retry`); then `game-review-summary`: `review-intro`,
+  `eval-graph` (`eval-graph-dot-<i>`, `eval-graph-cursor`),
+  `review-opening`, `review-accuracy-<w|b>`, `review-rating-<w|b>` (the game rating),
+  `review-count-<w|b>-<class>`, `review-start`. Stepping
+  (`game-review-stepping`): `eval-bar`, `review-bubble` with
+  `-title`, `-score`, `-text`, `-line` (`-line-current`, the move of
+  Show's line on the board); `review-board` with
+  `square-badge-<square>` and `move-class-<class>` marks (also in the
+  move list); `review-back` / `review-forward` beside the `move-list`;
+  `review-toolbar`: `review-retry`, `review-show`, `review-best` and
+  `review-next` (Next / Skip while it plays the moves on to a key
+  moment - every 0.17s - / Analyse; any move gone to is where the
+  review is, Next playing on from it); `review-show` plays the
+  line out a move every 0.65s (a Maestro tap waits ~1.5s for the screen
+  to settle, so screenshots straight after miss it - record with
+  `simctl io booted recordVideo` to see it play); at the close,
+  `move-list-end-<opening|tactics|strategy|endgame>` (the cards, after
+  the last move in the `move-list`) and `review-summary-button`. Swiping
+  along the move list scrolls it, the review going through the moves as
+  they pass (finger right goes back) - on iPhone 18 Pro it runs along
+  y ≈ 661, x 48-354. `review-show` and `review-best` are disabled where
+  they've nothing to say (Best on a book or best move, Show on a quiet
+  one). In Retry, tap a piece then a square (by
+  testID) - the board is the usual `piece-*`/`square-*`. The header's
+  `review-analyse-button` (the head icon, beside the ⚙) opens the analysis board at the move shown
+  (the result card has no Analyse any more - ☰ `analyse-action` in a
+  game), and `review-settings-button` opens `review-settings`
+  (`review-setting-<voice|showBestMoves|evalBar>`,
+  `review-voice-<identifier>`, `review-voice-hear-<identifier>`,
+  `review-as-<me|white|black>`, `review-strength-<fast|standard|deep>`);
+  Settings has `review-settings-row`. A 53-ply game took ~10s and a
+  130-ply one ~18s to analyse on the simulator (the Mac's CPU - a phone
+  is slower); `.maestro/game-review.yaml` is the happy path.
 - **Sign in / Create account**: `sign-in-screen` / `create-account-screen`,
   inputs `username-or-email-input`, `username-input`, `email-input`,
   `password-input` (its eye button, which shows or hides the password, is

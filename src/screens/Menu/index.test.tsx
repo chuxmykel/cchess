@@ -69,7 +69,7 @@ describe('Menu', () => {
     ]);
   });
 
-  it('opens my own profile, the same screen as anyone else’s', async () => {
+  it("opens my own profile, the same screen as anyone else's", async () => {
     const { screen, navigation } = await renderMenu();
 
     expect(screen.getByText('Magnus Carlsen')).toBeTruthy();

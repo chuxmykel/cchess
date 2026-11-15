@@ -13,8 +13,9 @@ export type AnalysisRequest = {
   fen: string;
   // How many of the best lines to follow.
   multiPv: number;
-  // When to stop: at this depth, or after this long - or never, `infinite`,
-  // until it's stopped for another position.
+  // When to stop: at this depth, or after this long - at whichever comes
+  // first, given both - or never, `infinite`, until it's stopped for another
+  // position.
   limit: SearchLimit;
 };
 

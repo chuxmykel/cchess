@@ -18,6 +18,8 @@ export function makeGameSummary(
     opponentProvisional: false,
     ratingDiff: null,
     playedAsWhite: true,
+    accuracy: null,
+    opponentAccuracy: null,
     createdAt: '2026-10-26T10:00:00.000Z',
     endedAt: '2026-10-26T10:08:00.000Z',
     ...overrides,

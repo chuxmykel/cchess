@@ -1,3 +1,4 @@
+import type { MoveClass } from '../domain/review/types';
 import {
   elevation,
   fontFamily,
@@ -137,6 +138,12 @@ export interface ThemeColors {
     threatArrow: string;
   };
   evalBar: { white: string; black: string; onWhite: string; onBlack: string };
+  // A game review's classes of move - on the board's squares and beside
+  // the moves, so the same in both modes - and the mark drawn on them.
+  moveClass: Record<MoveClass, string>;
+  onMoveClass: string;
+  // The review's speech bubble.
+  reviewBubble: string;
 }
 
 export interface Theme {
@@ -176,6 +183,22 @@ const sharedBoardColors = {
   ],
   threatArrow: 'rgba(214, 96, 86, 0.58)',
 } as const;
+
+// Green for the good, the stronger the better; then yellow, orange and red
+// for the slips, as lichess marks ?!, ? and ??; teal and blue for the
+// standouts, and brown for the book.
+const moveClass: Record<MoveClass, string> = {
+  brilliant: '#26a69a',
+  great: '#5c8fd6',
+  best: '#6aa84f',
+  excellent: '#8bbf4e',
+  good: '#93ae80',
+  book: '#a3825c',
+  inaccuracy: '#e2b31d',
+  mistake: '#e8892a',
+  miss: '#e2645a',
+  blunder: '#d03a32',
+};
 
 const evalBar = {
   white: '#f2f2f2',
@@ -263,6 +286,9 @@ export const lightTheme: Theme = {
       promotionTilePressed: '#d5d9de',
     },
     evalBar,
+    moveClass,
+    onMoveClass: '#fff',
+    reviewBubble: '#fff',
   },
 };
 
@@ -349,6 +375,9 @@ export const darkTheme: Theme = {
       promotionTilePressed: '#4a4743',
     },
     evalBar,
+    moveClass,
+    onMoveClass: '#fff',
+    reviewBubble: '#33312d',
   },
 };
 

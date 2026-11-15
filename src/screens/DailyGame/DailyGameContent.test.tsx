@@ -509,10 +509,25 @@ describe('DailyGameContent', () => {
       expect(menuActionIds(screen)).toEqual([
         'next-game-action',
         'show-result-action',
+        'review-action',
         'analyse-action',
         'daily-game-settings-action',
         'flip-board-action',
       ]);
+    });
+
+    it("opens the game's review from the result card", async () => {
+      const { screen, trigger, navigation, snapshot } = await renderContent(
+        'w',
+        UNDER_WAY,
+      );
+      await finish(trigger);
+
+      await fireEvent.press(screen.getByTestId('review-button'));
+
+      expect(navigation.navigate).toHaveBeenCalledWith('GameReview', {
+        gameId: snapshot.id,
+      });
     });
   });
 });

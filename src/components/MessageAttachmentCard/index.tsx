@@ -61,7 +61,7 @@ const GameCard: React.FC<{
       )}
       <View style={styles.caption}>
         {game === 'error' ? (
-          <Text style={styles.muted}>This game can’t be shown</Text>
+          <Text style={styles.muted}>This game can&apos;t be shown</Text>
         ) : isReady ? (
           <>
             <Text style={styles.title} numberOfLines={1}>

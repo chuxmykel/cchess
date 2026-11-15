@@ -20,7 +20,11 @@ interface GameRowProps {
 function subtitleFor(game: GameSummary): string {
   const finishedAt = min([game.endedAt ?? game.createdAt, Date.now()]);
   const timeAgo = formatDistanceToNowStrict(finishedAt, { addSuffix: true });
-  return game.status === 'aborted' ? `Aborted • ${timeAgo}` : timeAgo;
+  if (game.status === 'aborted') return `Aborted • ${timeAgo}`;
+  // The player's accuracy, once the game's been reviewed.
+  return game.accuracy === null
+    ? timeAgo
+    : `${timeAgo} • Accuracy ${game.accuracy.toFixed(1)}`;
 }
 
 const GameRow: React.FC<GameRowProps> = ({ game, onPress }) => {

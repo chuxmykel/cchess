@@ -28,6 +28,7 @@ import {
   PieceSet,
   Premovable,
   Square,
+  SquareBadge,
 } from './types';
 import { defaultPieceSet } from './defaultPieceSet';
 
@@ -36,6 +37,7 @@ import BoardSurface from './components/BoardSurface';
 import LastMoveHighlight from './components/LastMoveHighlight';
 import Pieces from './components/Pieces';
 import PieceDragAndDropGuide from './components/PieceDragAndDropGuide';
+import SquareBadges from './components/SquareBadges';
 import ValidMoveIndicators from './components/ValidMoveIndicators';
 
 export interface ChessboardProps {
@@ -79,6 +81,8 @@ export interface ChessboardProps {
   // A king in check, glowing red - tipped over once fallen.
   check?: KingCheck | null;
   arrows?: BoardArrow[];
+  // Marks on squares' corners, over the pieces.
+  squareBadges?: SquareBadge[];
   animation?: BoardAnimation;
   // Drawn only, not touched: no gestures, and touches pass through.
   viewOnly?: boolean;
@@ -93,9 +97,10 @@ export interface ChessboardProps {
   testID?: string;
 }
 
-type CoreProps = Omit<ChessboardProps, 'arrows'>;
+type CoreProps = Omit<ChessboardProps, 'arrows' | 'squareBadges'>;
 
 const NO_ARROWS: BoardArrow[] = [];
+const NO_BADGES: SquareBadge[] = [];
 const NO_DESTS: Dests = {};
 const NO_SQUARES: Square[] = [];
 const DEFAULT_ANIMATION: BoardAnimation = {};
@@ -431,6 +436,7 @@ const BoardCore = memo(function BoardCore({
 // change.
 const Chessboard: React.FC<ChessboardProps> = ({
   arrows = NO_ARROWS,
+  squareBadges = NO_BADGES,
   ...props
 }) => {
   const { size, orientation = 'w', viewOnly = false } = props;
@@ -440,6 +446,11 @@ const Chessboard: React.FC<ChessboardProps> = ({
       <BoardCore {...props} testID={testID} />
       <BoardArrows
         arrows={arrows}
+        boardWidth={size}
+        orientation={orientation}
+      />
+      <SquareBadges
+        badges={squareBadges}
         boardWidth={size}
         orientation={orientation}
       />

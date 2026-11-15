@@ -30,6 +30,8 @@ export type HomeStackParamList = {
   ConditionalMoves: { gameId: string };
   /** Your own notes on a game. */
   GameNotes: { gameId: string };
+  /** A finished game's review: its key moments, stepped through. */
+  GameReview: { gameId: string };
   /** watchedUserId: the player whose game this is being watched for -
    * shown at the bottom, and followed into their next game. */
   GameViewer: { gameId: string; watchedUserId?: string };
@@ -57,6 +59,8 @@ export type HomeStackParamList = {
   AnalysisSettings: undefined;
   /** Daily games' settings, over one. */
   DailyGameSettings: undefined;
+  /** The game review's settings, over one or from Settings. */
+  ReviewSettings: undefined;
   /** Credit and licences for what the app uses, the engine's above all. */
   Licenses: undefined;
   Appearance: undefined;

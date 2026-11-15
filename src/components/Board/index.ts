@@ -3,6 +3,7 @@
 // so another board library would be swapped in here alone.
 export { default as GameBoard } from './GameBoard';
 export { default as PositionBoard } from './PositionBoard';
+export { default as ReviewBoard } from './ReviewBoard';
 export { default as EmptyBoard } from './EmptyBoard';
 export { default as SetupBoard } from './SetupBoard';
 export { default as BoardPieceIcon } from './BoardPieceIcon';
