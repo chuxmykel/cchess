@@ -369,8 +369,11 @@ resign or abort from the app (see `examples/resign.yaml` /
   `simctl io booted recordVideo` to see it play); at the close,
   `move-list-end-<opening|tactics|strategy|endgame>` (the cards, after
   the last move in the `move-list`) and `review-summary-button`. Swiping
-  along the move list steps a move every 28pt (finger right goes back) -
-  on iPhone 18 Pro it runs along y ≈ 661, x 48-354. In Retry, tap a piece then a square (by
+  along the move list scrolls it, the review going through the moves as
+  they pass (finger right goes back) - on iPhone 18 Pro it runs along
+  y ≈ 661, x 48-354. `review-show` and `review-best` are disabled where
+  they've nothing to say (Best on a book or best move, Show on a quiet
+  one). In Retry, tap a piece then a square (by
   testID) - the board is the usual `piece-*`/`square-*`. The header's
   `review-settings-button` opens `review-settings`
   (`review-setting-<voice|showBestMoves|evalBar>`,
