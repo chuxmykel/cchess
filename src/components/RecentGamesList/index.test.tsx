@@ -68,6 +68,25 @@ describe('RecentGamesList', () => {
     expect(row.getByTestId('game-result-icon-loss')).toBeTruthy();
   });
 
+  it('shows my accuracy once the game has been reviewed', async () => {
+    const game = makeGameSummary({
+      endedAt: '2026-10-26T10:00:00.000Z',
+      accuracy: 87.34,
+      opponentAccuracy: 61.2,
+    });
+    const screen = await render(
+      <RecentGamesList
+        recentGames={{ status: RECENT_GAMES_STATUS.READY, games: [game] }}
+        onRetry={jest.fn()}
+        onPressGame={jest.fn()}
+        onSeeAll={jest.fn()}
+      />,
+    );
+
+    const row = within(screen.getByTestId(`game-row-${game.id}`));
+    expect(row.getByText('2 hours ago • Accuracy 87.3')).toBeTruthy();
+  });
+
   it("shows the opponent's rating and what the game did to mine", async () => {
     const game = makeGameSummary({ opponentRating: 1529, ratingDiff: -8 });
     const screen = await render(
