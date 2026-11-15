@@ -362,12 +362,15 @@ resign or abort from the app (see `examples/resign.yaml` /
   move list); `review-back` / `review-forward` beside the `move-list`;
   `review-toolbar`: `review-retry`, `review-show`, `review-best` and
   `review-next` (Next / Skip while it plays the moves on to a key
-  moment - every 0.17s - / Resume / Analyse); `review-show` plays the
+  moment - every 0.17s - / Analyse; any move gone to is where the
+  review is, Next playing on from it); `review-show` plays the
   line out a move every 0.65s (a Maestro tap waits ~1.5s for the screen
   to settle, so screenshots straight after miss it - record with
   `simctl io booted recordVideo` to see it play); at the close,
-  `tab-<opening|tactics|strategy|endgame>` (when there's more than one
-  card) and `review-summary-button`. In Retry, tap a piece then a square (by
+  `move-list-end-<opening|tactics|strategy|endgame>` (the cards, after
+  the last move in the `move-list`) and `review-summary-button`. Swiping
+  along the move list steps a move every 28pt (finger right goes back) -
+  on iPhone 18 Pro it runs along y ≈ 661, x 48-354. In Retry, tap a piece then a square (by
   testID) - the board is the usual `piece-*`/`square-*`. The header's
   `review-settings-button` opens `review-settings`
   (`review-setting-<voice|showBestMoves|evalBar>`,
