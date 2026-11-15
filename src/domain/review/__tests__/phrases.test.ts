@@ -1,0 +1,55 @@
+import { commentFor, headline, seedOf } from '../phrases';
+
+describe('phrases', () => {
+  it('heads a move with its class', () => {
+    expect(headline('Nf3', 'book')).toBe('Nf3 is a book move');
+    expect(headline('Bg3', 'mistake')).toBe('Bg3 is a mistake');
+    expect(headline('a3', 'inaccuracy')).toBe('a3 is an inaccuracy');
+  });
+
+  it('says the first fact, filled in', () => {
+    const comment = commentFor(
+      { san: 'Bg3', moveClass: 'mistake', bestSan: 'Nd2' },
+      [{ kind: 'trapped', piece: 'bishop' }],
+      0,
+    );
+    expect(comment.text).toBe(
+      'You permitted the opponent to win a bishop by eventually *trapping* it.',
+    );
+    expect(comment.spoken).toBe(
+      'bishop g3 is a mistake. You permitted the opponent to win a bishop by eventually trapping it.',
+    );
+  });
+
+  it('chooses among wordings by the seed', () => {
+    const say = (seed: number) =>
+      commentFor(
+        { san: 'Bg3', moveClass: 'blunder', bestSan: null },
+        [{ kind: 'hangs', piece: 'rook' }],
+        seed,
+      ).text;
+    expect(say(0)).not.toBe(say(1));
+    expect(say(0)).toBe(say(2));
+  });
+
+  it('names the better move for a slip with nothing more to say', () => {
+    const comment = commentFor(
+      { san: 'a3', moveClass: 'inaccuracy', bestSan: 'Nf3' },
+      [{ kind: 'slips' }],
+      0,
+    );
+    expect(comment.text).toMatch(/Nf3 was best\.$/);
+    expect(comment.spoken).toMatch(/knight f3 was best\.$/);
+  });
+
+  it('falls back on the class when there’s no fact', () => {
+    expect(
+      commentFor({ san: 'Nf3', moveClass: 'best', bestSan: 'Nf3' }, [], 0).text,
+    ).toBe('The best move in the position.');
+  });
+
+  it('seeds the same text the same way', () => {
+    expect(seedOf('game:12')).toBe(seedOf('game:12'));
+    expect(seedOf('game:12')).not.toBe(seedOf('game:13'));
+  });
+});

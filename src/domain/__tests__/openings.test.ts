@@ -1,6 +1,6 @@
 import { Chess, DEFAULT_POSITION } from 'chess.js';
 
-import { bookMovesFrom, epd, openingAt } from '../openings';
+import { bookMovesFrom, bookOpeningAt, epd, openingAt } from '../openings';
 
 // Every position along a line of SAN moves, the start first.
 function fensAlong(...sans: string[]) {
@@ -71,5 +71,17 @@ describe('bookMovesFrom', () => {
 
   it('gives none once out of the book', () => {
     expect(bookMovesFrom('8/8/4k3/8/8/4K3/8/8 w - - 0 60')).toEqual([]);
+  });
+});
+
+describe('bookOpeningAt', () => {
+  it('names a position in the book', () => {
+    const [, afterE4] = fensAlong('e4');
+    expect(bookOpeningAt(afterE4)?.name).toBe("King's Pawn Game");
+  });
+
+  it('has none for a position the book doesn’t name', () => {
+    const fens = fensAlong('e4', 'c5', 'Ke2', 'Qa5');
+    expect(bookOpeningAt(fens[fens.length - 1])).toBeNull();
   });
 });

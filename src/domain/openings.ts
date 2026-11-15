@@ -49,3 +49,10 @@ export function bookMovesFrom(fen: string): BookMove[] {
   }
   return moves;
 }
+
+// The opening a position is in the book as - null when the book doesn't
+// name it, the moves having left it.
+export function bookOpeningAt(fen: string): Opening | null {
+  const found = BY_POSITION[epd(fen)];
+  return found ? { eco: found[0], name: found[1] } : null;
+}

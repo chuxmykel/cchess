@@ -1,6 +1,7 @@
 import { Chess, Color } from 'chess.js';
 
 import { otherColor } from './players';
+import { whiteWinningChances } from './review/winChances';
 import { RawScore } from './uci';
 
 // A score as analysis shows it: from white's point of view, as on lichess and
@@ -39,9 +40,7 @@ export function formatScore(score: EngineScore): string {
 // fill the bar - a mate does.
 export function evalBarFraction(score: EngineScore): number {
   if (score.kind === 'mate') return score.winner === 'w' ? 1 : 0;
-  const cp = Math.max(-1000, Math.min(1000, score.cp));
-  const chances = 2 / (1 + Math.exp(-0.00368208 * cp)) - 1;
-  return (chances + 1) / 2;
+  return (whiteWinningChances(score) + 1) / 2;
 }
 
 // A position with no moves left has no search to run, just a result: mate
