@@ -1,4 +1,5 @@
 import { render } from '@testing-library/react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 import PieceImage from '.';
 import { defaultPieceSet } from '../../defaultPieceSet';
@@ -21,10 +22,30 @@ describe('PieceImage', () => {
 
   it('makes a king in check glow red', async () => {
     const screen = await render(
-      <PieceImage svg={SVG} width={50} orientation="w" inDanger />,
+      <PieceImage
+        svg={SVG}
+        width={50}
+        orientation="w"
+        inDanger
+        dangerColor="red"
+      />,
     );
 
-    expect(screen.getAllByTestId('danger-glow').length).toBeGreaterThan(0);
+    // A shadow on iOS; Android draws none, so there it's a drop-shadow.
+    const glow = StyleSheet.flatten(
+      screen.getAllByTestId('danger-glow')[0].props.style,
+    );
+    if (Platform.OS === 'android') {
+      expect(glow.filter).toEqual([
+        {
+          dropShadow: expect.objectContaining({ color: 'red' }),
+        },
+      ]);
+      expect(glow.shadowColor).toBeUndefined();
+    } else {
+      expect(glow).toMatchObject({ shadowColor: 'red', shadowOpacity: 1 });
+      expect(glow.filter).toBeUndefined();
+    }
   });
 
   it('stands a mated king upright, then topples it', async () => {
