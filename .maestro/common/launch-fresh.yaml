@@ -1,25 +1,86 @@
-appId: host.exp.Exponent
+appId: ${APP_ID}
 ---
-# Guarantees a genuinely fresh app, landing on Home: clearState wipes Expo
-# Go's remembered project list (so openLink can't just resume an
-# already-running JS instance), and the dev-menu overlay only reappears on
-# a true fresh load - its presence is itself a signal this worked, which is
-# why every flow dismisses it explicitly rather than assuming it's absent.
-
-# Requires `expo start` already running locally on the default port 8081 -
-# see ../README.md.
+# Guarantees a genuinely fresh app, landing on Home as a new guest:
+# clearState wipes Expo Go's remembered project list (so openLink can't
+# just resume an already-running JS instance) and, on Android, the stored
+# account; iOS keeps that in the keychain, cleared here too. A flow that
+# needs an account signs in afterwards (sign-in.yaml).
+#
+# Every flow starts here, after stopping any scripted opponent an earlier
+# flow left running (bot-reset.js).
+#
+# Run through scripts/e2e/run.sh, which sets APP_ID (Expo Go's, per
+# platform), METRO_URL (its Metro, on 8091 so it's clear of a dev one)
+# and BOT_URL - see ../README.md.
+- runScript: bot-reset.js
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - clearKeychain
 - launchApp:
     clearState: true
-- openLink: "exp://127.0.0.1:8081"
+# As `expo start` does when it opens a project itself:
+# __expo_disable_onboarding keeps Expo Go's first-launch dev-menu overlay
+# away, and __expo_disable_fab its floating dev-menu button - drawn over the
+# app's top right corner, where it takes taps meant for a header's buttons.
+# Retried: the simulator now and then times out opening it (POSIX error 60).
+- retry:
+    maxRetries: 2
+    commands:
+      - openLink: "${METRO_URL}?__expo_disable_onboarding=1&__expo_disable_fab=1"
 
-# The first-launch dev-menu overlay has both an "X" (id: xmark) and a
-# "Continue" button. Tap the X to close the overlay.
-- tapOn:
-    id: "xmark"
+# Until Home shows - the first launch of a run also waits here on Metro's
+# bundle - closing Expo Go's dev menu should it open over the app: with
+# its X, `xmark`, on iOS, or the one labelled "Close" on Android. Never
+# "Continue", which opens the dev tools menu over the app instead. And
+# Wait on an Android "isn't responding" dialog (see below).
+- repeat:
+    while:
+      notVisible:
+        id: "play-button"
+    times: 20
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "play-button"
+          timeout: 3000
+          optional: true
+      - tapOn:
+          id: "xmark"
+          optional: true
+      - tapOn:
+          text: "Close"
+          optional: true
+      - tapOn:
+          text: "Wait"
+          optional: true
+
+# Android's Expo Go opens its dev menu once the app has loaded, over Home:
+# give it a moment to, and close it. And a slow emulator can show a system
+# app's "isn't responding" dialog over everything (run.sh turns them off,
+# which Android doesn't always heed): Wait lets it carry on.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          text: "Wait"
+          optional: true
+      - extendedWaitUntil:
+          visible:
+            text: "Close"
+          timeout: 4000
+          optional: true
+      - tapOn:
+          text: "Close"
+          optional: true
 
 # Synchronization barrier: tapOn/swipe don't wait for Home to actually be
 # interactive, only for Maestro's own target element to resolve - without
 # this, a flow that starts interacting immediately after this one races
 # ahead of Home settling and silently misses.
-- assertVisible:
-    id: "play-button"
+- extendedWaitUntil:
+    visible:
+      id: "play-button"
+    timeout: 10000

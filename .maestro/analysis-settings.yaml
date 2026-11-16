@@ -1,0 +1,19 @@
+appId: ${APP_ID}
+---
+# The analysis board's settings, from its menu: how many engine lines,
+# the search time, and the rest.
+- runFlow: common/launch-fresh.yaml
+- tapOn:
+    id: "menu-tab"
+- tapOn:
+    id: "analysis-new"
+- tapOn:
+    id: "game-menu-button"
+- tapOn:
+    id: "analysis-settings-action"
+- assertVisible:
+    id: "analysis-settings"
+- assertVisible:
+    id: "engine-line-count-slider"
+- assertVisible:
+    id: "search-time-slider"

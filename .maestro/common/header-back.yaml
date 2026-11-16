@@ -1,0 +1,17 @@
+appId: ${APP_ID}
+---
+# Back, from a screen's header: the app's own chevron on iOS (`header-back`,
+# in place of the native button and its glass circle), Android's native
+# arrow there - AppCompat's "up" button, described as "Navigate up". Not
+# Maestro's `back`, Android's alone, which closes an open keyboard first.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: "header-back"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn: "Navigate up"

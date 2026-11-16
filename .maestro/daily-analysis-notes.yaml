@@ -1,0 +1,44 @@
+appId: ${APP_ID}
+tags:
+  - account
+---
+# A daily game's analysis, from its toolbar: a move tried there leaves the
+# game as it is; the notes, written there, are kept; and the opening
+# explorer opens on the position.
+- runFlow: common/sign-in.yaml
+- extendedWaitUntil:
+    visible:
+      id: "daily-games-section"
+    timeout: 15000
+- tapOn:
+    id: "daily-game-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+    text: ".*bot_2.*"
+- tapOn:
+    id: "toolbar-analysis-button"
+- assertVisible:
+    id: "daily-analysis"
+- tapOn: { id: "square-d7" }
+- tapOn: { id: "square-d5" }
+- assertVisible:
+    id: "move-2"
+    text: "d5"
+- tapOn:
+    id: "notes-button"
+- tapOn:
+    id: "notes-input"
+- inputText: "Play c4 next"
+# Back, above the keyboard, closes it with the screen - no dismiss-keyboard,
+# whose back press on Android can close the screen too.
+- runFlow: common/header-back.yaml
+- tapOn:
+    id: "notes-button"
+- assertVisible: ".*Play c4 next.*"
+- runFlow: common/header-back.yaml
+- tapOn:
+    id: "opening-explorer-button"
+- assertVisible:
+    id: "opening-explorer"
+- extendedWaitUntil:
+    visible:
+      id: "explorer-moves"
+    timeout: 15000

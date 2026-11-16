@@ -1,0 +1,23 @@
+appId: ${APP_ID}
+tags:
+  - account
+---
+# Your profile, from the Menu, and a category's rating stats from it: the
+# chart over a month, then over every game.
+- runFlow: common/sign-in.yaml
+- tapOn:
+    id: "menu-tab"
+- tapOn:
+    id: "menu-profile"
+- assertVisible:
+    id: "user-profile-screen"
+- tapOn:
+    id: "rating-blitz"
+- assertVisible:
+    id: "rating-stats-screen"
+- assertVisible:
+    id: "rating-chart"
+- tapOn:
+    id: "tab-all"
+- assertVisible:
+    id: "rating-chart"

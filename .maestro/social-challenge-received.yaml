@@ -1,0 +1,23 @@
+appId: ${APP_ID}
+tags:
+  - account
+  - opponent
+---
+# A friend's challenge arrives: counted on Home's bell, accepted from its
+# menu, and the game opens.
+- runFlow:
+    file: common/friend-online.yaml
+    env:
+      FRIEND_ARGS: "--challenge --time 5+0"
+- extendedWaitUntil:
+    visible:
+      id: "notifications-badge"
+    timeout: 20000
+- tapOn:
+    id: "notifications-button"
+- tapOn:
+    id: "accept-challenge-.*"
+- extendedWaitUntil:
+    visible:
+      id: "game-toolbar"
+    timeout: 20000

@@ -1,0 +1,27 @@
+appId: ${APP_ID}
+tags:
+  - account
+---
+# Game history, from Home's Recent Games See All: every finished game, then
+# just the losses - e2e_main's seeded games include some.
+- runFlow: common/sign-in.yaml
+- tapOn:
+    id: "recent-games-see-all"
+- assertVisible:
+    id: "games-list"
+- extendedWaitUntil:
+    visible:
+      id: "game-row-.*"
+    timeout: 15000
+- tapOn:
+    id: "games-result-filter"
+- tapOn:
+    id: "games-result-filter-loss"
+- assertVisible:
+    id: "game-row-.*"
+- tapOn:
+    id: "games-type-filter"
+- tapOn:
+    id: "games-type-filter-blitz"
+- assertVisible:
+    id: "game-row-.*"

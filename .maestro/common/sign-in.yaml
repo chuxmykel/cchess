@@ -1,0 +1,27 @@
+appId: ${APP_ID}
+---
+# Home, signed in as an e2e account (USERNAME - e2e_main unless given): a
+# fresh launch, then Sign in from Home's guest prompt. The e2e backend
+# seeds e2e_main and e2e_friend, friends, with games of their own;
+# cchess-be's e2e-fixtures seeder says which. Every e2e account's password
+# is "password".
+- runFlow: launch-fresh.yaml
+- tapOn:
+    id: "sign-in-button"
+- tapOn:
+    id: "username-or-email-input"
+- inputText: ${USERNAME || 'e2e_main'}
+- tapOn:
+    id: "password-input"
+- inputText: "password"
+- runFlow: dismiss-keyboard.yaml
+- tapOn:
+    id: "account-form-submit"
+- runFlow: dismiss-save-password.yaml
+# Back on Home, its guest prompt gone.
+- extendedWaitUntil:
+    notVisible:
+      id: "sign-in-prompt"
+    timeout: 15000
+- assertVisible:
+    id: "play-button"

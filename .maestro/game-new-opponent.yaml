@@ -1,0 +1,29 @@
+appId: ${APP_ID}
+tags:
+  - opponent
+---
+# "New opponent" after a game puts the screen back to seeking, with the same
+# time control, and a new game starts in place when one's found.
+- runFlow: common/to-board.yaml
+- runFlow: common/both-moved.yaml
+- tapOn:
+    id: "toolbar-resign-button"
+- tapOn:
+    text: "Resign"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: "new-opponent-button"
+    timeout: 10000
+- runScript:
+    file: common/bot-start.js
+    env:
+      BOT_ARGS: "--guest --color b --level easy"
+- tapOn:
+    id: "new-opponent-button"
+- extendedWaitUntil:
+    visible:
+      id: "game-toolbar"
+    timeout: 30000
+- assertNotVisible:
+    id: "move-1"

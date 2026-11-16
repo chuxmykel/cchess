@@ -1,0 +1,29 @@
+appId: ${APP_ID}
+tags:
+  - opponent
+---
+# A game still going when the app is closed opens again on the next launch,
+# moves and all - the account (a guest here) kept.
+- runFlow: common/to-board.yaml
+- runFlow: common/both-moved.yaml
+- stopApp
+- launchApp
+- openLink: "${METRO_URL}?__expo_disable_onboarding=1&__expo_disable_fab=1"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible:
+            text: "Close"
+          timeout: 15000
+          optional: true
+      - tapOn:
+          text: "Close"
+          optional: true
+- extendedWaitUntil:
+    visible:
+      id: "game-toolbar"
+    timeout: 30000
+- assertVisible:
+    id: "move-2"

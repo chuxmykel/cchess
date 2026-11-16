@@ -1,14 +1,14 @@
-appId: host.exp.Exponent
+appId: ${APP_ID}
 tags:
-  - needs-live-server
+  - account
+  - engine
 ---
-# A finished game's review, from Home's newest recent game: analysed on the
-# device (the engine downloaded first, launch-fresh having cleared it) - or
-# fetched, when the server keeps one - then its summary, its key moments,
-# and Show, Best and Retry at one of them. Needs the game server and an
-# account signed in (a fresh launch keeps it - the keychain isn't cleared)
-# with a finished game whose side had a slip - most do; no opponent.
-- runFlow: common/launch-fresh.yaml
+# A finished game's review, from Home's newest recent game - e2e_main's
+# seeded blunder (6...Qxg5??, see cchess-be's e2e-fixtures seeder):
+# analysed on the device (the engine downloaded first, a fresh launch
+# having cleared it) - then its summary, a key moment, Show, Best and
+# stepping back. It never checks what the engine said, which varies.
+- runFlow: common/sign-in.yaml
 - extendedWaitUntil:
     visible:
       id: "game-row-.*"

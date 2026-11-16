@@ -1,0 +1,37 @@
+appId: ${APP_ID}
+---
+# Setting up a position from the Menu: the board cleared, two kings and a
+# queen placed, then analysed - and it's that position: the queen's check
+# can be played.
+- runFlow: common/launch-fresh.yaml
+- tapOn:
+    id: "menu-tab"
+- tapOn:
+    id: "analysis-set-up"
+- assertVisible:
+    id: "set-up-position"
+- tapOn:
+    id: "set-up-menu"
+- tapOn:
+    id: "editor-clear"
+- tapOn:
+    id: "editor-tool-wk"
+- tapOn:
+    id: "square-e1"
+- tapOn:
+    id: "editor-tool-wq"
+- tapOn:
+    id: "square-d1"
+- tapOn:
+    id: "editor-tool-bk"
+- tapOn:
+    id: "square-e8"
+- tapOn:
+    id: "set-up-analyse"
+- assertVisible:
+    id: "analysis-board"
+- tapOn:
+    id: "square-d1"
+- tapOn:
+    id: "square-d7"
+- assertVisible: ".*Qd7\\+"

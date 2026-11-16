@@ -1,203 +1,229 @@
 # E2E flows (Maestro)
 
-Real device/simulator tests, as opposed to the Jest/RNTL suite in `src/`,
-which only _simulates_ React Native's PanResponder gesture protocol. These
-flows drive the actual app running in a real iOS Simulator via Apple's
-XCTest instrumentation, so they catch things the simulated tests structurally
+Real-device tests, on the iOS Simulator and the Android emulator, against a
+real cchess-be - as opposed to the Jest/RNTL suite in `src/`, which only
+_simulates_ native gestures and mocks the server. These flows drive the
+actual app in Expo Go, so they catch what the simulated tests structurally
 can't.
-
-## Prerequisites
-
-1. **Maestro installed** at `~/.maestro/bin/maestro` - not an npm dependency
-   (there is no official npm package for it);
-2. **`expo start` running locally**, serving on the default port 8081.
-   Every flow deep-links via `exp://127.0.0.1:8081` (see
-   `common/launch-fresh.yaml`), so this has to already be up:
-   ```bash
-   source ~/.nvm/nvm.sh && nvm use 22.16.0   # see the skill doc - this matters
-   npx expo start --ios
-   ```
-3. **A simulator booted** with the project open at least once (so Expo Go
-   is installed) - `expo start --ios` handles this itself.
 
 ## Running
 
 ```bash
-npm run test:e2e              # every flow in this directory except needs-live-server ones
-maestro test .maestro/tap-to-move.yaml   # a single flow, while iterating
+npm run test:e2e:ios         # every flow, on the booted iOS Simulator
+npm run test:e2e:android     # every flow, on the cchess-e2e emulator
+scripts/e2e/run.sh --platform android .maestro/game-resign.yaml   # one flow
+scripts/e2e/run.sh --platform ios --shard 2/3                     # a CI shard
+KEEP=1 scripts/e2e/run.sh ...   # leave the backend up afterwards
 ```
 
-In CI, `.github/workflows/e2e.yml` runs the same suite, but only when
-started by hand from the Actions tab - not on every push or PR.
+`scripts/e2e/run.sh` does everything, and takes it all down again:
 
-**Flows tagged `needs-live-server` are excluded from `npm run test:e2e`
-(and so from CI) as of the guest-auth/matchmaking/live-game slice.**
-`common/to-board.yaml` now goes through real matchmaking - tapping
-"Start New Game" opens LiveGame seeking an opponent, not a game, and
-reaching an actual game needs a live `cchess-be` connection (and a real
-opponent) that CI doesn't have. `common/to-board.yaml` itself and every
-flow that depends on it (`tap-to-move`, `drag-and-drop`, `capture`,
-`off-board-drag`, `new-game-renders`, `time-control-selection`, and
-`premove`, which also needs a slow scripted opponent - see its header) is
-tagged accordingly - still worth running locally against a live server
-(`maestro test .maestro --include-tags=needs-live-server`), just not
-gating CI until there's a self-contained way to run a backend inside
-the e2e job (e.g. booting `cchess-be` itself as a throwaway process in
-the same CI job). This is a known, deliberately deferred gap, not an
-oversight.
+1. **The backend** - cchess-be from `../cchess-be` (`$CCHESS_BE_DIR`),
+   migrated and seeded, on `127.0.0.1:3100`: by default
+   `../cchess-infra/test/e2e-stack.sh` (the Docker image production runs,
+   `compose.e2e.yaml`); with `--backend native`, cchess-be run directly on
+   a Postgres already running (`scripts/e2e/backend-native.sh` - CI's
+   macOS runner has no Docker).
+2. **The device** - the booted simulator (or `$E2E_IOS_DEVICE`, iPhone 18
+   Pro, booted), or the emulator: the one open if there is one, else
+   `cchess-e2e` booted without a window.
+3. **Metro** on 8091, the app's server built in as the device reaches the
+   host: `127.0.0.1` on the simulator, `10.0.2.2` on the emulator (no
+   `adb reverse`: Maestro's driver clears those rules).
+4. **The bot server** on 4100 (`scripts/e2e/bot-server.js`), through which
+   flows start and stop scripted opponents.
+5. **The flows** - all of `.maestro/*.yaml` but the screenshot tour, those
+   given, or a shard's share - with a JUnit report, logs and Maestro's
+   artifacts in `.e2e-logs/`.
 
-Each flow is independent and self-contained: every flow starts with
-`runFlow: common/launch-fresh.yaml`, `common/to-new-game.yaml`, or
-`common/to-board.yaml` (whichever gets it to the screen it actually
-needs - see "Navigation path" below), all of which force-quit and clear
-Expo Go's state, then deep-link back into the project. No flow depends
-on another's leftover state, and they can run in any order.
+Its ports are clear of a dev backend (3000) and Metro (8081), so a run never
+talks to them. The simulator itself is shared, though: a run relaunches Expo
+Go and clears its keychain over and over, signing out whatever account was
+in use there.
 
-## What's covered, and what isn't
+## One-time setup
 
-- **Navigation**: `common/launch-fresh.yaml` (→ Home), `to-new-game.yaml`
-  (→ New Game), and `to-board.yaml` (→ a fresh game's board, now via
-  real matchmaking - `needs-live-server`) are the layered entry points
-  every flow builds on - see "Navigation path" below.
-- **Board/gameplay** (`needs-live-server`, run manually - see above):
-  tap-to-move, drag-and-drop, captures, an off-board drag snapping
-  back, and picking a time control then actually starting a game
-  (`tap-to-move.yaml`, `drag-and-drop.yaml`, `capture.yaml`,
-  `off-board-drag.yaml`, `new-game-renders.yaml`,
-  `time-control-selection.yaml`).
-- **Daily games** (`needs-live-server`, no opponent needed): seeking a
-  daily game from New Game, waiting under Home's Daily games, and
-  withdrawing the seek (`daily-seek.yaml`).
-- **New Game screen**: dismissing the time-control sheet via its backdrop
-  without changing the selection (`bottom-sheet-dismiss.yaml`), and the
-  "Coming Soon" buttons' disabled-look-but-still-tappable toast
-  (`coming-soon-toast.yaml`).
-- **Analysis, from the Menu tab** (no game server, but the internet: the
-  engine is downloaded the first time it's used, and
-  `launch-fresh.yaml`'s cleared state means every run downloads it
-  again): a new analysis played for both sides, a variation from an
-  earlier position, the opening's name and an engine line appearing
-  (`analysis-variations.yaml` - it checks a line is there, never what it
-  says, since engine output varies), and a pasted FEN analysed
-  (`analysis-paste-fen.yaml`).
-- **Game review** (`needs-live-server`, signed in, with a finished game
-  on Home - a fresh launch keeps the account, see the header of
-  `game-review.yaml`): the newest game's review, analysed on the device
-  or fetched, its summary, Next to a key moment, Show, Best and stepping
-  back, the review going on from there (`game-review.yaml` - like the analysis flows, it never
-  checks what the engine said, which varies).
-- **The tabs** (`needs-live-server`, as a guest): Puzzles' coming-soon
-  page, Messages asking a guest to sign in, and the Menu opening the
-  settings (`tabs.yaml`). Messaging itself needs two signed-in accounts
-  who are friends, so it's left to Jest and checking by hand.
-- **Not covered**: Home itself (Friends carousel, Recent Games -
-  no interactive behavior worth a real-device flow yet, mostly
-  TODO-stubbed handlers; `common/launch-fresh.yaml` is ready for this
-  once there's something worth asserting on), the bottom sheet's
-  drag-to-dismiss gesture (covered at the hook level instead - see
-  `src/hooks/__tests__/useBottomSheet.test.tsx` - a real swipe gesture
-  through Maestro wasn't attempted here).
+- **Maestro** 2.10.0, at `~/.maestro/bin/maestro` - not an npm dependency:
+  `curl -Ls "https://get.maestro.mobile.dev" | bash`.
+- **Docker** (for the backend's stack), and cchess-be and cchess-infra
+  checked out beside this repo.
+- **iOS**: Xcode with the iPhone 18 Pro / iOS 27 simulator. Expo Go installs
+  itself the first time.
+- **Android**: the emulator, from Android's SDK command-line tools - not
+  the Android Studio app, nor Gradle or the NDK: the app runs in Expo Go,
+  which installs itself, so nothing's compiled. Java 17 or later (Maestro
+  needs it too), then about 2.5 GB to download:
 
-## Navigation path: launch lands on Home, not the board
+  ```bash
+  brew install --cask android-commandlinetools   # just to bootstrap sdkmanager
+  export ANDROID_HOME=$HOME/Library/Android/sdk
+  sdkmanager --sdk_root=$ANDROID_HOME "cmdline-tools;latest" "platform-tools" "emulator" \
+    "system-images;android-35;google_apis;arm64-v8a"
+  # The SDK's own avdmanager: Homebrew's looks for images in its own folder.
+  echo no | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd \
+    -n cchess-e2e -k "system-images;android-35;google_apis;arm64-v8a" -d pixel_8
+  sed -i '' 's/^hw.keyboard=no/hw.keyboard=yes/' ~/.android/avd/cchess-e2e.avd/config.ini
+  ```
 
-A fresh launch shows the **Home** tab (Friends carousel, Recent Games
-list, a "Play" bar pinned above the tab bar), not the chessboard. Three
-common flows cover progressively deeper navigation, each building on
-the last:
+  and in your shell's profile:
 
-1. `common/launch-fresh.yaml` - clear state, deep-link in, dismiss the
-   dev-menu overlay. Lands on **Home**. The base every other common flow
-   (and any future Home-screen flow) builds on.
-2. `common/to-new-game.yaml` - runs `launch-fresh.yaml`, then taps
-   `play-button`. Lands on the **New Game** screen.
-3. `common/to-board.yaml` (`needs-live-server`) - runs `to-new-game.yaml`,
-   then taps `start-new-game-button`. This now goes through real
-   matchmaking rather than landing directly on a board - see the
-   `needs-live-server` note above.
+  ```bash
+  export ANDROID_HOME=$HOME/Library/Android/sdk
+  export PATH=$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+  ```
 
-Use whichever one matches what the flow actually needs - a flow testing
-only the New Game screen should `runFlow: common/to-new-game.yaml`
-directly rather than `to-board.yaml`, and a flow testing only Home
-should use `launch-fresh.yaml` directly. `to-board.yaml` in particular
-is meant only for flows that actually need the board (its own game
-state) - pulling it into something that doesn't need a started game
-just adds navigation the flow has to wait through for no reason.
+  `emulator -avd cchess-e2e` opens it in a window to click through, as the
+  iOS Simulator is used (`hw.keyboard=yes` lets the Mac's keyboard type
+  into it); `npm start` then `a` opens the app there. CI's emulator is the
+  same Pixel 8 profile on x86_64.
 
-## Gotchas discovered writing these (read before adding more)
+## What's covered
 
-- **Tap the dev-menu's "X" (`id: xmark`), never "Continue".** Continue
-  doesn't dismiss the first-launch overlay - it advances into the actual
-  dev tools menu (Reload/Go home/Source code explorer/...), which then
-  sits on top of the board and silently absorbs whatever the next tap's
-  screen coordinates happen to land on. This produced a very confusing
-  failure (a tap aimed at a board square opened "Source code explorer"
-  instead) before being traced back to this.
-- **`assertVisible` after launch is a required synchronization barrier,
-  not optional.** `tapOn`/`swipe` don't wait for the board to be
-  interactive, only for Maestro's own target element to resolve - a flow
-  that starts interacting immediately after the launch subflow, without
-  that assertion, races ahead and silently misses.
-- **Only drag a piece whose color actually moves next.** A black piece is
-  correctly non-draggable (disabled) until white has moved - dragging one
-  on move one looks exactly like a broken swipe (nothing happens) but is
-  the app correctly refusing it. `drag-and-drop.yaml` originally tried to
-  drag d7 (black) first and chased a phantom "swipe doesn't work" bug for
-  a while before this was spotted.
-- **Swipe needs literal point coordinates, not selectors.** `start:
-{id: ...}` parses but silently does the wrong thing on this Maestro
-  version (2.10.0) - use `start`/`end` as `"x,y"` point strings in points
-  (not screenshot pixels), computed from a `maestro hierarchy` bounds
-  dump. These are specific to iPhone 18 Pro / iOS 27.0's layout -
-  recompute for any other device or board state.
-- **Board-layout coordinates silently go stale when _navigation_ around
-  the board changes, even though nothing in `ChessBoard`/`Game` itself
-  did.** Found this session: the drag-and-drop/off-board-drag swipe
-  coordinates (piece-e2's center, piece-g1's center) were still the
-  values from commit `d88824f`, written back when Game was reached
-  through a root **drawer** navigator. `e3656a3` later replaced that
-  with a stack nested under bottom tabs, and further commits added a
-  Home header and a pinned Play bar - nobody re-captured the
-  coordinates after. `Game`'s container is `flex: 1, justifyContent:
-"center", alignItems: "center"` - the board is centered in whatever
-  height its container gets, not fixed-position, so a different
-  enclosing navigator/chrome changes where that centered board lands on
-  screen with zero changes to board code. Recomputed via `maestro
-hierarchy`: piece-e2's center moved from `(226,613)` to `(226,562)`,
-  piece-g1's from `(326,663)` to `(326,613)`. Since then the screen
-  itself moved the board: a taller header, and the board 24pt from each
-  player bar with more room left below them than above (`GameBoardArea`),
-  putting piece-e2 at `(226,587)` and piece-g1 at `(326,637)`.
-  Maestro reports `COMPLETED` for a swipe even when its start point
-  misses the piece entirely - there's no error, the board just silently
-  doesn't change. If a drag flow "succeeds" but nothing moved, don't
-  trust the old numbers; re-dump `maestro hierarchy` and recompute -
-  and check whether it's really the board that changed, or something
-  further up the navigation tree.
-- **A literal `+` in an `id:` or `text:` matcher is a regex quantifier,
-  not a character - both silently fail to match.** Every time-control
-  testID/label containing `+` (e.g. `time-control-option-bullet-1+0`,
-  or the text `"5+0"`) needs it escaped as `\\+` in the YAML string, or
-  Maestro reports "Element not found" / the assertion fails even though
-  the element is clearly on screen.
-- **`text:` matches the _complete_ accessibility string, not a
-  substring - and iOS merges sibling Text nodes under one accessible
-  Pressable into a single comma-joined string.** The time control
-  trigger's icon, label, and caret are three separate `<Text>` children,
-  but because the parent `Pressable` is one accessible element, Maestro
-  sees them as one merged string: `"🔥, Blitz · 5+0, ⏷"`. Asserting
-  `text: "Blitz · 5+0"` (or even just `"Blitz"`) fails - only the full
-  merged string, comma-joined with the icon and caret, matches. This
-  makes trigger-label assertions brittle (tied to the exact merge
-  format); prefer asserting on testIDs instead, and leave exact label
-  text to the RTL component tests, which don't have this merging
-  behavior.
-- **A full-screen backdrop's `testID` doesn't necessarily tap where you
-  think.** The bottom sheet's backdrop `Pressable` covers the entire
-  screen (so `BottomSheet`'s own RTL test can press it directly), but
-  the sheet's content renders on top of it and visually covers most of
-  that area. Maestro resolves `id: "bottom-sheet-backdrop"` to a tap at
-  the center of its (full-screen) bounds, which lands on the sheet
-  content instead of the actually-dimmed area - the tap gets absorbed
-  by whatever's on top, not an error, so it looks like a no-op rather
-  than a wrong-target tap. Use a literal point coordinate in the region
-  that's visibly still dimmed instead (see `bottom-sheet-dismiss.yaml`).
+Every flow starts from a fresh app, as a new guest (`common/launch-fresh`),
+after stopping any opponent an earlier flow left; so no flow depends on
+another, and they run in any order, or split across shards.
+
+| Area           | Flows                                                                                                                                                                                                                                                                             |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| New Game       | `bottom-sheet-dismiss`, `coming-soon-toast`, `time-control-selection`, `new-game-settings` (Rated for a guest and an account, the saved time control)                                                                                                                             |
+| The board      | `new-game-renders`, `tap-to-move`, `drag-and-drop`, `off-board-drag`, `capture`, `premove`, `game-promotion`                                                                                                                                                                      |
+| A live game    | `game-resign` (and the result card), `game-draw-offered`, `game-draw-received`, `game-abort`, `game-first-move-timeout`, `game-flag`, `game-rematch`, `game-new-opponent`, `game-chat`, `game-back-blocked` (Android's back, iOS's swipe), `game-resume` (after the app's closed) |
+| Accounts       | `account-create` (a name taken, then free), `account-sign-in-out` (a wrong password, then signing out)                                                                                                                                                                            |
+| Friends        | `social-friend-profile`, `social-direct-message`, `social-challenge-sent`, `social-challenge-received`, `social-find-player` (and a friend request), `social-watch-friend`                                                                                                        |
+| Daily games    | `daily-seek`, `daily-play-move` (move confirmation), `daily-conditional-moves`, `daily-analysis-notes` (and the opening explorer from it), `daily-list`                                                                                                                           |
+| Review         | `game-review`, `review-settings-retry`                                                                                                                                                                                                                                            |
+| Analysis       | `analysis-variations`, `analysis-paste-fen`, `analysis-paste-pgn`, `analysis-set-up-position`, `analysis-from-your-games`, `analysis-settings`, `opening-explorer`                                                                                                                |
+| History, stats | `history-games-list` (its filters), `history-game-viewer` (and a bookmark), `stats-rating`                                                                                                                                                                                        |
+| Elsewhere      | `tabs`, `settings-appearance` (kept after a relaunch), `settings-licenses`                                                                                                                                                                                                        |
+
+Tags pick subsets while iterating (`maestro test --include-tags=...`):
+`opponent` (a scripted opponent), `account` (signed in), `engine` (the
+analysis engine, downloaded on first use - the internet, not just the
+backend), `slow` (a minute or so of waiting on a clock).
+
+Not covered: things a flow can't judge - how something looks (the
+screenshot tour, below, is for that), sounds, haptics, the review's voice;
+and native sheets that differ by platform (sharing a game).
+
+## The backend's fixtures
+
+The e2e backend is seeded (cchess-be's `e2e-fixtures` seeder, after its
+bots) with:
+
+- **`e2e_main`** - the account flows sign in as (`common/sign-in.yaml`) -
+  and **`e2e_friend`**, friends; and the bots, `bot_1`..`bot_5`. Every
+  password is `password`.
+- e2e_main's finished games: a blitz loss with a queen blundered out of the
+  book (6...Qxg5??) - the newest, which the review flows open - wins,
+  losses and a draw across bullet, blitz and rapid over the last month,
+  and an aborted game.
+- Two daily games in progress: e2e_main to move against e2e_friend (1. e4
+  e5), and bot_2 to move (1. d4). Flows tell them apart by the opponent's
+  name - the list's order changes once a move's played.
+
+A run's flows share one backend, so a flow that changes a fixture (playing
+the daily move) changes it for the flows after it; none depends on another
+having done so.
+
+## Opponents
+
+`common/to-board.yaml` starts a game against a scripted opponent - a guest
+seeking the app's default 5+0, as black - through the bot server, and flows
+pass their own (`BOT_ARGS`) for other games: `--moves d5,...` to play known
+moves first (so a capture, a promotion or a pre-move happens where the flow
+expects), `--draw accept|decline`, `--offer-draw`, `--idle`, `--chat`,
+`--games 2` for a rematch, `--time 1+0`. `common/friend-online.yaml` signs
+in and starts e2e_friend in friend mode (`--friend e2e_main`: answering
+messages "You said: ...", accepting challenges; `FRIEND_ARGS: --challenge`
+to send one). `scripts/opponent.js --help` has them all. A bot stopped by
+the next flow aborts its game, or resigns it once both have moved, so no
+game outlives its flow. Bots start after `sign-in.yaml`, whose fresh launch
+stops every bot.
+
+## Device-specific coordinates
+
+A swipe can't be aimed by testID (`start: {id: ...}` parses but does the
+wrong thing on Maestro 2.10.0), so the drags' ends are points per platform,
+written into the flows for each platform under `runFlow: when: platform:`
+
+- points on the iPhone 18 Pro, pixels on the Pixel 8 (`drag-and-drop`,
+  `off-board-drag`, `common/tap-backdrop`, and iOS's own sheets and keyboard
+  in `common/`). Not as env (`${...}`): given several flows, Maestro checks
+  them all before substituting env, and a point that's only `${...}` fails
+  to parse. The drags' are the squares' centres from
+  `maestro hierarchy` on a fresh game's board. They go stale silently when
+  anything moves the board on screen - a taller header, a different player
+  bar - and Maestro reports a swipe that missed its piece as COMPLETED, the
+  board just not changing; so when a drag "passes" but no move appears,
+  re-dump the hierarchy and recompute.
+
+## Gotchas (read before adding more)
+
+- **Check moves in the move list, not by a piece's testID.** Android
+  reports a view where it's laid out, not where a transform has moved it,
+  and every piece is laid out on a8 and moved by a transform: so on Android
+  only one `piece-*` is ever found. `move-<ply>` with the move's SAN as
+  `text` works on both (`id: move-1`, `text: e4`).
+- **Expo Go's floating dev-menu button** sits over the app's top right
+  corner - over a header's buttons, taking their taps - unless the link
+  says `__expo_disable_fab=1`, as every flow's does.
+- **Expo Go's dev menu.** On iOS it's kept away by the link's
+  `__expo_disable_onboarding=1`, and closed by its X (`id: xmark`) if it
+  shows anyway - never "Continue", which opens the dev tools menu over the
+  app, absorbing taps. Android's opens a moment _after_ the app has
+  loaded, over Home, labelled "Close"; `launch-fresh.yaml` waits for both.
+- **A synchronization barrier after launching.** `tapOn`/`swipe` don't wait
+  for the app to be interactive, only for their own target - so the common
+  flows end on an assertion that the screen is there.
+- **A literal `+` in an `id:` or `text:` matcher is a regex quantifier** -
+  escape it, `"time-control-option-bullet-1\\+0"`, or the match silently
+  fails.
+- **`text:` matches the whole accessible string**, and iOS merges sibling
+  texts under one accessible Pressable into one comma-joined string (the
+  time control trigger reads `"🔥, Blitz · 5+0, ⏷"`); prefer testIDs, or a
+  regex (`".*3\\+2.*"`).
+- **A full-screen backdrop's testID taps its centre**, which may be under
+  the sheet on top of it - tap a point in the dimmed part instead
+  (`common/tap-backdrop.yaml`).
+- **Only one side's pieces can be moved, and only on its turn** - a piece
+  that doesn't move may be the app correctly refusing it.
+- **Start bots after signing in** - the fresh launch stops every bot.
+- **iOS's own sheets** - "Use Strong Password?" over a new password field,
+  "Save Password?" after a sign-in form goes - are missing from Maestro's
+  hierarchy: they're closed by point, in
+  `account-create.yaml` and `common/dismiss-save-password.yaml`.
+- **Leaving a screen is a tap on its back button**, through
+  `common/header-back.yaml` (or a sheet's Cancel): the app's own chevron on
+  iOS (`header-back`), Android's native arrow ("Navigate up") there, as
+  header items are iOS's alone. Maestro's `back` is Android's alone, and
+  closes an open keyboard before it leaves anything.
+- **A sheet past 75% of the screen scrolls**, and `tapOn` doesn't: reach
+  what's below the fold with `scrollUntilVisible` first.
+- **Closing the keyboard** goes through `common/dismiss-keyboard.yaml`:
+  `hideKeyboard` on iOS fails when the simulator has no on-screen keyboard
+  up, so there it's a tap on empty space; on Android it's a back press,
+  which can leave the screen as well, so only where nothing else - a tap
+  on the header's back, above the keyboard - would close it.
+- **A move's text differs**: iOS reads a move token as "1. Ra8#", Android
+  as "Ra8#" - match with a regex, `".*Ra8#"`.
+- **A card's texts are its own**: both platforms read a pressable card's
+  texts as its label, so match the card by `id` and a `text` regex
+  (`".*bot_2.*"`) - `containsDescendants` finds nothing under it on iOS.
+
+## The screenshot tour
+
+`screens-tour.yaml` visits the app's screens and screenshots each, for
+comparing the platforms side by side - not a test, and left out of runs:
+
+```bash
+scripts/e2e/run.sh --platform android .maestro/screens-tour.yaml
+```
+
+The screenshots land in `.e2e-logs/maestro/`.
+
+## In CI
+
+`.github/workflows/e2e.yml` runs every flow on both platforms, on every PR
+and push to `main`/`develop`, each in three shards: Android on Linux
+(Docker for the backend, KVM for the emulator), iOS on macOS (cchess-be run
+directly, on Postgres 18). Each shard uploads its `.e2e-logs/`.

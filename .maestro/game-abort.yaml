@@ -1,0 +1,24 @@
+appId: ${APP_ID}
+tags:
+  - opponent
+---
+# Before both sides have moved, a game can only be aborted - from the menu,
+# confirmed - and it's over, with no result.
+- runFlow:
+    file: common/to-board.yaml
+    env:
+      BOT_ARGS: "--guest --color b --idle"
+- tapOn:
+    id: "game-menu-button"
+- assertNotVisible:
+    id: "resign-action"
+- tapOn:
+    id: "abort-game-action"
+- tapOn:
+    text: "Abort"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: "game-over-card"
+    timeout: 10000
+- assertVisible: ".*[Aa]bort.*"

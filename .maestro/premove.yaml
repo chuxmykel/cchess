@@ -1,32 +1,42 @@
-appId: host.exp.Exponent
+appId: ${APP_ID}
 tags:
-  - needs-live-server
+  - opponent
 ---
 # A pre-move, queued by tap while the opponent thinks, played by the server
-# the moment the opponent's move lands. Needs the app playing black against
-# a slow scripted opponent, started alongside:
-#   npm run opponent -- --guest --color w --delay 10000 --level easy
-# (a guest app; for a signed-in one on Rated, drop --guest). Taps by testID,
-# so it works whichever way the board faces. Resign afterwards - the
-# opponent leaves the game open otherwise.
-- runFlow: common/to-board.yaml
-- extendedWaitUntil:
-    visible:
-      id: "game-toolbar"
-    timeout: 30000
-# White hasn't moved yet: queue e7-e5, marked, the pawn still home.
-- tapOn: { id: "piece-e7" }
-- tapOn: { id: "square-e5" }
+# the moment the opponent's move lands: the app plays black against a slow
+# scripted white, so its 1...e5 is queued before 1. e4 comes.
+- runFlow:
+    file: common/to-board.yaml
+    env:
+      # Long enough for the taps to land first on a slow emulator.
+      BOT_ARGS: "--guest --color w --moves e4 --delay 20000"
+# White hasn't moved yet: queue e7-e5, marked. On Android the first-move
+# countdown ticking keeps Maestro from settling on a square to aim at - up
+# to 14s a tap, longer than white waits - so there the squares are tapped by
+# point (the Pixel 8's, board turned for black).
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          point: "472,1577"
+      - tapOn:
+          point: "472,1307"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: { id: "square-e7" }
+      - tapOn: { id: "square-e5" }
 - assertVisible:
     id: "premove-to"
-- assertVisible:
-    id: "piece-e7"
+- assertNotVisible:
+    id: "move-1"
 # Played by itself once white's move is in, and no longer marked.
 - extendedWaitUntil:
     visible:
-      id: "piece-e5"
-    timeout: 15000
-- assertNotVisible:
-    id: "piece-e7"
+      id: "move-2"
+      text: "e5"
+    timeout: 40000
 - assertNotVisible:
     id: "premove-to"

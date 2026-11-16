@@ -1,0 +1,19 @@
+appId: ${APP_ID}
+---
+# A tap on a sheet's or popover's dimmed backdrop, clear of what's over it
+# - New Game's title area - on each platform's pinned device: points on the
+# iPhone 18 Pro, pixels on the Pixel 8 (README.md, "Device-specific
+# coordinates"). Its testID would tap the backdrop's centre, under the
+# sheet.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          point: "540,250"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          point: "200,100"

@@ -1,0 +1,20 @@
+appId: ${APP_ID}
+---
+# Closes the on-screen keyboard. Android's hideKeyboard is a back press,
+# which - should the keyboard already be down - leaves the screen, so use
+# this only where nothing else closes it (a form whose submit it covers).
+# iOS's fails when no on-screen keyboard is up (it depends on the
+# simulator's keyboard setting), so there a tap on empty space closes one
+# if it's up and does nothing otherwise - below the forms, on the iPhone
+# 18 Pro.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          point: "200,700"

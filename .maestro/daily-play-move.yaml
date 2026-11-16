@@ -1,0 +1,37 @@
+appId: ${APP_ID}
+tags:
+  - account
+---
+# A daily game on your move, from Home's Daily games: a move made is held
+# for confirmation - cancelled, it goes back; confirmed, it's played.
+# e2e_main's seeded game against e2e_friend (1. e4 e5, white to move).
+- runFlow: common/sign-in.yaml
+- extendedWaitUntil:
+    visible:
+      id: "daily-games-section"
+    timeout: 15000
+- tapOn:
+    id: "daily-game-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+    text: ".*e2e_friend.*"
+- assertVisible:
+    id: "move-2"
+    text: "e5"
+- tapOn: { id: "square-g1" }
+- tapOn: { id: "square-f3" }
+- assertVisible:
+    id: "confirm-move-bar"
+- tapOn:
+    id: "cancel-move-button"
+- assertNotVisible:
+    id: "move-3"
+- tapOn: { id: "square-g1" }
+- tapOn: { id: "square-f3" }
+- tapOn:
+    id: "confirm-move-button"
+- extendedWaitUntil:
+    visible:
+      id: "move-3"
+      text: "Nf3"
+    timeout: 10000
+- assertNotVisible:
+    id: "confirm-move-bar"

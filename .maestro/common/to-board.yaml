@@ -1,11 +1,19 @@
-appId: host.exp.Exponent
-tags:
-  - needs-live-server
+appId: ${APP_ID}
 ---
+# A live game's board, as white unless told otherwise: New Game's Start,
+# matched with a scripted opponent (BOT_ARGS - by default a guest seeking
+# the app's default 5+0, as black, easy, quick to answer). A flow wanting
+# another game passes its own: `runFlow: {file: common/to-board.yaml, env:
+# {BOT_ARGS: "--guest --color w"}}` - a guest app seeks casual games only,
+# so a bot it's to meet is a guest too.
 - runFlow: to-new-game.yaml
-
+- runScript:
+    file: bot-start.js
+    env:
+      BOT_ARGS: ${BOT_ARGS || '--guest --color b --level easy --delay 500'}
 - tapOn:
     id: "start-new-game-button"
-
-- assertVisible:
-    id: "piece-e2"
+- extendedWaitUntil:
+    visible:
+      id: "game-toolbar"
+    timeout: 30000

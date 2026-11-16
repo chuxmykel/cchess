@@ -1,0 +1,46 @@
+appId: ${APP_ID}
+---
+# Appearance, from the Menu's Settings: dark mode chosen, and still chosen
+# after the app is closed and opened again - it's kept on the device.
+- runFlow: common/launch-fresh.yaml
+- tapOn:
+    id: "menu-tab"
+- tapOn:
+    id: "menu-settings"
+- tapOn:
+    id: "appearance-row"
+- tapOn:
+    id: "color-scheme-dark"
+- runFlow:
+    file: common/assert-checked.yaml
+    env:
+      ID: color-scheme-dark
+- stopApp
+- launchApp
+- openLink: "${METRO_URL}?__expo_disable_onboarding=1&__expo_disable_fab=1"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible:
+            text: "Close"
+          timeout: 15000
+          optional: true
+      - tapOn:
+          text: "Close"
+          optional: true
+- extendedWaitUntil:
+    visible:
+      id: "play-button"
+    timeout: 30000
+- tapOn:
+    id: "menu-tab"
+- tapOn:
+    id: "menu-settings"
+- tapOn:
+    id: "appearance-row"
+- runFlow:
+    file: common/assert-checked.yaml
+    env:
+      ID: color-scheme-dark

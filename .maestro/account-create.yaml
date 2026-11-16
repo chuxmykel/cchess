@@ -1,0 +1,54 @@
+appId: ${APP_ID}
+tags:
+  - account
+---
+# Creating an account from Home's guest prompt: a name already taken is
+# flagged as it's typed, a free one is accepted, and the new account is
+# signed in - the prompt gone.
+- runFlow: common/launch-fresh.yaml
+- tapOn:
+    id: "create-account-button"
+- assertVisible:
+    id: "create-account-screen"
+- tapOn:
+    id: "username-input"
+- inputText: "e2e_main"
+- extendedWaitUntil:
+    visible:
+      id: "username-taken"
+    timeout: 10000
+- eraseText: 20
+# A name no run has used: the time, in base 36.
+- evalScript: ${output.username = 'new_' + Date.now().toString(36)}
+- inputText: ${output.username}
+- extendedWaitUntil:
+    visible:
+      id: "username-available"
+    timeout: 10000
+- tapOn:
+    id: "email-input"
+- inputText: ${output.username + '@e2e.cchess.test'}
+- tapOn:
+    id: "password-input"
+# iOS's "Use Strong Password?" sheet takes over a new-password field and
+# swallows typing; like the save prompt, it's outside the app's hierarchy:
+# close it by point, then clear whatever got typed before it opened.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - waitForAnimationToEnd
+      - tapOn:
+          point: "370,507"
+      - eraseText: 20
+- inputText: "password"
+- runFlow: common/dismiss-keyboard.yaml
+- tapOn:
+    id: "account-form-submit"
+- runFlow: common/dismiss-save-password.yaml
+- extendedWaitUntil:
+    notVisible:
+      id: "sign-in-prompt"
+    timeout: 15000
+- assertVisible:
+    id: "play-button"

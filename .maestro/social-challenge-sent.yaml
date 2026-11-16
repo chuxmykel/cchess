@@ -1,0 +1,25 @@
+appId: ${APP_ID}
+tags:
+  - account
+  - opponent
+---
+# Challenging a friend from their profile: the sheet sends it, the friend
+# accepts, and the game opens.
+- runFlow: common/friend-online.yaml
+- tapOn:
+    id: "friend-card-.*"
+- tapOn:
+    id: "profile-challenge"
+- assertVisible:
+    id: "challenge-sheet"
+# The sheet scrolls past 75% of the screen, Send at its foot.
+- scrollUntilVisible:
+    element:
+      id: "send-challenge-button"
+    direction: DOWN
+- tapOn:
+    id: "send-challenge-button"
+- extendedWaitUntil:
+    visible:
+      id: "game-toolbar"
+    timeout: 20000

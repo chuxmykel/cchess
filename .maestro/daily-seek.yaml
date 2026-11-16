@@ -1,6 +1,4 @@
-appId: host.exp.Exponent
-tags:
-  - needs-live-server
+appId: ${APP_ID}
 ---
 # A daily game sought from New Game, posted and left: with nobody else
 # seeking those days, it waits under Home's Daily games, and its cross

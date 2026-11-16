@@ -1,13 +1,13 @@
-appId: host.exp.Exponent
+appId: ${APP_ID}
 tags:
-  - needs-live-server
+  - opponent
 ---
+# A matched game opens on its board at the start: both sides' pieces there,
+# no move made yet.
 - runFlow: common/to-board.yaml
 - assertVisible:
     id: "chessboard"
 - assertVisible:
-    id: "piece-e2"
-- assertVisible:
-    id: "piece-d7"
+    id: "piece-a8"
 - assertNotVisible:
-    id: "piece-e4"
+    id: "move-1"

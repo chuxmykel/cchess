@@ -1,0 +1,25 @@
+appId: ${APP_ID}
+tags:
+  - opponent
+---
+# The game's chat: the opponent says good luck, marked unread on the chat
+# button; read in the sheet, and a message sent back shows there.
+- runFlow:
+    file: common/to-board.yaml
+    env:
+      BOT_ARGS: "--guest --color b --level easy --delay 500 --chat"
+- extendedWaitUntil:
+    visible:
+      id: "chat-button-badge"
+    timeout: 10000
+- tapOn:
+    id: "chat-button"
+- assertVisible:
+    id: "chat-sheet"
+- assertVisible: "Good luck!"
+- tapOn:
+    id: "chat-input"
+- inputText: "Thanks, you too"
+- tapOn:
+    id: "chat-send-button"
+- assertVisible: "Thanks, you too"

@@ -1,20 +1,25 @@
-appId: host.exp.Exponent
+appId: ${APP_ID}
 tags:
-  - needs-live-server
+  - opponent
 ---
-# 1. e4 d5 2. exd5 - the shortest path to a real capture from the standard
-# start position. Proves the tap-to-move path correctly drives a capture on
-# a real device; the rules themselves (what counts as a capture, etc) are
-# unit-tested directly against ChessEngine - this only checks the gesture
-# layer produces the right outcome end-to-end.
-- runFlow: common/to-board.yaml
+# 1. e4 d5 2. exd5 - the shortest path to a capture, the opponent scripted
+# to answer 1...d5. Proves tapping drives a capture on a real device; the
+# rules themselves are unit-tested against ChessEngine.
+- runFlow:
+    file: common/to-board.yaml
+    env:
+      BOT_ARGS: "--guest --color b --moves d5 --delay 300"
 - tapOn: { id: "square-e2" }
 - tapOn: { id: "square-e4" }
-- tapOn: { id: "square-d7" }
-- tapOn: { id: "square-d5" }
+- extendedWaitUntil:
+    visible:
+      id: "move-2"
+      text: "d5"
+    timeout: 10000
 - tapOn: { id: "square-e4" }
 - tapOn: { id: "square-d5" }
-- assertNotVisible:
-    id: "piece-e4"
-- assertVisible:
-    id: "piece-d5"
+- extendedWaitUntil:
+    visible:
+      id: "move-3"
+      text: "exd5"
+    timeout: 5000

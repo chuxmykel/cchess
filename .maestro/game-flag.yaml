@@ -1,0 +1,28 @@
+appId: ${APP_ID}
+tags:
+  - opponent
+  - slow
+---
+# A bullet game the app lets run out: once both have moved, its clock runs
+# down to nothing and it loses on time.
+- runFlow: common/to-new-game.yaml
+- tapOn:
+    id: "time-control-trigger"
+- tapOn:
+    id: "time-control-option-bullet-1\\+0"
+- runScript:
+    file: common/bot-start.js
+    env:
+      BOT_ARGS: "--guest --color b --time 1+0 --level easy --delay 100"
+- tapOn:
+    id: "start-new-game-button"
+- extendedWaitUntil:
+    visible:
+      id: "game-toolbar"
+    timeout: 30000
+- runFlow: common/both-moved.yaml
+- extendedWaitUntil:
+    visible:
+      id: "game-over-card"
+    timeout: 90000
+- assertVisible: ".*[Tt]ime.*"

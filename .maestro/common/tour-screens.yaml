@@ -1,0 +1,71 @@
+appId: ${APP_ID}
+---
+# Screenshots of the app's screens, named THEME-<screen> - for
+# screens-tour.yaml, signed in as e2e_main, from Home.
+- takeScreenshot: ${THEME}-home
+- tapOn:
+    id: "play-button"
+- takeScreenshot: ${THEME}-new-game
+- tapOn:
+    id: "time-control-trigger"
+- takeScreenshot: ${THEME}-time-control-sheet
+- runFlow: tap-backdrop.yaml
+- tapOn:
+    id: "game-settings-trigger"
+- takeScreenshot: ${THEME}-game-settings
+- tapOn:
+    id: "game-settings-done"
+- runFlow: header-back.yaml
+- tapOn:
+    id: "game-row-.*"
+    index: 0
+- takeScreenshot: ${THEME}-game-viewer
+- tapOn:
+    id: "game-header-menu"
+- takeScreenshot: ${THEME}-game-header-menu
+# A tap outside closes the menu; then out of the viewer.
+- runFlow: tap-backdrop.yaml
+- tapOn:
+    id: "game-header-back"
+- tapOn:
+    id: "friend-card-.*"
+- takeScreenshot: ${THEME}-profile
+# A sheet taller than 75% of the screen, over a screen: on Android it covers
+# the status and navigation bars too.
+- tapOn:
+    id: "profile-challenge"
+- takeScreenshot: ${THEME}-challenge-sheet
+- runFlow: tap-backdrop.yaml
+- tapOn:
+    id: "profile-message"
+- tapOn:
+    id: "message-input"
+- takeScreenshot: ${THEME}-conversation-keyboard
+# Back, above the keyboard, closes it with the screen.
+- runFlow: header-back.yaml
+- runFlow: header-back.yaml
+- tapOn:
+    id: "messages-tab"
+- takeScreenshot: ${THEME}-messages
+- tapOn:
+    id: "menu-tab"
+- takeScreenshot: ${THEME}-menu
+- tapOn:
+    id: "analysis-new"
+- takeScreenshot: ${THEME}-analysis
+- tapOn:
+    id: "game-menu-button"
+- takeScreenshot: ${THEME}-analysis-menu
+- tapOn:
+    id: "action-sheet-cancel"
+- runFlow: header-back.yaml
+- tapOn:
+    id: "analysis-set-up"
+- takeScreenshot: ${THEME}-set-up-position
+- runFlow: header-back.yaml
+- tapOn:
+    id: "menu-settings"
+- takeScreenshot: ${THEME}-settings
+- runFlow: header-back.yaml
+- tapOn:
+    id: "home-tab"

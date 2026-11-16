@@ -1,0 +1,33 @@
+appId: ${APP_ID}
+tags:
+  - opponent
+---
+# After a game, a rematch: the opponent offers one as soon as the game ends
+# (--games 2), the result card shows it, and accepting starts it in place -
+# the series' score on the players' avatars.
+- runFlow:
+    file: common/to-board.yaml
+    env:
+      BOT_ARGS: "--guest --color b --level easy --delay 300 --games 2"
+- runFlow: common/both-moved.yaml
+- tapOn:
+    id: "toolbar-resign-button"
+- tapOn:
+    text: "Resign"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: "rematch-accept-button"
+    timeout: 20000
+- tapOn:
+    id: "rematch-accept-button"
+# The new game, in place - colors swapped, so the opponent may have moved
+# already - with a point to the opponent.
+- extendedWaitUntil:
+    notVisible:
+      id: "game-over-card"
+    timeout: 20000
+- assertVisible:
+    id: "game-toolbar"
+- assertVisible:
+    id: "series-points-.*"

@@ -1,0 +1,22 @@
+appId: ${APP_ID}
+tags:
+  - account
+---
+# Analysing one of your own games, picked from the Menu's From your games:
+# the analysis board opens on it, its moves listed.
+- runFlow: common/sign-in.yaml
+- tapOn:
+    id: "menu-tab"
+- tapOn:
+    id: "analysis-pick-game"
+- extendedWaitUntil:
+    visible:
+      id: "game-row-.*"
+    timeout: 15000
+- tapOn:
+    id: "game-row-.*"
+    index: 0
+- assertVisible:
+    id: "analysis-board"
+- assertVisible:
+    id: "variation-move-list"

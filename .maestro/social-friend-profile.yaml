@@ -1,0 +1,21 @@
+appId: ${APP_ID}
+tags:
+  - account
+  - opponent
+---
+# A friend online, on Home's carousel; their profile, from it, says so, and
+# offers a message and a challenge.
+- runFlow: common/friend-online.yaml
+- extendedWaitUntil:
+    visible:
+      id: "friend-online-.*"
+    timeout: 15000
+- tapOn:
+    id: "friend-card-.*"
+- assertVisible:
+    id: "user-profile-screen"
+- assertVisible: "e2e_friend"
+- assertVisible:
+    id: "profile-message"
+- assertVisible:
+    id: "profile-challenge"
