@@ -8,6 +8,7 @@ import { DEFAULT_TIME_CONTROL } from '../../constants/timeControls';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { waitForSheetToClose } from '../../testUtils/modal';
 import { makeAuthSession } from '../../testUtils/authSession';
+import { isSwitchOn } from '../../testUtils/switch';
 
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
@@ -124,7 +125,7 @@ describe('NewGame', () => {
     const screen = await screenPromise;
 
     await fireEvent.press(screen.getByTestId('game-settings-trigger'));
-    expect(screen.getByTestId('rated-switch').props.value).toBe(true);
+    expect(isSwitchOn(screen.getByTestId('rated-switch'))).toBe(true);
     await fireEvent(screen.getByTestId('rated-switch'), 'valueChange', false);
     await fireEvent(
       screen.getByTestId('rating-range-below-slider'),
@@ -152,7 +153,7 @@ describe('NewGame', () => {
     const screen = await screenPromise;
 
     await fireEvent.press(screen.getByTestId('game-settings-trigger'));
-    expect(screen.getByTestId('rated-switch').props.value).toBe(false);
+    expect(isSwitchOn(screen.getByTestId('rated-switch'))).toBe(false);
     expect(screen.getByText('Sign in to play rated games.')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('game-settings-done'));
     await waitForSheetToClose();

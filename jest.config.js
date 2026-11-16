@@ -1,6 +1,8 @@
-/** @type {import('jest').Config} */
-module.exports = {
-  preset: 'jest-expo',
+// Every test runs twice, as iOS and as Android - jest-expo's platform
+// presets set Platform.OS and resolve `.ios`/`.android` files - so a
+// Platform branch is exercised both ways. `npm test -- --selectProjects
+// android` runs one of them.
+const shared = {
   resolver: 'react-native-reanimated/jest/resolver',
   // Gesture Handler's own mocks of its native module and gesture detector,
   // so gestures can be fired from tests (react-native-gesture-handler/jest-utils).
@@ -8,5 +10,21 @@ module.exports = {
   setupFilesAfterEnv: ['./jest-setup.js'],
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|chess.js)',
+  ],
+};
+
+/** @type {import('jest').Config} */
+module.exports = {
+  projects: [
+    {
+      ...shared,
+      preset: 'jest-expo/ios',
+      displayName: { name: 'ios', color: 'blue' },
+    },
+    {
+      ...shared,
+      preset: 'jest-expo/android',
+      displayName: { name: 'android', color: 'green' },
+    },
   ],
 };

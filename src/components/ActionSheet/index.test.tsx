@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 
 import ActionSheet, { ActionSheetAction } from '.';
 import { withSafeArea } from '../../testUtils/safeArea';
@@ -57,9 +58,12 @@ describe('ActionSheet', () => {
     await fireEvent.press(screen.getByTestId('flip-action'));
 
     expect(onClose).toHaveBeenCalledTimes(1);
-    expect(onFlip).not.toHaveBeenCalled();
-
-    await waitForSheetToClose();
+    // Only iOS waits: one presented over a modal still going away doesn't
+    // show there, and Android never reports the dismiss.
+    if (Platform.OS === 'ios') {
+      expect(onFlip).not.toHaveBeenCalled();
+      await waitForSheetToClose();
+    }
 
     expect(onFlip).toHaveBeenCalledTimes(1);
   });

@@ -3,6 +3,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import GameSettings from '.';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { waitForSheetToClose } from '../../testUtils/modal';
+import { isSwitchOn } from '../../testUtils/switch';
 import { lightTheme } from '../../theme/themes';
 
 const RANGE = { below: 200, above: 500 };
@@ -36,7 +37,7 @@ describe('GameSettings', () => {
 
     await fireEvent.press(screen.getByText('Game Settings'));
 
-    expect(screen.getByTestId('rated-switch').props.value).toBe(true);
+    expect(isSwitchOn(screen.getByTestId('rated-switch'))).toBe(true);
     expect(screen.getByTestId('rating-range-below')).toHaveTextContent('−200');
   });
 
@@ -80,7 +81,7 @@ describe('GameSettings', () => {
 
     await fireEvent.press(screen.getByTestId('game-settings-trigger'));
 
-    expect(screen.getByTestId('rated-switch').props.value).toBe(false);
+    expect(isSwitchOn(screen.getByTestId('rated-switch'))).toBe(false);
     expect(screen.getByText('Sign in to play rated games.')).toBeTruthy();
     expect(screen.queryByTestId('rating-range-below')).toBeNull();
   });
@@ -98,7 +99,7 @@ describe('GameSettings', () => {
 
     expect(screen.getAllByText('Sign in to play rated games.')).toHaveLength(2);
     expect(onChangeRated).not.toHaveBeenCalled();
-    expect(screen.getByTestId('rated-switch').props.value).toBe(false);
+    expect(isSwitchOn(screen.getByTestId('rated-switch'))).toBe(false);
   });
 
   it('shows no sign-in toast for a signed-in player', async () => {
