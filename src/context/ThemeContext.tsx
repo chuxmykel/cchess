@@ -16,7 +16,7 @@ const ThemeContext = createContext<Theme | null>(null);
 const AppearanceContext = createContext<AppearanceSettingsState | null>(null);
 
 // The theme every component's styles are drawn from, for the whole app -
-// dark while iOS is, unless Appearance says always light or always dark -
+// dark while the device is, unless Appearance says always light or dark -
 // and the appearance settings behind it.
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,

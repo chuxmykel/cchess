@@ -6,7 +6,7 @@ import { chooseVoice, reviewVoices } from '../utils/voices';
 import { useAppIsActive } from './useAppIsActive';
 
 // The device's English voices, the most natural first - none until they've
-// been asked of iOS.
+// been asked of the system.
 export function useSpeechVoices(): Speech.Voice[] | null {
   const [voices, setVoices] = useState<Speech.Voice[] | null>(null);
   useEffect(() => {
@@ -31,9 +31,11 @@ export type ReviewVoice = {
   stop: () => void;
 };
 
-// The review's voice: iOS's own speech, on the device - free, offline, and
-// in the app's audio session, so the silent switch quiets it as it does the
-// move sounds. Nothing's said while it's off, and what's being said stops
+// The review's voice: the device's own speech - iOS's voices, or Android's
+// text-to-speech engine - free and, but for Android's online voices,
+// offline. On iOS it's in the app's audio session, so the silent switch
+// quiets it as it does the move sounds; Android speaks at the media
+// volume. Nothing's said while it's off, and what's being said stops
 // when it's turned off, the app goes to the background or the screen
 // closes.
 export function useReviewVoice(

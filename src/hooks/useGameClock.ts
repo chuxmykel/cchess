@@ -20,8 +20,9 @@ type ServerClock = {
 
 // Runs the two clocks locally between authoritative server updates. Each
 // tick reads how long it's really been since the server's reading came in
-// - not how many ticks there were, since iOS stops timers while the app is
-// in the background and a busy JS thread runs them late - reading the time
+// - not how many ticks there were, since iOS and Android both stop or slow
+// timers while the app is in the background, and a busy JS thread runs
+// them late - reading the time
 // in the interval, as render must stay pure (no Date.now()).
 // Every time whiteTimeMs/blackTimeMs/turn change (a move landed, or the game
 // ended), the server clock resets and the elapsed time restarts from zero -

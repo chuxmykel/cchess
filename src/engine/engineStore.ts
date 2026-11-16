@@ -3,8 +3,10 @@ import { Directory, File, Paths } from 'expo-file-system';
 import { ENGINE_FILES, ENGINE_VERSION } from '../constants/engine';
 import { EngineStore } from './engineFiles';
 
-// The engine's files on the device: under documents - which iOS never clears,
-// and which outlasts app updates - in a folder of their version's own.
+// The engine's files on the device: under documents - which neither iOS
+// nor Android clears short of uninstalling (or, on Android, clearing the
+// app's data), and which outlasts app updates - in a folder of their
+// version's own.
 function engineRoot(): Directory {
   return new Directory(Paths.document, 'engine');
 }
