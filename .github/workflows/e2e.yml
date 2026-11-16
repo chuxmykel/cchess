@@ -112,6 +112,8 @@ jobs:
         with:
           name: e2e-android-${{ matrix.shard }}
           path: cchess/.e2e-logs
+          # upload-artifact leaves out what's hidden unless told: all of it is.
+          include-hidden-files: true
           if-no-files-found: ignore
 
   ios:
@@ -189,6 +191,8 @@ jobs:
         with:
           name: e2e-ios-${{ matrix.shard }}
           path: cchess/.e2e-logs
+          # upload-artifact leaves out what's hidden unless told: all of it is.
+          include-hidden-files: true
           if-no-files-found: ignore
 
   # One check for branch protection to require: every shard on both.
