@@ -46,8 +46,8 @@ type EngineFiles = { glueJs: string; wasmBase64: string };
 
 // The analysis engine, for the whole app: downloaded the first time a
 // screen asks for it (then kept on the device - see engineFiles), run in a
-// hidden WebView only while something's using it, and started again if iOS
-// ends the WebView's process.
+// hidden WebView only while something's using it, and started again if the
+// system ends the WebView's process.
 export const EngineProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -198,7 +198,10 @@ export const EngineProvider: React.FC<{ children: React.ReactNode }> = ({
           source={{ html: STOCKFISH_PAGE }}
           originWhitelist={['*']}
           onMessage={onMessage}
+          // The system can end the page's process to free memory - iOS
+          // says so with the first, Android with the second.
           onContentProcessDidTerminate={restartPage}
+          onRenderProcessGone={restartPage}
           // The page sits in a container that grows to fill its parent
           // unless it's given a style of its own - hidden too, or it takes
           // half the screen from the app.
