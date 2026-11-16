@@ -1,5 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, Keyboard, KeyboardEvent } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Keyboard,
+  KeyboardEvent,
+  Platform,
+} from 'react-native';
 
 const DEFAULT_DURATION_MS = 250;
 
@@ -25,11 +31,17 @@ export function useKeyboardHeight(isActive = true): Animated.Value {
         useNativeDriver: false,
       }).start();
     }
+    // iOS says the keyboard will move, so this moves with it; Android only
+    // says once it has.
+    const [show, hide] =
+      Platform.OS === 'ios'
+        ? (['keyboardWillShow', 'keyboardWillHide'] as const)
+        : (['keyboardDidShow', 'keyboardDidHide'] as const);
     const subscriptions = [
-      Keyboard.addListener('keyboardWillShow', (event) =>
+      Keyboard.addListener(show, (event) =>
         follow(event, event.endCoordinates.height),
       ),
-      Keyboard.addListener('keyboardWillHide', (event) => follow(event, 0)),
+      Keyboard.addListener(hide, (event) => follow(event, 0)),
     ];
     return () => subscriptions.forEach((subscription) => subscription.remove());
   }, [height]);
