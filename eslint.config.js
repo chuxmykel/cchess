@@ -2,6 +2,7 @@
 const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 const eslintConfigPrettier = require('eslint-config-prettier');
+const globals = require('globals');
 
 module.exports = defineConfig([
   expoConfig,
@@ -116,6 +117,25 @@ module.exports = defineConfig([
           ],
         },
       ],
+    },
+  },
+  // The e2e harness runs in Node, and the flows' scripts in Maestro's own
+  // JavaScript, which gives them `http`, `json` and `output`, and the
+  // flow's env as globals (BOT_URL, BOT_ARGS).
+  {
+    files: ['scripts/e2e/**/*.js'],
+    languageOptions: { globals: globals.node },
+  },
+  {
+    files: ['.maestro/**/*.js'],
+    languageOptions: {
+      globals: {
+        http: 'readonly',
+        json: 'readonly',
+        output: 'writable',
+        BOT_URL: 'readonly',
+        BOT_ARGS: 'readonly',
+      },
     },
   },
   // Must come last so it can disable stylistic rules that Prettier owns.
