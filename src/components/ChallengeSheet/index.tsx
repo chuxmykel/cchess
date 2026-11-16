@@ -102,6 +102,7 @@ const ChallengeSheet: React.FC<ChallengeSheetProps> = ({
               value={rated}
               onValueChange={setRated}
               trackColor={{ true: colors.accent }}
+              thumbColor={colors.switchThumb}
               accessibilityLabel="Rated"
               testID="challenge-rated-switch"
             />

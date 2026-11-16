@@ -72,6 +72,7 @@ const GameSettings: React.FC<GameSettingsProps> = ({
             value={rated}
             onValueChange={changeRated}
             trackColor={{ true: colors.accent }}
+            thumbColor={colors.switchThumb}
             accessibilityLabel="Rated"
             testID="rated-switch"
           />

@@ -52,6 +52,7 @@ const AnalysisSettingsForm: React.FC<AnalysisSettingsFormProps> = ({
         value={settings[key]}
         onValueChange={(value) => onChange({ [key]: value })}
         trackColor={{ true: colors.accent }}
+        thumbColor={colors.switchThumb}
         accessibilityLabel={label}
         testID={`analysis-setting-${key}`}
       />

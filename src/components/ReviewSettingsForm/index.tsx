@@ -70,6 +70,7 @@ const ReviewSettingsForm: React.FC<ReviewSettingsFormProps> = ({
         value={settings[key]}
         onValueChange={(value) => onChange({ [key]: value })}
         trackColor={{ true: colors.accent }}
+        thumbColor={colors.switchThumb}
         accessibilityLabel={label}
         testID={`review-setting-${key}`}
       />

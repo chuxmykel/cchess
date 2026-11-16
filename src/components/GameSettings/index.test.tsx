@@ -3,6 +3,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import GameSettings from '.';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { waitForSheetToClose } from '../../testUtils/modal';
+import { lightTheme } from '../../theme/themes';
 
 const RANGE = { below: 200, above: 500 };
 
@@ -37,6 +38,15 @@ describe('GameSettings', () => {
 
     expect(screen.getByTestId('rated-switch').props.value).toBe(true);
     expect(screen.getByTestId('rating-range-below')).toHaveTextContent('−200');
+  });
+
+  it("draws the switch's thumb in the theme's color, not Android's blue", async () => {
+    const screen = await renderSettings();
+    await fireEvent.press(screen.getByText('Game Settings'));
+
+    expect(screen.getByTestId('rated-switch').props.thumbTintColor).toBe(
+      lightTheme.colors.switchThumb,
+    );
   });
 
   it('reports changes and stays open until Done', async () => {
