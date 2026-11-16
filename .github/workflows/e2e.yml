@@ -183,6 +183,10 @@ jobs:
         working-directory: cchess
         env:
           E2E_IOS_DEVICE: iPhone 17 Pro
+          # Maestro's driver - an XCTest runner it builds and starts on the
+          # simulator - takes minutes on a hosted runner, past its default
+          # wait of seconds.
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: 240000
         run: scripts/e2e/run.sh --platform ios --backend native --shard ${{ matrix.shard }}/3
 
       - name: Upload logs and reports
