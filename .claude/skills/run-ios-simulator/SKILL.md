@@ -1,9 +1,9 @@
 ---
 name: run-ios-simulator
-description: Launch cchess in the iOS Simulator and drive it (tap, drag-and-drop, screenshots) to verify a change actually works. Use whenever asked to run, start, or screenshot the app, or to confirm a change works in the real app on this machine — not just the Jest/RNTL test suite. For the machine-specific environment gotchas (no Simulator.app, no GUI automation permissions, Node version mismatch, Maestro quirks), see the global `ios-simulator-setup` skill — this skill only covers what's specific to cchess.
+description: Launch cchess in the iOS Simulator or the Android emulator and drive it (tap, drag-and-drop, screenshots) to verify a change actually works, and run the Maestro e2e suite on either. Use whenever asked to run, start, or screenshot the app, or to confirm a change works in the real app on this machine — not just the Jest/RNTL test suite. For the machine-specific environment gotchas (no Simulator.app, no GUI automation permissions, Node version mismatch, Maestro quirks), see the global `ios-simulator-setup` skill — this skill only covers what's specific to cchess.
 ---
 
-# Run cchess in the iOS Simulator
+# Run cchess in the iOS Simulator (or the Android emulator)
 
 This assumes the `ios-simulator-setup` skill's environment facts and
 general steps (booting the simulator, screenshotting, driving Maestro).
@@ -11,7 +11,13 @@ What follows is only what's specific to cchess: the project path, its
 testIDs, how to get from launch into a live game (which now needs a
 backend and an opponent), and known-good example flows.
 
-**Last verified: 2026-10-27.** Ran the friends features end to end with
+**Last verified: 2026-11-16** for the e2e suite (`scripts/e2e/run.sh`):
+every flow in `.maestro/` passed on the Android emulator (cchess-e2e,
+Pixel 8, API 35) and was run on the iPhone 18 Pro / iOS 27 simulator,
+against the seeded e2e backend - see "The e2e suite" and "The Android
+emulator" below. The rest of this file is as of 2026-10-27.
+
+**2026-10-27.** Ran the friends features end to end with
 `scripts/opponent.js --friend`: a friend request accepted from Home, the
 friend card's live status, messages both ways and clearing them, the
 profile, challenges both ways into a game, captured pieces, the game
@@ -51,6 +57,48 @@ is running this app in another window`, an Expo server for this project
   `../cchess-be`) running at `http://localhost:3000`, or wherever
   `EXPO_PUBLIC_SERVER_URL` points. A 404 from `curl localhost:3000/` means
   it's up. Ask the user to start it rather than starting it yourself.
+
+## The e2e suite
+
+`.maestro/README.md` is its manual. In short: `npm run test:e2e:ios` or
+`test:e2e:android` (`scripts/e2e/run.sh`) brings up its own seeded
+backend (3100), Metro (8091) and bot server (4100) - clear of the user's
+dev backend and Metro - runs every flow, and takes them down. To run single
+flows against what's already up (iterating), pass the env `run.sh` would:
+
+```bash
+maestro --device <UDID or emulator-5554> test .maestro/<flow>.yaml \
+  -e APP_ID=host.exp.Exponent \        # host.exp.exponent on Android
+  -e METRO_URL=exp://127.0.0.1:8091 \  # exp://10.0.2.2:8091 on Android
+  -e BOT_URL=http://127.0.0.1:4100
+```
+
+Every flow starts a fresh guest (iOS's keychain cleared too) and stops the
+earlier flow's bots: running the suite signs the simulator out of whatever
+account the user had there - ask before driving it.
+
+## The Android emulator
+
+- **One-time setup** (`.maestro/README.md`): the SDK's command-line tools
+  in `~/Library/Android/sdk`, an AVD `cchess-e2e` (Pixel 8, API 35,
+  google_apis, arm64), `hw.keyboard=yes`. No Android Studio app.
+- **Start it**: `emulator -avd cchess-e2e` - a window to click through, as
+  the Simulator is used; `-no-window` for none. `adb devices` lists it as
+  `emulator-5554`; `adb exec-out screencap -p > shot.png` screenshots it.
+- **Open the app**: `npx expo start --android` (installs Expo Go the first
+  time), or a Metro already up and `exp://10.0.2.2:<port>` - the emulator's
+  `127.0.0.1` is itself; `10.0.2.2` is this Mac. Build the app against a
+  backend the same way: `EXPO_PUBLIC_SERVER_URL=http://10.0.2.2:3000`.
+  Don't rely on `adb reverse`: Maestro's driver and Expo's CLI both clear
+  its rules.
+- **Expo Go's dev menu** opens as a bottom sheet a moment after the app
+  loads; its ✕ is labelled "Close" (`launch-fresh.yaml` handles it).
+- **Pieces' testIDs**: Android reports every piece on a8 (where it's laid
+  out, before the transform that moves it) - check moves by `move-<ply>`
+  and its SAN instead. Squares (`square-e4`) are fine.
+- **Swipe points are pixels** (1080x2400), not points - each flow has
+  both platforms' under `runFlow: when: platform:`.
+- **Back**: Maestro's `- back` presses Android's back.
 
 ## Getting into a live game
 
