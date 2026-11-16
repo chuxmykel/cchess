@@ -23,7 +23,9 @@ mkdir -p "$LOG_DIR"
 # The api's settings, and nothing from a .env in the checkout: dotenv
 # never overwrites what's set, so everything it might read is set here.
 export DB_HOST="${PGHOST:-127.0.0.1}" DB_PORT="${PGPORT:-5432}"
-export DB_USERNAME="${PGUSER:-$(whoami)}" DB_PASSWORD="${PGPASSWORD:-}"
+# cchess-be refuses an empty password; a Postgres that trusts local
+# connections (CI's) ignores whatever's given, so any will do there.
+export DB_USERNAME="${PGUSER:-$(whoami)}" DB_PASSWORD="${PGPASSWORD:-trusted}"
 export DB_NAME="$DB" PORT
 export JWT_ACCESS_SECRET=e2e-only-access JWT_REFRESH_SECRET=e2e-only-refresh
 export NODE_ENV=test SEED_E2E=1 CLUSTER_WORKERS=1 GAME_START_FEN=''
