@@ -98,7 +98,22 @@ account the user had there - ask before driving it.
   and its SAN instead. Squares (`square-e4`) are fine.
 - **Swipe points are pixels** (1080x2400), not points - each flow has
   both platforms' under `runFlow: when: platform:`.
-- **Back**: Maestro's `- back` presses Android's back.
+- **Back**: Maestro's `- back` presses Android's back - and with the
+  keyboard up only closes it. A screen's header back is Android's native
+  arrow, "Navigate up" (header items are iOS's alone): flows go through
+  `common/header-back.yaml`.
+- **Memory**: this 16 GB Mac can't hold the emulator, a booted Simulator,
+  Docker's stack and the user's own apps at once - the emulator crawls
+  (adb drops it, a tap takes minutes). Shut the Simulator down for an
+  Android run (`xcrun simctl shutdown all`); the user's Metro on 8081 only
+  with their OK. API 35 forces software rendering whatever `-gpu` says,
+  and its memory grows over a long run; `-gpu host` made System UI stall.
+- **A crash-report dialog** ("emulator failed unexpectedly", asking to
+  send it) blocks the boot after any crash: move the dumps out of
+  `/tmp/android-chux_fortress/emu-crash-*/completed`.
+- **"... isn't responding"** dialogs from a system app on a slow emulator
+  cover the app: run.sh sets `hide_error_dialogs`, and `launch-fresh`
+  taps Wait. One already up stays: `adb shell input tap` its Wait.
 
 ## Getting into a live game
 
