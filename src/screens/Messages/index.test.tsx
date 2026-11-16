@@ -12,6 +12,7 @@ import {
 } from '../../network/restClient';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { createFakeSocket, FakeSocket } from '../../testUtils/fakeSocket';
+import { headerRightOf } from '../../testUtils/headerRight';
 import { waitForSheetToClose } from '../../testUtils/modal';
 import { withSafeArea } from '../../testUtils/safeArea';
 import {
@@ -157,11 +158,11 @@ describe('Messages', () => {
 
   it('starts a new message with a friend picked from the header', async () => {
     const { screen, navigation } = await renderScreen();
-    const [newMessage] = navigation.setOptions.mock.calls
-      .at(-1)[0]
-      .unstable_headerRightItems();
+    const newMessage = headerRightOf(
+      navigation.setOptions.mock.calls.at(-1)[0],
+    );
 
-    await act(() => newMessage.element.props.onPress());
+    await act(() => newMessage.props.onPress());
     await fireEvent.press(screen.getByTestId('friend-row-bo'));
 
     expect(navigation.navigate).toHaveBeenCalledWith(

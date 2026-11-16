@@ -33,7 +33,7 @@ import {
 } from '../../hooks/useGameReview';
 import type { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackScreenProps } from '../HomeStack/types';
-import { plainHeaderItem } from '../plainHeaderOptions';
+import { plainHeaderRight } from '../plainHeaderOptions';
 import { makeStyles } from '../../theme';
 import GameReviewContent from './GameReviewContent';
 
@@ -126,38 +126,36 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
     navigation.setOptions({
       // One item, so the two sit close together rather than spaced as
       // separate header buttons are.
-      unstable_headerRightItems: () => [
-        plainHeaderItem(
-          <View style={styles.headerButtons}>
-            <Pressable
-              onPress={() =>
-                navigation.navigate('AnalysisBoard', {
-                  source: {
-                    kind: 'game',
-                    gameId,
-                    ...(shownPly.current !== null && { ply: shownPly.current }),
-                  },
-                })
-              }
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Analyse"
-              testID="review-analyse-button"
-            >
-              <Icon name="head-cog-outline" size={24} />
-            </Pressable>
-            <Pressable
-              onPress={() => navigation.navigate('ReviewSettings')}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Review settings"
-              testID="review-settings-button"
-            >
-              <Icon name="cog-outline" size={24} />
-            </Pressable>
-          </View>,
-        ),
-      ],
+      ...plainHeaderRight(
+        <View style={styles.headerButtons}>
+          <Pressable
+            onPress={() =>
+              navigation.navigate('AnalysisBoard', {
+                source: {
+                  kind: 'game',
+                  gameId,
+                  ...(shownPly.current !== null && { ply: shownPly.current }),
+                },
+              })
+            }
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Analyse"
+            testID="review-analyse-button"
+          >
+            <Icon name="head-cog-outline" size={24} />
+          </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate('ReviewSettings')}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Review settings"
+            testID="review-settings-button"
+          >
+            <Icon name="cog-outline" size={24} />
+          </Pressable>
+        </View>,
+      ),
     });
   }, [navigation, gameId, styles]);
 

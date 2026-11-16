@@ -14,6 +14,7 @@ import {
 } from '../../network/restClient';
 import { makeFakeEngine } from '../../testUtils/fakeEngine';
 import { makeFinishedGame } from '../../testUtils/gameSnapshot';
+import { headerRightOf } from '../../testUtils/headerRight';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { settleAnimations } from '../../testUtils/pieceGestures';
 
@@ -417,8 +418,7 @@ describe('GameReview', () => {
   // The header's buttons, drawn on their own.
   async function headerButtons(navigation: { setOptions: jest.Mock }) {
     const [options] = navigation.setOptions.mock.calls.at(-1);
-    const [item] = options.unstable_headerRightItems();
-    return render(item.element);
+    return render(headerRightOf(options));
   }
 
   it('opens its settings from the header', async () => {
