@@ -1,85 +1,200 @@
 name: E2E
 
+# The Maestro suite on both platforms, against a real cchess-be: every flow,
+# split into shards run side by side. scripts/e2e/run.sh does the work -
+# the backend, the device, Metro, the bots, the flows - on CI as locally.
 on:
-  # Paused: the suite takes too long to hold up every PR. Run it by hand
-  # from the Actions tab, and uncomment these to run it automatically again.
-  # push:
-  #   branches: [main]
-  # pull_request:
+  push:
+    branches: [main, develop]
+  pull_request:
   workflow_dispatch:
 
 concurrency:
   group: e2e-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  MAESTRO_VERSION: 2.10.0
+
 jobs:
-  e2e:
-    name: Maestro (iOS Simulator)
-    runs-on: macos-15
-    timeout-minutes: 30
+  android:
+    name: Android (shard ${{ matrix.shard }}/3)
+    # Docker for the backend's stack (cchess-infra's, the image production
+    # runs) and KVM for the emulator: Linux has both.
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: cchess
+      # The backend, beside the app as run.sh expects - from develop. Private
+      # repos need a token that can read them, as these secrets.
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/cchess-be
+          ref: develop
+          path: cchess-be
+          token: ${{ secrets.CCHESS_BE_TOKEN || github.token }}
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/cchess-infra
+          ref: develop
+          path: cchess-infra
+          token: ${{ secrets.CCHESS_INFRA_TOKEN || github.token }}
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: cchess/.nvmrc
           cache: npm
-
+          cache-dependency-path: cchess/package-lock.json
       - run: npm ci
+        working-directory: cchess
 
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
-
+          java-version: '17'
       - name: Install Maestro
         run: |
           curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
-      - name: Verify Maestro install
-        run: maestro --version
-
-      - name: Start Expo and boot iOS Simulator
-        env:
-          CI: "true"
+      - name: Enable KVM
         run: |
-          nohup npx expo start --ios > expo.log 2>&1 &
-          echo $! > expo.pid
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
 
-          echo "Waiting for Metro bundler to finish bundling..."
-          for i in $(seq 1 60); do
-            if grep -q "Bundled" expo.log; then
-              echo "Bundler ready."
-              break
-            fi
-            if [ "$i" -eq 60 ]; then
-              echo "Timed out waiting for Expo/Metro to bundle the app." >&2
-              cat expo.log
-              exit 1
-            fi
-            sleep 5
-          done
-          cat expo.log
+      - name: Cache the emulator
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-35-pixel_8-x86_64
 
-      - name: Run Maestro e2e flows
-        run: npm run test:e2e
+      - name: Make the emulator's snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_8
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Snapshot made."
 
-      - name: Stop Expo
+      # The same Pixel 8 as the cchess-e2e emulator used locally, so the
+      # flows' points on it hold.
+      - name: Run the flows
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_8
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          working-directory: cchess
+          script: scripts/e2e/run.sh --platform android --backend docker --shard ${{ matrix.shard }}/3
+
+      - name: Upload logs and reports
         if: always()
-        run: kill "$(cat expo.pid)" 2>/dev/null || true
-
-      - name: Upload Expo log on failure
-        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: expo-log
-          path: expo.log
-
-      - name: Upload Maestro test reports on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: maestro-reports
-          path: ~/.maestro/tests
+          name: e2e-android-${{ matrix.shard }}
+          path: cchess/.e2e-logs
           if-no-files-found: ignore
+
+  ios:
+    name: iOS (shard ${{ matrix.shard }}/3)
+    # The simulator needs macOS, whose runners have no Docker: cchess-be
+    # runs directly instead (scripts/e2e/backend-native.sh), on Postgres
+    # 18 as production's is.
+    runs-on: macos-26
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: cchess
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/cchess-be
+          ref: develop
+          path: cchess-be
+          token: ${{ secrets.CCHESS_BE_TOKEN || github.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: cchess/.nvmrc
+          cache: npm
+          cache-dependency-path: cchess/package-lock.json
+      - run: npm ci
+        working-directory: cchess
+      # cchess-be runs on its own Node, as its .nvmrc says.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: cchess-be/.nvmrc
+          cache: npm
+          cache-dependency-path: cchess-be/package-lock.json
+      - run: npm ci
+        working-directory: cchess-be
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Start Postgres
+        run: |
+          brew install postgresql@18
+          pg="$(brew --prefix postgresql@18)/bin"
+          echo "$pg" >> "$GITHUB_PATH"
+          "$pg/initdb" -D "$RUNNER_TEMP/pg" -U runner --auth=trust >/dev/null
+          "$pg/pg_ctl" -D "$RUNNER_TEMP/pg" -l "$RUNNER_TEMP/pg.log" -w start
+          echo "PGHOST=127.0.0.1" >> "$GITHUB_ENV"
+          echo "PGUSER=runner" >> "$GITHUB_ENV"
+          echo "PGDATABASE=postgres" >> "$GITHUB_ENV"
+
+      # The flows' iOS points are for this device.
+      # Metro runs on cchess-be's Node too, set up last: newer than the
+      # app's pin, which is for its lint tooling.
+      - name: Run the flows
+        working-directory: cchess
+        env:
+          E2E_IOS_DEVICE: iPhone 18 Pro
+        run: scripts/e2e/run.sh --platform ios --backend native --shard ${{ matrix.shard }}/3
+
+      - name: Upload logs and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-ios-${{ matrix.shard }}
+          path: cchess/.e2e-logs
+          if-no-files-found: ignore
+
+  # One check for branch protection to require: every shard on both.
+  e2e:
+    name: E2E
+    if: always()
+    needs: [android, ios]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          [ "${{ needs.android.result }}" = success ] && [ "${{ needs.ios.result }}" = success ]
