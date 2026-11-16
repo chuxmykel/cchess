@@ -1,4 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { ScrollView } from 'react-native';
 
 import MoveList from '.';
 import { GameMoveSummary } from '../../network/socketEvents';
@@ -108,6 +109,37 @@ describe('MoveList', () => {
     expect(screen.getByTestId('move-list-end-tactics')).not.toBeSelected();
     await fireEvent.press(screen.getByTestId('move-list-end-tactics'));
     expect(onPress).toHaveBeenCalled();
+  });
+
+  // A move played comes into view - even when it's laid out after the list
+  // has re-rendered for it, as it can be on iOS, by which time there was
+  // nowhere yet to scroll to.
+  it('scrolls to a new move once it has been laid out', async () => {
+    const scrollTo = jest.spyOn(ScrollView.prototype, 'scrollTo');
+    const layOut = async (
+      screen: Awaited<ReturnType<typeof render>>,
+      ply: number,
+      x: number,
+    ) =>
+      fireEvent(screen.getByTestId(`move-${ply}`), 'layout', {
+        nativeEvent: { layout: { x, y: 0, width: 80, height: 32 } },
+      });
+    const twoMoves = THREE_MOVES.slice(0, 2);
+    const screen = await render(
+      <MoveList moves={twoMoves} currentPly={2} onSelectPly={jest.fn()} />,
+    );
+    await layOut(screen, 1, 60);
+    await layOut(screen, 2, 160);
+    scrollTo.mockClear();
+
+    await screen.rerender(
+      <MoveList moves={THREE_MOVES} currentPly={3} onSelectPly={jest.fn()} />,
+    );
+    await layOut(screen, 3, 260);
+
+    // Kept 48pt in from the list's left edge.
+    expect(scrollTo).toHaveBeenLastCalledWith({ x: 212, animated: true });
+    scrollTo.mockRestore();
   });
 
   it('goes through the moves as it is scrolled by hand', async () => {
