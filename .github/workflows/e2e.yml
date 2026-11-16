@@ -172,13 +172,15 @@ jobs:
           echo "PGUSER=runner" >> "$GITHUB_ENV"
           echo "PGDATABASE=postgres" >> "$GITHUB_ENV"
 
-      # The flows' iOS points are for this device.
+      # The flows' iOS points are for the iPhone 18 Pro used locally; the
+      # 17 Pro, the newest on this image (Xcode 26, iOS 26), is the same
+      # size, 402x874.
       # Metro runs on cchess-be's Node too, set up last: newer than the
       # app's pin, which is for its lint tooling.
       - name: Run the flows
         working-directory: cchess
         env:
-          E2E_IOS_DEVICE: iPhone 18 Pro
+          E2E_IOS_DEVICE: iPhone 17 Pro
         run: scripts/e2e/run.sh --platform ios --backend native --shard ${{ matrix.shard }}/3
 
       - name: Upload logs and reports

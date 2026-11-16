@@ -48,7 +48,9 @@ in use there.
 - **Docker** (for the backend's stack), and cchess-be and cchess-infra
   checked out beside this repo.
 - **iOS**: Xcode with the iPhone 18 Pro / iOS 27 simulator. Expo Go installs
-  itself the first time.
+  itself the first time. CI's macOS image has Xcode 26 only, so it runs the
+  iPhone 17 Pro (iOS 26) - the same 402x874 points, so the flows' iOS
+  points hold on both.
 - **Android**: the emulator, from Android's SDK command-line tools - not
   the Android Studio app, nor Gradle or the NDK: the app runs in Expo Go,
   which installs itself, so nothing's compiled. Java 17 or later (Maestro

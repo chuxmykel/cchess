@@ -116,10 +116,15 @@ import json, sys
 booted = [d for ds in json.load(sys.stdin)["devices"].values() for d in ds if d["state"] == "Booted"]
 print(booted[0]["udid"] if booted else "")')
   if [ -z "$device" ]; then
+    # The newest iOS that has it - CI's image has the same phone on several.
     device=$(xcrun simctl list devices available -j | python3 -I -c '
-import json, sys
+import json, re, sys
 name = sys.argv[1]
-found = [d for ds in json.load(sys.stdin)["devices"].values() for d in ds if d["name"] == name]
+devices = json.load(sys.stdin)["devices"]
+def version(runtime):
+    return [int(n) for n in re.findall(r"\d+", runtime.rsplit(".", 1)[-1])]
+found = [d for runtime in sorted(devices, key=version, reverse=True)
+         for d in devices[runtime] if d["name"] == name]
 print(found[0]["udid"] if found else "")' "$IOS_DEVICE")
     [ -n "$device" ] || { echo "no booted simulator, and no '$IOS_DEVICE' to boot" >&2; exit 1; }
     xcrun simctl boot "$device"
