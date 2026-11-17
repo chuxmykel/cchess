@@ -146,24 +146,38 @@ has_expo_go() {
 # which installs it as it opens a project there - from an instance of its
 # own, stopped once it's in: that opening can time out on a slow simulator,
 # and its error ends the whole `expo start`, Metro and all.
-if ! has_expo_go; then
-  log "Expo Go onto $device"
+# Tried three times: Expo's CLI downloads Expo Go first, and that download
+# can time out on a hosted runner.
+install_expo_go() {
   CI=1 npx expo start --"$platform" --port "$((E2E_METRO_PORT + 1))" \
-    > "$E2E_LOG_DIR/expo-go-install.log" 2>&1 &
+    >> "$E2E_LOG_DIR/expo-go-install.log" 2>&1 &
   installer_pid=$!
   i=0
   until has_expo_go; do
     i=$((i + 1))
     if [ "$i" -gt 150 ] || ! kill -0 "$installer_pid" 2>/dev/null; then
-      echo "Expo Go never installed on $device:" >&2
-      tail -30 "$E2E_LOG_DIR/expo-go-install.log" >&2
-      exit 1
+      kill "$installer_pid" 2>/dev/null || true
+      installer_pid=
+      return 1
     fi
     sleep 2
   done
   pkill -P "$installer_pid" 2>/dev/null || true
   kill "$installer_pid" 2>/dev/null || true
   installer_pid=
+}
+if ! has_expo_go; then
+  log "Expo Go onto $device"
+  attempt=1
+  until install_expo_go; do
+    if [ "$attempt" -ge 3 ]; then
+      echo "Expo Go never installed on $device:" >&2
+      tail -30 "$E2E_LOG_DIR/expo-go-install.log" >&2
+      exit 1
+    fi
+    attempt=$((attempt + 1))
+    echo "Expo Go didn't install; trying again ($attempt of 3)"
+  done
 fi
 
 log "metro on $E2E_METRO_PORT"
