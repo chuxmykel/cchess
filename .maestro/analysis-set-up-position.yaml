@@ -12,8 +12,21 @@ appId: ${APP_ID}
     id: "set-up-position"
 - tapOn:
     id: "set-up-menu"
-- tapOn:
-    id: "editor-clear"
+# Tapped again until the menu has gone: on a slow simulator (CI's) a tap
+# as it opens can come before it takes taps.
+- repeat:
+    while:
+      visible:
+        id: "editor-clear"
+    times: 3
+    commands:
+      - tapOn:
+          id: "editor-clear"
+      - extendedWaitUntil:
+          notVisible:
+            id: "editor-clear"
+          timeout: 5000
+          optional: true
 - tapOn:
     id: "editor-tool-wk"
 - tapOn:
