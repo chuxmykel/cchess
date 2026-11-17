@@ -248,8 +248,9 @@ fi
 
 log "flows on $platform${shard:+, shard $shard}"
 # In batches of $E2E_MAESTRO_BATCH flows (all at once unless set), each a
-# Maestro session of its own: on a hosted macOS runner, its iOS driver
-# stops answering after twenty minutes or so, failing every flow after.
+# Maestro session of its own: on a hosted runner, its iOS driver stops
+# answering, or the emulator drops off adb, after a quarter of an hour or
+# so, failing every flow after.
 batch_size="${E2E_MAESTRO_BATCH:-0}"
 # shellcheck disable=SC2086 # flows is a word list
 set -- $flows
@@ -265,6 +266,15 @@ while [ $# -gt 0 ]; do
     shift
     n=$((n + 1))
   done
+  # The emulator can drop off adb for a moment (device offline); give it
+  # back to the next batch.
+  if [ "$platform" = android ]; then
+    i=0
+    until [ "$(adb -s "$device" get-state 2>/dev/null)" = device ] || [ "$i" -ge 60 ]; do
+      i=$((i + 1))
+      sleep 2
+    done
+  fi
   # shellcheck disable=SC2086 # these is a word list
   maestro --device "$device" test $these \
     -e "APP_ID=$APP_ID" \

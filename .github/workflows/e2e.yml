@@ -104,7 +104,9 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           working-directory: cchess
-          script: scripts/e2e/run.sh --platform android --backend docker --shard ${{ matrix.shard }}/3
+          # A Maestro session of its own every six flows: on a hosted runner
+          # the emulator drops off adb a quarter of an hour or so in.
+          script: E2E_MAESTRO_BATCH=6 scripts/e2e/run.sh --platform android --backend docker --shard ${{ matrix.shard }}/3
 
       - name: Upload logs and reports
         if: always()
