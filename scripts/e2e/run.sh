@@ -155,6 +155,12 @@ print(found[0]["udid"] if found else "")' "$IOS_DEVICE")
     xcrun simctl boot "$device"
   fi
   xcrun simctl bootstatus "$device" -b >/dev/null
+  # Password AutoFill off: with it on, iOS offers "Use Strong Password?" over
+  # a new password field and "Save Password?" after every sign-in - its own
+  # UI, which Maestro can't see to close, and which covers the app.
+  xcrun simctl spawn "$device" defaults write com.apple.WebUI AutoFillPasswords -bool NO
+  [ "$(xcrun simctl spawn "$device" defaults read com.apple.WebUI AutoFillPasswords)" = 0 ] ||
+    { echo "couldn't turn password AutoFill off on $device" >&2; exit 1; }
 fi
 echo "using $device"
 
@@ -249,20 +255,6 @@ bot_pid=$!
 sleep 1
 
 
-# iOS offers to save a password after a sign-in: a card Maestro sees up to
-# iOS 26, a sheet it doesn't from 27 - common/dismiss-save-password.yaml
-# closes whichever this simulator shows.
-save_password=none
-if [ "$platform" = ios ]; then
-  ios_major=$(xcrun simctl list devices -j | python3 -I -c '
-import json, re, sys
-udid = sys.argv[1]
-for runtime, devices in json.load(sys.stdin)["devices"].items():
-    if any(d["udid"] == udid for d in devices):
-        print(re.search(r"iOS-(\d+)", runtime).group(1))' "$device")
-  if [ "${ios_major:-0}" -ge 27 ]; then save_password=sheet; else save_password=card; fi
-fi
-
 log "flows on $platform${shard:+, shard $shard}"
 # In batches of $E2E_MAESTRO_BATCH flows (all at once unless set), each a
 # Maestro session of its own: on a hosted runner, its iOS driver stops
@@ -297,7 +289,6 @@ while [ $# -gt 0 ]; do
     -e "APP_ID=$APP_ID" \
     -e "METRO_URL=exp://$HOST:$E2E_METRO_PORT" \
     -e "BOT_URL=http://127.0.0.1:$E2E_BOT_PORT" \
-    -e "SAVE_PASSWORD=$save_password" \
     --format junit \
     --output "$E2E_LOG_DIR/report-$platform${shard:+-${shard%/*}}-$batch.xml" \
     --test-output-dir "$E2E_LOG_DIR/maestro" || status=1

@@ -583,7 +583,6 @@ Account flows (no opponent needed, just the backend):
   (`-e USERNAME=...`, password `password` unless `-e PASSWORD=...`).
   Every test account uses `password`, including the seeded `bot_1`-`bot_5`,
   `real_user_bot` and `glicko_65163`.
-- `dismiss-save-password.yaml` - used by the two above (see Gotchas).
 
 Run them as create-account → sign-out → sign-in with the same USERNAME.
 
@@ -628,8 +627,6 @@ see each file's header for how to start it):
   (an abort included), a tap meant for a square like e4 lands on "New
   opponent" and starts a seek - check for `game-over-card` before tapping
   squares.
-- **"Save Password?" can appear after `sign-in.yaml` finishes**, over
-  Home, so the next tap misses. Tap "Not Now" at (127, 547).
 - **Only the hardware keyboard is used on this simulator**, so no
   on-screen keyboard shows when typing in chat - the chat sheet's
   keyboard handling can't be checked here.
@@ -639,14 +636,15 @@ see each file's header for how to start it):
   `to-board.yaml`) resume that account. Run `sign-out.yaml` to get back
   to a guest.
 - **iOS password prompts swallow input and are invisible to Maestro.**
-  Focusing Create account's password field opens "Use Strong Password?",
-  which eats the typing that follows; leaving a filled-in password form
-  opens "Save Password?". Both are iOS UI, missing from `maestro
-hierarchy` and from Maestro's own screenshots (`xcrun simctl io booted
-screenshot` shows them), so the app looks frozen. `create-account.yaml`
-  and `dismiss-save-password.yaml` close them by point. Typing into a
-  secure field a second time is unreliable for the same reason - reopen
-  the form instead of retyping.
+  With password AutoFill on, focusing Create account's password field
+  opens "Use Strong Password?", which eats the typing that follows, and
+  leaving a filled-in password form opens "Save Password?" - a sheet on
+  iOS 27, a card on 26 - which can come seconds later, over Home. Both
+  are iOS UI, missing from `maestro hierarchy`, so nothing can close them
+  reliably. Turn AutoFill off on the simulator, as `scripts/e2e/run.sh`
+  does, and they never come:
+  `xcrun simctl spawn booted defaults write com.apple.WebUI AutoFillPasswords -bool NO`
+  (it lasts until the simulator's erased). The examples assume it's off.
 
 - **Swipes that miss still report `COMPLETED`.** If a drag flow
   "succeeds" but the board didn't change, the coordinates are stale or

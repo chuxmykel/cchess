@@ -27,7 +27,6 @@ appId: ${APP_ID}
 - runFlow: dismiss-keyboard.yaml
 - tapOn:
     id: "account-form-submit"
-- runFlow: dismiss-save-password.yaml
 # Back on Home, its guest prompt gone.
 - extendedWaitUntil:
     notVisible:

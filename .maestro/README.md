@@ -190,10 +190,12 @@ written into the flows for each platform under `runFlow: when: platform:`
 - **Only one side's pieces can be moved, and only on its turn** - a piece
   that doesn't move may be the app correctly refusing it.
 - **Start bots after signing in** - the fresh launch stops every bot.
-- **iOS's own sheets** - "Use Strong Password?" over a new password field,
-  "Save Password?" after a sign-in form goes - are missing from Maestro's
-  hierarchy: they're closed by point, in
-  `account-create.yaml` and `common/dismiss-save-password.yaml`.
+- **iOS's password sheets** - "Use Strong Password?" over a new password
+  field, "Save Password?" after a sign-in form goes - are missing from
+  Maestro's hierarchy, so nothing can close them reliably: `run.sh` turns
+  the simulator's password AutoFill off, and they never come (by hand:
+  `xcrun simctl spawn booted defaults write com.apple.WebUI
+AutoFillPasswords -bool NO`).
 - **Leaving a screen is a tap on its back button**, through
   `common/header-back.yaml` (or a sheet's Cancel): the app's own chevron on
   iOS (`header-back`), Android's native arrow ("Navigate up") there, as

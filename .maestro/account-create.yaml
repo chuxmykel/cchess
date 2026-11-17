@@ -35,17 +35,6 @@ tags:
       TEXT: ".+@e2e\\.cchess\\.test"
 - tapOn:
     id: "password-input"
-# iOS's "Use Strong Password?" sheet takes over a new-password field and
-# swallows typing; like the save prompt, it's outside the app's hierarchy:
-# close it by point, then clear whatever got typed before it opened.
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - waitForAnimationToEnd
-      - tapOn:
-          point: "370,507"
-      - eraseText: 20
 - inputText: "password"
 - runFlow:
     file: common/typed.yaml
@@ -55,7 +44,6 @@ tags:
 - runFlow: common/dismiss-keyboard.yaml
 - tapOn:
     id: "account-form-submit"
-- runFlow: common/dismiss-save-password.yaml
 - extendedWaitUntil:
     notVisible:
       id: "sign-in-prompt"
