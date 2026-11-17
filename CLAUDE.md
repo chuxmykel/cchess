@@ -851,12 +851,12 @@ reviewActions.ts`: Best where another move was better, out of the book;
   white's or black's - and the strength: fast, standard or deep,
   `constants/review.ts`), also in Settings. Accuracy shows in Recent Games
   and game history (`GameRow`) once a game's been reviewed. See
-  cchess-be's README, "Game review", for why the engine runs on the
+  cchess-be's `docs/features.md`, "Game review", for why the engine runs on the
   device.
 
 - **Daily games** - chess.com's: 1, 2, 3, 5, 7 or 14 days a move, a game
   type and rating category of their own (`daily`), played alongside live
-  games and each other (see cchess-be's README, "Daily games"). A daily
+  games and each other (see cchess-be's `docs/features.md`, "Daily games"). A daily
   time control is its days in `initialSeconds`, no increment
   (`constants/timeControls.ts`' `DAILY_DAYS`, `isDailyTimeControl`,
   `daysPerMove`) - New Game's panel and the challenge sheet offer them,
@@ -947,8 +947,8 @@ reviewActions.ts`: Best where another move was better, out of the book;
       instead (the answer's `source`).
 
     The database is lichess's Masters or Lichess, kept and rate-limited by
-    the server, or a player's games here (see cchess-be's README, "Opening
-    explorer"). It's chosen in `ExplorerSettingsSheet`, from the toolbar's
+    the server, or a player's games here (see cchess-be's `docs/features.md`,
+    "Opening explorer"). It's chosen in `ExplorerSettingsSheet`, from the toolbar's
     database button, captioned with it (`ToolbarButton`'s `caption`):
     - Lichess's time controls and rating bands, as chips;
     - the player, you or anyone searched for (`useUserSearch`), and the
