@@ -117,16 +117,19 @@ jobs:
           if-no-files-found: ignore
 
   ios:
-    name: iOS (shard ${{ matrix.shard }}/3)
+    name: iOS (shard ${{ matrix.shard }}/5)
     # The simulator needs macOS, whose runners have no Docker: cchess-be
     # runs directly instead (scripts/e2e/backend-native.sh), on Postgres
     # 18 as production's is.
     runs-on: macos-26
-    timeout-minutes: 45
+    # Five shards, the most macOS jobs a free account runs at once: an iOS
+    # flow takes minutes on a hosted runner, and a long simulator session
+    # grows likelier to lose Maestro's driver.
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -187,7 +190,7 @@ jobs:
           # simulator - takes minutes on a hosted runner, past its default
           # wait of seconds.
           MAESTRO_DRIVER_STARTUP_TIMEOUT: 240000
-        run: scripts/e2e/run.sh --platform ios --backend native --shard ${{ matrix.shard }}/3
+        run: scripts/e2e/run.sh --platform ios --backend native --shard ${{ matrix.shard }}/5
 
       - name: Upload logs and reports
         if: always()
