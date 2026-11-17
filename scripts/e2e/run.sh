@@ -89,12 +89,14 @@ fi
 started_emulator=
 installer_pid=
 metro_pid=
+cache_pid=
 bot_pid=
 cleanup() {
   code=$?
   if [ -n "$bot_pid" ]; then kill "$bot_pid" 2>/dev/null || true; fi
   if [ -n "$installer_pid" ]; then kill "$installer_pid" 2>/dev/null || true; fi
   if [ -n "$metro_pid" ]; then kill "$metro_pid" 2>/dev/null || true; fi
+  if [ -n "$cache_pid" ]; then kill "$cache_pid" 2>/dev/null || true; fi
   if [ -n "$started_emulator" ]; then adb -s "$device" emu kill >/dev/null 2>&1 || true; fi
   if [ "${KEEP:-}" != 1 ]; then
     if [ "$backend" = docker ]; then
@@ -109,7 +111,7 @@ cleanup() {
 device=
 trap cleanup EXIT INT TERM
 
-for port in "$E2E_API_PORT" "$E2E_METRO_PORT" "$E2E_BOT_PORT"; do
+for port in "$E2E_API_PORT" "$E2E_METRO_PORT" "$((E2E_METRO_PORT + 2))" "$E2E_BOT_PORT"; do
   port_free "$port" || { echo "port $port is in use - is another e2e run going?" >&2; exit 1; }
 done
 
@@ -222,9 +224,17 @@ if [ -n "${E2E_METRO_TMPDIR:-}" ]; then
   mkdir -p "$E2E_METRO_TMPDIR"
   export TMPDIR="$E2E_METRO_TMPDIR"
 fi
-CI=1 npx expo start --no-dev --port "$E2E_METRO_PORT" \
+# Behind a cache, on the next port but one (the next is Expo Go's
+# installer's): every launch asks for the same bundle and assets, which a
+# busy runner's Metro took past Expo Go's patience over - see
+# scripts/e2e/metro-cache.js.
+metro_port=$((E2E_METRO_PORT + 2))
+CI=1 npx expo start --no-dev --port "$metro_port" \
   > "$E2E_LOG_DIR/metro.log" 2>&1 &
 metro_pid=$!
+METRO_PORT="$metro_port" node scripts/e2e/metro-cache.js \
+  > "$E2E_LOG_DIR/metro-cache.log" 2>&1 &
+cache_pid=$!
 # Bundled ahead of the first flow - which would otherwise wait minutes on
 # it on a hosted runner - by asking for the very bundle Expo Go loads: its
 # address, from the manifest Metro serves Expo Go, has settings of its own
