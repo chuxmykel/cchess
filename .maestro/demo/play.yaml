@@ -1,0 +1,64 @@
+appId: ${APP_ID}
+tags:
+  - demo
+---
+# README demo: a rated 5+0 against a scripted bot_1, from the seek to a
+# Scholar's Mate - drags, and 2. Bc4 queued as a premove while black
+# thinks - then the result card with the rating change. Recorded to
+# play.mp4. Squares are the iPhone 18 Pro's points with the app as white
+# (see ../README.md, "Device-specific coordinates").
+- runFlow: ../common/sign-in.yaml
+- tapOn:
+    id: "play-button"
+    retryTapIfNoChange: true
+- assertVisible:
+    id: "start-new-game-button"
+- startRecording: play
+- runFlow: common/pause.yaml
+- tapOn:
+    id: "start-new-game-button"
+- runScript:
+    file: ../common/bot-start.js
+    env:
+      BOT_ARGS: "--color b --level easy --delay 2500 --moves e5,Nc6,Nf6"
+- extendedWaitUntil:
+    visible:
+      id: "game-toolbar"
+    timeout: 30000
+# 1. e4
+- swipe:
+    start: "226,587"
+    end: "226,486"
+    duration: 500
+# 2. Bc4, queued while black thinks.
+- swipe:
+    start: "276,637"
+    end: "126,486"
+    duration: 500
+- extendedWaitUntil:
+    visible:
+      id: "move-4"
+    timeout: 15000
+# 3. Qh5, once 2...Nc6 is in.
+- swipe:
+    start: "176,637"
+    end: "377,435"
+    duration: 500
+- extendedWaitUntil:
+    visible:
+      id: "move-6"
+    timeout: 15000
+# 4. Qxf7#
+- swipe:
+    start: "377,435"
+    end: "276,334"
+    duration: 500
+- extendedWaitUntil:
+    visible:
+      id: "game-over-card"
+    timeout: 15000
+- runFlow:
+    file: common/pause.yaml
+    env:
+      MS: 2500
+- stopRecording

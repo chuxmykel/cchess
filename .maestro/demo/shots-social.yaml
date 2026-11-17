@@ -1,0 +1,35 @@
+appId: ${APP_ID}
+tags:
+  - demo
+---
+# README gallery still: a conversation with e2e_friend (a scripted bot
+# that answers), one of e2e_main's games shared in it.
+- runFlow: ../common/friend-online.yaml
+- tapOn:
+    id: "friend-card-.*"
+- tapOn:
+    id: "profile-message"
+- assertVisible:
+    id: "conversation-screen"
+- tapOn:
+    id: "attach-button"
+- assertVisible:
+    id: "game-picker"
+- tapOn:
+    id: "game-row-.*"
+    index: 0
+- tapOn:
+    id: "message-input"
+- inputText: "Look at this finish!"
+- runFlow:
+    file: ../common/typed.yaml
+    env:
+      FIELD: "message-input"
+      TEXT: "Look at this finish!"
+- tapOn:
+    id: "send-message-button"
+- extendedWaitUntil:
+    visible: "You said: Look at this finish!"
+    timeout: 10000
+- runFlow: common/pause.yaml
+- takeScreenshot: messages

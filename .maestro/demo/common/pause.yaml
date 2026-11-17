@@ -1,0 +1,10 @@
+appId: ${APP_ID}
+---
+# Holds the screen still for MS milliseconds (1500 unless given), so a
+# recording lingers where there's something to see: waits for an element
+# that never comes, optionally.
+- extendedWaitUntil:
+    visible:
+      id: "demo-pause-never-shown"
+    timeout: ${MS || 1500}
+    optional: true
