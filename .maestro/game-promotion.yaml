@@ -1,0 +1,33 @@
+appId: ${APP_ID}
+tags:
+  - opponent
+---
+# A pawn reaching the last rank asks what it becomes: 1. h4 g5 2. hxg5 Nf6
+# 3. gxf6 Rg8 4. fxe7 d6 5. exf8=Q+ - the opponent's replies scripted.
+- runFlow:
+    file: common/to-board.yaml
+    env:
+      BOT_ARGS: "--guest --color b --moves g5,Nf6,Rg8,d6 --delay 300"
+- tapOn: { id: "square-h2" }
+- tapOn: { id: "square-h4" }
+- extendedWaitUntil: { visible: { id: "move-2", text: "g5" }, timeout: 10000 }
+- tapOn: { id: "square-h4" }
+- tapOn: { id: "square-g5" }
+- extendedWaitUntil: { visible: { id: "move-4", text: "Nf6" }, timeout: 10000 }
+- tapOn: { id: "square-g5" }
+- tapOn: { id: "square-f6" }
+- extendedWaitUntil: { visible: { id: "move-6", text: "Rg8" }, timeout: 10000 }
+- tapOn: { id: "square-f6" }
+- tapOn: { id: "square-e7" }
+- extendedWaitUntil: { visible: { id: "move-8", text: "d6" }, timeout: 10000 }
+- tapOn: { id: "square-e7" }
+- tapOn: { id: "square-f8" }
+- assertVisible:
+    id: "promotion-menu"
+- tapOn:
+    id: "promote-q"
+- extendedWaitUntil:
+    visible:
+      id: "move-9"
+      text: "exf8=Q\\+"
+    timeout: 5000

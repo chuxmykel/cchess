@@ -22,7 +22,7 @@ type ChessGameResultRef = { current: Pick<UseChessGameResult, 'pieces'> };
 // empty square - oriented exactly like the on-screen board (rank 8 at the
 // top). Not wired up anywhere yet; just a quick way to eyeball board state
 // (e.g. console.log(renderBoardAsText(result))) from a test or debugger
-// without reaching for the simulator.
+// without reaching for a simulator or emulator.
 export function renderBoardAsText(resultRef: ChessGameResultRef): string {
   const { pieces } = resultRef.current;
   const bySquare = new Map(pieces.map((piece) => [piece.square, piece]));

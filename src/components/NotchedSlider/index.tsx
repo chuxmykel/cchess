@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import Slider, { SliderProps } from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
 import { makeStyles } from '../../theme';
@@ -18,6 +18,12 @@ const NotchedSlider: React.FC<SliderProps> = ({
   return (
     <Slider
       {...props}
+      // Android's thumb is its own blue unless told: the track's color, as
+      // iOS's white one with its shadow stands out without.
+      thumbTintColor={
+        props.thumbTintColor ??
+        (Platform.OS === 'android' ? props.minimumTrackTintColor : undefined)
+      }
       value={value}
       StepMarker={Notch}
       onValueChange={(next) => {

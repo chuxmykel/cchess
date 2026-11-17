@@ -1,0 +1,36 @@
+appId: ${APP_ID}
+tags:
+  - account
+---
+# Conditional moves, while the opponent's to move in a daily game: a line
+# written on the board - their reply, then ours - and saved, counted on the
+# game's menu. e2e_main's seeded game against bot_2 (1. d4, black to move).
+- runFlow: common/sign-in.yaml
+- extendedWaitUntil:
+    visible:
+      id: "daily-games-section"
+    timeout: 15000
+- tapOn:
+    id: "daily-game-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+    text: ".*bot_2.*"
+- tapOn:
+    id: "game-menu-button"
+- tapOn:
+    id: "conditional-moves-action"
+- assertVisible:
+    id: "conditional-moves"
+- tapOn: { id: "square-d7" }
+- tapOn: { id: "square-d5" }
+- tapOn: { id: "square-c2" }
+- tapOn: { id: "square-c4" }
+- assertVisible:
+    id: "conditional-line-0"
+- tapOn:
+    id: "confirm-conditional-moves-button"
+- extendedWaitUntil:
+    notVisible:
+      id: "conditional-moves"
+    timeout: 10000
+- tapOn:
+    id: "game-menu-button"
+- assertVisible: "Conditional moves \\(1\\)"

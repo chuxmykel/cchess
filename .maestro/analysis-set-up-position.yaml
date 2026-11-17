@@ -1,0 +1,52 @@
+appId: ${APP_ID}
+---
+# Setting up a position from the Menu: the board cleared, two kings and a
+# queen placed, then analysed - and it's that position: the queen's check
+# can be played.
+- runFlow: common/launch-fresh.yaml
+- tapOn:
+    id: "menu-tab"
+    retryTapIfNoChange: true
+- tapOn:
+    id: "analysis-set-up"
+    retryTapIfNoChange: true
+- assertVisible:
+    id: "set-up-position"
+- tapOn:
+    id: "set-up-menu"
+# Tapped again until the menu has gone: on a slow simulator (CI's) a tap
+# as it opens can come before it takes taps.
+- repeat:
+    while:
+      visible:
+        id: "editor-clear"
+    times: 3
+    commands:
+      - tapOn:
+          id: "editor-clear"
+      - extendedWaitUntil:
+          notVisible:
+            id: "editor-clear"
+          timeout: 5000
+          optional: true
+- tapOn:
+    id: "editor-tool-wk"
+- tapOn:
+    id: "square-e1"
+- tapOn:
+    id: "editor-tool-wq"
+- tapOn:
+    id: "square-d1"
+- tapOn:
+    id: "editor-tool-bk"
+- tapOn:
+    id: "square-e8"
+- tapOn:
+    id: "set-up-analyse"
+- assertVisible:
+    id: "analysis-board"
+- tapOn:
+    id: "square-d1"
+- tapOn:
+    id: "square-d7"
+- assertVisible: ".*Qd7\\+"

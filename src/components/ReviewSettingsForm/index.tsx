@@ -20,7 +20,7 @@ import {
 } from '../../constants/review';
 import { VOICE_SAMPLE } from '../../domain/review/phrases';
 import { makeStyles, useTheme } from '../../theme';
-import { voiceQualityLabel } from '../../utils/voices';
+import { voiceDisplayName, voiceQualityLabel } from '../../utils/voices';
 
 interface ReviewSettingsFormProps {
   settings: ReviewSettings;
@@ -70,6 +70,7 @@ const ReviewSettingsForm: React.FC<ReviewSettingsFormProps> = ({
         value={settings[key]}
         onValueChange={(value) => onChange({ [key]: value })}
         trackColor={{ true: colors.accent }}
+        thumbColor={colors.switchThumb}
         accessibilityLabel={label}
         testID={`review-setting-${key}`}
       />
@@ -103,7 +104,9 @@ const ReviewSettingsForm: React.FC<ReviewSettingsFormProps> = ({
                       size={20}
                       color={selected ? colors.accent : colors.textMuted}
                     />
-                    <Text style={styles.voiceName}>{voice.name}</Text>
+                    <Text style={styles.voiceName}>
+                      {voiceDisplayName(voice)}
+                    </Text>
                     <Text style={styles.voiceDetail}>
                       {[quality, voice.language].filter(Boolean).join(' · ')}
                     </Text>
@@ -112,7 +115,7 @@ const ReviewSettingsForm: React.FC<ReviewSettingsFormProps> = ({
                     onPress={() => hear(voice)}
                     hitSlop={8}
                     accessibilityRole="button"
-                    accessibilityLabel={`Hear ${voice.name}`}
+                    accessibilityLabel={`Hear ${voiceDisplayName(voice)}`}
                     testID={`review-voice-hear-${voice.identifier}`}
                   >
                     <Icon

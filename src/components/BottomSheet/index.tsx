@@ -103,6 +103,12 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
       visible={modalVisible}
       transparent
       animationType="none"
+      // Android's modal otherwise stops at the status and navigation bars,
+      // while the app draws behind them: the backdrop would leave both
+      // undimmed and the sheet end short of the bottom, the screen showing
+      // under it. The sheet pads itself clear of the bottom inset.
+      statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={onClose}
       onDismiss={onDismiss}
     >

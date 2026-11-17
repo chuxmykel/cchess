@@ -30,7 +30,7 @@ import { useSendTyping, useTypingFriends } from '../../hooks/useTyping';
 import { MessageAttachment } from '../../network/restClient';
 import { presenceLabel } from '../../utils/presence';
 import { HomeStackScreenProps } from '../HomeStack/types';
-import { plainHeaderItem } from '../plainHeaderOptions';
+import { plainHeaderRight } from '../plainHeaderOptions';
 import { makeStyles, useTheme } from '../../theme';
 
 type ConversationProps = Pick<
@@ -121,19 +121,17 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
           </View>
         </Pressable>
       ),
-      unstable_headerRightItems: () => [
-        plainHeaderItem(
-          <Pressable
-            onPress={() => setIsMenuOpen(true)}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="More"
-            testID="conversation-menu-button"
-          >
-            <Icon name="dots-horizontal" size={24} />
-          </Pressable>,
-        ),
-      ],
+      ...plainHeaderRight(
+        <Pressable
+          onPress={() => setIsMenuOpen(true)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="More"
+          testID="conversation-menu-button"
+        >
+          <Icon name="dots-horizontal" size={24} />
+        </Pressable>,
+      ),
     });
   }, [
     navigation,

@@ -1,0 +1,11 @@
+appId: ${APP_ID}
+---
+# e2e_main signed in, with e2e_friend - the scripted opponent in friend
+# mode (scripts/opponent.js --friend), its FRIEND_ARGS added - online:
+# answering messages ("You said: ..."), and accepting challenges. Started
+# after signing in, whose fresh launch stops every bot.
+- runFlow: sign-in.yaml
+- runScript:
+    file: bot-start.js
+    env:
+      BOT_ARGS: "${'--user e2e_friend --friend e2e_main --level easy --delay 300 ' + (typeof FRIEND_ARGS === 'undefined' ? '' : FRIEND_ARGS)}"

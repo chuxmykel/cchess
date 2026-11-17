@@ -28,7 +28,7 @@ import { useToast } from '../../hooks/useToast';
 import { useTypingFriends } from '../../hooks/useTyping';
 import { ConversationSummary, Friend } from '../../network/restClient';
 import { MessagesStackScreenProps } from '../MessagesStack/types';
-import { plainHeaderItem } from '../plainHeaderOptions';
+import { plainHeaderRight } from '../plainHeaderOptions';
 import { makeStyles, useTheme } from '../../theme';
 
 type MessagesProps = {
@@ -84,22 +84,19 @@ const Messages: React.FC<MessagesProps> = ({ navigation }) => {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      unstable_headerRightItems: () =>
-        canMessage
-          ? [
-              plainHeaderItem(
-                <Pressable
-                  onPress={() => setIsPickingFriend(true)}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel="New message"
-                  testID="new-message-button"
-                >
-                  <Icon name="pencil-box-outline" size={26} />
-                </Pressable>,
-              ),
-            ]
-          : [],
+      ...plainHeaderRight(
+        canMessage ? (
+          <Pressable
+            onPress={() => setIsPickingFriend(true)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="New message"
+            testID="new-message-button"
+          >
+            <Icon name="pencil-box-outline" size={26} />
+          </Pressable>
+        ) : null,
+      ),
     });
   }, [navigation, canMessage]);
 

@@ -1,6 +1,6 @@
 # cChess
 
-A chess app for iOS (more to come), built with React Native and Expo.
+A chess app for iOS and Android, built with React Native and Expo.
 Pieces move either by tap (tap a piece, then tap a destination square) or
 by drag-and-drop; all rules enforcement (legal moves, check/checkmate/
 stalemate, castling, en passant, promotion) is delegated to
@@ -44,8 +44,8 @@ WIP (TBD)
   gesture primitives
 - Jest + [@testing-library/react-native](https://callstack.github.io/react-native-testing-library/) -
   unit and component tests
-- [Maestro](https://maestro.mobile.dev) - end-to-end tests against a real
-  iOS Simulator
+- [Maestro](https://maestro.mobile.dev) - end-to-end tests on the iOS
+  Simulator and an Android emulator, against a real, seeded `cchess-be`
 
 ## Project structure
 
@@ -177,10 +177,15 @@ anything, and keeps everything under `components/` purely presentational.
   else..
 - The Expo CLI is a project dependency, invoked via `npx expo` /
   `npm run <script>` - no global install needed.
-- A way to actually run the app: Xcode + an iOS Simulator.
+- A way to actually run the app, in Expo Go: Xcode and an iOS Simulator,
+  Android's SDK command-line tools and an emulator (no Android Studio
+  needed - `.maestro/README.md` has the one-time setup), or a phone with
+  Expo Go installed.
 - [Maestro](https://maestro.mobile.dev) installed separately
   (`curl -Ls "https://get.maestro.mobile.dev" | bash`), only if you want to
-  run the end-to-end suite - see `.maestro/README.md`.
+  run the end-to-end suite - along with Docker (or Postgres), and
+  `cchess-be` and `cchess-infra` checked out beside this repo; see
+  `.maestro/README.md`.
 - A running `cchess-be` instance (the Socket.IO/NestJS backend) for guest
   auth, matchmaking, and live games to actually work - the app falls back
   to `http://localhost:3000` if `EXPO_PUBLIC_SERVER_URL` isn't set (see
@@ -198,24 +203,27 @@ npm install
 ### Run
 
 ```bash
-npm start        # start the Metro bundler - press i, or scan the QR code with Expo Go
-npm run ios      # start the bundler and open directly in the iOS Simulator
+npm start                # start Metro - press i (iOS Simulator) or a (Android emulator), or scan the QR code with Expo Go
+emulator -avd cchess-e2e # the Android emulator, in a window to click through
 ```
 
 ## Testing
 
 Two deliberately separate layers:
 
-|                    | Unit/component (Jest)                                                        | End-to-end (Maestro)                                |
-| ------------------ | ---------------------------------------------------------------------------- | --------------------------------------------------- |
-| Run with           | `npm test`                                                                   | `npm run test:e2e`                                  |
-| Covers             | Chess rules, the game state machine, gesture→callback translation, rendering | Real native gestures driving the actual running app |
-| Needs a simulator? | No                                                                           | Yes - a booted iOS Simulator + `expo start` running |
+|                    | Unit/component (Jest)                                                        | End-to-end (Maestro)                                                        |
+| ------------------ | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Run with           | `npm test`                                                                   | `npm run test:e2e:ios` / `test:e2e:android`                                 |
+| Covers             | Chess rules, the game state machine, gesture→callback translation, rendering | Real native gestures driving the actual running app, against `cchess-be`    |
+| Platforms          | Both: every test runs as iOS and again as Android                            | Both: every flow runs on the iOS Simulator and the Android emulator         |
+| Needs a simulator? | No                                                                           | Yes, or the emulator - the script brings up the backend, Metro and the bots |
 
 ```bash
-npm test                 # full Jest suite
+npm test                 # full Jest suite, as iOS and as Android
+npm test -- --selectProjects android  # one platform's run
 npm test -- --watch      # watch mode
-npm run test:e2e         # full Maestro suite - see .maestro/README.md for setup
+npm run test:e2e:ios     # full Maestro suite on the iOS Simulator - see .maestro/README.md for setup
+npm run test:e2e:android # ...and on the Android emulator
 ```
 
 Chess rules (legality, check/checkmate, castling, en passant, promotion)

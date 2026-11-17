@@ -1,0 +1,39 @@
+appId: ${APP_ID}
+tags:
+  - account
+---
+# New Game's settings: a guest switching Rated on is told to sign in, and it
+# stays off; signed in, Rated leaves the colors to chance. And the time
+# control last started with is New Game's next time.
+- runFlow: common/to-new-game.yaml
+- tapOn:
+    id: "game-settings-trigger"
+- tapOn:
+    id: "rated-switch"
+- assertVisible: "Sign in to play rated games."
+- tapOn:
+    id: "game-settings-done"
+- runFlow: common/sign-in.yaml
+- tapOn:
+    id: "play-button"
+- tapOn:
+    id: "game-settings-trigger"
+- assertVisible:
+    id: "rated-color-hint"
+- tapOn:
+    id: "game-settings-done"
+# Started at 3+2, then cancelled - back on New Game - and left: New Game
+# opens at 3+2 again.
+- tapOn:
+    id: "time-control-trigger"
+- tapOn:
+    id: "time-control-option-blitz-3\\+2"
+- tapOn:
+    id: "start-new-game-button"
+    retryTapIfNoChange: true
+- tapOn:
+    id: "matchmaking-cancel-button"
+- runFlow: common/header-back.yaml
+- tapOn:
+    id: "play-button"
+- assertVisible: ".*3\\+2.*"

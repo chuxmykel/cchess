@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A chess app for iOS (more platforms planned), built with React Native (0.88) +
+A chess app for iOS and Android, built with React Native (0.88) +
 Expo SDK 58 + React 19 + TypeScript. Pieces move by tap-to-move or
 drag-and-drop; all chess rules enforcement (legality, check/checkmate/
 stalemate, castling, en passant, promotion) is delegated to
@@ -16,16 +16,18 @@ stalemate, castling, en passant, promotion) is delegated to
 nvm use                  # Node 22.16.0 is pinned in .nvmrc - always run this first
 npm install
 
-npm start                # start Metro; press i or scan the QR code with Expo Go
-npm run ios              # start Metro and open directly in the iOS Simulator
+npm start                # start Metro; press i (iOS Simulator) or a (Android emulator), or scan the QR code with Expo Go
+emulator -avd cchess-e2e # the Android emulator, in a window to click through (see .maestro/README.md)
 
-npm test                 # full Jest suite
+npm test                 # full Jest suite, run as iOS and again as Android
+npm test -- --selectProjects android      # one platform's run
 npm test -- --watch      # watch mode
-npm test -- path/to/file.test.ts          # a single file
+npm test -- path/to/file.test.ts          # a single file (both platforms)
 npm test -- -t "name of test or describe" # filter by test name
 
-npm run test:e2e         # Maestro e2e suite, excluding needs-live-server flows (see .maestro/README.md)
-maestro test .maestro/tap-to-move.yaml    # a single Maestro flow, while iterating
+npm run test:e2e:ios     # Maestro e2e suite on the iOS Simulator, against a seeded backend (see .maestro/README.md)
+npm run test:e2e:android # ...and on the Android emulator
+scripts/e2e/run.sh --platform android .maestro/tap-to-move.yaml  # a single flow, while iterating
 
 npm run lint             # eslint . (flat config: eslint-config-expo + prettier)
 npm run lint:fix
@@ -33,12 +35,19 @@ npm run format           # prettier --write .
 npm run format:check
 ```
 
-Maestro e2e requires `expo start` already running (deep-links via
-`exp://127.0.0.1:8081`) and a booted simulator with Expo Go installed. It's
-a separate, non-npm install (`curl -Ls "https://get.maestro.mobile.dev" | bash`).
-For driving the app end-to-end on this machine, use the `run-ios-simulator`
-skill (project specifics: testIDs, navigation path, known-good example flows)
-together with the global `ios-simulator-setup` skill (machine gotchas).
+The e2e suite (`scripts/e2e/run.sh`) brings everything up itself and takes
+it down again: cchess-be from `../cchess-be`, seeded with the e2e accounts
+and games - in Docker through `../cchess-infra`'s e2e stack, or run directly
+with `--backend native` - on port 3100; Metro on 8091; a bot server the
+flows start their scripted opponents through (4100); and the device - the
+booted iOS Simulator, or the `cchess-e2e` Android emulator. Its ports are
+clear of a dev backend (3000) and Metro (8081). Maestro is a separate,
+non-npm install (`curl -Ls "https://get.maestro.mobile.dev" | bash`), and
+the emulator needs Android's SDK command-line tools - `.maestro/README.md`
+has the one-time setup. For driving the app end-to-end on this machine, use
+the `run-app-on-device` skill (project specifics: testIDs, navigation path,
+known-good example flows, the Android emulator too) together with the
+global `ios-simulator-setup` skill (machine gotchas).
 
 There's no typecheck npm script - run `npx tsc --noEmit` directly.
 `tsconfig.json` extends `expo/tsconfig.base` with `strict: false`.
@@ -52,9 +61,19 @@ older default Node. lint-staged is held at 16.x: 17+ needs Node >=
 22.22.1, newer than the pinned 22.16.0.
 
 GitHub Actions runs lint and the Jest suite on every push to `main` and on
-every PR (`.github/workflows/{lint,test}.yml`). The Maestro e2e suite
-(`e2e.yml`) only runs when started by hand from the Actions tab
-("Run workflow"): it takes too long to hold up every PR.
+every PR (`.github/workflows/{lint,test}.yml` - Jest as two jobs, iOS's
+and Android's, so a failure shows which, under a `Jest` job that passes
+when both do). The Maestro e2e suite
+(`e2e.yml`), the better part of an hour, runs once a PR is merged to
+`develop` and on a PR from `develop` to `main` - not on PRs to `develop` -
+on both platforms: Android on Linux in six shards (Docker for
+the backend's stack, KVM for the emulator), iOS on macOS in five
+(cchess-be run directly, on Postgres 18 - macOS runners have no Docker).
+Run by hand from the Actions tab, it takes a platform and the flows to
+run, for checking a fix in minutes. Its `E2E` job is the one check for
+`main`'s branch protection. It checks out
+cchess-be and cchess-infra's `develop`, with the `CCHESS_BE_TOKEN` and
+`CCHESS_INFRA_TOKEN` secrets while those repos are private.
 
 ## Architecture
 
@@ -244,8 +263,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
     in turn (the author's GitHub release, then unpkg - jsDelivr refuses
     the package, it's over 150 MB), and nothing downloaded once they're
     there, so analysis works offline after the first time.
-    `engineStore.ts` is the device's store: the documents folder (never
-    cleared by iOS, kept through updates), one folder per version.
+    `engineStore.ts` is the device's store: the documents folder (cleared
+    by neither iOS nor Android short of uninstalling, kept through
+    updates), one folder per version.
     `constants/engine.ts` pins the version, URLs, hashes and sizes;
     `node scripts/pin-stockfish.js <version>` prints them, checking every
     source serves the same bytes.
@@ -317,8 +337,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
     rematches (`useRematch`: offering one, answering the opponent's, and
     handing over the new game when the server starts it, which `LiveGame`
     then plays in place), the game sounds (`useGameSounds.ts`,
-    with `expo-audio` - one player per sound, shared app-wide; muted by the
-    silent switch, mixing with other apps' audio: `useMoveSounds`, each
+    with `expo-audio` - one player per sound, shared app-wide; muted by
+    iOS's silent switch or Android's silent/vibrate mode, mixing with
+    other apps' audio: `useMoveSounds`, each
     move's as it's applied, either side's - and a game review's Show
     line's; `useMoveNavigationSounds`,
     stepping through a game's moves, in `LiveGame` and `GameViewer`, plus a
@@ -388,10 +409,13 @@ lib/chessboard/  the board, written as a package of its own: outside the
     a slip, to find a better move: the best one taken at once, another
     judged by `useRetryJudge`, a quick search). `reviewView.ts` - what the
     board and the bubble show at each of those, and what's said.
-    `useReviewVoice` - each comment read aloud with `expo-speech` (iOS's own
-    voices, in the app's audio session, stopped in the background and on
-    leaving), the best English voice there is unless one's chosen
-    (`utils/voices.ts`); `useSpeechVoices`, the voices to choose from.
+    `useReviewVoice` - each comment read aloud with `expo-speech` (the
+    device's own voices - iOS's, in the app's audio session, or Android's
+    text-to-speech engine - stopped in the background and on leaving), the
+    best English voice there is unless one's chosen (`utils/voices.ts`:
+    Apple's Premium and Enhanced first; on Android, voices read on the
+    device before those read online, named by their short name, "Voice
+    TPF"); `useSpeechVoices`, the voices to choose from.
     `useReviewSettings`.
   - Friends and everything around them: `useSocial` (backs
     `SocialContext`: friends with their live status, friend requests,
@@ -433,8 +457,12 @@ lib/chessboard/  the board, written as a package of its own: outside the
     keyboard covers, as an `Animated.Value` moving in step with it rather
     than state - a re-render can reset a natively driven animation on the
     same view, like a sheet's slide; and a `KeyboardAvoidingView` can't
-    move an absolutely positioned sheet),
-    `useCaretRotation`, `useGameScreenGestureLock`,
+    move an absolutely positioned sheet; it follows iOS's
+    `keyboardWill*` events, and Android's `keyboardDid*`, the only ones it
+    sends),
+    `useCaretRotation`, `useGameScreenGestureLock` (a live game's swipe-back
+    locked, and Android's back button and gesture refused, until it's
+    over),
     `usePressAndHoldRepeat` (a button's handlers for an action that
     repeats while held - once as the finger goes down, not as it lifts, then every 100ms after a 400ms hold,
     until let go or disabled - as the toolbar's ‹ › step through moves),
@@ -442,7 +470,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
     available until its game has loaded), `useRunAfterDismiss` (holds a
     menu/sheet action until its modal has finished closing - on iOS,
     presenting the share sheet or an Alert while a modal is still
-    animating away silently does nothing; an `ActionSheet` action marked
+    animating away silently does nothing; Android has no such wait, and
+    runs it at once; an `ActionSheet` action marked
     `immediate`, like Flip board, presents nothing and runs at once), and
     `useAsyncAction` (runs a
     server request for a form or button: in-flight state, no double
@@ -469,7 +498,7 @@ lib/chessboard/  the board, written as a package of its own: outside the
     from any screen).
   - `ThemeContext.tsx` - `ThemeProvider`, mounted at the root of
     `App.tsx`, wrapping `useAppearanceSettings`: the theme in use - dark
-    while iOS is (`app.json`'s `userInterfaceStyle` is `automatic`),
+    while the device is (`app.json`'s `userInterfaceStyle` is `automatic`),
     unless Appearance says always light or always dark - for `useTheme()`,
     the settings for `useAppearance()`, the chosen board's squares for
     `useBoardColors()` and its pieces' set for `usePieceSetName()`. Outside a provider - a component rendered alone in
@@ -485,7 +514,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
     screen uses it (downloading its files the first time, with progress),
     run in a hidden WebView - given a `containerStyle` too, or its
     container takes half the screen - shut down 30s after the last screen
-    lets go, and restarted if iOS ends its process. Its status is
+    lets go, and restarted if the system ends its process (iOS's
+    `onContentProcessDidTerminate`, Android's `onRenderProcessGone`). Its status is
     `idle`/`downloading`/`starting`/`ready` (an engine per slot)/`error`,
     with `retry`.
 
@@ -559,7 +589,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
   - `components/` - `BoardSurface`/`Row`/`Square`, `LastMoveHighlight`,
     `PieceDragAndDropGuide`, `ValidMoveIndicators`, `Pieces` (`Piece`, or
     `StaticPiece` on a view-only board), `PieceImage` (the piece's SVG, upright for black, a
-    king in check glowing red - an iOS shadow, which follows the piece's
+    king in check glowing red - an iOS shadow, or on Android, which draws
+    no such shadow, a drop-shadow `filter`, either following the piece's
     shape - and tipping over 45° once fallen) and `BoardArrows` (square
     centre to square centre in SVG, over the pieces and out of the way of
     touches); `ChessPiece`, exported, draws one piece off the board from a
@@ -694,7 +725,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
   so the sheet keeps its height) - and a
   `RatingRangeSelector` - two sliders, `@react-native-community/slider`
   (every slider in the app is a `NotchedSlider`: notched at its steps,
-  with a haptic tick, `expo-haptics`, as the thumb reaches each),
+  with a haptic tick, `expo-haptics`, as the thumb reaches each, and on
+  Android its thumb the track's color - as every switch's thumb is the
+  theme's `switchThumb` - not Android's own blue),
   for how far below and above your rating an opponent may be, each with
   an "Open" checkbox that leaves that side unlimited, shown as "+∞"),
   `TextField`/`PasswordField`, and
@@ -969,8 +1002,10 @@ reviewActions.ts`: Best where another move was better, out of the book;
   which Cancel keeps) change it in place, without navigating. Every screen with a shown
   header uses `screens/plainHeaderOptions.tsx`: no line under it, and a
   plain chevron (`HeaderBackButton`) in place of the native back button,
-  whose glass circle iOS 26+ draws - header buttons go in as
-  `plainHeaderItem`s, which turn that circle off (`hidesSharedBackground`). A
+  whose glass circle iOS 26+ draws - header buttons go in through
+  `plainHeaderRight`: an iOS header item with that circle turned off
+  (`hidesSharedBackground`), and on Android, which draws no header items,
+  the header's `headerRight`; Android keeps its own back arrow. A
   player's profile leaves its header title empty until the avatar block
   scrolls out of view, then fades the username in there. Its Friends
   section's View All opens `UserFriends`, every friend - or only those
@@ -1002,7 +1037,8 @@ reviewActions.ts`: Best where another move was better, out of the book;
   being folded into this one. Guests reach `SignIn`/`CreateAccount`
   from the prompt on Home, the Menu or Messages; both pop back on success. They're
   pushed over the tabs, so nobody can sign in or out mid-game -
-  `LiveGame` covers the tabs and locks swipe-back while playing.
+  `LiveGame` covers the tabs and locks swipe-back - and Android's back -
+  while playing.
 
 - **`src/theme/`** - the app's style guide, every color, space, corner,
   type size and shadow its styles are drawn from. `tokens.ts`: the scales
@@ -1082,8 +1118,9 @@ reviewActions.ts`: Best where another move was better, out of the book;
   `jest.mock` factories (`ConnectionStrengthIndicatorStub.tsx`,
   `popoverMenuStartingOpen.ts`, and `focusEffectRunsOnMount.ts` for
   screens that use `useFocusEffect`). `jest-setup.js` makes the mocked
-  `Modal` report `onDismiss` when it hides, as iOS does, so actions that
-  wait on it run in tests too, and renders the icons as plain
+  `Modal` report `onDismiss` when it hides on iOS - as iOS does, and
+  Android doesn't - so actions that wait on it run in iOS's tests too, and
+  renders the icons as plain
   `Text`s keeping their props (icon fonts can't load under Jest) - so
   tests assert which icon shows by its `name` prop, via a `testID`. It
   renders the slider as a plain `View` keeping its props too, so tests
@@ -1101,11 +1138,12 @@ reviewActions.ts`: Best where another move was better, out of the book;
 
 Two deliberately separate layers - don't let one re-do the other's job:
 
-|                    | Unit/component (Jest)                                                       | End-to-end (Maestro)                                |
-| ------------------ | --------------------------------------------------------------------------- | --------------------------------------------------- |
-| Run with           | `npm test`                                                                  | `npm run test:e2e`                                  |
-| Covers             | Chess rules, game state machine, gesture -> callback translation, rendering | Real native gestures driving the actual running app |
-| Needs a simulator? | No                                                                          | Yes                                                 |
+|                    | Unit/component (Jest)                                                       | End-to-end (Maestro)                                                                  |
+| ------------------ | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Run with           | `npm test`                                                                  | `npm run test:e2e:ios` / `test:e2e:android`                                           |
+| Covers             | Chess rules, game state machine, gesture -> callback translation, rendering | Real native gestures driving the actual running app, against a real, seeded cchess-be |
+| Platforms          | Both: every test runs as iOS and as Android (`jest.config.js`' projects)    | Both: every flow runs on the iOS Simulator and the Android emulator                   |
+| Needs a simulator? | No                                                                          | Yes, or the emulator - and Docker, or Postgres for `--backend native`                 |
 
 - Chess rules (legality, check/checkmate, castling, en passant, promotion)
   are unit-tested directly against `ChessEngine`, no rendering involved -
@@ -1119,8 +1157,17 @@ Two deliberately separate layers - don't let one re-do the other's job:
   for it playing a real `useChessGame`, and `testUtils/pieceGestures.ts`. Those tests use fake timers: the gestures'
   worklets reach JS through `scheduleOnRN`, and pieces move by timed
   animations.
+- Platform differences are tested in Jest by `Platform.OS`: the same test
+  runs as both, each expecting what its platform does (`testUtils/
+keyboard.ts` sends each platform's keyboard events; `isSwitchOn` reads
+  either platform's `Switch`, which RNTL's `toBeChecked` reads only on
+  iOS).
 - "Does this actually work on a real device" questions belong in a Maestro
-  flow under `.maestro/`, not a Jest test.
+  flow under `.maestro/`, not a Jest test. Every flow reaching the server
+  plays against the e2e backend's seeded accounts (`e2e_main`,
+  `e2e_friend`) and scripted opponents it starts itself; flows check a move
+  in the move list (`move-<ply>`), not by a piece's testID, which Android
+  reports where the piece is laid out (a8), not where it's drawn.
 
 ## Conventions
 

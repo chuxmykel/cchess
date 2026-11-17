@@ -1,0 +1,32 @@
+appId: ${APP_ID}
+tags:
+  - tour
+---
+# Not a test: the app's screens, screenshotted in light mode and then dark,
+# for comparing the platforms side by side (README.md, "The screenshot
+# tour"). Left out of the suite's runs; name it to run it.
+- runFlow: common/sign-in.yaml
+- runFlow:
+    file: common/tour-screens.yaml
+    env:
+      THEME: light
+- tapOn:
+    id: "menu-tab"
+    retryTapIfNoChange: true
+- tapOn:
+    id: "menu-settings"
+    retryTapIfNoChange: true
+- tapOn:
+    id: "appearance-row"
+- tapOn:
+    id: "color-scheme-dark"
+# Back from Appearance, then Settings.
+- runFlow: common/header-back.yaml
+- runFlow: common/header-back.yaml
+- tapOn:
+    id: "home-tab"
+    retryTapIfNoChange: true
+- runFlow:
+    file: common/tour-screens.yaml
+    env:
+      THEME: dark

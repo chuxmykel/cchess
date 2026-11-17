@@ -1,0 +1,49 @@
+appId: ${APP_ID}
+tags:
+  - account
+---
+# Signing in with a wrong password says why, and leaves the form; the right
+# one signs in. Signing out, from the Menu, is back to a guest.
+- runFlow: common/launch-fresh.yaml
+- tapOn:
+    id: "sign-in-button"
+    retryTapIfNoChange: true
+- tapOn:
+    id: "username-or-email-input"
+- inputText: "e2e_main"
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "username-or-email-input"
+      TEXT: "e2e_main"
+- tapOn:
+    id: "password-input"
+- inputText: "not-the-password"
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "password-input"
+      TEXT: "•{16}"
+- runFlow: common/dismiss-keyboard.yaml
+- tapOn:
+    id: "account-form-submit"
+# The password checked first - most of a minute, at times, on a busy runner.
+- extendedWaitUntil:
+    visible:
+      id: "account-form-error"
+    timeout: 60000
+- assertVisible:
+    id: "sign-in-screen"
+- runFlow: common/sign-in.yaml
+- tapOn:
+    id: "menu-tab"
+    retryTapIfNoChange: true
+- scrollUntilVisible:
+    element:
+      id: "sign-out-button"
+- tapOn:
+    id: "sign-out-button"
+- extendedWaitUntil:
+    visible:
+      id: "sign-in-prompt"
+    timeout: 15000

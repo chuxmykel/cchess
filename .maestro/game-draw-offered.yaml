@@ -1,0 +1,28 @@
+appId: ${APP_ID}
+tags:
+  - opponent
+---
+# A draw offered from the menu, once both sides have moved: declined by the
+# opponent, which the game's chat says, and the game goes on.
+- runFlow:
+    file: common/to-board.yaml
+    env:
+      BOT_ARGS: "--guest --color b --level easy --delay 300 --draw decline"
+- runFlow: common/both-moved.yaml
+- tapOn:
+    id: "game-menu-button"
+- tapOn:
+    id: "offer-draw-action"
+# Declined - said in the game's chat, among its messages - and the game
+# goes on.
+- extendedWaitUntil:
+    visible:
+      id: "chat-button-badge"
+    timeout: 10000
+- tapOn:
+    id: "chat-button"
+- extendedWaitUntil:
+    visible: ".*declined the draw.*"
+    timeout: 10000
+- assertNotVisible:
+    id: "game-over-card"

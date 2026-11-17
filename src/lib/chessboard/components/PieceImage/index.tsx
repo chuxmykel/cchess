@@ -1,5 +1,5 @@
 import { memo, useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View, ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -48,19 +48,8 @@ const PieceImage: React.FC<PieceImageProps> = ({
   return (
     <View style={[size, orientation === 'b' && styles.upright]}>
       <Animated.View style={[size, fallStyle]} testID="sprite">
-        {/* With no background of its own, the view's shadow follows the
-            piece's shape - a glow around the king, not a box. */}
         <View
-          style={[
-            size,
-            inDanger && [
-              styles.glow,
-              {
-                shadowColor: dangerColor,
-                shadowRadius: width * GLOW_RADIUS_RATIO,
-              },
-            ],
-          ]}
+          style={[size, inDanger && glowStyle(dangerColor, width)]}
           testID={inDanger ? 'danger-glow' : undefined}
         >
           <Drawing svg={svg} width={width} />
@@ -69,6 +58,34 @@ const PieceImage: React.FC<PieceImageProps> = ({
     </View>
   );
 };
+
+// A king in danger's glow, following the piece's shape - a glow around the
+// king, not a box. On iOS it's the view's shadow, which with no background
+// of its own takes the shape of what's drawn in it; Android draws no such
+// shadow, but a drop-shadow filter (Android's alone) does the same.
+function glowStyle(color: string | undefined, width: number): ViewStyle {
+  const radius = width * GLOW_RADIUS_RATIO;
+  if (Platform.OS === 'android') {
+    return {
+      filter: [
+        {
+          dropShadow: {
+            offsetX: 0,
+            offsetY: 0,
+            standardDeviation: radius,
+            color,
+          },
+        },
+      ],
+    };
+  }
+  return {
+    shadowColor: color,
+    shadowRadius: radius,
+    shadowOpacity: 1,
+    shadowOffset: { width: 0, height: 0 },
+  };
+}
 
 // The SVG itself, drawn again only for a new piece or size - not as the
 // board turns round, which every piece's upright turn follows.
@@ -87,9 +104,5 @@ export default PieceImage;
 const styles = StyleSheet.create({
   upright: {
     transform: [{ rotate: '180deg' }],
-  },
-  glow: {
-    shadowOpacity: 1,
-    shadowOffset: { width: 0, height: 0 },
   },
 });

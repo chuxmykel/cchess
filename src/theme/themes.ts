@@ -73,6 +73,9 @@ export interface ThemeColors {
   // The pill behind a section's count: a see-through grey, the same in
   // both modes, so it shows a shade off the page in either.
   countPill: string;
+  // A switch's thumb: white, as iOS draws it - Android's would otherwise be
+  // its own blue.
+  switchThumb: string;
   // A friend who isn't online.
   presenceOffline: string;
   // Captured pieces under a player's name, either side's, as lichess draws
@@ -246,6 +249,7 @@ export const lightTheme: Theme = {
     warning: '#c99a1c',
     badge: '#e53935',
     countPill: 'rgba(120, 120, 128, 0.2)',
+    switchThumb: '#ffffff',
     presenceOffline: '#bbb',
     capturedPiece: '#888',
 
@@ -335,6 +339,7 @@ export const darkTheme: Theme = {
     warning: '#d6a930',
     badge: '#e53935',
     countPill: 'rgba(120, 120, 128, 0.2)',
+    switchThumb: '#ffffff',
     presenceOffline: '#6d6a65',
     capturedPiece: '#888',
 

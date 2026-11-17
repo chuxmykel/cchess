@@ -1,0 +1,29 @@
+appId: ${APP_ID}
+tags:
+  - opponent
+---
+# Resigning from the toolbar, confirmed: the game's over, its card says so,
+# and can be closed and brought back from the menu.
+- runFlow: common/to-board.yaml
+- runFlow: common/both-moved.yaml
+- tapOn:
+    id: "toolbar-resign-button"
+# The confirmation is the platform's own alert.
+- tapOn:
+    text: "Resign"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: "game-over-card"
+    timeout: 10000
+- assertVisible: ".*[Rr]esign.*"
+- tapOn:
+    id: "game-over-dismiss"
+- assertNotVisible:
+    id: "game-over-card"
+- tapOn:
+    id: "game-menu-button"
+- tapOn:
+    id: "show-result-action"
+- assertVisible:
+    id: "game-over-card"

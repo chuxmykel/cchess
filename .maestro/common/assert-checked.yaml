@@ -1,0 +1,19 @@
+appId: ${APP_ID}
+---
+# That the radio button or checkbox with testID ID is checked, as each
+# platform says: Android in its `checked` state, iOS in its value - "radio
+# button, checked" - which Maestro reads as its text.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible:
+          id: ${ID}
+          checked: true
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - assertVisible:
+          id: ${ID}
+          text: ".*, checked"

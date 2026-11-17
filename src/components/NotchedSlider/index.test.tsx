@@ -1,5 +1,6 @@
 import { fireEvent, render } from '@testing-library/react-native';
 import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
 
 import NotchedSlider from '.';
 
@@ -24,6 +25,16 @@ describe('NotchedSlider', () => {
     );
     return { slider: screen.getByTestId('slider'), onValueChange };
   }
+
+  it('colors the thumb as the track on Android, which draws it blue otherwise', async () => {
+    const screen = await render(
+      <NotchedSlider value={1} minimumTrackTintColor="green" testID="slider" />,
+    );
+
+    expect(screen.getByTestId('slider').props.thumbTintColor).toBe(
+      Platform.OS === 'android' ? 'green' : undefined,
+    );
+  });
 
   it('notches the track at each step', async () => {
     const { slider } = await renderSlider();

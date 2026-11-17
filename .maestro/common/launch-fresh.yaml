@@ -1,25 +1,108 @@
-appId: host.exp.Exponent
+appId: ${APP_ID}
 ---
-# Guarantees a genuinely fresh app, landing on Home: clearState wipes Expo
-# Go's remembered project list (so openLink can't just resume an
-# already-running JS instance), and the dev-menu overlay only reappears on
-# a true fresh load - its presence is itself a signal this worked, which is
-# why every flow dismisses it explicitly rather than assuming it's absent.
-
-# Requires `expo start` already running locally on the default port 8081 -
-# see ../README.md.
+# Guarantees a genuinely fresh app, landing on Home as a new guest:
+# clearState wipes Expo Go's remembered project list (so openLink can't
+# just resume an already-running JS instance) and, on Android, the stored
+# account; iOS keeps that in the keychain, cleared here too. A flow that
+# needs an account signs in afterwards (sign-in.yaml).
+#
+# Every flow starts here, after stopping any scripted opponent an earlier
+# flow left running (bot-reset.js).
+#
+# Run through scripts/e2e/run.sh, which sets APP_ID (Expo Go's, per
+# platform), METRO_URL (its Metro, on 8091 so it's clear of a dev one)
+# and BOT_URL - see ../README.md.
+- runScript: bot-reset.js
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - clearKeychain
 - launchApp:
     clearState: true
-- openLink: "exp://127.0.0.1:8081"
+- runFlow: open-app.yaml
 
-# The first-launch dev-menu overlay has both an "X" (id: xmark) and a
-# "Continue" button. Tap the X to close the overlay.
-- tapOn:
-    id: "xmark"
+# Until Home shows - the first launch of a run also waits here on Expo Go
+# building the bundle, minutes on a slow simulator (CI's) - closing
+# whatever covers it: Expo Go's dev menu (its X, `xmark`, on iOS, or the
+# one labelled "Close" on Android - never "Continue", which opens the dev
+# tools menu over the app instead); a fresh simulator's "Open in “Expo
+# Go”?", until answered nothing loads; and an Android "isn't responding"
+# dialog (see below). Each tapped only once it's seen there: an optional
+# tap waits seconds for what's missing, every round, every flow.
+- repeat:
+    while:
+      notVisible:
+        id: "play-button"
+    times: 60
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: "play-button"
+          timeout: 3000
+          optional: true
+      - runFlow:
+          when:
+            visible: "Open"
+          commands:
+            - tapOn: "Open"
+      - runFlow:
+          when:
+            visible:
+              id: "xmark"
+          commands:
+            - tapOn:
+                id: "xmark"
+      - runFlow:
+          when:
+            visible: "Close"
+          commands:
+            - tapOn: "Close"
+      - runFlow:
+          when:
+            visible: "Wait"
+          commands:
+            - tapOn: "Wait"
+      # "Could not connect to development server": a busy runner's Metro
+      # took longer over the bundle than Expo Go waits. Ask again.
+      - runFlow:
+          when:
+            visible: "Reload \\(⌘R\\)"
+          commands:
+            - tapOn: "Reload \\(⌘R\\)"
+
+# Android's Expo Go can open its dev menu once the app has loaded, over
+# Home: give it a moment to, and close it. And a slow emulator can show a
+# system app's "isn't responding" dialog over everything (run.sh turns them
+# off, which Android doesn't always heed): Wait lets it carry on.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - runFlow:
+          when:
+            visible: "Wait"
+          commands:
+            - tapOn: "Wait"
+      - extendedWaitUntil:
+          visible: "Close"
+          timeout: 4000
+          optional: true
+      - runFlow:
+          when:
+            visible: "Close"
+          commands:
+            - tapOn: "Close"
 
 # Synchronization barrier: tapOn/swipe don't wait for Home to actually be
 # interactive, only for Maestro's own target element to resolve - without
 # this, a flow that starts interacting immediately after this one races
 # ahead of Home settling and silently misses.
-- assertVisible:
-    id: "play-button"
+- extendedWaitUntil:
+    visible:
+      id: "play-button"
+    timeout: 10000
+# And then settled: on a slow simulator (CI's) Home shows a while before it
+# takes taps, as it loads, and a flow's first tap went missing.
+- waitForAnimationToEnd:
+    timeout: 5000

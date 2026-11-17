@@ -1,0 +1,22 @@
+appId: ${APP_ID}
+---
+# Closes the on-screen keyboard. Android's hideKeyboard is a back press,
+# which - should the keyboard already be down - leaves the screen, so use
+# this only where nothing else closes it (a form whose submit it covers).
+# iOS's fails when no on-screen keyboard is up (a simulator with a hardware
+# keyboard shows none; CI's shows one), and a tap on a point there can land
+# on a key, typing into the field. So on iOS it's a tap on the screen's own
+# text - the account forms' Password label, Paste PGN or FEN's hint: those
+# screens scroll, and a tap on text that isn't a control closes the
+# keyboard, with or without one up.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Password|A PGN.*"

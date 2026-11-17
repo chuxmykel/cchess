@@ -1,0 +1,26 @@
+appId: ${APP_ID}
+tags:
+  - account
+---
+# A finished game from Recent Games, in the viewer: stepped back through, and
+# bookmarked from its header's menu - which then offers to remove it.
+- runFlow: common/sign-in.yaml
+- extendedWaitUntil:
+    visible:
+      id: "game-row-.*"
+    timeout: 20000
+- tapOn:
+    id: "game-row-.*"
+    index: 0
+- assertVisible:
+    id: "game-viewer"
+- tapOn:
+    id: "previous-move-button"
+- tapOn:
+    id: "game-header-menu"
+- tapOn:
+    id: "bookmark-game-item"
+- tapOn:
+    id: "game-header-menu"
+# iOS reads a menu item with its icon as one label.
+- assertVisible: ".*Remove bookmark.*"

@@ -1,21 +1,30 @@
-# Pasting a FEN from the Menu tab analyses that position.
-appId: host.exp.Exponent
+# Pasting a FEN from the Menu tab analyses that position - and it's that
+# position: its back-rank mate, 1. Ra8#, can be played.
+appId: ${APP_ID}
 ---
 - runFlow: common/launch-fresh.yaml
 - tapOn:
     id: "menu-tab"
+    retryTapIfNoChange: true
 - tapOn:
     id: "analysis-paste"
+    retryTapIfNoChange: true
 - tapOn:
     id: "paste-game-input"
 - inputText: "6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1"
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "paste-game-input"
+      TEXT: "6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1"
+- runFlow: common/dismiss-keyboard.yaml
 - tapOn:
     id: "paste-game-analyse"
 - assertVisible:
     id: "analysis-board"
-- assertVisible:
-    id: "piece-a1"
-- assertVisible:
-    id: "piece-g8"
-- assertNotVisible:
-    id: "piece-e1"
+- tapOn:
+    id: "square-a1"
+- tapOn:
+    id: "square-a8"
+# iOS reads the move as "1. Ra8#", Android as "Ra8#".
+- assertVisible: ".*Ra8#"

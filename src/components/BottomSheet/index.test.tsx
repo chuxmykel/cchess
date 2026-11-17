@@ -3,6 +3,7 @@ import { Dimensions, Keyboard, Text } from 'react-native';
 
 import BottomSheet from '.';
 import { captureKeyboardListeners } from '../../testUtils/keyboard';
+import { modalPropsOf } from '../../testUtils/modal';
 import { withSafeArea } from '../../testUtils/safeArea';
 
 describe('BottomSheet', () => {
@@ -20,6 +21,23 @@ describe('BottomSheet', () => {
     );
 
     expect(screen.getByText('Sheet content')).toBeTruthy();
+  });
+
+  it("covers the whole screen, Android's status and navigation bars too", async () => {
+    const screen = await render(
+      withSafeArea(
+        <BottomSheet visible onClose={jest.fn()}>
+          <Text>Sheet content</Text>
+        </BottomSheet>,
+      ),
+    );
+
+    expect(modalPropsOf(screen)).toEqual(
+      expect.objectContaining({
+        statusBarTranslucent: true,
+        navigationBarTranslucent: true,
+      }),
+    );
   });
 
   it('calls onClose when the backdrop is pressed', async () => {

@@ -93,7 +93,8 @@ function toWhiteSide(
 // pan's translation: on iOS, Gesture Handler counts that from where the drag
 // activates - once the finger has moved TAP_MOVEMENT_THRESHOLD points - so a
 // piece moved by it would trail the finger by that much, and be dropped that
-// much short of it, often on the square before.
+// much short of it, often on the square before. Counted from the
+// touch-down, a drag lands under the finger on Android too.
 function movedSinceTouchDown(
   touchDown: { x: number; y: number },
   event: { absoluteX: number; absoluteY: number },

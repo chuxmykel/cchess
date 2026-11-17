@@ -83,7 +83,7 @@ export const ToolbarButton: React.FC<ToolbarButtonProps> = ({
     onPress,
     onLongPress: () => {
       setIsTooltipShown(true);
-      // Felt as the tooltip shows, as iOS does for a long press.
+      // Felt as the tooltip shows, as iOS and Android do for a long press.
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     },
     delayLongPress: TOOLTIP_DELAY_MS,

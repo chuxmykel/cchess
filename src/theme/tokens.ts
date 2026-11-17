@@ -1,4 +1,4 @@
-import { TextStyle } from 'react-native';
+import { Platform, TextStyle } from 'react-native';
 
 // The app's style guide: the scales every component's styles are built from,
 // the same in light and dark mode. Colors, which change with the mode, are in
@@ -51,10 +51,11 @@ export const fontWeight = {
   bold: '700',
 } as const satisfies Record<string, TextStyle['fontWeight']>;
 
-// The system font; set `base` to swap the whole app's typeface.
+// The system font; set `base` to swap the whole app's typeface. Menlo is
+// iOS's; Android's own monospace font is named by its generic family.
 export const fontFamily = {
   base: undefined as string | undefined,
-  mono: 'Menlo',
+  mono: Platform.select({ ios: 'Menlo', default: 'monospace' }),
 } as const;
 
 // Ready-made text styles, for text that's one of these rather than its own.

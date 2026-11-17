@@ -1,0 +1,36 @@
+appId: ${APP_ID}
+tags:
+  - account
+  - opponent
+---
+# A direct message to a friend, from their profile: sent, and answered - and
+# the conversation then in the Messages tab's inbox.
+- runFlow: common/friend-online.yaml
+- tapOn:
+    id: "friend-card-.*"
+- tapOn:
+    id: "profile-message"
+- assertVisible:
+    id: "conversation-screen"
+- tapOn:
+    id: "message-input"
+- inputText: "Hello from the e2e suite"
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "message-input"
+      TEXT: "Hello from the e2e suite"
+- tapOn:
+    id: "send-message-button"
+- assertVisible: "Hello from the e2e suite"
+- extendedWaitUntil:
+    visible: "You said: Hello from the e2e suite"
+    timeout: 10000
+# Back from the conversation, then the profile.
+- runFlow: common/header-back.yaml
+- runFlow: common/header-back.yaml
+- tapOn:
+    id: "messages-tab"
+    retryTapIfNoChange: true
+- assertVisible:
+    id: "conversation-.*"

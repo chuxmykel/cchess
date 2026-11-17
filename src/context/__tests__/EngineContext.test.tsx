@@ -1,5 +1,5 @@
 import { act, render } from '@testing-library/react-native';
-import { Text } from 'react-native';
+import { Platform, Text } from 'react-native';
 
 import { EngineProvider, useEngine } from '../EngineContext';
 import { ensureEngineFiles } from '../../engine/engineFiles';
@@ -120,6 +120,29 @@ describe('EngineProvider', () => {
     expect(screen.getByTestId('status')).toHaveTextContent('error');
 
     await act(async () => screen.getByTestId('status').props.onPress());
+
+    expect(screen.getByTestId('status')).toHaveTextContent('starting');
+  });
+
+  it("starts the page again when the system ends the WebView's process", async () => {
+    jest.mocked(ensureEngineFiles).mockResolvedValue(undefined);
+    const screen = await render(
+      <EngineProvider>
+        <Analysing />
+      </EngineProvider>,
+    );
+    await pageSays(screen, { type: 'ready' });
+    await pageSays(screen, { type: 'booted' });
+    expect(screen.getByTestId('status')).toHaveTextContent('ready');
+
+    // Each platform says so its own way: iOS's content process ended, or
+    // Android's render process gone (killed, or crashed).
+    const host = screen.getByTestId('engine-host');
+    await act(async () =>
+      Platform.OS === 'ios'
+        ? host.props.onContentProcessDidTerminate()
+        : host.props.onRenderProcessGone({ nativeEvent: { didCrash: false } }),
+    );
 
     expect(screen.getByTestId('status')).toHaveTextContent('starting');
   });

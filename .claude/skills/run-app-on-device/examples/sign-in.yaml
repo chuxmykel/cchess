@@ -21,7 +21,6 @@ env:
     point: "200,700"
 - tapOn:
     id: "account-form-submit"
-- runFlow: dismiss-save-password.yaml
 - extendedWaitUntil:
     notVisible:
       id: "sign-in-prompt"

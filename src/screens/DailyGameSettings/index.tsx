@@ -26,6 +26,7 @@ const DailyGameSettings: React.FC = () => {
           value={settings.confirmMoves}
           onValueChange={(confirmMoves) => update({ confirmMoves })}
           trackColor={{ true: colors.accent }}
+          thumbColor={colors.switchThumb}
           accessibilityLabel="Confirm moves"
           testID="daily-setting-confirmMoves"
         />

@@ -1,0 +1,36 @@
+appId: ${APP_ID}
+tags:
+  - account
+  - engine
+---
+# The review's settings, from its header's cog; and Retry at a slip, which
+# puts the position before it back on the board to find a better move.
+- runFlow: common/sign-in.yaml
+- extendedWaitUntil:
+    visible:
+      id: "game-row-.*"
+    timeout: 20000
+- tapOn:
+    id: "game-row-.*"
+    index: 0
+- tapOn:
+    id: "review-button"
+- extendedWaitUntil:
+    visible:
+      id: "game-review-summary"
+    timeout: 180000
+- tapOn:
+    id: "review-settings-button"
+- assertVisible:
+    id: "review-settings"
+- runFlow: common/header-back.yaml
+- tapOn:
+    id: "review-start"
+- tapOn:
+    id: "review-next"
+- tapOn:
+    id: "review-retry"
+- assertVisible:
+    id: "review-board"
+- assertVisible:
+    id: "review-bubble-title"

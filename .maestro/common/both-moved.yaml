@@ -1,0 +1,11 @@
+appId: ${APP_ID}
+---
+# On from to-board.yaml (the app white): 1. e4 and the opponent's reply, so
+# both sides have moved - before then a game can only be aborted, not
+# resigned or drawn.
+- tapOn: { id: "square-e2" }
+- tapOn: { id: "square-e4" }
+- extendedWaitUntil:
+    visible:
+      id: "move-2"
+    timeout: 15000

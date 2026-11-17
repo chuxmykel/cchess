@@ -12,6 +12,8 @@ export interface ActionSheetAction {
   // sheet is gone - for an action that presents nothing of its own, like
   // flipping the board. Only a share sheet or an Alert needs the wait: on
   // iOS one presented while a modal is still going away doesn't show.
+  // Android has no such wait, and runs every action at once (see
+  // useRunAfterDismiss).
   immediate?: boolean;
   testID?: string;
 }

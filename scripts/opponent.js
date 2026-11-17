@@ -25,7 +25,7 @@ DESCRIPTION
        bot_1 account (or --user, or a fresh guest), seeks a game,
        and plays the move its engine (scripts/opponent-ai.js) picks at
        --level whenever it's its turn. It answers a draw offer after 2
-       seconds, accepting half the time, at random.
+       seconds, accepting half the time, at random (or as --draw says).
 
        It plays one game and exits, or --games N of them. Between games it
        offers a rematch and accepts one offered to it, so the series score
@@ -85,6 +85,17 @@ OPTIONS
        --chat Say "Good luck!" when the game starts, and answer chat.
 
        --idle Never move, so the game is aborted for want of a first move.
+
+       --draw accept|decline
+              Answer a draw offer this way, instead of at random.
+
+       --offer-draw
+              Offer a draw once both sides have moved, after its own move.
+
+       --moves SAN,SAN,...
+              Play these moves first, in turn, each while it's legal, then
+              the engine's - for a game an e2e flow can count on, e.g.
+              --color b --moves d5 answers 1.e4 with 1...d5.
 
        --friend USERNAME
               Befriend USERNAME instead of seeking: accept its friend request
@@ -158,6 +169,9 @@ const { values: args } = parseArgs({
     friend: { type: 'string' },
     challenge: { type: 'boolean', default: false },
     games: { type: 'string' },
+    moves: { type: 'string' },
+    draw: { type: 'string' },
+    'offer-draw': { type: 'boolean', default: false },
     help: { type: 'boolean', short: 'h', default: false },
   },
 });
@@ -194,6 +208,21 @@ if (!Object.hasOwn(LEVELS, args.level)) {
   process.exit(1);
 }
 const level = LEVELS[args.level];
+// --moves: the moves to play first, in turn, while each is legal - so an e2e
+// flow knows the game it'll see - then the engine's.
+const scriptedMoves = (args.moves ?? '').split(',').filter(Boolean);
+function scriptedMove(chess) {
+  const san = scriptedMoves[0];
+  if (!san) return null;
+  try {
+    const move = chess.move(san);
+    scriptedMoves.shift();
+    return move;
+  } catch {
+    scriptedMoves.length = 0;
+    return null;
+  }
+}
 if (args.user && args.guest) {
   console.error('--user and --guest are alternatives - pass one');
   process.exit(1);
@@ -312,7 +341,8 @@ async function main() {
 
   function playIfMyTurn(fen, turn) {
     if (!gameId || turn !== myColor || args.idle) return;
-    const move = findBestMove(new Chess(fen), level);
+    const move =
+      scriptedMove(new Chess(fen)) ?? findBestMove(new Chess(fen), level);
     if (!move) return;
     const playingIn = gameId;
     setTimeout(() => {
@@ -326,8 +356,18 @@ async function main() {
         to: move.to,
         promotion: move.promotion,
       });
+      // --offer-draw: once both sides have moved (a draw can't be offered
+      // before), straight after its own move.
+      const bothMoved = Number(fen.split(' ')[5]) >= 2 || myColor === 'b';
+      if (args['offer-draw'] && bothMoved && drawOfferedIn !== playingIn) {
+        drawOfferedIn = playingIn;
+        log('offers a draw');
+        socket.emit('game:drawOffer', { gameId: playingIn });
+      }
     }, moveDelayMs);
   }
+  // The game it's offered a draw in, so it offers one once a game.
+  let drawOfferedIn = null;
 
   const token = session.accessToken;
   const friendMode = Boolean(args.friend);
@@ -412,7 +452,30 @@ async function main() {
     }
   });
 
+  // Stopped mid-game - by the e2e bot server between flows, or Ctrl-C - it
+  // leaves the game rather than walking off: aborted while it still can
+  // be (before both sides have moved), resigned after. Its player is then
+  // free for the next game at once, not held until the server calls the
+  // game abandoned.
+  let lastFen = null;
+  function leave() {
+    if (exiting) return;
+    exiting = true;
+    if (!friendMode) socket.emit('matchmaking:cancel');
+    if (gameId && lastFen) {
+      const [, turn, , , , fullmove] = lastFen.split(' ');
+      const plies = (Number(fullmove) - 1) * 2 + (turn === 'b' ? 1 : 0);
+      const how = plies < 2 ? 'game:abort' : 'game:resign';
+      log(how === 'game:abort' ? 'stopped: aborting' : 'stopped: resigning');
+      socket.emit(how, { gameId });
+    }
+    setTimeout(() => exit(0), 500);
+  }
+  process.on('SIGINT', leave);
+  process.on('SIGTERM', leave);
+
   socket.on('game:created', (snapshot) => {
+    lastFen = snapshot.fen;
     clearTimeout(rematchTimer);
     finishedGameId = null;
     // A rematch accepted late can start after the bot has gone back to
@@ -447,14 +510,17 @@ async function main() {
 
   socket.on('game:move', (payload) => {
     if (payload.gameId !== gameId) return;
+    lastFen = payload.fen;
     log('move', payload.move.san);
     playIfMyTurn(payload.fen, payload.turn);
   });
 
   socket.on('game:drawOffered', () => {
-    // A coin flip, so both outcomes of a draw offer can be tried - after a
-    // moment's thought rather than instantly.
-    const accept = Math.random() < 0.5;
+    // As --draw says, or a coin flip, so both outcomes of a draw offer can
+    // be tried - after a moment's thought rather than instantly.
+    const accept =
+      args.draw === 'accept' ||
+      (args.draw !== 'decline' && Math.random() < 0.5);
     const offeredIn = gameId;
     log(`${accept ? 'accepting' : 'declining'} draw offer`);
     setTimeout(() => {

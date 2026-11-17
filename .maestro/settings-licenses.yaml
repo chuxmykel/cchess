@@ -1,0 +1,16 @@
+appId: ${APP_ID}
+---
+# Licenses, from the Menu's Settings: the engine the app downloads and its
+# licence.
+- runFlow: common/launch-fresh.yaml
+- tapOn:
+    id: "menu-tab"
+    retryTapIfNoChange: true
+- tapOn:
+    id: "menu-settings"
+    retryTapIfNoChange: true
+- tapOn:
+    id: "licenses-row"
+- assertVisible:
+    id: "licenses-screen"
+- assertVisible: ".*Stockfish.*"

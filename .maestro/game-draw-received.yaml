@@ -1,0 +1,22 @@
+appId: ${APP_ID}
+tags:
+  - opponent
+---
+# The opponent offers a draw: the prompt asks, and accepting it ends the
+# game drawn.
+- runFlow:
+    file: common/to-board.yaml
+    env:
+      BOT_ARGS: "--guest --color b --level easy --delay 300 --offer-draw"
+- runFlow: common/both-moved.yaml
+- extendedWaitUntil:
+    visible:
+      id: "draw-offer-prompt"
+    timeout: 10000
+- tapOn:
+    id: "accept-draw-button"
+- extendedWaitUntil:
+    visible:
+      id: "game-over-card"
+    timeout: 10000
+- assertVisible: ".*[Dd]raw.*"

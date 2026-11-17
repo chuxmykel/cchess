@@ -16,8 +16,9 @@ let players: Record<GameSound, AudioPlayer> | null = null;
 
 function loadPlayers(): Record<GameSound, AudioPlayer> {
   if (!players) {
-    // Sound effects, not media: the silent switch mutes them, and they play
-    // over whatever else is playing rather than stopping it.
+    // Sound effects, not media: muted by iOS's silent switch, or Android's
+    // silent or vibrate mode, and played over whatever else is playing
+    // rather than stopping it.
     setAudioModeAsync({
       playsInSilentMode: false,
       interruptionMode: 'mixWithOthers',

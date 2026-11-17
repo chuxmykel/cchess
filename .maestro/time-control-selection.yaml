@@ -1,6 +1,6 @@
-appId: host.exp.Exponent
+appId: ${APP_ID}
 tags:
-  - needs-live-server
+  - opponent
 ---
 # Opening the time control dropdown and picking a different time control -
 # then confirming starting a game still works afterward, so a bad
@@ -22,7 +22,15 @@ tags:
 - assertNotVisible:
     id: "time-control-option-bullet-1\\+0"
 
+# A bot seeking 1+0 too, for the game to start.
+- runScript:
+    file: common/bot-start.js
+    env:
+      BOT_ARGS: "--guest --time 1+0 --level easy --delay 300"
 - tapOn:
     id: "start-new-game-button"
-- assertVisible:
-    id: "piece-e2"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible:
+      id: "game-toolbar"
+    timeout: 30000

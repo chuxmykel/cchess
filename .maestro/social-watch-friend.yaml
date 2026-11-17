@@ -1,0 +1,29 @@
+appId: ${APP_ID}
+tags:
+  - account
+  - opponent
+---
+# A friend playing someone else: their card offers to watch, and the game
+# opens in the viewer, moves arriving as they're played.
+# The bots start once signed in: the fresh launch stops every bot.
+- runFlow: common/sign-in.yaml
+- runScript:
+    file: common/bot-start.js
+    env:
+      BOT_ARGS: "--user e2e_friend --color w --level easy --delay 3000"
+- runScript:
+    file: common/bot-start.js
+    env:
+      BOT_ARGS: "--user bot_1 --color b --level easy --delay 3000"
+- extendedWaitUntil:
+    visible:
+      id: "friend-watch-.*"
+    timeout: 20000
+- tapOn:
+    id: "friend-watch-.*"
+- assertVisible:
+    id: "game-viewer"
+- extendedWaitUntil:
+    visible:
+      id: "move-2"
+    timeout: 20000

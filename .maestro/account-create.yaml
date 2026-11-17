@@ -1,0 +1,57 @@
+appId: ${APP_ID}
+tags:
+  - account
+---
+# Creating an account from Home's guest prompt: a name already taken is
+# flagged as it's typed, a free one is accepted, and the new account is
+# signed in - the prompt gone.
+- runFlow: common/launch-fresh.yaml
+- tapOn:
+    id: "create-account-button"
+    retryTapIfNoChange: true
+- assertVisible:
+    id: "create-account-screen"
+- tapOn:
+    id: "username-input"
+- inputText: "e2e_main"
+- extendedWaitUntil:
+    visible:
+      id: "username-taken"
+    timeout: 10000
+- eraseText: 20
+# A name no run has used: the time, in base 36.
+- evalScript: ${output.username = 'new_' + Date.now().toString(36)}
+- inputText: ${output.username}
+- extendedWaitUntil:
+    visible:
+      id: "username-available"
+    timeout: 10000
+- tapOn:
+    id: "email-input"
+- inputText: ${output.username + '@e2e.cchess.test'}
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "email-input"
+      TEXT: ".+@e2e\\.cchess\\.test"
+- tapOn:
+    id: "password-input"
+- inputText: "password"
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "password-input"
+      TEXT: "•{8}"
+- runFlow: common/dismiss-keyboard.yaml
+- tapOn:
+    id: "account-form-submit"
+# Back on Home - which a busy runner's backend can take most of a minute
+# to send it to, hashing the password - its guest prompt gone.
+- extendedWaitUntil:
+    visible:
+      id: "play-button"
+    timeout: 60000
+- extendedWaitUntil:
+    notVisible:
+      id: "sign-in-prompt"
+    timeout: 15000

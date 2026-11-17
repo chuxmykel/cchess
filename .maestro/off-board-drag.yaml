@@ -1,18 +1,44 @@
-appId: host.exp.Exponent
+appId: ${APP_ID}
 tags:
-  - needs-live-server
+  - opponent
 ---
-# Point coordinates are device-specific - see drag-and-drop.yaml.
+# A knight dragged off the board goes home, no move made - and can still be
+# moved after. Points are per platform: see drag-and-drop.yaml.
 - runFlow: common/to-board.yaml
-- swipe:
-    start: "326,637" # piece-g1 (knight) center
-    end: "326,770"   # well below the board
-    duration: 600
-- assertVisible:
-    id: "piece-g1"
-- tapOn: { id: "square-g1" }
-- tapOn: { id: "square-f3" }
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - swipe:
+          start: "877,1712"
+          end: "877,1990"
+          duration: 600
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - swipe:
+          start: "326,637"
+          end: "326,770"
+          duration: 600
 - assertNotVisible:
-    id: "piece-g1"
+    id: "move-1"
+# Tapped again until it's played: on a slow simulator (CI's) a tap can be
+# lost - and a pair whose second was lost leaves the knight picked up, so
+# the next pair's first puts it down again and a third plays it.
+- repeat:
+    while:
+      notVisible:
+        id: "move-1"
+    times: 4
+    commands:
+      - tapOn: { id: "square-g1" }
+      - tapOn: { id: "square-f3" }
+      - extendedWaitUntil:
+          visible:
+            id: "move-1"
+          timeout: 5000
+          optional: true
 - assertVisible:
-    id: "piece-f3"
+    id: "move-1"
+    text: "Nf3"

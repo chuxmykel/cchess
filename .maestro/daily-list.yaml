@@ -1,0 +1,23 @@
+appId: ${APP_ID}
+tags:
+  - account
+---
+# Every daily game, from Home's See All: both seeded games shown, and the
+# "Your move" filter keeps only those waiting on you.
+- runFlow: common/sign-in.yaml
+- extendedWaitUntil:
+    visible:
+      id: "daily-games-section-see-all"
+    timeout: 15000
+- tapOn:
+    id: "daily-games-section-see-all"
+- assertVisible:
+    id: "daily-games-list"
+- assertVisible:
+    id: "daily-game-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+    text: ".*bot_2.*"
+- tapOn:
+    id: "daily-games-your-move-filter"
+- assertNotVisible:
+    id: "daily-game-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+    text: ".*bot_2.*"

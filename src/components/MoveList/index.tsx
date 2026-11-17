@@ -174,9 +174,13 @@ const MoveList: React.FC<MoveListProps> = ({
             )}
             <Pressable
               onPress={() => onSelectPly(move.ply)}
-              onLayout={(event) =>
-                moveXOffsets.current.set(index, event.nativeEvent.layout.x)
-              }
+              onLayout={(event) => {
+                moveXOffsets.current.set(index, event.nativeEvent.layout.x);
+                // A move can be laid out after the list re-rendered for it
+                // (iOS) - too late for that render's scroll - so the
+                // current one, once placed, scrolls into view itself.
+                if (isCurrent && !scrubbing.current) scrollToCurrent();
+              }}
               style={[styles.move, isCurrent && styles.currentMove]}
               accessibilityRole="button"
               accessibilityState={{ selected: isCurrent }}

@@ -1,0 +1,28 @@
+appId: ${APP_ID}
+---
+# Opens the app in Expo Go, from its Metro (METRO_URL) - what follows waits
+# for it to show.
+#
+# As `expo start` does when it opens a project itself:
+# __expo_disable_onboarding keeps Expo Go's first-launch dev-menu overlay
+# away, and __expo_disable_fab its floating dev-menu button - drawn over the
+# app's top right corner, where it takes taps meant for a header's buttons.
+# On iOS, through the bot server, which opens it without waiting: Maestro's
+# openLink waits on `simctl openurl`, which a slow simulator (CI's) times
+# out (POSIX error 60) - on its "Open in Expo Go?" prompt, which
+# launch-fresh.yaml answers, or on Expo Go loading - failing the flow,
+# `optional` or not. Should it really not have opened, the app never shows,
+# and the flow's wait for it fails.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - openLink: "${METRO_URL}?__expo_disable_onboarding=1&__expo_disable_fab=1"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - runScript:
+          file: open-link.js
+          env:
+            LINK: "${METRO_URL}?__expo_disable_onboarding=1&__expo_disable_fab=1"

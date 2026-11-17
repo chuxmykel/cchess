@@ -1,0 +1,36 @@
+appId: ${APP_ID}
+tags:
+  - account
+---
+# Finding a player from the Menu's Players: searched by name, their profile
+# opened, and a friend request sent - then waiting, to be cancelled.
+- runFlow: common/sign-in.yaml
+- tapOn:
+    id: "menu-tab"
+    retryTapIfNoChange: true
+- tapOn:
+    id: "menu-players"
+- tapOn:
+    id: "user-search-input"
+- inputText: "bot_3"
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "user-search-input"
+      TEXT: "bot_3"
+- tapOn:
+    id: "user-search-result-bot_3"
+- assertVisible:
+    id: "user-profile-screen"
+- tapOn:
+    id: "profile-add-friend"
+- extendedWaitUntil:
+    visible:
+      id: "profile-cancel-request"
+    timeout: 10000
+- tapOn:
+    id: "profile-cancel-request"
+- extendedWaitUntil:
+    visible:
+      id: "profile-add-friend"
+    timeout: 10000

@@ -66,7 +66,10 @@ jest.mock('./src/constants/sounds', () => ({
   },
 }));
 
+// A Modal reports onDismiss as it hides on iOS only - as the real one does,
+// so the Android project runs without it.
 jest.mock('react-native/Libraries/Modal/Modal', () => {
+  const { Platform } = jest.requireActual('react-native');
   const PresetModal = jest.requireActual(
     '@react-native/jest-preset/jest/mocks/Modal',
   ).default;
@@ -75,7 +78,7 @@ jest.mock('react-native/Libraries/Modal/Modal', () => {
     componentDidUpdate(prevProps) {
       super.componentDidUpdate?.(prevProps);
       const wasVisible = prevProps.visible !== false;
-      if (wasVisible && this.props.visible === false) {
+      if (Platform.OS === 'ios' && wasVisible && this.props.visible === false) {
         this.props.onDismiss?.();
       }
     }

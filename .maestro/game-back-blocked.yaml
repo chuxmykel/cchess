@@ -1,0 +1,25 @@
+appId: ${APP_ID}
+tags:
+  - opponent
+---
+# A game in progress can't be left by going back: Android's back (button or
+# gesture), or iOS's swipe from the edge - the game stays on screen.
+- runFlow: common/to-board.yaml
+- runFlow: common/both-moved.yaml
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - swipe:
+          start: 1%, 50%
+          end: 90%, 50%
+          duration: 400
+- assertVisible:
+    id: "game-toolbar"
+- assertVisible:
+    id: "move-2"

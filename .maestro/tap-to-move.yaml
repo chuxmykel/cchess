@@ -1,13 +1,18 @@
-appId: host.exp.Exponent
+appId: ${APP_ID}
 tags:
-  - needs-live-server
+  - opponent
 ---
+# A move by tapping: the pawn, then its square. Moves are checked in the
+# move list, as a player reads them - not by the pieces' testIDs: Android
+# reports a view where it's laid out, not where a transform has moved it,
+# and every piece is laid out on a8.
 - runFlow: common/to-board.yaml
 - tapOn:
     id: "square-e2"
 - tapOn:
     id: "square-e4"
-- assertNotVisible:
-    id: "piece-e2"
-- assertVisible:
-    id: "piece-e4"
+- extendedWaitUntil:
+    visible:
+      id: "move-1"
+      text: "e4"
+    timeout: 5000

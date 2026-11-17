@@ -1,16 +1,30 @@
-appId: host.exp.Exponent
+appId: ${APP_ID}
 tags:
-  - needs-live-server
+  - opponent
 ---
-# Point coordinates are in points, captured from a fresh starting position
-# on iPhone 18 Pro / iOS 27.0 (see README.md "Device-specific coordinates").
-# Recompute via `maestro hierarchy` for any other device/board state.
+# A move by dragging the pawn from e2 to e4. A swipe can't be aimed by
+# testID, so its ends are the squares' centres on each platform's pinned
+# device: points on the iPhone 18 Pro, pixels on the Pixel 8 (see
+# README.md, "Device-specific coordinates").
 - runFlow: common/to-board.yaml
-- swipe:
-    start: "226,587" # piece-e2 center
-    end: "226,486"   # square-e4 center
-    duration: 600
-- assertNotVisible:
-    id: "piece-e2"
-- assertVisible:
-    id: "piece-e4"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - swipe:
+          start: "607,1577"
+          end: "607,1307"
+          duration: 600
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - swipe:
+          start: "226,587"
+          end: "226,486"
+          duration: 600
+- extendedWaitUntil:
+    visible:
+      id: "move-1"
+      text: "e4"
+    timeout: 5000

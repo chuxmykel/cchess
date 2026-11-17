@@ -1,0 +1,30 @@
+appId: ${APP_ID}
+---
+# The opening explorer, on its own from the Menu: the games here answer for
+# lichess, out of reach of the e2e backend (it says so), a move from them
+# played on its board, and the database chosen in its settings.
+- runFlow: common/launch-fresh.yaml
+- tapOn:
+    id: "menu-tab"
+    retryTapIfNoChange: true
+- tapOn:
+    id: "menu-opening-explorer"
+- assertVisible:
+    id: "opening-explorer"
+- extendedWaitUntil:
+    visible:
+      id: "explorer-moves"
+    timeout: 20000
+- assertVisible:
+    id: "explorer-fallback"
+- tapOn:
+    id: "explorer-move-e2e4"
+- assertVisible:
+    id: "move-1"
+    text: "e4"
+- tapOn:
+    id: "explorer-database-button"
+- assertVisible:
+    id: "explorer-settings"
+- tapOn:
+    id: "explorer-settings-done"

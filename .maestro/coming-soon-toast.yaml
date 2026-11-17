@@ -1,18 +1,17 @@
-appId: host.exp.Exponent
+appId: ${APP_ID}
 ---
-# "Challenge a Friend" and "Play Stockfish" look disabled but still respond
-# to a tap, showing a "Coming soon" toast via a separate onDisabledPress
-# path rather than the button's real onPress (see Button's appearsDisabled
-# prop). The assertion has to land in the same flow run right after the
-# tap - the toast auto-dismisses after 2s (see useToast's DEFAULT_DURATION_MS),
-# and a screenshot taken via a separate, slower shell round-trip can miss
-# that window entirely even though the feature works correctly.
+# New Game's two lower buttons look disabled but still answer a tap, with
+# a toast through a separate onDisabledPress path rather than the button's
+# real onPress (see Button's appearsDisabled prop): "Challenge a Friend"
+# asks a guest to sign in, and "Play Stockfish" isn't there yet. Each
+# assertion has to land in the same flow run right after its tap - the
+# toast goes after 2s (see useToast's DEFAULT_DURATION_MS).
 - runFlow: common/to-new-game.yaml
 
 - tapOn:
     id: "challenge-friend-button"
 - assertVisible:
-    text: "Coming soon"
+    text: "Sign in to challenge friends."
 
 - tapOn:
     id: "play-stockfish-button"

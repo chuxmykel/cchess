@@ -16,6 +16,7 @@ import {
 import { makeAuthSession } from '../../testUtils/authSession';
 import { createFakeSocket, FakeSocket } from '../../testUtils/fakeSocket';
 import { makeGameSummary } from '../../testUtils/gameSummary';
+import { headerRightOf } from '../../testUtils/headerRight';
 import { waitForSheetToClose } from '../../testUtils/modal';
 import { withSafeArea } from '../../testUtils/safeArea';
 import {
@@ -90,14 +91,13 @@ describe('Conversation', () => {
    * title is only rendered to be read, and the buttons are pressed through
    * their props, the screen staying rendered. */
   function headerOf(navigation: { setOptions: jest.Mock }) {
-    const { headerTitle, unstable_headerRightItems } =
-      navigation.setOptions.mock.calls.at(-1)[0];
-    const [menu] = unstable_headerRightItems();
-    expect(menu.hidesSharedBackground).toBe(true);
+    const options = navigation.setOptions.mock.calls.at(-1)[0];
+    const { headerTitle } = options;
+    const menu = headerRightOf(options);
     return {
       renderTitle: () => render(headerTitle()),
       pressTitle: () => act(() => headerTitle().props.onPress()),
-      openMenu: () => act(() => menu.element.props.onPress()),
+      openMenu: () => act(() => menu.props.onPress()),
     };
   }
 

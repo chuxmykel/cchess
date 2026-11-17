@@ -71,6 +71,9 @@ const Popover: React.FC<PopoverProps> = ({
       visible={visible}
       transparent
       animationType="fade"
+      // Not translucent, unlike BottomSheet's: on Android the position it's
+      // given (measureInWindow) counts from below the status bar, as this
+      // modal's content does.
       onRequestClose={onClose}
       onDismiss={onDismiss}
     >

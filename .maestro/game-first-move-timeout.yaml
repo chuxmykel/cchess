@@ -1,0 +1,19 @@
+appId: ${APP_ID}
+tags:
+  - opponent
+  - slow
+---
+# White never moves: black's bar counts down the seconds white has left to
+# play a first move, and when they're up the game is aborted (the server's
+# 30s, GAME_FIRST_MOVE_TIMEOUT_MS).
+- runFlow:
+    file: common/to-board.yaml
+    env:
+      BOT_ARGS: "--guest --color w --idle"
+- assertVisible:
+    id: "first-move-countdown-w"
+- extendedWaitUntil:
+    visible:
+      id: "game-over-card"
+    timeout: 45000
+- assertVisible: ".*[Aa]bort.*"

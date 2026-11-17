@@ -1,4 +1,5 @@
 import { ReactElement } from 'react';
+import { Platform } from 'react-native';
 import {
   NativeStackHeaderItemCustom,
   NativeStackNavigationOptions,
@@ -10,7 +11,8 @@ type BackNavigation = { canGoBack: () => boolean; goBack: () => void };
 
 /**
  * A header item without the glass circle iOS 26 and later put behind
- * header buttons.
+ * header buttons. iOS's alone, as header items are: `plainHeaderRight`
+ * gives Android its own.
  */
 export function plainHeaderItem(
   element: ReactElement,
@@ -19,8 +21,24 @@ export function plainHeaderItem(
 }
 
 /**
- * A shown header with no line under it, and a plain chevron back button
- * in place of the native one and its glass circle.
+ * A header's right-hand button, or none: a plain item on iOS (header items
+ * are iOS's alone), and the header's right on Android.
+ */
+export function plainHeaderRight(
+  element: ReactElement | null,
+): NativeStackNavigationOptions {
+  return Platform.OS === 'ios'
+    ? {
+        unstable_headerRightItems: () =>
+          element ? [plainHeaderItem(element)] : [],
+      }
+    : { headerRight: element ? () => element : undefined };
+}
+
+/**
+ * A shown header with no line under it, and on iOS a plain chevron back
+ * button in place of the native one and its glass circle - Android keeps
+ * its own back arrow, header items being iOS's alone.
  */
 export function plainHeaderOptions(
   navigation: BackNavigation,
