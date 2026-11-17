@@ -44,56 +44,69 @@ appId: ${APP_ID}
             LINK: "${METRO_URL}?__expo_disable_onboarding=1&__expo_disable_fab=1"
 
 # Until Home shows - the first launch of a run also waits here on Expo Go
-# building the bundle, minutes on a slow simulator (CI's) - closing Expo
-# Go's dev menu should it open over the app: with its X, `xmark`, on iOS,
-# or the one labelled "Close" on Android. Never "Continue", which opens
-# the dev tools menu over the app instead. And Wait on an Android "isn't
-# responding" dialog (see below).
+# building the bundle, minutes on a slow simulator (CI's) - closing
+# whatever covers it: Expo Go's dev menu (its X, `xmark`, on iOS, or the
+# one labelled "Close" on Android - never "Continue", which opens the dev
+# tools menu over the app instead); a fresh simulator's "Open in “Expo
+# Go”?", until answered nothing loads; and an Android "isn't responding"
+# dialog (see below). Each tapped only once it's seen there: an optional
+# tap waits seconds for what's missing, every round, every flow.
 - repeat:
     while:
       notVisible:
         id: "play-button"
-    times: 45
+    times: 60
     commands:
       - extendedWaitUntil:
           visible:
             id: "play-button"
           timeout: 3000
           optional: true
-      # A fresh simulator (CI's) asks before it first opens an exp:// link:
-      # "Open in “Expo Go”?" - until it's answered, nothing loads.
-      - tapOn:
-          text: "Open"
-          optional: true
-      - tapOn:
-          id: "xmark"
-          optional: true
-      - tapOn:
-          text: "Close"
-          optional: true
-      - tapOn:
-          text: "Wait"
-          optional: true
+      - runFlow:
+          when:
+            visible: "Open"
+          commands:
+            - tapOn: "Open"
+      - runFlow:
+          when:
+            visible:
+              id: "xmark"
+          commands:
+            - tapOn:
+                id: "xmark"
+      - runFlow:
+          when:
+            visible: "Close"
+          commands:
+            - tapOn: "Close"
+      - runFlow:
+          when:
+            visible: "Wait"
+          commands:
+            - tapOn: "Wait"
 
-# Android's Expo Go opens its dev menu once the app has loaded, over Home:
-# give it a moment to, and close it. And a slow emulator can show a system
-# app's "isn't responding" dialog over everything (run.sh turns them off,
-# which Android doesn't always heed): Wait lets it carry on.
+# Android's Expo Go can open its dev menu once the app has loaded, over
+# Home: give it a moment to, and close it. And a slow emulator can show a
+# system app's "isn't responding" dialog over everything (run.sh turns them
+# off, which Android doesn't always heed): Wait lets it carry on.
 - runFlow:
     when:
       platform: Android
     commands:
-      - tapOn:
-          text: "Wait"
-          optional: true
+      - runFlow:
+          when:
+            visible: "Wait"
+          commands:
+            - tapOn: "Wait"
       - extendedWaitUntil:
-          visible:
-            text: "Close"
+          visible: "Close"
           timeout: 4000
           optional: true
-      - tapOn:
-          text: "Close"
-          optional: true
+      - runFlow:
+          when:
+            visible: "Close"
+          commands:
+            - tapOn: "Close"
 
 # Synchronization barrier: tapOn/swipe don't wait for Home to actually be
 # interactive, only for Maestro's own target element to resolve - without
