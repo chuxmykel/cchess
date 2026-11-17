@@ -32,7 +32,9 @@ tags:
 # The new reply, bracketed as a variation after the move it replaces.
 - assertVisible: "1... c5"
 - assertVisible: "B20 · Sicilian Defense"
+# The engine's first line: on a fresh simulator, after it's downloaded and
+# started - minutes on a hosted runner, as for a review.
 - extendedWaitUntil:
     visible:
       id: "engine-line-0"
-    timeout: 60000
+    timeout: 180000
