@@ -9,6 +9,11 @@ appId: ${APP_ID}
 - tapOn:
     id: "paste-game-input"
 - inputText: "1. e4 e5 2. Nf3 Nc6 3. Bb5"
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "paste-game-input"
+      TEXT: "1. e4 e5 2. Nf3 Nc6 3. Bb5"
 - runFlow: common/dismiss-keyboard.yaml
 - tapOn:
     id: "paste-game-analyse"

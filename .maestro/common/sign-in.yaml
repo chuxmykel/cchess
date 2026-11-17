@@ -11,9 +11,19 @@ appId: ${APP_ID}
 - tapOn:
     id: "username-or-email-input"
 - inputText: ${USERNAME || 'e2e_main'}
+- runFlow:
+    file: typed.yaml
+    env:
+      FIELD: "username-or-email-input"
+      TEXT: "${USERNAME || 'e2e_main'}"
 - tapOn:
     id: "password-input"
 - inputText: "password"
+- runFlow:
+    file: typed.yaml
+    env:
+      FIELD: "password-input"
+      TEXT: "•{8}"
 - runFlow: dismiss-keyboard.yaml
 - tapOn:
     id: "account-form-submit"

@@ -15,6 +15,11 @@ tags:
 - tapOn:
     id: "message-input"
 - inputText: "Hello from the e2e suite"
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "message-input"
+      TEXT: "Hello from the e2e suite"
 - tapOn:
     id: "send-message-button"
 - assertVisible: "Hello from the e2e suite"

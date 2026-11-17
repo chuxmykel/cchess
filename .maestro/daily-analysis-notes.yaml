@@ -27,6 +27,11 @@ tags:
 - tapOn:
     id: "notes-input"
 - inputText: "Play c4 next"
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "notes-input"
+      TEXT: "Play c4 next"
 # Back, above the keyboard, closes it with the screen - no dismiss-keyboard,
 # whose back press on Android can close the screen too.
 - runFlow: common/header-back.yaml

@@ -28,6 +28,11 @@ tags:
 - tapOn:
     id: "email-input"
 - inputText: ${output.username + '@e2e.cchess.test'}
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "email-input"
+      TEXT: ".+@e2e\\.cchess\\.test"
 - tapOn:
     id: "password-input"
 # iOS's "Use Strong Password?" sheet takes over a new-password field and
@@ -42,6 +47,11 @@ tags:
           point: "370,507"
       - eraseText: 20
 - inputText: "password"
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "password-input"
+      TEXT: "•{8}"
 - runFlow: common/dismiss-keyboard.yaml
 - tapOn:
     id: "account-form-submit"

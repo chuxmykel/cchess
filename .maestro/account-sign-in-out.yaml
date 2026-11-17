@@ -10,9 +10,19 @@ tags:
 - tapOn:
     id: "username-or-email-input"
 - inputText: "e2e_main"
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "username-or-email-input"
+      TEXT: "e2e_main"
 - tapOn:
     id: "password-input"
 - inputText: "not-the-password"
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "password-input"
+      TEXT: "•{16}"
 - runFlow: common/dismiss-keyboard.yaml
 - tapOn:
     id: "account-form-submit"

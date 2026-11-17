@@ -1,0 +1,14 @@
+appId: ${APP_ID}
+---
+# Waits for what inputText typed to have reached the field (FIELD, its
+# testID) - TEXT, a regex of it; a password's dots, `•{8}`. On a slow
+# simulator (CI's) inputText returns while the keystrokes are still going
+# in, and a Send or Sign in tapped then takes part of it. Bounded and
+# optional: should a platform report the field's text otherwise, it only
+# waits that long.
+- extendedWaitUntil:
+    visible:
+      id: ${FIELD}
+      text: ${TEXT}
+    timeout: 8000
+    optional: true

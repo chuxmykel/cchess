@@ -12,6 +12,11 @@ tags:
 - tapOn:
     id: "user-search-input"
 - inputText: "bot_3"
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "user-search-input"
+      TEXT: "bot_3"
 - tapOn:
     id: "user-search-result-bot_3"
 - assertVisible:
