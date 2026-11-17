@@ -15,6 +15,15 @@ const shared = {
 
 /** @type {import('jest').Config} */
 module.exports = {
+  // Jest's default, a worker per core but one, left a laptop running other
+  // apps so short of CPU that tests ran past their 5s timeout (and their
+  // updates landed after they'd ended, outside act). Half the cores ran the
+  // suite faster there; CI's 4-core runner keeps the default.
+  ...(process.env.CI ? {} : { maxWorkers: '50%' }),
+  // A worker that's grown past this is started afresh between files: one
+  // that had run hundreds of them took too long to exit at the end and was
+  // killed ("A worker process has failed to exit gracefully").
+  workerIdleMemoryLimit: '1GB',
   projects: [
     {
       ...shared,
