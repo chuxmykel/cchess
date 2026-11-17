@@ -64,11 +64,13 @@ log() { printf '\n== %s\n' "$*"; }
 port_free() { ! lsof -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; }
 
 started_emulator=
+installer_pid=
 metro_pid=
 bot_pid=
 cleanup() {
   code=$?
   if [ -n "$bot_pid" ]; then kill "$bot_pid" 2>/dev/null || true; fi
+  if [ -n "$installer_pid" ]; then kill "$installer_pid" 2>/dev/null || true; fi
   if [ -n "$metro_pid" ]; then kill "$metro_pid" 2>/dev/null || true; fi
   if [ -n "$started_emulator" ]; then adb -s "$device" emu kill >/dev/null 2>&1 || true; fi
   if [ "${KEEP:-}" != 1 ]; then
@@ -133,10 +135,6 @@ print(found[0]["udid"] if found else "")' "$IOS_DEVICE")
 fi
 echo "using $device"
 
-log "metro on $E2E_METRO_PORT"
-# On a device without Expo Go (a fresh one, as on CI), Metro opens the
-# project there, which installs it; otherwise it just serves. CI=1: no
-# prompts, no file watching.
 has_expo_go() {
   if [ "$platform" = android ]; then
     adb -s "$device" shell pm list packages "$APP_ID" | grep -q "$APP_ID"
@@ -144,13 +142,36 @@ has_expo_go() {
     xcrun simctl get_app_container "$device" "$APP_ID" >/dev/null 2>&1
   fi
 }
-open_on_device=
-has_expo_go || open_on_device="--$platform"
-# shellcheck disable=SC2086 # open_on_device is empty or one flag
-CI=1 npx expo start $open_on_device --port "$E2E_METRO_PORT" > "$E2E_LOG_DIR/metro.log" 2>&1 &
+# A device without Expo Go (a fresh one, as on CI) gets it from Expo's CLI,
+# which installs it as it opens a project there - from an instance of its
+# own, stopped once it's in: that opening can time out on a slow simulator,
+# and its error ends the whole `expo start`, Metro and all.
+if ! has_expo_go; then
+  log "Expo Go onto $device"
+  CI=1 npx expo start --"$platform" --port "$((E2E_METRO_PORT + 1))" \
+    > "$E2E_LOG_DIR/expo-go-install.log" 2>&1 &
+  installer_pid=$!
+  i=0
+  until has_expo_go; do
+    i=$((i + 1))
+    if [ "$i" -gt 150 ] || ! kill -0 "$installer_pid" 2>/dev/null; then
+      echo "Expo Go never installed on $device:" >&2
+      tail -30 "$E2E_LOG_DIR/expo-go-install.log" >&2
+      exit 1
+    fi
+    sleep 2
+  done
+  pkill -P "$installer_pid" 2>/dev/null || true
+  kill "$installer_pid" 2>/dev/null || true
+  installer_pid=
+fi
+
+log "metro on $E2E_METRO_PORT"
+# CI=1: no prompts, no file watching.
+CI=1 npx expo start --port "$E2E_METRO_PORT" > "$E2E_LOG_DIR/metro.log" 2>&1 &
 metro_pid=$!
 # Bundled ahead of the first flow, by asking for the bundle directly - so
-# that flow doesn't wait on it - once Metro's up (and Expo Go's installed).
+# that flow doesn't wait on it.
 i=0
 until curl -fsS -o /dev/null "http://127.0.0.1:$E2E_METRO_PORT/node_modules/expo/AppEntry.bundle?platform=$platform&dev=true&minify=false" 2>/dev/null; do
   i=$((i + 1))
@@ -159,12 +180,6 @@ until curl -fsS -o /dev/null "http://127.0.0.1:$E2E_METRO_PORT/node_modules/expo
     tail -30 "$E2E_LOG_DIR/metro.log" >&2
     exit 1
   fi
-  sleep 2
-done
-i=0
-until has_expo_go; do
-  i=$((i + 1))
-  [ "$i" -le 90 ] || { echo "Expo Go never installed on $device" >&2; exit 1; }
   sleep 2
 done
 
