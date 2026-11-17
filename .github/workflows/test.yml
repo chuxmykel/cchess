@@ -11,9 +11,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Each platform's run on its own, so a failure shows which at a glance.
   test:
-    name: Jest
+    name: Jest (${{ matrix.platform.name }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { name: iOS, project: ios }
+          - { name: Android, project: android }
     steps:
       - uses: actions/checkout@v4
 
@@ -24,4 +31,15 @@ jobs:
 
       - run: npm ci
 
-      - run: npm test -- --ci
+      - run: npm test -- --ci --selectProjects ${{ matrix.platform.project }}
+
+  # The one check branch protection asks for, whatever the platforms.
+  jest:
+    name: Jest
+    if: always()
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULT: ${{ needs.test.result }}
+        run: test "$RESULT" = success
