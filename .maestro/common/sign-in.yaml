@@ -28,7 +28,12 @@ appId: ${APP_ID}
 - runFlow: dismiss-keyboard.yaml
 - tapOn:
     id: "account-form-submit"
-# Back on Home, its guest prompt gone.
+# Back on Home - which a busy runner's backend can take most of a minute
+# to send it to, checking the password - its guest prompt gone.
+- extendedWaitUntil:
+    visible:
+      id: "play-button"
+    timeout: 60000
 - extendedWaitUntil:
     notVisible:
       id: "sign-in-prompt"

@@ -13,6 +13,11 @@ tags:
 - tapOn:
     id: "daily-game-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
     text: ".*bot_2.*"
+# The game, fetched first - slow at times on a busy runner.
+- extendedWaitUntil:
+    visible:
+      id: "toolbar-analysis-button"
+    timeout: 30000
 - tapOn:
     id: "toolbar-analysis-button"
 - assertVisible:

@@ -27,10 +27,11 @@ tags:
 - runFlow: common/dismiss-keyboard.yaml
 - tapOn:
     id: "account-form-submit"
+# The password checked first - most of a minute, at times, on a busy runner.
 - extendedWaitUntil:
     visible:
       id: "account-form-error"
-    timeout: 10000
+    timeout: 60000
 - assertVisible:
     id: "sign-in-screen"
 - runFlow: common/sign-in.yaml

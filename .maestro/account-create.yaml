@@ -45,9 +45,13 @@ tags:
 - runFlow: common/dismiss-keyboard.yaml
 - tapOn:
     id: "account-form-submit"
+# Back on Home - which a busy runner's backend can take most of a minute
+# to send it to, hashing the password - its guest prompt gone.
+- extendedWaitUntil:
+    visible:
+      id: "play-button"
+    timeout: 60000
 - extendedWaitUntil:
     notVisible:
       id: "sign-in-prompt"
     timeout: 15000
-- assertVisible:
-    id: "play-button"
