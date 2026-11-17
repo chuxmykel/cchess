@@ -109,12 +109,18 @@ async function toBlunder(screen: Awaited<ReturnType<typeof render>>) {
 }
 
 describe('GameReview', () => {
+  // The board's pieces move by timed animations, and Next plays a move
+  // every few hundred ms: settleAnimations runs them on.
   beforeEach(async () => {
+    jest.useFakeTimers();
     await AsyncStorage.clear();
     (getGame as jest.Mock).mockResolvedValue(GAME);
     (getGameReview as jest.Mock).mockResolvedValue(STORED);
   });
-  afterEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    jest.clearAllMocks();
+    jest.useRealTimers();
+  });
 
   it("opens on the summary: the graph, each side's accuracy and moves", async () => {
     const { screen } = await renderReview();
@@ -376,7 +382,6 @@ describe('GameReview', () => {
   });
 
   it('tells chess facts while it analyses, a new one every few seconds', async () => {
-    jest.useFakeTimers();
     (getGameReview as jest.Mock).mockResolvedValue(null);
     const { screen } = await renderReview();
     const fact = () =>
@@ -392,7 +397,6 @@ describe('GameReview', () => {
     await act(async () => jest.advanceTimersByTime(REVIEW_FACT_MS));
 
     expect(fact()).not.toBe(first);
-    jest.useRealTimers();
   });
 
   it('says so while the engine downloads', async () => {
