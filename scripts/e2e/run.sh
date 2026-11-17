@@ -287,11 +287,19 @@ with_deadline() {
   shift
   "$@" &
   pid=$!
-  ( sleep "$limit" && kill "$pid" 2>/dev/null && echo "stopped after ${limit}s: $*" >&2 ) &
+  # Kept off the run's output, which a CI step waits on to close - a
+  # watcher left holding it kept a finished shard going its 20 minutes.
+  ( sleep "$limit" && kill "$pid" 2>/dev/null &&
+    echo "stopped after ${limit}s: $*" >> "$E2E_LOG_DIR/stopped.log" ) \
+    < /dev/null > /dev/null 2>&1 &
   watcher=$!
   wait "$pid"
   code=$?
+  # The watcher, and the sleep it's waiting on.
+  pkill -P "$watcher" 2>/dev/null || true
   kill "$watcher" 2>/dev/null || true
+  [ ! -s "$E2E_LOG_DIR/stopped.log" ] || cat "$E2E_LOG_DIR/stopped.log" >&2
+  : > "$E2E_LOG_DIR/stopped.log"
   return "$code"
 }
 
