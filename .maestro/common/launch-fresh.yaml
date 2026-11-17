@@ -24,11 +24,13 @@ appId: ${APP_ID}
 # __expo_disable_onboarding keeps Expo Go's first-launch dev-menu overlay
 # away, and __expo_disable_fab its floating dev-menu button - drawn over the
 # app's top right corner, where it takes taps meant for a header's buttons.
-# Retried: the simulator now and then times out opening it (POSIX error 60).
-- retry:
-    maxRetries: 2
-    commands:
-      - openLink: "${METRO_URL}?__expo_disable_onboarding=1&__expo_disable_fab=1"
+# Optional: the simulator says it couldn't open the link (POSIX error 60,
+# timed out) while it's waiting on its "Open in Expo Go?" prompt, answered
+# below - or while Expo Go is slow loading it. Should it really not have
+# opened, Home never shows, and the wait below fails the flow.
+- openLink:
+    link: "${METRO_URL}?__expo_disable_onboarding=1&__expo_disable_fab=1"
+    optional: true
 
 # Until Home shows - the first launch of a run also waits here on Metro's
 # bundle - closing Expo Go's dev menu should it open over the app: with
@@ -45,6 +47,11 @@ appId: ${APP_ID}
           visible:
             id: "play-button"
           timeout: 3000
+          optional: true
+      # A fresh simulator (CI's) asks before it first opens an exp:// link:
+      # "Open in “Expo Go”?" - until it's answered, nothing loads.
+      - tapOn:
+          text: "Open"
           optional: true
       - tapOn:
           id: "xmark"
