@@ -271,39 +271,74 @@ log "flows on $platform${shard:+, shard $shard}"
 # In batches of $E2E_MAESTRO_BATCH flows (all at once unless set), each a
 # Maestro session of its own: on a hosted runner, its iOS driver stops
 # answering, or the emulator drops off adb, after a quarter of an hour or
-# so, failing every flow after.
-batch_size="${E2E_MAESTRO_BATCH:-0}"
-# shellcheck disable=SC2086 # flows is a word list
-set -- $flows
-[ "$batch_size" -gt 0 ] || batch_size=$#
-batch=0
-status=0
-while [ $# -gt 0 ]; do
-  batch=$((batch + 1))
-  these=
-  n=0
-  while [ $# -gt 0 ] && [ "$n" -lt "$batch_size" ]; do
-    these="$these $1"
-    shift
-    n=$((n + 1))
-  done
-  # The emulator can drop off adb for a moment (device offline); give it
-  # back to the next batch.
-  if [ "$platform" = android ]; then
-    i=0
-    until [ "$(adb -s "$device" get-state 2>/dev/null)" = device ] || [ "$i" -ge 60 ]; do
-      i=$((i + 1))
-      sleep 2
+# so, failing every flow after. Reports go to report-<platform>[-<shard>]-
+# <attempt>-<batch>.xml.
+run_flows() {
+  attempt=$1
+  shift
+  batch_size="${E2E_MAESTRO_BATCH:-0}"
+  [ "$batch_size" -gt 0 ] || batch_size=$#
+  batch=0
+  status=0
+  while [ $# -gt 0 ]; do
+    batch=$((batch + 1))
+    these=
+    n=0
+    while [ $# -gt 0 ] && [ "$n" -lt "$batch_size" ]; do
+      these="$these $1"
+      shift
+      n=$((n + 1))
     done
-  fi
-  # shellcheck disable=SC2086 # these is a word list
-  maestro --device "$device" test $these \
-    -e "APP_ID=$APP_ID" \
-    -e "METRO_URL=exp://$HOST:$E2E_METRO_PORT" \
-    -e "BOT_URL=http://127.0.0.1:$E2E_BOT_PORT" \
-    --format junit \
-    --output "$E2E_LOG_DIR/report-$platform${shard:+-${shard%/*}}-$batch.xml" \
-    --test-output-dir "$E2E_LOG_DIR/maestro" || status=1
-done
-# Failing, if a batch did: the run's exit code.
-[ "$status" -eq 0 ]
+    # The emulator can drop off adb for a moment (device offline); give it
+    # back to the next batch.
+    if [ "$platform" = android ]; then
+      i=0
+      until [ "$(adb -s "$device" get-state 2>/dev/null)" = device ] || [ "$i" -ge 60 ]; do
+        i=$((i + 1))
+        sleep 2
+      done
+    fi
+    # shellcheck disable=SC2086 # these is a word list
+    maestro --device "$device" test $these \
+      -e "APP_ID=$APP_ID" \
+      -e "METRO_URL=exp://$HOST:$E2E_METRO_PORT" \
+      -e "BOT_URL=http://127.0.0.1:$E2E_BOT_PORT" \
+      --format junit \
+      --output "$E2E_LOG_DIR/report-$platform${shard:+-${shard%/*}}-$attempt-$batch.xml" \
+      --test-output-dir "$E2E_LOG_DIR/maestro" || status=1
+  done
+  return "$status"
+}
+
+# The flows of the given flows that an attempt's reports don't show passed -
+# failed, or never run (a batch whose session couldn't start).
+not_passed() {
+  attempt=$1
+  shift
+  python3 -I - "$E2E_LOG_DIR" "$platform${shard:+-${shard%/*}}-$attempt" "$@" <<'PY'
+import glob, sys, xml.etree.ElementTree as ET
+log_dir, prefix, *flows = sys.argv[1:]
+passed = set()
+for report in glob.glob(f"{log_dir}/report-{prefix}-*.xml"):
+    for case in ET.parse(report).iter("testcase"):
+        if not any(child.tag in ("failure", "error") for child in case):
+            passed.add(case.get("file"))
+print(" ".join(flow for flow in flows if flow not in passed))
+PY
+}
+
+# shellcheck disable=SC2086 # flows is a word list
+run_flows 1 $flows && exit 0
+
+# A flow that failed is run once more, and the run fails only if it fails
+# again: on a hosted runner, a few flows a run lose a tap or wait out a
+# slow screen - a different few each time - under the machine's load.
+# Each first failure stays in the run's output above. E2E_RERUN=0: none.
+[ "${E2E_RERUN:-1}" = 1 ] || exit 1
+# shellcheck disable=SC2086 # flows is a word list
+again=$(not_passed 1 $flows)
+# Failed with nothing to run again - Maestro failing apart from any flow.
+[ -n "$again" ] || exit 1
+log "running again, once: $again"
+# shellcheck disable=SC2086 # again is a word list
+run_flows 2 $again

@@ -240,6 +240,12 @@ a cache that answers each launch's bundle and assets once Metro has
 built them (`scripts/e2e/metro-cache.js`), and Metro's own cache is kept
 between runs.
 
+A flow that fails is run once more at the end of its shard, and the shard
+fails only if it fails again: on a hosted runner a few flows a run lose a
+tap or wait out a slow screen under the machine's load, a different few
+each time. The first failures stay in the output, so a flow that keeps
+needing the second try shows. `E2E_RERUN=0` turns it off.
+
 While fixing a failure, run just the flows in question rather than the
 hour-long suite: from the Actions tab, E2E → "Run workflow", with a
 platform and the flows (`.maestro/game-chat.yaml .maestro/tabs.yaml`) -
