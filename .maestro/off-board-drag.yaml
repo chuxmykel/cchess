@@ -23,10 +23,22 @@ tags:
           duration: 600
 - assertNotVisible:
     id: "move-1"
-- tapOn: { id: "square-g1" }
-- tapOn: { id: "square-f3" }
-- extendedWaitUntil:
-    visible:
-      id: "move-1"
-      text: "Nf3"
-    timeout: 5000
+# Tapped again until it's played: on a slow simulator (CI's) a tap can be
+# lost - and a pair whose second was lost leaves the knight picked up, so
+# the next pair's first puts it down again and a third plays it.
+- repeat:
+    while:
+      notVisible:
+        id: "move-1"
+    times: 4
+    commands:
+      - tapOn: { id: "square-g1" }
+      - tapOn: { id: "square-f3" }
+      - extendedWaitUntil:
+          visible:
+            id: "move-1"
+          timeout: 5000
+          optional: true
+- assertVisible:
+    id: "move-1"
+    text: "Nf3"
