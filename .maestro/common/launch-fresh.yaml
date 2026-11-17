@@ -43,16 +43,17 @@ appId: ${APP_ID}
           env:
             LINK: "${METRO_URL}?__expo_disable_onboarding=1&__expo_disable_fab=1"
 
-# Until Home shows - the first launch of a run also waits here on Metro's
-# bundle - closing Expo Go's dev menu should it open over the app: with
-# its X, `xmark`, on iOS, or the one labelled "Close" on Android. Never
-# "Continue", which opens the dev tools menu over the app instead. And
-# Wait on an Android "isn't responding" dialog (see below).
+# Until Home shows - the first launch of a run also waits here on Expo Go
+# building the bundle, minutes on a slow simulator (CI's) - closing Expo
+# Go's dev menu should it open over the app: with its X, `xmark`, on iOS,
+# or the one labelled "Close" on Android. Never "Continue", which opens
+# the dev tools menu over the app instead. And Wait on an Android "isn't
+# responding" dialog (see below).
 - repeat:
     while:
       notVisible:
         id: "play-button"
-    times: 20
+    times: 45
     commands:
       - extendedWaitUntil:
           visible:
