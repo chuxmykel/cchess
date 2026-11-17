@@ -61,13 +61,15 @@ older default Node. lint-staged is held at 16.x: 17+ needs Node >=
 22.22.1, newer than the pinned 22.16.0.
 
 GitHub Actions runs lint and the Jest suite on every push to `main` and on
-every PR (`.github/workflows/{lint,test}.yml`), and the Maestro e2e suite
-(`e2e.yml`) on both platforms: Android on Linux in six shards (Docker for
+every PR (`.github/workflows/{lint,test}.yml`). The Maestro e2e suite
+(`e2e.yml`), the better part of an hour, runs once a PR is merged to
+`develop` and on a PR from `develop` to `main` - not on PRs to `develop` -
+on both platforms: Android on Linux in six shards (Docker for
 the backend's stack, KVM for the emulator), iOS on macOS in five
 (cchess-be run directly, on Postgres 18 - macOS runners have no Docker).
 Run by hand from the Actions tab, it takes a platform and the flows to
 run, for checking a fix in minutes. Its `E2E` job is the one check for
-branch protection. It checks out
+`main`'s branch protection. It checks out
 cchess-be and cchess-infra's `develop`, with the `CCHESS_BE_TOKEN` and
 `CCHESS_INFRA_TOKEN` secrets while those repos are private.
 

@@ -230,8 +230,11 @@ The screenshots land in `.e2e-logs/maestro/`.
 
 ## In CI
 
-`.github/workflows/e2e.yml` runs every flow on both platforms, on every PR
-and push to `main`/`develop`: Android on Linux in six shards (Docker for
+`.github/workflows/e2e.yml` runs every flow on both platforms once a PR
+is merged to `develop`, and on a PR from `develop` to `main` - not on PRs
+to `develop`, which it would hold up the better part of an hour; a flow
+can be run there by hand from the Actions tab. Android on Linux in six
+shards (Docker for
 the backend, KVM for the emulator), iOS on macOS in five, the most a free
 account runs at once (cchess-be run directly, on Postgres 18). Each shard
 uploads its `.e2e-logs/`, and runs its flows a few to a Maestro session
