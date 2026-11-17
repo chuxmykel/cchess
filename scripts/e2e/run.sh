@@ -247,11 +247,33 @@ for runtime, devices in json.load(sys.stdin)["devices"].items():
 fi
 
 log "flows on $platform${shard:+, shard $shard}"
+# In batches of $E2E_MAESTRO_BATCH flows (all at once unless set), each a
+# Maestro session of its own: on a hosted macOS runner, its iOS driver
+# stops answering after twenty minutes or so, failing every flow after.
+batch_size="${E2E_MAESTRO_BATCH:-0}"
 # shellcheck disable=SC2086 # flows is a word list
-maestro --device "$device" test $flows \
-  -e "APP_ID=$APP_ID" \
-  -e "METRO_URL=exp://$HOST:$E2E_METRO_PORT" \
-  -e "BOT_URL=http://127.0.0.1:$E2E_BOT_PORT" \
-  -e "SAVE_PASSWORD=$save_password" \
-  --format junit --output "$E2E_LOG_DIR/report-$platform${shard:+-${shard%/*}}.xml" \
-  --test-output-dir "$E2E_LOG_DIR/maestro"
+set -- $flows
+[ "$batch_size" -gt 0 ] || batch_size=$#
+batch=0
+status=0
+while [ $# -gt 0 ]; do
+  batch=$((batch + 1))
+  these=
+  n=0
+  while [ $# -gt 0 ] && [ "$n" -lt "$batch_size" ]; do
+    these="$these $1"
+    shift
+    n=$((n + 1))
+  done
+  # shellcheck disable=SC2086 # these is a word list
+  maestro --device "$device" test $these \
+    -e "APP_ID=$APP_ID" \
+    -e "METRO_URL=exp://$HOST:$E2E_METRO_PORT" \
+    -e "BOT_URL=http://127.0.0.1:$E2E_BOT_PORT" \
+    -e "SAVE_PASSWORD=$save_password" \
+    --format junit \
+    --output "$E2E_LOG_DIR/report-$platform${shard:+-${shard%/*}}-$batch.xml" \
+    --test-output-dir "$E2E_LOG_DIR/maestro" || status=1
+done
+# Failing, if a batch did: the run's exit code.
+[ "$status" -eq 0 ]
