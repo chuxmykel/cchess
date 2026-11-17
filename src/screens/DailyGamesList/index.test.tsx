@@ -58,16 +58,26 @@ describe('DailyGamesList', () => {
     return { screen, navigation };
   }
 
+  // Three are enough to show the order: each card draws a whole board, and
+  // a dozen took past the test's time on a busy machine.
   it('lists every game, in the order given, then the seeks waiting', async () => {
-    const games = Array.from({ length: 12 }, (_, index) =>
+    const games = Array.from({ length: 3 }, (_, index) =>
       makeDailyGame({ id: `game-${index}` }),
     );
     (getDailyGames as jest.Mock).mockResolvedValue(games);
     const { screen } = await renderList();
 
     expect(getDailyGames).toHaveBeenCalledWith(expect.any(String), undefined);
-    expect(screen.getByTestId('daily-game-game-0')).toBeTruthy();
-    expect(screen.getByTestId('daily-seek-seek-1')).toBeTruthy();
+    expect(
+      screen
+        .getAllByTestId(/^daily-(game-game-\d|seek-seek-1)$/)
+        .map((card) => card.props.testID),
+    ).toEqual([
+      'daily-game-game-0',
+      'daily-game-game-1',
+      'daily-game-game-2',
+      'daily-seek-seek-1',
+    ]);
   });
 
   it('opens a game, and withdraws a seek', async () => {
