@@ -232,11 +232,26 @@ if [ -n "$shard" ]; then
   flows=$(printf '%s\n' $flows | awk -v i="$index" -v n="$count" '(NR - 1) % n == i - 1')
 fi
 
+# iOS offers to save a password after a sign-in: a card Maestro sees up to
+# iOS 26, a sheet it doesn't from 27 - common/dismiss-save-password.yaml
+# closes whichever this simulator shows.
+save_password=none
+if [ "$platform" = ios ]; then
+  ios_major=$(xcrun simctl list devices -j | python3 -I -c '
+import json, re, sys
+udid = sys.argv[1]
+for runtime, devices in json.load(sys.stdin)["devices"].items():
+    if any(d["udid"] == udid for d in devices):
+        print(re.search(r"iOS-(\d+)", runtime).group(1))' "$device")
+  if [ "${ios_major:-0}" -ge 27 ]; then save_password=sheet; else save_password=card; fi
+fi
+
 log "flows on $platform${shard:+, shard $shard}"
 # shellcheck disable=SC2086 # flows is a word list
 maestro --device "$device" test $flows \
   -e "APP_ID=$APP_ID" \
   -e "METRO_URL=exp://$HOST:$E2E_METRO_PORT" \
   -e "BOT_URL=http://127.0.0.1:$E2E_BOT_PORT" \
+  -e "SAVE_PASSWORD=$save_password" \
   --format junit --output "$E2E_LOG_DIR/report-$platform${shard:+-${shard%/*}}.xml" \
   --test-output-dir "$E2E_LOG_DIR/maestro"
