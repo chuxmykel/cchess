@@ -84,6 +84,13 @@ appId: ${APP_ID}
             visible: "Wait"
           commands:
             - tapOn: "Wait"
+      # "Could not connect to development server": a busy runner's Metro
+      # took longer over the bundle than Expo Go waits. Ask again.
+      - runFlow:
+          when:
+            visible: "Reload \\(⌘R\\)"
+          commands:
+            - tapOn: "Reload \\(⌘R\\)"
 
 # Android's Expo Go can open its dev menu once the app has loaded, over
 # Home: give it a moment to, and close it. And a slow emulator can show a
