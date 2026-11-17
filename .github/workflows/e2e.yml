@@ -3,10 +3,15 @@ name: E2E
 # The Maestro suite on both platforms, against a real cchess-be: every flow,
 # split into shards run side by side. scripts/e2e/run.sh does the work -
 # the backend, the device, Metro, the bots, the flows - on CI as locally.
+#
+# It takes the better part of an hour, so not on every PR: once a PR is
+# merged to develop, and on a PR from develop to main - the release, which
+# nothing reaches main without passing.
 on:
   push:
-    branches: [main, develop]
+    branches: [develop]
   pull_request:
+    branches: [main]
   # Run by hand from the Actions tab - while fixing a failure, just the
   # flows in question, on one platform, in minutes rather than the hour.
   workflow_dispatch:
