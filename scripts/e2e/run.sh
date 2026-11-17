@@ -163,6 +163,12 @@ print(found[0]["udid"] if found else "")' "$IOS_DEVICE")
   xcrun simctl spawn "$device" defaults write com.apple.WebUI AutoFillPasswords -bool NO
   [ "$(xcrun simctl spawn "$device" defaults read com.apple.WebUI AutoFillPasswords)" = 0 ] ||
     { echo "couldn't turn password AutoFill off on $device" >&2; exit 1; }
+  # The push service off: a fresh simulator's apsd retries a certificate it
+  # can't get, logging hundreds of thousands of lines a minute - CPU a
+  # hosted runner's simulator hasn't got, starving the app and Maestro
+  # until they stop answering. Nothing the flows do needs it.
+  xcrun simctl spawn "$device" launchctl disable system/com.apple.apsd 2>/dev/null || true
+  xcrun simctl spawn "$device" launchctl bootout system/com.apple.apsd 2>/dev/null || true
 fi
 echo "using $device"
 
