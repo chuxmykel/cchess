@@ -2,9 +2,22 @@ appId: ${APP_ID}
 ---
 - runFlow: launch-fresh.yaml
 
-# Home's Play bar navigates to New Game.
-- tapOn:
-    id: "play-button"
+# Home's Play bar navigates to New Game - tapped again until it does: on a
+# slow simulator (CI's) a tap as Home first shows can come before it takes
+# taps.
+- repeat:
+    while:
+      notVisible:
+        id: "time-control-trigger"
+    times: 3
+    commands:
+      - tapOn:
+          id: "play-button"
+      - extendedWaitUntil:
+          visible:
+            id: "time-control-trigger"
+          timeout: 5000
+          optional: true
 
 # Synchronization barrier - see the note in launch-fresh.yaml.
 - assertVisible:
