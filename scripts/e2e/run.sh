@@ -181,8 +181,12 @@ if ! has_expo_go; then
 fi
 
 log "metro on $E2E_METRO_PORT"
-# CI=1: no prompts, no file watching.
-CI=1 npx expo start --port "$E2E_METRO_PORT" > "$E2E_LOG_DIR/metro.log" 2>&1 &
+# CI=1: no prompts, no file watching. A production bundle - minified,
+# without React's development checks - as people get the app: a hosted
+# runner's simulator loads and runs the development one so slowly that
+# Home took minutes to show and taps went missing.
+CI=1 npx expo start --no-dev --minify --port "$E2E_METRO_PORT" \
+  > "$E2E_LOG_DIR/metro.log" 2>&1 &
 metro_pid=$!
 # Bundled ahead of the first flow - which would otherwise wait minutes on
 # it on a hosted runner - by asking for the very bundle Expo Go loads: its
