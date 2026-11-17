@@ -19,7 +19,7 @@ appId: ${APP_ID}
       ID: color-scheme-dark
 - stopApp
 - launchApp
-- openLink: "${METRO_URL}?__expo_disable_onboarding=1&__expo_disable_fab=1"
+- runFlow: common/open-app.yaml
 - runFlow:
     when:
       platform: Android

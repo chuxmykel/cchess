@@ -20,28 +20,7 @@ appId: ${APP_ID}
       - clearKeychain
 - launchApp:
     clearState: true
-# As `expo start` does when it opens a project itself:
-# __expo_disable_onboarding keeps Expo Go's first-launch dev-menu overlay
-# away, and __expo_disable_fab its floating dev-menu button - drawn over the
-# app's top right corner, where it takes taps meant for a header's buttons.
-# On iOS, through the bot server, which opens it without waiting: Maestro's
-# openLink waits on `simctl openurl`, which a slow simulator (CI's) times
-# out (POSIX error 60) - on its "Open in Expo Go?" prompt, answered below,
-# or on Expo Go loading - failing the flow, `optional` or not. Should it
-# really not have opened, Home never shows, and the wait below fails it.
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - openLink: "${METRO_URL}?__expo_disable_onboarding=1&__expo_disable_fab=1"
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - runScript:
-          file: open-link.js
-          env:
-            LINK: "${METRO_URL}?__expo_disable_onboarding=1&__expo_disable_fab=1"
+- runFlow: open-app.yaml
 
 # Until Home shows - the first launch of a run also waits here on Expo Go
 # building the bundle, minutes on a slow simulator (CI's) - closing
