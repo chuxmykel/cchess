@@ -184,10 +184,21 @@ log "metro on $E2E_METRO_PORT"
 # CI=1: no prompts, no file watching.
 CI=1 npx expo start --port "$E2E_METRO_PORT" > "$E2E_LOG_DIR/metro.log" 2>&1 &
 metro_pid=$!
-# Bundled ahead of the first flow, by asking for the bundle directly - so
-# that flow doesn't wait on it.
+# Bundled ahead of the first flow - which would otherwise wait minutes on
+# it on a hosted runner - by asking for the very bundle Expo Go loads: its
+# address, from the manifest Metro serves Expo Go, has settings of its own
+# (lazy, Hermes bytecode), and any other is another bundle.
+launch_bundle() {
+  curl -fsS -H "expo-platform: $platform" \
+    -H "Accept: application/expo+json,application/json" \
+    "http://127.0.0.1:$E2E_METRO_PORT/" 2>/dev/null | python3 -I -c '
+import json, sys
+from urllib.parse import urlsplit, urlunsplit
+url = urlsplit(json.load(sys.stdin)["launchAsset"]["url"])
+print(urlunsplit(url._replace(netloc="127.0.0.1:" + str(url.port))))'
+}
 i=0
-until curl -fsS -o /dev/null "http://127.0.0.1:$E2E_METRO_PORT/node_modules/expo/AppEntry.bundle?platform=$platform&dev=true&minify=false" 2>/dev/null; do
+until url=$(launch_bundle) && curl -fsS -o /dev/null "$url" 2>/dev/null; do
   i=$((i + 1))
   if [ "$i" -gt 150 ] || ! kill -0 "$metro_pid" 2>/dev/null; then
     echo "Metro never bundled the app:" >&2
