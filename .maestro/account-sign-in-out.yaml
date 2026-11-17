@@ -7,6 +7,7 @@ tags:
 - runFlow: common/launch-fresh.yaml
 - tapOn:
     id: "sign-in-button"
+    retryTapIfNoChange: true
 - tapOn:
     id: "username-or-email-input"
 - inputText: "e2e_main"
@@ -35,6 +36,7 @@ tags:
 - runFlow: common/sign-in.yaml
 - tapOn:
     id: "menu-tab"
+    retryTapIfNoChange: true
 - scrollUntilVisible:
     element:
       id: "sign-out-button"

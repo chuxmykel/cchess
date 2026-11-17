@@ -8,6 +8,7 @@ appId: ${APP_ID}
 - runFlow: launch-fresh.yaml
 - tapOn:
     id: "sign-in-button"
+    retryTapIfNoChange: true
 - tapOn:
     id: "username-or-email-input"
 - inputText: ${USERNAME || 'e2e_main'}

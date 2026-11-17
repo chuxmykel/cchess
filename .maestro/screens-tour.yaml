@@ -12,8 +12,10 @@ tags:
       THEME: light
 - tapOn:
     id: "menu-tab"
+    retryTapIfNoChange: true
 - tapOn:
     id: "menu-settings"
+    retryTapIfNoChange: true
 - tapOn:
     id: "appearance-row"
 - tapOn:
@@ -23,6 +25,7 @@ tags:
 - runFlow: common/header-back.yaml
 - tapOn:
     id: "home-tab"
+    retryTapIfNoChange: true
 - runFlow:
     file: common/tour-screens.yaml
     env:

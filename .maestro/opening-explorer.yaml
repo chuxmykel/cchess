@@ -6,6 +6,7 @@ appId: ${APP_ID}
 - runFlow: common/launch-fresh.yaml
 - tapOn:
     id: "menu-tab"
+    retryTapIfNoChange: true
 - tapOn:
     id: "menu-opening-explorer"
 - assertVisible:

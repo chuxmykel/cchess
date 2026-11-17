@@ -30,6 +30,7 @@ tags:
     id: "time-control-option-blitz-3\\+2"
 - tapOn:
     id: "start-new-game-button"
+    retryTapIfNoChange: true
 - tapOn:
     id: "matchmaking-cancel-button"
 - runFlow: common/header-back.yaml

@@ -5,8 +5,10 @@ appId: ${APP_ID}
 - runFlow: common/launch-fresh.yaml
 - tapOn:
     id: "menu-tab"
+    retryTapIfNoChange: true
 - tapOn:
     id: "menu-settings"
+    retryTapIfNoChange: true
 - tapOn:
     id: "licenses-row"
 - assertVisible:

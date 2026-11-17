@@ -31,5 +31,6 @@ tags:
 - runFlow: common/header-back.yaml
 - tapOn:
     id: "messages-tab"
+    retryTapIfNoChange: true
 - assertVisible:
     id: "conversation-.*"

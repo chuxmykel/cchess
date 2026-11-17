@@ -116,3 +116,7 @@ appId: ${APP_ID}
     visible:
       id: "play-button"
     timeout: 10000
+# And then settled: on a slow simulator (CI's) Home shows a while before it
+# takes taps, as it loads, and a flow's first tap went missing.
+- waitForAnimationToEnd:
+    timeout: 5000

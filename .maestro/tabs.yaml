@@ -9,15 +9,18 @@ appId: ${APP_ID}
     id: "puzzles-coming-soon"
 - tapOn:
     id: "messages-tab"
+    retryTapIfNoChange: true
 - assertVisible:
     id: "messages-screen"
 - assertVisible:
     id: "sign-in-prompt"
 - tapOn:
     id: "menu-tab"
+    retryTapIfNoChange: true
 - assertVisible:
     id: "analysis-new"
 - tapOn:
     id: "menu-settings"
+    retryTapIfNoChange: true
 - assertVisible:
     id: "settings-screen"

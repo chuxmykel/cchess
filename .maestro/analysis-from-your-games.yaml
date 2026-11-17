@@ -7,8 +7,10 @@ tags:
 - runFlow: common/sign-in.yaml
 - tapOn:
     id: "menu-tab"
+    retryTapIfNoChange: true
 - tapOn:
     id: "analysis-pick-game"
+    retryTapIfNoChange: true
 - extendedWaitUntil:
     visible:
       id: "game-row-.*"

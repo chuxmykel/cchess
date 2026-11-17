@@ -29,6 +29,7 @@ tags:
       BOT_ARGS: "--guest --time 1+0 --level easy --delay 300"
 - tapOn:
     id: "start-new-game-button"
+    retryTapIfNoChange: true
 - extendedWaitUntil:
     visible:
       id: "game-toolbar"

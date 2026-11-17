@@ -5,8 +5,10 @@ appId: ${APP_ID}
 - runFlow: common/launch-fresh.yaml
 - tapOn:
     id: "menu-tab"
+    retryTapIfNoChange: true
 - tapOn:
     id: "analysis-paste"
+    retryTapIfNoChange: true
 - tapOn:
     id: "paste-game-input"
 - inputText: "6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1"

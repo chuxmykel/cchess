@@ -5,8 +5,10 @@ appId: ${APP_ID}
 - runFlow: common/launch-fresh.yaml
 - tapOn:
     id: "menu-tab"
+    retryTapIfNoChange: true
 - tapOn:
     id: "menu-settings"
+    retryTapIfNoChange: true
 - tapOn:
     id: "appearance-row"
 - tapOn:
@@ -36,8 +38,10 @@ appId: ${APP_ID}
     timeout: 30000
 - tapOn:
     id: "menu-tab"
+    retryTapIfNoChange: true
 - tapOn:
     id: "menu-settings"
+    retryTapIfNoChange: true
 - tapOn:
     id: "appearance-row"
 - runFlow:

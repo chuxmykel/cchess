@@ -13,6 +13,7 @@ appId: ${APP_ID}
       BOT_ARGS: ${BOT_ARGS || '--guest --color b --level easy --delay 500'}
 - tapOn:
     id: "start-new-game-button"
+    retryTapIfNoChange: true
 - extendedWaitUntil:
     visible:
       id: "game-toolbar"

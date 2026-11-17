@@ -46,12 +46,15 @@ appId: ${APP_ID}
 - runFlow: header-back.yaml
 - tapOn:
     id: "messages-tab"
+    retryTapIfNoChange: true
 - takeScreenshot: ${THEME}-messages
 - tapOn:
     id: "menu-tab"
+    retryTapIfNoChange: true
 - takeScreenshot: ${THEME}-menu
 - tapOn:
     id: "analysis-new"
+    retryTapIfNoChange: true
 - takeScreenshot: ${THEME}-analysis
 - tapOn:
     id: "game-menu-button"
@@ -61,11 +64,14 @@ appId: ${APP_ID}
 - runFlow: header-back.yaml
 - tapOn:
     id: "analysis-set-up"
+    retryTapIfNoChange: true
 - takeScreenshot: ${THEME}-set-up-position
 - runFlow: header-back.yaml
 - tapOn:
     id: "menu-settings"
+    retryTapIfNoChange: true
 - takeScreenshot: ${THEME}-settings
 - runFlow: header-back.yaml
 - tapOn:
     id: "home-tab"
+    retryTapIfNoChange: true

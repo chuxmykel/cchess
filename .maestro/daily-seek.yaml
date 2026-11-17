@@ -13,6 +13,7 @@ appId: ${APP_ID}
     id: "time-control-option-daily-14 days"
 - tapOn:
     id: "start-new-game-button"
+    retryTapIfNoChange: true
 # Back on Home, waiting for an opponent.
 - extendedWaitUntil:
     visible:

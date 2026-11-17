@@ -8,6 +8,7 @@ tags:
 - runFlow: common/launch-fresh.yaml
 - tapOn:
     id: "create-account-button"
+    retryTapIfNoChange: true
 - assertVisible:
     id: "create-account-screen"
 - tapOn:

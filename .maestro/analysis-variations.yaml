@@ -10,8 +10,10 @@ tags:
 - runFlow: common/launch-fresh.yaml
 - tapOn:
     id: "menu-tab"
+    retryTapIfNoChange: true
 - tapOn:
     id: "analysis-new"
+    retryTapIfNoChange: true
 - tapOn:
     id: "square-e2"
 - tapOn:
