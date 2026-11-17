@@ -184,7 +184,8 @@ until curl -fsS -o /dev/null "http://127.0.0.1:$E2E_METRO_PORT/node_modules/expo
 done
 
 log "bot server on $E2E_BOT_PORT"
-EXPO_PUBLIC_SERVER_URL="http://127.0.0.1:$E2E_API_PORT" \
+# The simulator too, which it opens the app's link on for the iOS flows.
+EXPO_PUBLIC_SERVER_URL="http://127.0.0.1:$E2E_API_PORT" E2E_SIMULATOR="$device" \
   node scripts/e2e/bot-server.js > "$E2E_LOG_DIR/bot-server.log" 2>&1 &
 bot_pid=$!
 sleep 1

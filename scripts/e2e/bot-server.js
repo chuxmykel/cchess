@@ -9,6 +9,10 @@
 //                  end of its output
 //   DELETE /bots   stops them all - each flow starts with this, so no bot
 //                  from one flow plays in the next
+//   POST   /open   {"url": "exp://..."} opens it on the run's iOS simulator
+//                  ($E2E_SIMULATOR) without waiting: Maestro's openLink
+//                  waits on `simctl openurl`, which a slow simulator times
+//                  out (POSIX error 60), failing the flow - optional or not
 //
 // Each bot plays on $EXPO_PUBLIC_SERVER_URL, as the app does, and logs to
 // $E2E_LOG_DIR/bot-<id>.log.
@@ -88,8 +92,28 @@ function reply(response, status, body) {
   response.end(JSON.stringify(body));
 }
 
+// Started and left: the flow, waiting for the app, sees how it went.
+function openOnSimulator(url) {
+  const device = process.env.E2E_SIMULATOR;
+  if (!device) throw new Error('no E2E_SIMULATOR to open it on');
+  const child = spawn('xcrun', ['simctl', 'openurl', device, url], {
+    stdio: 'ignore',
+  });
+  child.on('error', (error) => console.error(`openurl ${url}: ${error}`));
+  child.on('exit', (code) => {
+    if (code) console.error(`openurl ${url} exited ${code}`);
+  });
+}
+
 const server = http.createServer(async (request, response) => {
   try {
+    if (request.url === '/open' && request.method === 'POST') {
+      const { url } = await readJson(request);
+      if (typeof url !== 'string')
+        return reply(response, 400, { error: 'url must be a string' });
+      openOnSimulator(url);
+      return reply(response, 202, { opening: url });
+    }
     if (request.url !== '/bots')
       return reply(response, 404, { error: 'not found' });
     switch (request.method) {

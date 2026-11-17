@@ -121,7 +121,7 @@ module.exports = defineConfig([
   },
   // The e2e harness runs in Node, and the flows' scripts in Maestro's own
   // JavaScript, which gives them `http`, `json` and `output`, and the
-  // flow's env as globals (BOT_URL, BOT_ARGS).
+  // flow's env as globals (BOT_URL, BOT_ARGS, LINK).
   {
     files: ['scripts/e2e/**/*.js'],
     languageOptions: { globals: globals.node },
@@ -135,6 +135,7 @@ module.exports = defineConfig([
         output: 'writable',
         BOT_URL: 'readonly',
         BOT_ARGS: 'readonly',
+        LINK: 'readonly',
       },
     },
   },
