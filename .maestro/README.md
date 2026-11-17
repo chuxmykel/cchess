@@ -229,6 +229,14 @@ The screenshots land in `.e2e-logs/maestro/`.
 ## In CI
 
 `.github/workflows/e2e.yml` runs every flow on both platforms, on every PR
-and push to `main`/`develop`, each in three shards: Android on Linux
-(Docker for the backend, KVM for the emulator), iOS on macOS (cchess-be run
-directly, on Postgres 18). Each shard uploads its `.e2e-logs/`.
+and push to `main`/`develop`: Android on Linux in six shards (Docker for
+the backend, KVM for the emulator), iOS on macOS in five, the most a free
+account runs at once (cchess-be run directly, on Postgres 18). Each shard
+uploads its `.e2e-logs/`, and runs its flows a few to a Maestro session
+(`E2E_MAESTRO_BATCH`). The app is served as a production bundle, and
+Metro's cache is kept between runs.
+
+While fixing a failure, run just the flows in question rather than the
+hour-long suite: from the Actions tab, E2E → "Run workflow", with a
+platform and the flows (`.maestro/game-chat.yaml .maestro/tabs.yaml`) -
+or "Re-run failed jobs" on a run, for its failed shards alone.

@@ -7,7 +7,19 @@ on:
   push:
     branches: [main, develop]
   pull_request:
+  # Run by hand from the Actions tab - while fixing a failure, just the
+  # flows in question, on one platform, in minutes rather than the hour.
   workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform
+        type: choice
+        options: [both, android, ios]
+        default: both
+      flows:
+        description: Flows, space-separated (all of them if empty)
+        type: string
+        default: ''
 
 concurrency:
   group: e2e-${{ github.ref }}
@@ -15,10 +27,14 @@ concurrency:
 
 env:
   MAESTRO_VERSION: 2.10.0
+  # The flows to run - empty, all of them - through env, not the script's
+  # text, so what's typed in can't become a command.
+  E2E_FLOWS: ${{ inputs.flows }}
 
 jobs:
   android:
-    name: Android (shard ${{ matrix.shard }}/3)
+    name: Android (shard ${{ matrix.shard }}/6)
+    if: inputs.platform != 'ios'
     # Docker for the backend's stack (cchess-infra's, the image production
     # runs) and KVM for the emulator: Linux has both.
     runs-on: ubuntu-latest
@@ -26,7 +42,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        # Linux runners are free and plentiful: six, so a shard is done in
+        # a quarter of an hour or so.
+        shard: [1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,6 +81,17 @@ jobs:
           curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
+      # Metro's transform cache, so the first bundle doesn't take minutes:
+      # each run saves its own, and restores the newest.
+      - name: Cache Metro
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/metro
+          key: metro-${{ runner.os }}-${{ hashFiles('cchess/package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            metro-${{ runner.os }}-${{ hashFiles('cchess/package-lock.json') }}-
+            metro-${{ runner.os }}-
+
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -95,6 +124,8 @@ jobs:
       # flows' points on it hold.
       - name: Run the flows
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          E2E_METRO_TMPDIR: ${{ runner.temp }}/metro
         with:
           api-level: 35
           target: google_apis
@@ -106,7 +137,7 @@ jobs:
           working-directory: cchess
           # A Maestro session of its own every six flows: on a hosted runner
           # the emulator drops off adb a quarter of an hour or so in.
-          script: E2E_MAESTRO_BATCH=6 scripts/e2e/run.sh --platform android --backend docker --shard ${{ matrix.shard }}/3
+          script: E2E_MAESTRO_BATCH=6 scripts/e2e/run.sh --platform android --backend docker --shard ${{ matrix.shard }}/6 $E2E_FLOWS
 
       - name: Upload logs and reports
         if: always()
@@ -120,6 +151,7 @@ jobs:
 
   ios:
     name: iOS (shard ${{ matrix.shard }}/5)
+    if: inputs.platform != 'android'
     # The simulator needs macOS, whose runners have no Docker: cchess-be
     # runs directly instead (scripts/e2e/backend-native.sh), on Postgres
     # 18 as production's is.
@@ -168,6 +200,17 @@ jobs:
           curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
+      # Metro's transform cache, so the first bundle doesn't take minutes:
+      # each run saves its own, and restores the newest.
+      - name: Cache Metro
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/metro
+          key: metro-${{ runner.os }}-${{ hashFiles('cchess/package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            metro-${{ runner.os }}-${{ hashFiles('cchess/package-lock.json') }}-
+            metro-${{ runner.os }}-
+
       - name: Start Postgres
         run: |
           brew install postgresql@18
@@ -175,9 +218,11 @@ jobs:
           echo "$pg" >> "$GITHUB_PATH"
           "$pg/initdb" -D "$RUNNER_TEMP/pg" -U runner --auth=trust >/dev/null
           "$pg/pg_ctl" -D "$RUNNER_TEMP/pg" -l "$RUNNER_TEMP/pg.log" -w start
-          echo "PGHOST=127.0.0.1" >> "$GITHUB_ENV"
-          echo "PGUSER=runner" >> "$GITHUB_ENV"
-          echo "PGDATABASE=postgres" >> "$GITHUB_ENV"
+          {
+            echo "PGHOST=127.0.0.1"
+            echo "PGUSER=runner"
+            echo "PGDATABASE=postgres"
+          } >> "$GITHUB_ENV"
 
       # The flows' iOS points are for the iPhone 18 Pro used locally; the
       # 17 Pro, the newest on this image (Xcode 26, iOS 26), is the same
@@ -189,13 +234,16 @@ jobs:
         env:
           E2E_IOS_DEVICE: iPhone 17 Pro
           # Maestro's driver - an XCTest runner it builds and starts on the
-          # simulator - takes minutes on a hosted runner, past its default
-          # wait of seconds.
-          MAESTRO_DRIVER_STARTUP_TIMEOUT: 240000
+          # simulator - takes minutes on a hosted runner (past four, at
+          # times), against its default wait of seconds.
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: 480000
           # A Maestro session of its own every four flows: on a hosted
           # runner its iOS driver stops answering twenty minutes or so in.
           E2E_MAESTRO_BATCH: 4
-        run: scripts/e2e/run.sh --platform ios --backend native --shard ${{ matrix.shard }}/5
+          E2E_METRO_TMPDIR: ${{ runner.temp }}/metro
+        run: |
+          # shellcheck disable=SC2086 # E2E_FLOWS is a list of flows
+          scripts/e2e/run.sh --platform ios --backend native --shard ${{ matrix.shard }}/5 $E2E_FLOWS
 
       - name: Upload logs and reports
         if: always()
@@ -207,12 +255,18 @@ jobs:
           include-hidden-files: true
           if-no-files-found: ignore
 
-  # One check for branch protection to require: every shard on both.
+  # One check for branch protection to require: every shard on both - or,
+  # run by hand for one platform, the other skipped.
   e2e:
     name: E2E
     if: always()
     needs: [android, ios]
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          [ "${{ needs.android.result }}" = success ] && [ "${{ needs.ios.result }}" = success ]
+      - env:
+          ANDROID: ${{ needs.android.result }}
+          IOS: ${{ needs.ios.result }}
+        run: |
+          for result in "$ANDROID" "$IOS"; do
+            case "$result" in success|skipped) ;; *) exit 1 ;; esac
+          done

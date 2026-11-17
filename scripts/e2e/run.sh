@@ -63,6 +63,29 @@ mkdir -p "$E2E_LOG_DIR"
 log() { printf '\n== %s\n' "$*"; }
 port_free() { ! lsof -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; }
 
+# The flows: those given, or every one (not the shared ones in common/, nor
+# the screenshot tour) - this shard's share of them, dealt round in turn.
+if [ $# -gt 0 ]; then
+  flows="$*"
+else
+  flows=
+  for flow in .maestro/*.yaml; do
+    case "$flow" in */screens-tour.yaml) ;; *) flows="$flows $flow" ;; esac
+  done
+fi
+if [ -n "$shard" ]; then
+  index=${shard%/*}
+  count=${shard#*/}
+  # shellcheck disable=SC2086 # one flow a line
+  flows=$(printf '%s\n' $flows | awk -v i="$index" -v n="$count" '(NR - 1) % n == i - 1')
+fi
+# A shard with none of them - fewer flows than shards, as a run of a few
+# chosen flows can be - has nothing to bring up.
+if [ -z "$(printf '%s' "$flows" | tr -d '[:space:]')" ]; then
+  echo "no flows in ${shard:+shard $shard of }this run"
+  exit 0
+fi
+
 started_emulator=
 installer_pid=
 metro_pid=
@@ -185,6 +208,12 @@ log "metro on $E2E_METRO_PORT"
 # without React's development checks - as people get the app: a hosted
 # runner's simulator loads and runs the development one so slowly that
 # Home took minutes to show and taps went missing.
+# Its transform cache, kept between CI runs, lives in the temp folder:
+# E2E_METRO_TMPDIR names one that's cached.
+if [ -n "${E2E_METRO_TMPDIR:-}" ]; then
+  mkdir -p "$E2E_METRO_TMPDIR"
+  export TMPDIR="$E2E_METRO_TMPDIR"
+fi
 CI=1 npx expo start --no-dev --minify --port "$E2E_METRO_PORT" \
   > "$E2E_LOG_DIR/metro.log" 2>&1 &
 metro_pid=$!
@@ -219,22 +248,6 @@ EXPO_PUBLIC_SERVER_URL="http://127.0.0.1:$E2E_API_PORT" E2E_SIMULATOR="$device" 
 bot_pid=$!
 sleep 1
 
-# The flows: those given, or every one (not the shared ones in common/, nor
-# the screenshot tour) - this shard's share of them, dealt round in turn.
-if [ $# -gt 0 ]; then
-  flows="$*"
-else
-  flows=
-  for flow in .maestro/*.yaml; do
-    case "$flow" in */screens-tour.yaml) ;; *) flows="$flows $flow" ;; esac
-  done
-fi
-if [ -n "$shard" ]; then
-  index=${shard%/*}
-  count=${shard#*/}
-  # shellcheck disable=SC2086 # one flow a line
-  flows=$(printf '%s\n' $flows | awk -v i="$index" -v n="$count" '(NR - 1) % n == i - 1')
-fi
 
 # iOS offers to save a password after a sign-in: a card Maestro sees up to
 # iOS 26, a sheet it doesn't from 27 - common/dismiss-save-password.yaml
