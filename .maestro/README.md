@@ -203,7 +203,10 @@ written into the flows for each platform under `runFlow: when: platform:`
   what's below the fold with `scrollUntilVisible` first.
 - **Closing the keyboard** goes through `common/dismiss-keyboard.yaml`:
   `hideKeyboard` on iOS fails when the simulator has no on-screen keyboard
-  up, so there it's a tap on empty space; on Android it's a back press,
+  up, and a tap on a point can land on a key of one that is (CI's shows
+  one; a simulator with a hardware keyboard doesn't), so there it's a tap
+  on the screen's own text - a form's Password label, Paste PGN or FEN's
+  hint - which closes it either way; on Android it's a back press,
   which can leave the screen as well, so only where nothing else - a tap
   on the header's back, above the keyboard - would close it.
 - **A move's text differs**: iOS reads a move token as "1. Ra8#", Android
