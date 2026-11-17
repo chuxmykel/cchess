@@ -45,7 +45,7 @@ clear of a dev backend (3000) and Metro (8081). Maestro is a separate,
 non-npm install (`curl -Ls "https://get.maestro.mobile.dev" | bash`), and
 the emulator needs Android's SDK command-line tools - `.maestro/README.md`
 has the one-time setup. For driving the app end-to-end on this machine, use
-the `run-ios-simulator` skill (project specifics: testIDs, navigation path,
+the `run-app-on-device` skill (project specifics: testIDs, navigation path,
 known-good example flows, the Android emulator too) together with the
 global `ios-simulator-setup` skill (machine gotchas).
 

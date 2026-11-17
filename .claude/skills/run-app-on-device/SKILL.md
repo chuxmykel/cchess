@@ -1,9 +1,9 @@
 ---
-name: run-ios-simulator
+name: run-app-on-device
 description: Launch cchess in the iOS Simulator or the Android emulator and drive it (tap, drag-and-drop, screenshots) to verify a change actually works, and run the Maestro e2e suite on either. Use whenever asked to run, start, or screenshot the app, or to confirm a change works in the real app on this machine — not just the Jest/RNTL test suite. For the machine-specific environment gotchas (no Simulator.app, no GUI automation permissions, Node version mismatch, Maestro quirks), see the global `ios-simulator-setup` skill — this skill only covers what's specific to cchess.
 ---
 
-# Run cchess in the iOS Simulator (or the Android emulator)
+# Run cchess on a device: the iOS Simulator or the Android emulator
 
 This assumes the `ios-simulator-setup` skill's environment facts and
 general steps (booting the simulator, screenshotting, driving Maestro).
