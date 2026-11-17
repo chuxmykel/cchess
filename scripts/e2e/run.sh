@@ -279,6 +279,22 @@ log "flows on $platform${shard:+, shard $shard}"
 # answering, or the emulator drops off adb, after a quarter of an hour or
 # so, failing every flow after. Reports go to report-<platform>[-<shard>]-
 # <attempt>-<batch>.xml.
+# Runs a command, ended after $1 seconds if it hasn't finished: a Maestro
+# session that hangs (a starved simulator's driver can stop answering)
+# fails its own batch, not the job's whole hour.
+with_deadline() {
+  limit=$1
+  shift
+  "$@" &
+  pid=$!
+  ( sleep "$limit" && kill "$pid" 2>/dev/null && echo "stopped after ${limit}s: $*" >&2 ) &
+  watcher=$!
+  wait "$pid"
+  code=$?
+  kill "$watcher" 2>/dev/null || true
+  return "$code"
+}
+
 run_flows() {
   attempt=$1
   shift
@@ -305,7 +321,7 @@ run_flows() {
       done
     fi
     # shellcheck disable=SC2086 # these is a word list
-    maestro --device "$device" test $these \
+    with_deadline "${E2E_BATCH_TIMEOUT:-1200}" maestro --device "$device" test $these \
       -e "APP_ID=$APP_ID" \
       -e "METRO_URL=exp://$HOST:$E2E_METRO_PORT" \
       -e "BOT_URL=http://127.0.0.1:$E2E_BOT_PORT" \
