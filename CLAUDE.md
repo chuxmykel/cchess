@@ -61,8 +61,8 @@ nvm is installed, since lint-staged/ESLint don't run on this machine's
 older default Node. lint-staged is held at 16.x: 17+ needs Node >=
 22.22.1, newer than the pinned 22.16.0.
 
-GitHub Actions runs lint and the Jest suite on every push to `main` and on
-every PR (`.github/workflows/{lint,test}.yml` - Jest as two jobs, iOS's
+GitHub Actions runs lint and the Jest suite on every push to `main` and
+`develop` and on every PR (`.github/workflows/{lint,test}.yml` - Jest as two jobs, iOS's
 and Android's, so a failure shows which, under a `Jest` job that passes
 when both do). The Maestro e2e suite
 (`e2e.yml`), the better part of an hour, runs once a PR is merged to
