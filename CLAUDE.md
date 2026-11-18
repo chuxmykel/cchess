@@ -371,7 +371,12 @@ lib/chessboard/  the board, written as a package of its own: outside the
     `clocksAtPly` gives each side's clock at any position), and
     `useFollowPlayer` (a player's next game as it starts, from
     `user:follow` - so the viewer, opened from a Watch button, moves on with
-    that player).
+    that player), and `useServerMaintenance` (when the server's announced
+    maintenance begins - it starts no new live game from the announcement
+    until it ends, and restarts once it's begun and the live games in
+    progress are over: `GET /maintenance` on launch and on every
+    reconnect, since a restart forgets it, then its `server:maintenance`
+    pushes).
   - Analysis: `useAnalysisTree` (the tree and the position looked at in
     it - Forward follows the line you came along, so back and forward
     again returns through a variation, not the main line; promote and
@@ -497,6 +502,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
   - `SocialContext.tsx` - wraps `useSocial`, mounted in `HomeStack` (inside
     navigation, so a game started from a challenge can open `LiveGame`
     from any screen).
+  - `ServerMaintenanceContext.tsx` - wraps `useServerMaintenance`,
+    mounted in `HomeStack` so it's heard from launch; `useServerMaintenanceStartsAt`
+    is null outside it, so screens render alone in tests.
   - `ThemeContext.tsx` - `ThemeProvider`, mounted at the root of
     `App.tsx`, wrapping `useAppearanceSettings`: the theme in use - dark
     while the device is (`app.json`'s `userInterfaceStyle` is `automatic`),
@@ -702,7 +710,10 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `LiveGameSkeleton`, `GameBoardArea` (the board between its two player
   bars, 24pt from each, with more of the room left over below them than
   above - clear of the toolbar - and laid out the same seeking, loading and playing,
-  so the board never jumps), `PlayerBarsFrame` (a game's two
+  so the board never jumps), `MaintenanceBanner` (the server's
+  maintenance, and when it begins: a red band over the game's header -
+  filling it, so the board never moves - while seeking and while a live
+  game is on; its ✕ puts it away for a minute), `PlayerBarsFrame` (a game's two
   `PlayerBar`s in `GameBoardArea`, with whatever board the screen draws
   between them, the side at the bottom facing it), `GameScreenHeader`
   (`GameHeader` with the menu every game has - share it, bookmark it),

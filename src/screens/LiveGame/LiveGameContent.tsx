@@ -22,6 +22,8 @@ import ChatSheet from '../../components/ChatSheet';
 import DrawOfferPrompt from '../../components/DrawOfferPrompt';
 import GameOverCard from '../../components/GameOverCard';
 import GameOverOverlay from '../../components/GameOverOverlay';
+import MaintenanceBanner from '../../components/MaintenanceBanner';
+import { useServerMaintenanceStartsAt } from '../../context/ServerMaintenanceContext';
 import { useGameScreenGestureLock } from '../../hooks/useGameScreenGestureLock';
 import { useGameClock } from '../../hooks/useGameClock';
 import { useFirstMoveCountdown } from '../../hooks/useFirstMoveCountdown';
@@ -162,6 +164,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
     abort,
   } = useOnlineChessGameContext();
   const PIECE_WIDTH = width / NUMBER_OF_ROWS;
+  const maintenanceStartsAt = useServerMaintenanceStartsAt();
   const { orientation, flip } = useBoardOrientation(myColor);
   const moveNavigation = useMoveNavigation(moves);
   // The live board sounds the game's own moves; this, stepping through them.
@@ -273,13 +276,18 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
 
   return (
     <View style={styles.screen}>
-      <GameScreenHeader
-        gameId={snapshot.id}
-        timeControl={timeControl}
-        rated={snapshot.rated}
-        onBack={isGameOver ? leaveGame : undefined}
-        onMessage={onError}
-      />
+      <View>
+        <GameScreenHeader
+          gameId={snapshot.id}
+          timeControl={timeControl}
+          rated={snapshot.rated}
+          onBack={isGameOver ? leaveGame : undefined}
+          onMessage={onError}
+        />
+        {/* Over the header, while the game's on: once it's over, starting
+            another is what maintenance holds up, and the server says so. */}
+        {!isGameOver && <MaintenanceBanner startsAt={maintenanceStartsAt} />}
+      </View>
 
       <MoveList
         moves={moves}

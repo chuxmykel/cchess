@@ -5,7 +5,12 @@ import type { LichessRating, LichessSpeed } from '../constants/explorer';
 import type { PositionEval } from '../domain/review/types';
 import { GameType } from '../domain/types';
 import { SERVER_URL } from './env';
-import type { ColorChoice, GameSnapshot, RatingRange } from './socketEvents';
+import type {
+  ColorChoice,
+  GameSnapshot,
+  MaintenanceStatus,
+  RatingRange,
+} from './socketEvents';
 
 export class ApiError extends Error {
   status: number;
@@ -397,6 +402,11 @@ export type StoredGameReview = {
 };
 
 /** A game's review, or null when nobody has reviewed it yet. */
+/** Maintenance announced on the server, if any - no sign-in needed. */
+export async function getMaintenance(): Promise<MaintenanceStatus> {
+  return (await apiClient.get<MaintenanceStatus>('/maintenance')).data;
+}
+
 export async function getGameReview(
   gameId: string,
   accessToken: string,
