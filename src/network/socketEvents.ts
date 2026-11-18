@@ -231,6 +231,12 @@ export interface ClientToServerEvents {
   ping: (clientTimeMs: number, ack: () => void) => void;
 }
 
+/** Maintenance on the server, set to begin at `startsAt` (ISO 8601). No
+ * new live game starts from its announcement, and once it's begun and the
+ * live games in progress finish, the server restarts. Null with none
+ * announced. */
+export type MaintenanceStatus = { startsAt: string | null };
+
 export interface ServerToClientEvents {
   'game:created': (payload: GameSnapshot) => void;
   'game:state': (payload: GameSnapshot) => void;
@@ -260,6 +266,9 @@ export interface ServerToClientEvents {
   'dm:message': (payload: DirectMessage) => void;
   /** `userId` has read your messages with them, up to `readAt`. */
   'dm:read': (payload: { userId: string; readAt: string }) => void;
+  /** Maintenance announced or ended - `GET /maintenance`'s answer, pushed
+   * to everyone. */
+  'server:maintenance': (payload: MaintenanceStatus) => void;
   /** `userId` is typing a message to you. */
   'dm:typing': (payload: { userId: string }) => void;
 }

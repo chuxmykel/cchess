@@ -1,0 +1,62 @@
+appId: ${APP_ID}
+tags:
+  - demo
+---
+# README gallery stills, signed in as e2e_main: Home, the daily games
+# list, conditional moves on the daily game against bot_2 (written, not
+# saved), and the blitz rating stats.
+- runFlow: ../common/sign-in.yaml
+- extendedWaitUntil:
+    visible:
+      id: "daily-games-section-see-all"
+    timeout: 15000
+- extendedWaitUntil:
+    visible:
+      id: "game-row-.*"
+    timeout: 15000
+- runFlow: common/pause.yaml
+- takeScreenshot: home
+- tapOn:
+    id: "daily-games-section-see-all"
+- assertVisible:
+    id: "daily-games-list"
+- runFlow: common/pause.yaml
+- takeScreenshot: daily-games
+- runFlow: ../common/header-back.yaml
+- tapOn:
+    id: "daily-game-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+    text: ".*bot_2.*"
+- tapOn:
+    id: "game-menu-button"
+- tapOn:
+    id: "conditional-moves-action"
+- assertVisible:
+    id: "conditional-moves"
+- tapOn: { id: "square-d7" }
+- tapOn: { id: "square-d5" }
+- tapOn: { id: "square-c2" }
+- tapOn: { id: "square-c4" }
+- tapOn: { id: "square-e7" }
+- tapOn: { id: "square-e6" }
+- tapOn: { id: "square-b1" }
+- tapOn: { id: "square-c3" }
+- assertVisible:
+    id: "conditional-line-0"
+- runFlow: common/pause.yaml
+- takeScreenshot: conditional-moves
+- runFlow: ../common/header-back.yaml
+- tapOn:
+    id: "game-header-back"
+- tapOn:
+    id: "menu-tab"
+    retryTapIfNoChange: true
+- tapOn:
+    id: "menu-profile"
+- tapOn:
+    id: "rating-blitz"
+- assertVisible:
+    id: "rating-chart"
+- tapOn:
+    id: "tab-all"
+- runFlow: common/pause.yaml
+- takeScreenshot: rating-stats

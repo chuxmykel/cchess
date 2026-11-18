@@ -15,6 +15,7 @@ import { timeControlOf } from '../../constants/timeControls';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { waitForSheetToClose } from '../../testUtils/modal';
 import { boardTester } from '../../components/Board/boardTester';
+import { useServerMaintenanceStartsAt } from '../../context/ServerMaintenanceContext';
 
 jest.mock('../../components/ConnectionStrengthIndicator', () =>
   jest.requireActual('../../testUtils/ConnectionStrengthIndicatorStub'),
@@ -40,6 +41,10 @@ jest.mock('../../hooks/usePopoverMenu', () =>
   jest.requireActual('../../testUtils/popoverMenuStartingOpen'),
 );
 
+jest.mock('../../context/ServerMaintenanceContext', () => ({
+  useServerMaintenanceStartsAt: jest.fn(() => null),
+}));
+
 const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
 const AFTER_E5 = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2';
 
@@ -53,6 +58,7 @@ describe('LiveGameContent', () => {
   afterEach(() => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
+    jest.mocked(useServerMaintenanceStartsAt).mockReturnValue(null);
   });
 
   async function renderContent(
@@ -548,6 +554,29 @@ describe('LiveGameContent', () => {
       expect(board.pieceOn('e4')).toBe('wp');
       expect(board.pieceOn('e5')).toBe('bp');
     });
+  });
+
+  it('tells the players of maintenance while the game is on, not once it is over', async () => {
+    jest
+      .mocked(useServerMaintenanceStartsAt)
+      .mockReturnValue(new Date(Date.now() + 5 * 60_000));
+    const { screen, snapshot, trigger } = await renderContent('w');
+    expect(screen.getByTestId('maintenance-banner')).toBeOnTheScreen();
+
+    await act(() => {
+      trigger('game:over', {
+        ...snapshot,
+        status: 'completed',
+        result: 'black',
+        resultReason: GAME_RESULT_REASON.RESIGNATION,
+      });
+    });
+    expect(screen.queryByTestId('maintenance-banner')).toBeNull();
+  });
+
+  it('shows no maintenance banner with none scheduled', async () => {
+    const { screen } = await renderContent('w');
+    expect(screen.queryByTestId('maintenance-banner')).toBeNull();
   });
 
   it('still flips once the game is over, from a menu that no longer offers abort or resign', async () => {

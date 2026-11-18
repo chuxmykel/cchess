@@ -1,0 +1,28 @@
+appId: ${APP_ID}
+tags:
+  - demo
+---
+# README gallery stills, as a guest: the position editor, and Appearance
+# switched to light mode with the Wood board.
+- runFlow: ../common/launch-fresh.yaml
+- tapOn:
+    id: "menu-tab"
+    retryTapIfNoChange: true
+- tapOn:
+    id: "analysis-set-up"
+    retryTapIfNoChange: true
+- assertVisible:
+    id: "set-up-position"
+- runFlow: common/pause.yaml
+- takeScreenshot: position-editor
+- runFlow: ../common/header-back.yaml
+- tapOn:
+    id: "menu-settings"
+- tapOn:
+    id: "appearance-row"
+- tapOn:
+    id: "color-scheme-light"
+- tapOn:
+    id: "board-theme-lichess.org"
+- runFlow: common/pause.yaml
+- takeScreenshot: appearance

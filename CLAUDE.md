@@ -28,6 +28,7 @@ npm test -- -t "name of test or describe" # filter by test name
 npm run test:e2e:ios     # Maestro e2e suite on the iOS Simulator, against a seeded backend (see .maestro/README.md)
 npm run test:e2e:android # ...and on the Android emulator
 scripts/e2e/run.sh --platform android .maestro/tap-to-move.yaml  # a single flow, while iterating
+scripts/demo/record.sh   # the README's demo GIFs and screenshots, recorded afresh (iOS Simulator)
 
 npm run lint             # eslint . (flat config: eslint-config-expo + prettier)
 npm run lint:fix
@@ -370,7 +371,12 @@ lib/chessboard/  the board, written as a package of its own: outside the
     `clocksAtPly` gives each side's clock at any position), and
     `useFollowPlayer` (a player's next game as it starts, from
     `user:follow` - so the viewer, opened from a Watch button, moves on with
-    that player).
+    that player), and `useServerMaintenance` (when the server's announced
+    maintenance begins - it starts no new live game from the announcement
+    until it ends, and restarts once it's begun and the live games in
+    progress are over: `GET /maintenance` on launch and on every
+    reconnect, since a restart forgets it, then its `server:maintenance`
+    pushes).
   - Analysis: `useAnalysisTree` (the tree and the position looked at in
     it - Forward follows the line you came along, so back and forward
     again returns through a variation, not the main line; promote and
@@ -496,6 +502,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
   - `SocialContext.tsx` - wraps `useSocial`, mounted in `HomeStack` (inside
     navigation, so a game started from a challenge can open `LiveGame`
     from any screen).
+  - `ServerMaintenanceContext.tsx` - wraps `useServerMaintenance`,
+    mounted in `HomeStack` so it's heard from launch; `useServerMaintenanceStartsAt`
+    is null outside it, so screens render alone in tests.
   - `ThemeContext.tsx` - `ThemeProvider`, mounted at the root of
     `App.tsx`, wrapping `useAppearanceSettings`: the theme in use - dark
     while the device is (`app.json`'s `userInterfaceStyle` is `automatic`),
@@ -701,7 +710,10 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `LiveGameSkeleton`, `GameBoardArea` (the board between its two player
   bars, 24pt from each, with more of the room left over below them than
   above - clear of the toolbar - and laid out the same seeking, loading and playing,
-  so the board never jumps), `PlayerBarsFrame` (a game's two
+  so the board never jumps), `MaintenanceBanner` (the server's
+  maintenance, and when it begins: a red band over the game's header -
+  filling it, so the board never moves - while seeking and while a live
+  game is on; its ✕ puts it away for a minute), `PlayerBarsFrame` (a game's two
   `PlayerBar`s in `GameBoardArea`, with whatever board the screen draws
   between them, the side at the bottom facing it), `GameScreenHeader`
   (`GameHeader` with the menu every game has - share it, bookmark it),
@@ -850,12 +862,12 @@ reviewActions.ts`: Best where another move was better, out of the book;
   white's or black's - and the strength: fast, standard or deep,
   `constants/review.ts`), also in Settings. Accuracy shows in Recent Games
   and game history (`GameRow`) once a game's been reviewed. See
-  cchess-be's README, "Game review", for why the engine runs on the
+  cchess-be's `docs/features.md`, "Game review", for why the engine runs on the
   device.
 
 - **Daily games** - chess.com's: 1, 2, 3, 5, 7 or 14 days a move, a game
   type and rating category of their own (`daily`), played alongside live
-  games and each other (see cchess-be's README, "Daily games"). A daily
+  games and each other (see cchess-be's `docs/features.md`, "Daily games"). A daily
   time control is its days in `initialSeconds`, no increment
   (`constants/timeControls.ts`' `DAILY_DAYS`, `isDailyTimeControl`,
   `daysPerMove`) - New Game's panel and the challenge sheet offer them,
@@ -946,8 +958,8 @@ reviewActions.ts`: Best where another move was better, out of the book;
       instead (the answer's `source`).
 
     The database is lichess's Masters or Lichess, kept and rate-limited by
-    the server, or a player's games here (see cchess-be's README, "Opening
-    explorer"). It's chosen in `ExplorerSettingsSheet`, from the toolbar's
+    the server, or a player's games here (see cchess-be's `docs/features.md`,
+    "Opening explorer"). It's chosen in `ExplorerSettingsSheet`, from the toolbar's
     database button, captioned with it (`ToolbarButton`'s `caption`):
     - Lichess's time controls and rating bands, as chips;
     - the player, you or anyone searched for (`useUserSearch`), and the

@@ -1,0 +1,63 @@
+appId: ${APP_ID}
+tags:
+  - demo
+---
+# README demo: a game review - e2e_main's seeded blitz game with its
+# queen blunder (see ../game-review.yaml). Analysed once first, unrecorded
+# (the engine's download and the analysis take a minute), then opened
+# again - the server keeps the review, so it shows at once - and recorded
+# to review.mp4: the summary, Next to the blunder, Show, Best.
+- runFlow: ../common/sign-in.yaml
+- extendedWaitUntil:
+    visible:
+      id: "game-row-.*"
+    timeout: 20000
+- tapOn:
+    id: "game-row-.*"
+    index: 0
+- tapOn:
+    id: "review-button"
+- extendedWaitUntil:
+    visible:
+      id: "game-review-summary"
+    timeout: 180000
+- runFlow: ../common/header-back.yaml
+- tapOn:
+    id: "review-button"
+- extendedWaitUntil:
+    visible:
+      id: "game-review-summary"
+    timeout: 30000
+- takeScreenshot: review-summary
+- startRecording: review
+- runFlow:
+    file: common/pause.yaml
+    env:
+      MS: 2500
+- tapOn:
+    id: "review-start"
+- runFlow: common/pause.yaml
+- tapOn:
+    id: "review-next"
+- extendedWaitUntil:
+    visible:
+      id: "review-next"
+      text: "Next"
+    timeout: 20000
+- runFlow:
+    file: common/pause.yaml
+    env:
+      MS: 3000
+- tapOn:
+    id: "review-show"
+- runFlow:
+    file: common/pause.yaml
+    env:
+      MS: 4000
+- tapOn:
+    id: "review-best"
+- runFlow:
+    file: common/pause.yaml
+    env:
+      MS: 3000
+- stopRecording

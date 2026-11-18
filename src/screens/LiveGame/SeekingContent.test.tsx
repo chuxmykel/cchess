@@ -4,10 +4,15 @@ import SeekingContent from './SeekingContent';
 import { DEFAULT_TIME_CONTROL } from '../../constants/timeControls';
 import { Seek } from '../../constants/seek';
 import { withSafeArea } from '../../testUtils/safeArea';
+import { useServerMaintenanceStartsAt } from '../../context/ServerMaintenanceContext';
 
 jest.mock('../../components/ConnectionStrengthIndicator', () =>
   jest.requireActual('../../testUtils/ConnectionStrengthIndicatorStub'),
 );
+
+jest.mock('../../context/ServerMaintenanceContext', () => ({
+  useServerMaintenanceStartsAt: jest.fn(() => null),
+}));
 
 const SEEK: Seek = {
   timeControl: DEFAULT_TIME_CONTROL,
@@ -16,6 +21,10 @@ const SEEK: Seek = {
 };
 
 describe('SeekingContent', () => {
+  afterEach(() => {
+    jest.mocked(useServerMaintenanceStartsAt).mockReturnValue(null);
+  });
+
   function renderContent({
     isConnecting = false,
     isRated = false,
@@ -43,6 +52,29 @@ describe('SeekingContent', () => {
     expect(screen.getByText('Waiting for opponent to join…')).toBeTruthy();
     expect(screen.getAllByTestId('chessboard-row')).toHaveLength(8);
     expect(screen.queryByTestId(/^piece-/)).toBeNull();
+  });
+
+  it('tells a player seeking of maintenance scheduled', async () => {
+    const screen = await renderContent();
+    expect(screen.queryByTestId('maintenance-banner')).toBeNull();
+
+    jest
+      .mocked(useServerMaintenanceStartsAt)
+      .mockReturnValue(new Date(Date.now() + 5 * 60_000));
+    await screen.rerender(
+      withSafeArea(
+        <SeekingContent
+          width={400}
+          seek={SEEK}
+          isRated={false}
+          myRating={null}
+          lobbyStats={null}
+          isConnecting={false}
+          onCancel={jest.fn()}
+        />,
+      ),
+    );
+    expect(screen.getByTestId('maintenance-banner')).toBeOnTheScreen();
   });
 
   it('shows the time control in the header and on the card', async () => {

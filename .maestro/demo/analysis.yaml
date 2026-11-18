@@ -1,0 +1,44 @@
+appId: ${APP_ID}
+tags:
+  - demo
+---
+# README demo: the analysis board - the engine's lines, arrows and eval
+# bar following an Italian, then a variation (3. Bb5, the Ruy Lopez)
+# branching off it. The engine downloads first, unrecorded; then recorded
+# to analysis.mp4.
+- runFlow: ../common/launch-fresh.yaml
+- tapOn:
+    id: "menu-tab"
+    retryTapIfNoChange: true
+- tapOn:
+    id: "analysis-new"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible:
+      id: "engine-line-0"
+    timeout: 180000
+- startRecording: analysis
+- runFlow: common/pause.yaml
+- tapOn: { id: "square-e2" }
+- tapOn: { id: "square-e4" }
+- tapOn: { id: "square-e7" }
+- tapOn: { id: "square-e5" }
+- tapOn: { id: "square-g1" }
+- tapOn: { id: "square-f3" }
+- tapOn: { id: "square-b8" }
+- tapOn: { id: "square-c6" }
+- tapOn: { id: "square-f1" }
+- tapOn: { id: "square-c4" }
+- runFlow:
+    file: common/pause.yaml
+    env:
+      MS: 2500
+- tapOn:
+    id: "previous-move-button"
+- tapOn: { id: "square-f1" }
+- tapOn: { id: "square-b5" }
+- runFlow:
+    file: common/pause.yaml
+    env:
+      MS: 3000
+- stopRecording

@@ -228,6 +228,16 @@ scripts/e2e/run.sh --platform android .maestro/screens-tour.yaml
 
 The screenshots land in `.e2e-logs/maestro/`.
 
+## The README's demo
+
+`demo/` holds the flows that record the README's GIFs and screenshots
+(Maestro's `startRecording` and `takeScreenshot`), pausing where there's
+something to see - not tests, and left out of runs, which take only the
+flows directly under `.maestro/`. `scripts/demo/record.sh` runs them on the
+iOS Simulator, in dark mode with a clean status bar, and writes
+`docs/media/` (`scripts/demo/to-gif.sh` turns a recording into a GIF).
+Their drags are the same iPhone 18 Pro points as the suite's.
+
 ## In CI
 
 `.github/workflows/e2e.yml` runs every flow on both platforms once a PR

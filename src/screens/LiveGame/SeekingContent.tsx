@@ -6,6 +6,8 @@ import GameBoardArea, { PlayerBarSpace } from '../../components/GameBoardArea';
 import GameHeader from '../../components/GameHeader';
 import { MOVE_LIST_HEIGHT } from '../../components/MoveList';
 import SeekCard from '../../components/SeekCard';
+import MaintenanceBanner from '../../components/MaintenanceBanner';
+import { useServerMaintenanceStartsAt } from '../../context/ServerMaintenanceContext';
 import Icon from '../../components/Icon';
 import { Seek } from '../../constants/seek';
 import { LobbyStats } from '../../network/socketEvents';
@@ -32,9 +34,13 @@ const SeekingContent: React.FC<SeekingContentProps> = ({
   onCancel,
 }) => {
   const styles = useStyles();
+  const maintenanceStartsAt = useServerMaintenanceStartsAt();
   return (
     <View style={styles.screen} testID="seeking-content">
-      <GameHeader timeControl={seek.timeControl} rated={isRated} />
+      <View>
+        <GameHeader timeControl={seek.timeControl} rated={isRated} />
+        <MaintenanceBanner startsAt={maintenanceStartsAt} />
+      </View>
       <View style={styles.moveListSpace} />
 
       <GameBoardArea>
