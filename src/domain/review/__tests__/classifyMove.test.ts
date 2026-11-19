@@ -39,8 +39,26 @@ describe('classifyMove', () => {
     expect(classOf({ winAfter })).toBe(expected);
   });
 
-  it('calls the only good move great', () => {
+  it('calls the only move that holds the game great', () => {
+    // Level after it; the next best loses.
     expect(classOf({ isBest: true, winSecond: 30 })).toBe('great');
+  });
+
+  it('calls the only move that wins great', () => {
+    expect(
+      classOf({ isBest: true, winBefore: 80, winAfter: 80, winSecond: 55 }),
+    ).toBe('great');
+  });
+
+  it("doesn't call a move great when the next best stands as well", () => {
+    // Winning either way, if by less.
+    expect(
+      classOf({ isBest: true, winBefore: 97, winAfter: 97, winSecond: 75 }),
+    ).toBe('best');
+    // Lost either way.
+    expect(
+      classOf({ isBest: true, winBefore: 30, winAfter: 30, winSecond: 5 }),
+    ).toBe('best');
   });
 
   it("doesn't call an obvious recapture great", () => {

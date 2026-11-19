@@ -14,6 +14,10 @@ export const CLASS_THRESHOLDS = {
 // The only good move: the next best keeps this much less.
 export const ONLY_MOVE_GAP = 15;
 
+// Where a side stands by its winning chances: losing under the first,
+// winning from the second, level between.
+export const STANDING = { losing: 35, winning: 65 } as const;
+
 // Winning chances barely move once a game is all but decided, so a piece
 // thrown away there would read as a good move: a move giving up this much
 // material over best play - and this much of the score - is a mistake
@@ -34,7 +38,7 @@ export type ClassifyInput = {
   winSecond: number | null;
   // The opponent's last move: how much it gave away.
   opponentLoss: number | null;
-  // A piece given up, that the opponent can take for less than it's worth.
+  // A piece given up for good, or offered and turned down (sacrificeOf).
   isSacrifice: boolean;
   // Taking back on the square the opponent just took on - the obvious move.
   isRecapture: boolean;
@@ -62,6 +66,12 @@ function atLeast(moveClass: MoveClass, floor: MoveClass): MoveClass {
   return index < 0 || index >= floorIndex ? moveClass : floor;
 }
 
+// Losing, level or winning, as 0, 1 or 2.
+function standing(win: number): number {
+  if (win < STANDING.losing) return 0;
+  return win < STANDING.winning ? 1 : 2;
+}
+
 export function classifyMove(input: ClassifyInput): MoveClass {
   const moveClass = byWinChances(input);
   if (moveClass === 'book' || input.isBest || input.scoreLoss === null) {
@@ -86,16 +96,23 @@ function byWinChances(input: ClassifyInput): MoveClass {
   const loss = Math.max(0, input.winBefore - input.winAfter);
   if (input.isBook) return 'book';
   if (input.isBest || loss < 0.5) {
-    const onlyMove =
+    const onlyGap =
       input.winSecond !== null &&
       input.winBefore - input.winSecond >= ONLY_MOVE_GAP &&
       input.winAfter >= 30;
-    if (onlyMove && input.isSacrifice && input.winBefore < 95) {
+    if (onlyGap && input.isSacrifice && input.winBefore < 95) {
       return 'brilliant';
     }
     if (input.isSacrifice && input.winAfter >= 50 && input.winBefore < 90) {
       return 'brilliant';
     }
+    // Great: the only good move, and one that changes how the game stands -
+    // level where the next best loses, winning where it's level - as
+    // chess.com describes it. Not an obvious recapture.
+    const onlyMove =
+      input.winSecond !== null &&
+      input.winAfter - input.winSecond >= ONLY_MOVE_GAP &&
+      standing(input.winAfter) > standing(input.winSecond);
     if (onlyMove && !input.isRecapture) return 'great';
     return 'best';
   }
