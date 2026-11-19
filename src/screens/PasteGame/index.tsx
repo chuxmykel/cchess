@@ -38,6 +38,7 @@ const PasteGame: React.FC<PasteGameProps> = ({ navigation }) => {
         kind: 'import',
         startFen: result.startFen,
         uciMoves: result.uciMoves,
+        ...(result.game && { game: result.game }),
       },
     });
   }
