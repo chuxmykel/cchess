@@ -6,6 +6,7 @@ import { Seek } from '../../constants/seek';
 import { GameType } from '../../domain/types';
 import { AnalysisSource } from '../../hooks/useAnalysisSource';
 import { ExplorerLine } from '../../hooks/useExplorerLine';
+import type { ImportedReview } from '../../hooks/useGameReview';
 
 export type ConversationPartner = {
   userId: string;
@@ -30,8 +31,9 @@ export type HomeStackParamList = {
   ConditionalMoves: { gameId: string };
   /** Your own notes on a game. */
   GameNotes: { gameId: string };
-  /** A finished game's review: its key moments, stepped through. */
-  GameReview: { gameId: string };
+  /** A finished game's review: its key moments, stepped through - a game
+   * played here, or one brought in (a PGN pasted). */
+  GameReview: { gameId: string } | { imported: ImportedReview };
   /** watchedUserId: the player whose game this is being watched for -
    * shown at the bottom, and followed into their next game. */
   GameViewer: { gameId: string; watchedUserId?: string };

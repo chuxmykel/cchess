@@ -51,6 +51,16 @@ const AnalysisBoard: React.FC<AnalysisBoardProps> = ({ route, navigation }) => {
   const [editingFen, setEditingFen] = useState<string | null>(null);
   const { state, reload } = useAnalysisSource(session.source);
   const isSettingUp = session.source.kind === 'setup';
+  // A game brought in with its moves - a PGN pasted - can be reviewed.
+  const { source } = session;
+  const reviewable =
+    source.kind === 'import' && source.game && source.uciMoves.length > 0
+      ? {
+          startFen: source.startFen,
+          uciMoves: source.uciMoves,
+          game: source.game,
+        }
+      : null;
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -123,6 +133,11 @@ const AnalysisBoard: React.FC<AnalysisBoardProps> = ({ route, navigation }) => {
         explorerLine={isFocused ? route.params.explorerLine : undefined}
         onExplorerLineTaken={() =>
           navigation.setParams({ explorerLine: undefined })
+        }
+        onReview={
+          reviewable
+            ? () => navigation.navigate('GameReview', { imported: reviewable })
+            : undefined
         }
       />
       <Modal

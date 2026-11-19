@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -13,7 +14,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { Color, DEFAULT_POSITION, Square } from 'chess.js';
+import { Color } from 'chess.js';
 
 import { ReviewBoard } from '../../components/Board';
 import Button from '../../components/Button';
@@ -26,18 +27,23 @@ import { useReviewSettingsContext } from '../../context/ReviewSettingsContext';
 import { colorPlayedBy } from '../../domain/players';
 import { ANALYSING_WORDS, seedOf } from '../../domain/review/phrases';
 import { useMoveNavigationSounds } from '../../hooks/useGameSounds';
+import type { AnalysisSource } from '../../hooks/useAnalysisSource';
 import {
   GameReviewState,
+  ImportedReview,
+  importedReviewSeed,
+  ReviewedGame,
+  ReviewPosition,
   ReviewUnavailableReason,
   useGameReview,
+  useImportedGameReview,
 } from '../../hooks/useGameReview';
-import type { GameSnapshot } from '../../network/socketEvents';
 import { HomeStackScreenProps } from '../HomeStack/types';
 import { plainHeaderRight } from '../plainHeaderOptions';
 import { makeStyles } from '../../theme';
 import GameReviewContent from './GameReviewContent';
 
-const NO_MOVES: GameSnapshot['moves'] = [];
+const NO_POSITIONS: ReviewPosition[] = [];
 
 const UNAVAILABLE: Record<ReviewUnavailableReason, string> = {
   'in-play':
@@ -52,12 +58,12 @@ const UNAVAILABLE: Record<ReviewUnavailableReason, string> = {
 // white's.
 function reviewedSide(
   reviewAs: ReviewAs,
-  snapshot: GameSnapshot,
+  game: ReviewedGame,
   userId: string | null,
 ): Color {
   if (reviewAs === 'white') return 'w';
   if (reviewAs === 'black') return 'b';
-  return (userId && colorPlayedBy(snapshot, userId)) || 'w';
+  return (userId && colorPlayedBy(game, userId)) || 'w';
 }
 
 function progressLabel(
@@ -75,24 +81,102 @@ function progressLabel(
   }
 }
 
+type GameReviewProps = HomeStackScreenProps<'GameReview'>;
+
 // A finished game's review: worked out on the device the first time - the
 // game played through on the board as it's analysed - or fetched, when
 // someone has already; then stepped through. Its analysis button opens the analysis
-// board at the move shown, and its ⚙ the review's settings.
-const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
+// board at the move shown, and its ⚙ the review's settings. The game's one
+// played here, or one brought in - a PGN pasted - reviewed afresh each time.
+const GameReview: React.FC<GameReviewProps> = ({ navigation, route }) =>
+  'imported' in route.params ? (
+    <ImportedGameReview
+      navigation={navigation}
+      imported={route.params.imported}
+    />
+  ) : (
+    <PlayedGameReview navigation={navigation} gameId={route.params.gameId} />
+  );
+
+export default GameReview;
+
+type Navigation = GameReviewProps['navigation'];
+
+function PlayedGameReview({
   navigation,
-  route,
-}) => {
+  gameId,
+}: {
+  navigation: Navigation;
+  gameId: string;
+}) {
+  const { settings } = useReviewSettingsContext();
+  const state = useGameReview(gameId, settings.strength);
+  const analysisAt = useCallback(
+    (ply?: number): AnalysisSource => ({
+      kind: 'game',
+      gameId,
+      ...(ply !== undefined && { ply }),
+    }),
+    [gameId],
+  );
+  return (
+    <GameReviewView
+      navigation={navigation}
+      state={state}
+      seed={gameId}
+      analysisAt={analysisAt}
+    />
+  );
+}
+
+function ImportedGameReview({
+  navigation,
+  imported,
+}: {
+  navigation: Navigation;
+  imported: ImportedReview;
+}) {
+  const { settings } = useReviewSettingsContext();
+  const state = useImportedGameReview(imported, settings.strength);
+  const analysisAt = useCallback(
+    (ply?: number): AnalysisSource => ({
+      kind: 'import',
+      ...imported,
+      ...(ply !== undefined && { ply }),
+    }),
+    [imported],
+  );
+  return (
+    <GameReviewView
+      navigation={navigation}
+      state={state}
+      seed={importedReviewSeed(imported)}
+      analysisAt={analysisAt}
+    />
+  );
+}
+
+function GameReviewView({
+  navigation,
+  state,
+  seed,
+  analysisAt,
+}: {
+  navigation: Navigation;
+  state: GameReviewState;
+  // What the facts shown while it's analysed are picked by.
+  seed: string;
+  // The analysis board's source at a move - the game's end, left out.
+  analysisAt: (ply?: number) => AnalysisSource;
+}) {
   const styles = useStyles();
-  const { gameId } = route.params;
   const { width } = useWindowDimensions();
   const session = useAuthSession();
   const userId = session.isReady ? session.user.id : null;
   const { settings } = useReviewSettingsContext();
-  const state = useGameReview(gameId, settings.strength);
   // A chess fact to read while the game's analysed, the next every few
   // seconds - the first picked by the game.
-  const [factIndex, setFactIndex] = useState(() => seedOf(gameId));
+  const [factIndex, setFactIndex] = useState(() => seedOf(seed));
   const analysing = state.status === 'analysing';
   useEffect(() => {
     if (!analysing) return;
@@ -105,7 +189,12 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
 
   // The game played through while it's analysed, as far into it as the
   // progress bar is: half way at 50%, its last move at 100%.
-  const moves = state.status === 'analysing' ? state.snapshot.moves : NO_MOVES;
+  const positions =
+    state.status === 'analysing' ? state.positions : NO_POSITIONS;
+  const moves = useMemo(
+    () => positions.slice(1).map((position) => position.move!),
+    [positions],
+  );
   const played =
     state.status === 'analysing'
       ? Math.round(state.progress * moves.length)
@@ -131,11 +220,7 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
           <Pressable
             onPress={() =>
               navigation.navigate('AnalysisBoard', {
-                source: {
-                  kind: 'game',
-                  gameId,
-                  ...(shownPly.current !== null && { ply: shownPly.current }),
-                },
+                source: analysisAt(shownPly.current ?? undefined),
               })
             }
             hitSlop={8}
@@ -157,7 +242,7 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
         </View>,
       ),
     });
-  }, [navigation, gameId, styles]);
+  }, [navigation, analysisAt, styles]);
 
   if (state.status === 'loading') {
     return (
@@ -184,7 +269,7 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
     );
   }
 
-  const side = reviewedSide(settings.reviewAs, state.snapshot, userId);
+  const side = reviewedSide(settings.reviewAs, state.game, userId);
   if (state.status === 'analysing') {
     return (
       <ScrollView
@@ -199,15 +284,8 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
           />
         </View>
         <ReviewBoard
-          fen={played > 0 ? moves[played - 1].fenAfter : DEFAULT_POSITION}
-          lastMove={
-            played > 0
-              ? {
-                  from: moves[played - 1].from as Square,
-                  to: moves[played - 1].to as Square,
-                }
-              : null
-          }
+          fen={positions[played].fen}
+          lastMove={positions[played].move}
           width={width}
           orientation={side}
         />
@@ -226,23 +304,19 @@ const GameReview: React.FC<HomeStackScreenProps<'GameReview'>> = ({
 
   return (
     <GameReviewContent
-      snapshot={state.snapshot}
+      game={state.game}
       review={state.review}
       side={side}
-      viewerColor={userId ? colorPlayedBy(state.snapshot, userId) : null}
+      viewerColor={userId ? colorPlayedBy(state.game, userId) : null}
       settings={settings}
       width={width}
       onShownPly={rememberShownPly}
       onAnalyse={(ply) =>
-        navigation.navigate('AnalysisBoard', {
-          source: { kind: 'game', gameId, ply },
-        })
+        navigation.navigate('AnalysisBoard', { source: analysisAt(ply) })
       }
     />
   );
-};
-
-export default GameReview;
+}
 
 const useStyles = makeStyles((t) => ({
   headerButtons: {

@@ -1,0 +1,43 @@
+# A pasted PGN's review, from its analysis board's toolbar - where Flip
+# board was, now in the menu: analysed on the device (the engine downloaded
+# first, a fresh launch having cleared it), its players named from the
+# PGN's tags. It never checks what the engine said, which varies.
+appId: ${APP_ID}
+tags:
+  - engine
+---
+- runFlow: common/launch-fresh.yaml
+- tapOn:
+    id: "menu-tab"
+    retryTapIfNoChange: true
+- tapOn:
+    id: "analysis-paste"
+    retryTapIfNoChange: true
+- tapOn:
+    id: "paste-game-input"
+- inputText: '[White "Ann"] [Black "Bo"] 1. e4 e5 2. Ba6 bxa6 0-1'
+- runFlow:
+    file: common/typed.yaml
+    env:
+      FIELD: "paste-game-input"
+      TEXT: ".*bxa6 0-1"
+- runFlow: common/dismiss-keyboard.yaml
+- tapOn:
+    id: "paste-game-analyse"
+- assertVisible:
+    id: "analysis-board"
+- assertNotVisible:
+    id: "flip-board-button"
+- tapOn:
+    id: "toolbar-review-button"
+# The engine's download and the analysis: about a minute at most.
+- extendedWaitUntil:
+    visible:
+      id: "game-review-summary"
+    timeout: 180000
+- assertVisible: "Ann"
+- assertVisible: "Bo"
+- tapOn:
+    id: "review-start"
+- assertVisible:
+    id: "review-bubble-title"

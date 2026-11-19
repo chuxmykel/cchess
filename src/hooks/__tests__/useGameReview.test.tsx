@@ -1,4 +1,5 @@
 import { act, renderHook } from '@testing-library/react-native';
+import { DEFAULT_POSITION } from 'chess.js';
 
 import { EngineContext, EngineStatus } from '../../context/EngineContext';
 import type { PositionEval } from '../../domain/review/types';
@@ -13,7 +14,12 @@ import { useAuthSession } from '../../context/AuthSessionContext';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { makeFakeEngine } from '../../testUtils/fakeEngine';
 import { makeFinishedGame } from '../../testUtils/gameSnapshot';
-import { useGameReview } from '../useGameReview';
+import {
+  GameReviewState,
+  ImportedReview,
+  useGameReview,
+  useImportedGameReview,
+} from '../useGameReview';
 
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
@@ -55,11 +61,7 @@ const line = (cp: number, pv: string[]): Partial<EngineUpdate> => ({
   lines: [{ multipv: 1, score: { kind: 'cp', cp }, pv }],
 });
 
-async function renderReview(
-  status?: EngineStatus,
-  gameId = 'game-1',
-  strength: 'fast' | 'standard' = 'standard',
-) {
+async function renderWithEngine<T>(useReview: () => T, status?: EngineStatus) {
   const main = makeFakeEngine();
   const threat = makeFakeEngine();
   const acquire = jest.fn(() => () => {});
@@ -68,12 +70,20 @@ async function renderReview(
     acquire,
     retry: jest.fn(),
   };
-  const hook = await renderHook(() => useGameReview(gameId, strength), {
+  const hook = await renderHook(useReview, {
     wrapper: ({ children }: { children: React.ReactNode }) => (
       <EngineContext.Provider value={value}>{children}</EngineContext.Provider>
     ),
   });
   return { ...hook, main, threat, acquire };
+}
+
+function renderReview(
+  status?: EngineStatus,
+  gameId = 'game-1',
+  strength: 'fast' | 'standard' = 'standard',
+) {
+  return renderWithEngine(() => useGameReview(gameId, strength), status);
 }
 
 // Lets the runner's awaited searches move on.
@@ -215,5 +225,115 @@ describe('useGameReview', () => {
       (r) => r.fen,
     );
     expect(asked).toEqual([GAME.moves[0].fenAfter, GAME.moves[1].fenAfter]);
+  });
+});
+
+describe('useImportedGameReview', () => {
+  const IMPORTED: ImportedReview = {
+    startFen: DEFAULT_POSITION,
+    uciMoves: ['e2e4', 'e7e5', 'f1a6', 'b7a6'],
+    game: {
+      white: { name: 'Ann', rating: 1500 },
+      black: { name: null, rating: null },
+      result: 'black',
+    },
+  };
+  const ANSWERS: [number, string[]][] = [
+    [20, ['e2e4']],
+    [30, ['e7e5']],
+    [30, ['g1f3']],
+    [-300, ['b7a6']],
+    [-300, ['g1f3']],
+  ];
+
+  beforeEach(() => {
+    (useAuthSession as jest.Mock).mockReturnValue(makeAuthSession());
+  });
+  afterEach(() => jest.clearAllMocks());
+
+  it('analyses the game on the device, asking nothing of the server', async () => {
+    const { result, main, threat } = await renderWithEngine(() =>
+      useImportedGameReview(IMPORTED, 'standard'),
+    );
+    await flush();
+
+    expect(result.current).toMatchObject({
+      status: 'analysing',
+      progress: 0,
+      game: {
+        white: { displayName: 'Ann', rating: 1500 },
+        black: { displayName: 'Black', rating: null },
+        result: 'black',
+      },
+    });
+    if (result.current.status !== 'analysing') return;
+    expect(result.current.positions).toHaveLength(5);
+    expect(result.current.positions[3].move).toEqual({
+      from: 'f1',
+      to: 'a6',
+      san: 'Ba6',
+    });
+
+    for (let i = 0; i < ANSWERS.length; i++) {
+      const engine = i % 2 === 0 ? main : threat;
+      await act(async () => engine.report(line(...ANSWERS[i])));
+      await flush();
+    }
+
+    // Widened again: the check above narrowed it to analysing.
+    const done = result.current as GameReviewState;
+    expect(done.status).toBe('ready');
+    if (done.status !== 'ready') return;
+    expect(done.review.moves.map((m) => m.moveClass)).toContain('blunder');
+    expect(getGame).not.toHaveBeenCalled();
+    expect(getGameReview).not.toHaveBeenCalled();
+    expect(saveGameReview).not.toHaveBeenCalled();
+  });
+
+  it('reviews a game from a position set up, numbering on from it', async () => {
+    const fen = '4k3/8/8/8/8/8/4P3/4K3 b - - 0 12';
+    const { result, main, threat } = await renderWithEngine(() =>
+      useImportedGameReview(
+        { ...IMPORTED, startFen: fen, uciMoves: ['e8d7', 'e2e4'] },
+        'fast',
+      ),
+    );
+    await flush();
+    if (result.current.status !== 'analysing') throw new Error('not started');
+    expect(result.current.positions[0].fen).toBe(fen);
+    expect(main.requests[0].fen).toBe(fen);
+
+    const answers: [number, string[]][] = [
+      [300, ['e8d7']],
+      [300, ['e2e4']],
+      [300, ['d7e6']],
+    ];
+    for (let i = 0; i < answers.length; i++) {
+      const engine = i % 2 === 0 ? main : threat;
+      await act(async () => engine.report(line(...answers[i])));
+      await flush();
+    }
+
+    const done = result.current as GameReviewState;
+    expect(done.status).toBe('ready');
+    if (done.status !== 'ready') return;
+    expect(done.review.moves.map((m) => m.ply)).toEqual([24, 25]);
+  });
+
+  it('carries on from where it was left, coming back to it', async () => {
+    const imported = { ...IMPORTED, uciMoves: ['e2e4', 'e7e5', 'f1a6'] };
+    const first = await renderWithEngine(() =>
+      useImportedGameReview(imported, 'fast'),
+    );
+    await flush();
+    await act(async () => first.main.report(line(20, ['e2e4'])));
+    await flush();
+    await first.unmount();
+
+    const again = await renderWithEngine(() =>
+      useImportedGameReview(imported, 'fast'),
+    );
+    await flush();
+    expect(again.result.current).toMatchObject({ progress: 1 / 4 });
   });
 });

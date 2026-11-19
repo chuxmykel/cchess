@@ -31,6 +31,7 @@ import {
   useTakeExplorerLine,
 } from '../../hooks/useExplorerLine';
 import { analysisArrows } from '../../utils/analysisArrows';
+import { flipBoardAction } from '../gameMenuActions';
 import { makeStyles, useTheme } from '../../theme';
 
 interface AnalysisBoardContentProps {
@@ -46,6 +47,9 @@ interface AnalysisBoardContentProps {
   /** The line the explorer handed back, to go along. */
   explorerLine?: ExplorerLine;
   onExplorerLineTaken: () => void;
+  /** The game's review - for a game brought in to review, as a PGN
+   * pasted. Its button takes Flip board's place, which goes in the menu. */
+  onReview?: () => void;
 }
 
 // An analysis: a board either side can move on, the engine's view of the
@@ -61,6 +65,7 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
   onOpenExplorer,
   explorerLine,
   onExplorerLineTaken,
+  onReview,
 }) => {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -153,6 +158,7 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
       onPress: () => onEditPosition(fen),
       testID: 'edit-position-action',
     },
+    ...(onReview ? [flipBoardAction(flip)] : []),
     ...(sendToFriend.isAvailable
       ? [
           {
@@ -218,7 +224,8 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
               orientation,
             )
           }
-          onFlip={flip}
+          onFlip={onReview ? undefined : flip}
+          onReview={onReview}
           moveSteps={steps}
         />
       }

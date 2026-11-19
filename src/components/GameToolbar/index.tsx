@@ -39,6 +39,8 @@ interface GameToolbarProps {
   onOpenExplorer?: () => void;
   /** Leave out to hide the flip button. */
   onFlip?: () => void;
+  /** Leave out to hide the game review button. */
+  onReview?: () => void;
   moveSteps: MoveSteps;
 }
 
@@ -150,6 +152,7 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
   onAnalyse,
   onOpenExplorer,
   onFlip,
+  onReview,
   moveSteps,
 }) => {
   const styles = useStyles();
@@ -203,6 +206,14 @@ const GameToolbar: React.FC<GameToolbarProps> = ({
           label="Flip board"
           onPress={onFlip}
           testID="flip-board-button"
+        />
+      )}
+      {onReview && (
+        <ToolbarButton
+          icon="lightbulb-on-outline"
+          label="Game review"
+          onPress={onReview}
+          testID="toolbar-review-button"
         />
       )}
       <ToolbarButton
