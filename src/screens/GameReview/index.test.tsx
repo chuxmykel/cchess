@@ -1,12 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import * as Speech from 'expo-speech';
+import { DEFAULT_POSITION } from 'chess.js';
 
 import GameReview from '.';
 import { REVIEW_FACT_MS } from '../../constants/review';
 import { EngineContext, EngineStatus } from '../../context/EngineContext';
 import { ReviewSettingsProvider } from '../../context/ReviewSettingsContext';
 import type { PositionEval } from '../../domain/review/types';
+import type { ImportedReview } from '../../hooks/useGameReview';
+import { boardTester } from '../../components/Board/boardTester';
 import {
   getGame,
   getGameReview,
@@ -59,7 +62,12 @@ const STORED = {
 async function renderReview({
   status,
   voice = false,
-}: { status?: EngineStatus; voice?: boolean } = {}) {
+  params = { gameId: 'game-1' },
+}: {
+  status?: EngineStatus;
+  voice?: boolean;
+  params?: { gameId: string } | { imported: ImportedReview };
+} = {}) {
   await AsyncStorage.setItem(
     'cchess.reviewSettings',
     JSON.stringify({ voice }),
@@ -78,7 +86,7 @@ async function renderReview({
   };
   const props = {
     navigation,
-    route: { key: 'review', name: 'GameReview', params: { gameId: 'game-1' } },
+    route: { key: 'review', name: 'GameReview', params },
   } as unknown as React.ComponentProps<typeof GameReview>;
   const screen = await render(
     withSafeArea(
@@ -442,6 +450,74 @@ describe('GameReview', () => {
     // 2. Ba6, the third move.
     expect(navigation.navigate).toHaveBeenCalledWith('AnalysisBoard', {
       source: { kind: 'game', gameId: 'game-1', ply: 3 },
+    });
+  });
+
+  describe('of a game brought in', () => {
+    // The same game, pasted: 1. e4 e5 2. Ba6?? bxa6 0-1.
+    const IMPORTED: ImportedReview = {
+      startFen: DEFAULT_POSITION,
+      uciMoves: ['e2e4', 'e7e5', 'f1a6', 'b7a6'],
+      game: {
+        white: { name: 'Ann Smith', rating: 1500 },
+        black: { name: null, rating: null },
+        result: 'black',
+      },
+    };
+
+    async function analyseImported(imported = IMPORTED) {
+      const rendered = await renderReview({ params: { imported } });
+      for (let i = 0; i < EVALS.length; i++) {
+        const engine = i % 2 === 0 ? rendered.main : rendered.threat;
+        const { score, pv } = EVALS[i];
+        await act(async () =>
+          engine.report({
+            depth: 14,
+            done: true,
+            lines: [{ multipv: 1, score, pv }],
+          }),
+        );
+        await act(async () => {});
+      }
+      return rendered;
+    }
+
+    it("analyses it on the device, naming the players from the PGN's tags", async () => {
+      const { screen } = await analyseImported();
+
+      expect(screen.getByTestId('game-review-summary')).toBeTruthy();
+      expect(screen.getByTestId('review-summary')).toHaveTextContent(
+        /Ann Smith.*Black/,
+      );
+      expect(getGame).not.toHaveBeenCalled();
+      expect(getGameReview).not.toHaveBeenCalled();
+      expect(saveGameReview).not.toHaveBeenCalled();
+    });
+
+    it('tips over the king of the side its result says lost', async () => {
+      const { screen } = await analyseImported();
+      await fireEvent.press(screen.getByTestId('review-start'));
+      for (let i = 0; i < 4; i++) {
+        await fireEvent(screen.getByTestId('review-forward'), 'pressIn');
+      }
+      await settleAnimations();
+
+      expect(boardTester(screen, 'review').kingInDanger()).toEqual({
+        square: 'e1',
+        fallen: true,
+      });
+    });
+
+    it('opens the analysis board on the pasted game, at the move shown', async () => {
+      const { screen, navigation } = await analyseImported();
+      await toBlunder(screen);
+      const [options] = navigation.setOptions.mock.calls.at(-1);
+      const analyse = await render(headerRightOf(options));
+
+      await fireEvent.press(analyse.getByTestId('review-analyse-button'));
+      expect(navigation.navigate).toHaveBeenCalledWith('AnalysisBoard', {
+        source: { kind: 'import', ...IMPORTED, ply: 3 },
+      });
     });
   });
 });

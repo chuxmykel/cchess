@@ -24,11 +24,11 @@ import {
 import { useRetryJudge } from '../../hooks/useRetryJudge';
 import { useReviewStepper } from '../../hooks/useReviewStepper';
 import { useReviewVoice } from '../../hooks/useReviewVoice';
-import type { GameSnapshot } from '../../network/socketEvents';
+import type { ReviewedGame } from '../../hooks/useGameReview';
 import { makeStyles, useTheme } from '../../theme';
 
 interface GameReviewContentProps {
-  snapshot: GameSnapshot;
+  game: ReviewedGame;
   review: GameReview;
   // The side whose moves the review stops at, at the bottom of the board -
   // and the side the viewer played, null if they only watched.
@@ -58,17 +58,13 @@ const THEME_ICONS = {
 // What the review's intro is chosen by: how the game went for the side
 // reviewed - or that it was only watched - its opening, length and slips.
 function introContext(
-  snapshot: GameSnapshot,
+  game: ReviewedGame,
   review: GameReview,
   side: Color,
   viewerColor: Color | null,
 ): IntroContext {
   const winner =
-    snapshot.result === 'white'
-      ? 'w'
-      : snapshot.result === 'black'
-        ? 'b'
-        : null;
+    game.result === 'white' ? 'w' : game.result === 'black' ? 'b' : null;
   const mine = side === 'w' ? review.white : review.black;
   return {
     outcome:
@@ -79,9 +75,9 @@ function introContext(
           : winner === side
             ? 'win'
             : 'loss',
-    white: snapshot.white.displayName,
-    black: snapshot.black.displayName,
-    opponent: (side === 'w' ? snapshot.black : snapshot.white).displayName,
+    white: game.white.displayName,
+    black: game.black.displayName,
+    opponent: (side === 'w' ? game.black : game.white).displayName,
     opening: review.opening?.name ?? null,
     moves: Math.ceil(review.moves.length / 2),
     accuracy: mine.accuracy,
@@ -93,7 +89,7 @@ function introContext(
 // and classes of move - then its key moments one at a time, each with what
 // the review makes of it, read aloud; and to close, what to take from it.
 const GameReviewContent: React.FC<GameReviewContentProps> = ({
-  snapshot,
+  game,
   review,
   side,
   viewerColor,
@@ -120,10 +116,10 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
   const intro = useMemo(
     () =>
       introLine(
-        introContext(snapshot, review, side, viewerColor),
-        seedOf(snapshot.id),
+        introContext(game, review, side, viewerColor),
+        seedOf(game.seed),
       ),
-    [snapshot, review, side, viewerColor],
+    [game, review, side, viewerColor],
   );
 
   const view = reviewView({
@@ -190,7 +186,7 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
       ) as Record<number, MoveClass>,
     [review],
   );
-  const players = { white: snapshot.white, black: snapshot.black };
+  const players = { white: game.white, black: game.black };
   const atLastMove = shownIndex === review.moves.length - 1;
 
   if (stepper.phase === 'summary') {
@@ -265,7 +261,7 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
           onMove={stepper.tryMove}
           defeated={
             atLastMove && stepper.lineStep === null
-              ? defeatedColor(snapshot.result)
+              ? defeatedColor(game.result)
               : null
           }
         />

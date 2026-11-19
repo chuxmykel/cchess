@@ -159,7 +159,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
     - `pgnImport.ts` - `parseImport(text)`: a pasted FEN or PGN (from its
       `[FEN]` tag if it has one) as a start and UCI moves; the main line
       only, its comments taken out first - chess.js can't read two in a
-      row, as lichess writes them.
+      row, as lichess writes them - and for a PGN, its `game`
+      (`ImportedGame`): the players' names and Elo and the result, from
+      its tags.
     - `positionSetup.ts` - a position set up by hand: `setupToFen`/
       `setupFromFen`, `availableCastling` (king and rook on their
       squares), and `validateSetup` (one king a side, no pawns on the back
@@ -387,7 +389,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
     render as the tree, using the tree's `peek` at where a step goes - a
     render for the tree and then another for the board made every step lag), `useAnalysisSource` (what an
     analysis starts from - new, set up, a game fetched by id at a ply,
-    from your side, or moves brought in), `useEngineAnalysis` (an engine's
+    from your side, or moves brought in - at a ply, and with a pasted
+    PGN's `game`), `useEngineAnalysis` (an engine's
     best lines for a position, as SAN with formatted scores: waits 150ms on
     a position before searching, shows progress four times a second, and
     keeps the last position's lines, marked `stale`, until this one's
@@ -404,7 +407,11 @@ lib/chessboard/  the board, written as a package of its own: outside the
     server keeps, shown at once, or else the game analysed here
     (`runReview`, the engine claimed only then, through `EngineContext`'s
     `useEngineWhen`), its progress, and the review sent to the server;
-    paused in the background, picking up where it left off. `useReviewStepper` - the summary, then Next playing every move on the
+    paused in the background, picking up where it left off.
+    `useImportedGameReview(imported, strength)` - the same for a game
+    brought in (a pasted PGN), from its own start, analysed each time and
+    kept nowhere, its players made from the PGN's tags; both give a
+    `ReviewedGame` (seed, players, result) rather than a snapshot. `useReviewStepper` - the summary, then Next playing every move on the
     board, a move every 0.17s as chess.com's does, stopping at each key moment (tapped as they
     play, Skip, straight there) and then through the closing cards, which
     come after the last move; wherever ‹ ›, the move list or a scroll along
@@ -830,7 +837,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
 - **Game review** - the `GameReview` screen (from a finished game's
   result card - `GameOverCard`'s `onReview`, "Game review" - or ☰
   `reviewAction`, in `LiveGame`, `DailyGame` and `GameViewer`; not for an
-  aborted game): while it's analysed, the game played through on the
+  aborted game - or a pasted PGN's, from its analysis board's toolbar,
+  where `GameToolbar`'s `onReview` lightbulb takes Flip board's place and
+  Flip goes in ☰; route params `{ gameId }` or `{ imported }`): while it's analysed, the game played through on the
   board as far into it as the progress bar is (half way at 50%), a chess
   fact changing every 6s, and
   `ReviewProgress` (the engine's download, then the game); then `ReviewSummary` (a column under each player's avatar - accuracy, each

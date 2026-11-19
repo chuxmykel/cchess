@@ -53,6 +53,17 @@ describe('GameToolbar', () => {
     expect(props.moveSteps.forward).toHaveBeenCalledTimes(1);
   });
 
+  it('shows the game review button only when given one', async () => {
+    const without = await renderToolbar().screenPromise;
+    expect(without.queryByTestId('toolbar-review-button')).toBeNull();
+    await without.unmount();
+
+    const onReview = jest.fn();
+    const screen = await renderToolbar({ onReview }).screenPromise;
+    await fireEvent.press(screen.getByTestId('toolbar-review-button'));
+    expect(onReview).toHaveBeenCalledTimes(1);
+  });
+
   it.each([
     ['previous-move-button', 'back'],
     ['next-move-button', 'forward'],

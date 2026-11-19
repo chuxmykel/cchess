@@ -52,8 +52,10 @@ describe('AnalysisBoardContent', () => {
     status,
     settings,
     explorerLine,
+    onReview,
   }: {
     uciMoves?: string[];
+    onReview?: () => void;
     status?: EngineStatus;
     explorerLine?: ExplorerLine;
     // Saved before the board opens.
@@ -90,6 +92,7 @@ describe('AnalysisBoardContent', () => {
               onOpenExplorer={onOpenExplorer}
               explorerLine={explorerLine}
               onExplorerLineTaken={onExplorerLineTaken}
+              onReview={onReview}
             />
           </EngineContext.Provider>
         </AnalysisSettingsProvider>,
@@ -249,6 +252,28 @@ describe('AnalysisBoardContent', () => {
     );
 
     await fireEvent.press(screen.getByTestId('flip-board-button'));
+    expect(boardTester(screen).orientation()).toBe('b');
+  });
+
+  it('has no game review, and flips from its toolbar, without one to offer', async () => {
+    const { screen } = await renderAnalysis({ uciMoves: ['e2e4'] });
+
+    expect(screen.queryByTestId('toolbar-review-button')).toBeNull();
+    await fireEvent.press(screen.getByTestId('game-menu-button'));
+    expect(screen.queryByTestId('flip-board-action')).toBeNull();
+  });
+
+  it("offers the game's review in Flip board's place, flipping from its menu", async () => {
+    const onReview = jest.fn();
+    const { screen } = await renderAnalysis({ uciMoves: ['e2e4'], onReview });
+
+    expect(screen.queryByTestId('flip-board-button')).toBeNull();
+    await fireEvent.press(screen.getByTestId('toolbar-review-button'));
+    expect(onReview).toHaveBeenCalledTimes(1);
+
+    await fireEvent.press(screen.getByTestId('game-menu-button'));
+    await fireEvent.press(screen.getByTestId('flip-board-action'));
+    await settleAnimations();
     expect(boardTester(screen).orientation()).toBe('b');
   });
 

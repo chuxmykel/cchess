@@ -3,6 +3,7 @@ import { Color, DEFAULT_POSITION } from 'chess.js';
 
 import { useAuthSession } from '../context/AuthSessionContext';
 import { treeFromMoves, uciOf } from '../domain/analysisTree';
+import type { ImportedGame } from '../domain/pgnImport';
 import { colorPlayedBy } from '../domain/players';
 import { GameSnapshot, GameUserSummary } from '../network/socketEvents';
 import { getGame } from '../network/restClient';
@@ -11,12 +12,19 @@ import { AnalysisStart } from './useAnalysisTree';
 // What an analysis starts from: an empty board; a position being set up
 // (`fen` to start the editor from); a game played here, at `ply` moves in
 // (its end, left out); or moves and a position brought in - pasted, or
-// finished setting up.
+// finished setting up - at `ply` moves in, and the game a pasted PGN's tags
+// describe.
 export type AnalysisSource =
   | { kind: 'new' }
   | { kind: 'setup'; fen?: string }
   | { kind: 'game'; gameId: string; ply?: number }
-  | { kind: 'import'; startFen: string; uciMoves: string[] };
+  | {
+      kind: 'import';
+      startFen: string;
+      uciMoves: string[];
+      ply?: number;
+      game?: ImportedGame;
+    };
 
 export type AnalysisSourceState =
   | { status: 'loading' }
@@ -134,7 +142,11 @@ export function useAnalysisSource(
       return {
         state: {
           status: 'ready',
-          start: { startFen: source.startFen, uciMoves: source.uciMoves },
+          start: {
+            startFen: source.startFen,
+            uciMoves: source.uciMoves,
+            initialPly: source.ply,
+          },
           orientation: 'w',
         },
         reload,

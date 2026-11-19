@@ -15,7 +15,7 @@ import { dragPiece, touchPiece } from '../../testUtils/pieceGestures';
 // Drags run Gesture Handler's gestures through timed animations: tests that
 // drag need jest.useFakeTimers().
 
-export type BoardKind = 'game' | 'position' | 'setup' | 'empty';
+export type BoardKind = 'game' | 'position' | 'setup' | 'empty' | 'review';
 
 // Each kind of board by the testID the adapter gives it.
 const BOARD_TEST_IDS: Record<BoardKind, string> = {
@@ -23,6 +23,7 @@ const BOARD_TEST_IDS: Record<BoardKind, string> = {
   position: 'static-chessboard',
   setup: 'editor-board',
   empty: 'empty-chessboard',
+  review: 'review-board',
 };
 
 export type PieceCode = `${Color}${'p' | 'n' | 'b' | 'r' | 'q' | 'k'}`;

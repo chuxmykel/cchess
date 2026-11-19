@@ -55,6 +55,22 @@ describe('useAnalysisSource', () => {
     });
   });
 
+  it('starts what was brought in at the move asked for', async () => {
+    const { result } = await renderHook(() =>
+      useAnalysisSource({
+        kind: 'import',
+        startFen: DEFAULT_POSITION,
+        uciMoves: ['e2e4', 'e7e5'],
+        ply: 1,
+      }),
+    );
+
+    expect(result.current.state).toMatchObject({
+      status: 'ready',
+      start: { initialPly: 1 },
+    });
+  });
+
   it('refuses your own daily game still being played, unless asked to allow it', async () => {
     const snapshot = makeGameSnapshot({ gameType: 'daily', status: 'active' });
     jest.mocked(getGame).mockResolvedValue({

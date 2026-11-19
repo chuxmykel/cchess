@@ -1,4 +1,5 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
+import { DEFAULT_POSITION } from 'chess.js';
 
 import AnalysisBoard from '.';
 import { boardTester } from '../../components/Board/boardTester';
@@ -72,6 +73,42 @@ describe('AnalysisBoard', () => {
     expect(screen.queryByTestId('analysis-board')).toBeNull();
     await fireEvent.press(screen.getByText('Back'));
     expect(navigation.goBack).toHaveBeenCalled();
+  });
+
+  it('reviews a pasted PGN from its toolbar', async () => {
+    const game = {
+      white: { name: 'Ann', rating: null },
+      black: { name: 'Bo', rating: null },
+      result: 'white' as const,
+    };
+    const { screen, navigation } = await renderBoard({
+      kind: 'import',
+      startFen: DEFAULT_POSITION,
+      uciMoves: ['e2e4', 'e7e5'],
+      game,
+    });
+
+    await fireEvent.press(screen.getByTestId('toolbar-review-button'));
+    expect(navigation.navigate).toHaveBeenCalledWith('GameReview', {
+      imported: {
+        startFen: DEFAULT_POSITION,
+        uciMoves: ['e2e4', 'e7e5'],
+        game,
+      },
+    });
+  });
+
+  it.each<[string, AnalysisSource]>([
+    ['a new analysis', { kind: 'new' }],
+    [
+      'a FEN pasted',
+      { kind: 'import', startFen: DEFAULT_POSITION, uciMoves: [] },
+    ],
+  ])('has nothing to review for %s', async (_, source) => {
+    const { screen } = await renderBoard(source);
+
+    expect(screen.queryByTestId('toolbar-review-button')).toBeNull();
+    expect(screen.getByTestId('flip-board-button')).toBeTruthy();
   });
 
   it('sets up a position, then analyses it', async () => {
