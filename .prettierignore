@@ -26,3 +26,6 @@ src/domain/openings.json
 # reformat.
 *.yaml
 *.yml
+
+# The review harness's games, evals and downloaded engine
+.review-harness/
