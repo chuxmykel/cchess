@@ -118,13 +118,14 @@ function byWinChances(input: ClassifyInput): MoveClass {
   }
   if (loss < CLASS_THRESHOLDS.excellent) return 'excellent';
   if (loss < CLASS_THRESHOLDS.good) return 'good';
-  // The opponent gave something away, and the move let it go - not losing,
-  // but missing the chance.
+  // The opponent's slip left a winning position there for the taking, and
+  // the move let it go - not winning after it, but not losing either.
   if (
     input.opponentLoss !== null &&
     input.opponentLoss >= CLASS_THRESHOLDS.inaccuracy &&
     loss >= CLASS_THRESHOLDS.inaccuracy &&
-    input.winAfter >= 40
+    standing(input.winBefore) === 2 &&
+    standing(input.winAfter) === 1
   ) {
     return 'miss';
   }

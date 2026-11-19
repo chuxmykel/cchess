@@ -91,6 +91,19 @@ describe('classifyMove', () => {
     );
   });
 
+  it("doesn't call it a miss when the move still wins", () => {
+    // Winning by less, but winning.
+    expect(classOf({ opponentLoss: 25, winBefore: 95, winAfter: 78 })).toBe(
+      'mistake',
+    );
+  });
+
+  it("doesn't call it a miss when the slip left nothing winning", () => {
+    expect(classOf({ opponentLoss: 25, winBefore: 60, winAfter: 45 })).toBe(
+      'mistake',
+    );
+  });
+
   it('calls it a blunder still when the position is lost after', () => {
     expect(classOf({ opponentLoss: 25, winBefore: 80, winAfter: 20 })).toBe(
       'blunder',
