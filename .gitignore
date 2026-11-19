@@ -22,3 +22,6 @@ web-build/
 
 # The e2e suite's logs and reports (scripts/e2e/run.sh)
 .e2e-logs/
+
+# The review harness's games and engine evals (scripts/review-harness)
+.review-harness/
