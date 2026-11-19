@@ -2,11 +2,19 @@
 // - no engine needed - and compares it with what the game's own site said.
 //
 //   npx tsx scripts/review-harness/report.ts [--strength standard] \
-//     [--label baseline] [--source chesscom]
+//     [--label baseline] [--source chesscom] [--against <earlier label>]
 //
 // Prints a summary, and writes it with every brilliant, great and miss to
-// .review-harness/reports/<label>.json, to compare one run with the next.
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+// .review-harness/reports/<label>.json, to compare one run with the next -
+// and every move's class to <label>.classes.json, so --against can count
+// the moves whose class changed since that run, from what to what.
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import type { Color } from 'chess.js';
@@ -20,6 +28,7 @@ const { values } = parseArgs({
     strength: { type: 'string', default: 'standard' },
     label: { type: 'string', default: 'latest' },
     source: { type: 'string' },
+    against: { type: 'string' },
   },
 });
 
@@ -74,6 +83,8 @@ function main() {
   ) as Record<(typeof JUDGED)[number], Record<(typeof OURS)[number], number>>;
   let judgedGames = 0;
   let moves = 0;
+  // Each game's moves' classes, by game id.
+  const classes: Record<string, MoveClass[]> = {};
 
   for (const game of games) {
     const review = buildReview(
@@ -96,6 +107,7 @@ function main() {
     }
     const judgements = game.reference.judgements;
     if (judgements) judgedGames += 1;
+    classes[game.id] = review.moves.map((move) => move.moveClass);
     const seen = new Set<MoveClass>();
     review.moves.forEach((move, index) => {
       if (judgements) {
@@ -153,7 +165,40 @@ function main() {
     join(reports, `${values.label}.json`),
     JSON.stringify({ summary, standouts }, null, 2),
   );
+  writeFileSync(
+    join(reports, `${values.label}.classes.json`),
+    JSON.stringify(classes),
+  );
   console.log(JSON.stringify(summary, null, 2));
+  if (values.against) printChanges(classes, values.against);
+}
+
+// The moves whose class changed since an earlier run, counted by from and to.
+function printChanges(classes: Record<string, MoveClass[]>, against: string) {
+  const file = join(DATA_DIR, 'reports', `${against}.classes.json`);
+  if (!existsSync(file)) throw new Error(`No classes saved for ${against}`);
+  const earlier: Record<string, MoveClass[]> = JSON.parse(
+    readFileSync(file, 'utf8'),
+  );
+  const changes = new Map<string, number>();
+  let compared = 0;
+  for (const [id, now] of Object.entries(classes)) {
+    const then = earlier[id];
+    if (!then) continue;
+    now.forEach((moveClass, index) => {
+      compared += 1;
+      if (moveClass === then[index]) return;
+      const key = `${then[index]} -> ${moveClass}`;
+      changes.set(key, (changes.get(key) ?? 0) + 1);
+    });
+  }
+  const changed = [...changes.values()].reduce((a, b) => a + b, 0);
+  console.log(
+    `\n${changed} of ${compared} moves changed class since ${against}:`,
+  );
+  [...changes.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([key, n]) => console.log(`  ${key.padEnd(26)}${n}`));
 }
 
 main();
