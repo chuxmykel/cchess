@@ -29,6 +29,7 @@ npm run test:e2e:ios     # Maestro e2e suite on the iOS Simulator, against a see
 npm run test:e2e:android # ...and on the Android emulator
 scripts/e2e/run.sh --platform android .maestro/tap-to-move.yaml  # a single flow, while iterating
 scripts/demo/record.sh   # the README's demo GIFs and screenshots, recorded afresh (iOS Simulator)
+npx tsx scripts/review-harness/report.ts --label <name>  # game review's judgements against chess.com's and lichess's (see its README)
 
 npm run lint             # eslint . (flat config: eslint-config-expo + prettier)
 npm run lint:fix
@@ -181,13 +182,16 @@ lib/chessboard/  the board, written as a package of its own: outside the
     - `classifyMove.ts` - brilliant, great, best, excellent, good, book,
       inaccuracy, mistake, miss, blunder: by the winning chances the move
       gave away (2/5/10/20 points), the book (`bookOpeningAt`, every move
-      before it in it too), a sacrifice that's best (brilliant - a piece
-      left where it's taken for less, never counting a king, which can't
-      take a defended one), the only good move, not a recapture (great),
-      and the opponent's slip let go (miss). Winning chances barely move
-      once a game's decided, so a move giving away material over best play
-      (`materialGivenUp`) and enough of the score is at least an inaccuracy
-      (a pawn) or a mistake (a piece) whatever the chances.
+      before it in it too), and where a side stands - losing, level or
+      winning (under 35, from 65). Brilliant is a sacrifice that's best (a
+      piece left where it's taken for less, never counting a king, which
+      can't take a defended one). Great is the only good move, changing where the side stands (level where the
+      next best loses, winning where it's level), not a recapture; miss,
+      the winning position the opponent's slip left let go, to level.
+      Winning chances barely move once a game's lost, so a move giving
+      away a piece over best play (`materialGivenUp`) and enough of the
+      score is a mistake whatever the chances - unless the mover is still
+      completely winning.
     - `motifs.ts` - what a move did, with chess.js along the engine's
       lines: material over the line, mates allowed or missed, a piece left
       hanging, a fork, pin or skewer, a piece trapped; for a good one,
