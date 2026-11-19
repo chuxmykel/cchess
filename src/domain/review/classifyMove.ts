@@ -18,12 +18,15 @@ export const ONLY_MOVE_GAP = 15;
 // winning from the second, level between.
 export const STANDING = { losing: 35, winning: 65 } as const;
 
-// Winning chances barely move once a game is all but decided, so a piece
-// thrown away there would read as a good move: a move giving up this much
-// material over best play - and this much of the score - is a mistake
-// whatever the chances, and one giving up a pawn at least an inaccuracy.
+// Completely winning: from here, what's given away hardly matters.
+export const COMPLETELY_WINNING = 80;
+
+// Winning chances barely move once a game is all but lost, so a piece thrown
+// away there would read as a good move: a move giving up this much material
+// over best play - and this much of the score - is a mistake whatever the
+// chances. Not while the mover is still completely winning after it, where
+// chess.com and lichess call it fine too.
 export const MATERIAL_MISTAKE = { pawns: 3, centipawns: 80 } as const;
-export const MATERIAL_INACCURACY = { pawns: 1, centipawns: 50 } as const;
 
 export type ClassifyInput = {
   // The engine's own first choice.
@@ -79,15 +82,10 @@ export function classifyMove(input: ClassifyInput): MoveClass {
   }
   if (
     input.materialLoss >= MATERIAL_MISTAKE.pawns &&
-    input.scoreLoss >= MATERIAL_MISTAKE.centipawns
+    input.scoreLoss >= MATERIAL_MISTAKE.centipawns &&
+    input.winAfter < COMPLETELY_WINNING
   ) {
     return atLeast(moveClass, 'mistake');
-  }
-  if (
-    input.materialLoss >= MATERIAL_INACCURACY.pawns &&
-    input.scoreLoss >= MATERIAL_INACCURACY.centipawns
-  ) {
-    return atLeast(moveClass, 'inaccuracy');
   }
   return moveClass;
 }

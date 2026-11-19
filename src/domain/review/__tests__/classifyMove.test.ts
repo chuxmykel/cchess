@@ -117,10 +117,17 @@ describe('classifyMove', () => {
     ).toBe('mistake');
   });
 
-  it('calls a pawn given away at least an inaccuracy', () => {
+  it('judges a pawn given away by the chances alone', () => {
     expect(
       classOf({ winBefore: 10, winAfter: 8, materialLoss: 1, scoreLoss: 60 }),
-    ).toBe('inaccuracy');
+    ).toBe('good');
+  });
+
+  it('judges a piece given away by the chances while still completely winning', () => {
+    // Up a queen: a knight less still wins.
+    expect(
+      classOf({ winBefore: 97, winAfter: 94, materialLoss: 3, scoreLoss: 300 }),
+    ).toBe('good');
   });
 
   it('leaves a worse class as it is, and the best move alone', () => {
