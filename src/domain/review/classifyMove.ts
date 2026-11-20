@@ -18,6 +18,29 @@ export const ONLY_MOVE_GAP = 15;
 // winning from the second, level between.
 export const STANDING = { losing: 35, winning: 65 } as const;
 
+// Great is more generous to newer players, as chess.com's is: from a rating
+// of 2000 it's judged as above; from 1000 down, the only good move needs a
+// gap of 10, not 15. Between the two, in a straight line. A player with no
+// rating - a guest, a pasted game without Elo - is taken as a new one is
+// rated: 1500, the server's starting rating (Glicko-2, lichess's scale).
+export const GENEROUS = {
+  until: 2000,
+  fully: 1000,
+  onlyMoveGap: 10,
+} as const;
+export const UNRATED = 1500;
+
+// How generous, from 0 (from 2000) to 1 (1000 and below).
+function generosity(rating: number | null): number {
+  const at = rating ?? UNRATED;
+  const share = (GENEROUS.until - at) / (GENEROUS.until - GENEROUS.fully);
+  return Math.min(1, Math.max(0, share));
+}
+
+// A bar moved from its value for strong players toward its generous one.
+const toward = (strong: number, generous: number, share: number) =>
+  strong + (generous - strong) * share;
+
 // Completely winning: from here, what's given away hardly matters.
 export const COMPLETELY_WINNING = 80;
 
@@ -39,6 +62,8 @@ export type ClassifyInput = {
   winBefore: number;
   winAfter: number;
   winSecond: number | null;
+  // The mover's rating going into the game, or null when unrated.
+  rating: number | null;
   // The opponent's last move: how much it gave away.
   opponentLoss: number | null;
   // A piece given up for good, or offered and turned down (sacrificeOf).
@@ -109,7 +134,8 @@ function byWinChances(input: ClassifyInput): MoveClass {
     // chess.com describes it. Not an obvious recapture.
     const onlyMove =
       input.winSecond !== null &&
-      input.winAfter - input.winSecond >= ONLY_MOVE_GAP &&
+      input.winAfter - input.winSecond >=
+        toward(ONLY_MOVE_GAP, GENEROUS.onlyMoveGap, generosity(input.rating)) &&
       standing(input.winAfter) > standing(input.winSecond);
     if (onlyMove && !input.isRecapture) return 'great';
     return 'best';

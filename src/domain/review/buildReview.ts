@@ -67,6 +67,7 @@ export function buildReview(
       winBefore,
       winAfter,
       winSecond: before.second ? winPercent(before.second, color) : null,
+      rating: ratings[color] ?? null,
       opponentLoss: previous ? previous.winLoss : null,
       isSacrifice: isSacrifice(move),
       isRecapture:

@@ -6,6 +6,7 @@ const base: ClassifyInput = {
   winBefore: 55,
   winAfter: 55,
   winSecond: 54,
+  rating: 2000,
   opponentLoss: 0,
   isSacrifice: false,
   isRecapture: false,
@@ -143,5 +144,22 @@ describe('classifyMove', () => {
     expect(
       classOf({ winBefore: 10, winAfter: 9, materialLoss: 3, scoreLoss: 30 }),
     ).toBe('excellent');
+  });
+
+  describe('for a newer player', () => {
+    it('calls a smaller gap the only good move', () => {
+      // Level after it, losing after the next best, by 12 points.
+      const move = { isBest: true, winAfter: 45, winSecond: 33 };
+      expect(classOf({ ...move, rating: 2000 })).toBe('best');
+      expect(classOf({ ...move, rating: 1000 })).toBe('great');
+      expect(classOf({ ...move, rating: 600 })).toBe('great');
+    });
+
+    it('takes a player with no rating as rated 1500', () => {
+      // Halfway: a gap of 12.5 counts, 12 doesn't.
+      const move = { isBest: true, winAfter: 45 };
+      expect(classOf({ ...move, rating: null, winSecond: 32.5 })).toBe('great');
+      expect(classOf({ ...move, rating: null, winSecond: 33 })).toBe('best');
+    });
   });
 });
