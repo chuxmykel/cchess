@@ -185,9 +185,13 @@ lib/chessboard/  the board, written as a package of its own: outside the
       before it in it too), and where a side stands - losing, level or
       winning (under 35, from 65). Brilliant is a sacrifice that's best (a
       piece left where it's taken for less, never counting a king, which
-      can't take a defended one). Great is the only good move, changing where the side stands (level where the
-      next best loses, winning where it's level), not a recapture; miss,
+      can't take a defended one). Great is the only good move, changing
+      where the side stands (level where the next best loses, winning
+      where it's level), not a recapture; miss,
       the winning position the opponent's slip left let go, to level.
+      Great is more generous below a rating of 2000 (fully from 1000; an
+      unrated player taken as 1500), as chess.com's is; a slip is the same
+      at every rating.
       Winning chances barely move once a game's lost, so a move giving
       away a piece over best play (`materialGivenUp`) and enough of the
       score is a mistake whatever the chances - unless the mover is still
