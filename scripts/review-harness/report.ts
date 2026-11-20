@@ -73,6 +73,9 @@ function main() {
     number
   >;
   const gamesWith: Partial<Record<MoveClass, number>> = {};
+  // The rarer classes by the mover's rating band: moves, and each class's.
+  const RARE = ['brilliant', 'great', 'miss', 'blunder'] as const;
+  const byBand: Record<string, { moves: number } & Record<string, number>> = {};
   const standouts: object[] = [];
   // Lichess's judgement of a move against ours: rows lichess's (none, or
   // its mark), columns ours.
@@ -119,6 +122,12 @@ function main() {
       }
       moves += 1;
       counts[move.moveClass] += 1;
+      const rating = game.ratings[move.color];
+      if (rating !== null) {
+        const band = (byBand[bandOf(rating)] ??= { moves: 0 } as never);
+        band.moves += 1;
+        band[move.moveClass] = (band[move.moveClass] ?? 0) + 1;
+      }
       seen.add(move.moveClass);
       if (['brilliant', 'great', 'miss'].includes(move.moveClass)) {
         standouts.push({
@@ -134,7 +143,7 @@ function main() {
     seen.forEach((c) => (gamesWith[c] = (gamesWith[c] ?? 0) + 1));
   }
 
-  const byBand = Object.fromEntries(
+  const accuracyByBand = Object.fromEntries(
     BANDS.map((low) => [
       `${low}+`,
       stats(accuracy.filter((p) => bandOf(p.rating) === `${low}+`)),
@@ -144,12 +153,28 @@ function main() {
     label: values.label,
     games: games.length,
     moves,
-    accuracy: { all: stats(accuracy), byBand },
+    accuracy: { all: stats(accuracy), byBand: accuracyByBand },
     ...(judgedGames > 0 && {
       lichessJudgements: { games: judgedGames, theirsByOurs: judged },
     }),
     perHundredMoves: Object.fromEntries(
       MOVE_CLASSES.map((c) => [c, round((counts[c] / moves) * 100, 2)]),
+    ),
+    perHundredMovesByBand: Object.fromEntries(
+      Object.entries(byBand)
+        .sort(([a], [b]) => parseInt(a) - parseInt(b))
+        .map(([band, tally]) => [
+          band,
+          {
+            moves: tally.moves,
+            ...Object.fromEntries(
+              RARE.map((c) => [
+                c,
+                round(((tally[c] ?? 0) / tally.moves) * 100, 2),
+              ]),
+            ),
+          },
+        ]),
     ),
     shareOfGamesWith: Object.fromEntries(
       MOVE_CLASSES.map((c) => [
