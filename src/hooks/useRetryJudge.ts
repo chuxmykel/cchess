@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { EngineScore, finalScore } from '../domain/evalScore';
-import { CLASS_THRESHOLDS } from '../domain/review/classifyMove';
+import { CLASS_THRESHOLDS } from '../domain/review/thresholds';
 import type { ReviewedMove } from '../domain/review/types';
 import { winPercent } from '../domain/review/winChances';
 import { useEngineWhen } from '../context/EngineContext';

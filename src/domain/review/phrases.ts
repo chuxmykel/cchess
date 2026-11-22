@@ -1,4 +1,5 @@
 import { sanToSpeech, textToSpeech } from './spokenText';
+import { INTRO } from './thresholds';
 import type { MoveClass, MoveFact, ReviewComment } from './types';
 
 // Everything a review says, in one place - none of it is stored: it's made
@@ -384,11 +385,11 @@ export function introLine(context: IntroContext, seed: number): string {
   const options =
     context.outcome === null
       ? [...INTRO_WORDS.watched]
-      : context.slips === 0 && context.accuracy >= 85
+      : context.slips === 0 && context.accuracy >= INTRO.cleanAccuracy
         ? [...INTRO_WORDS.clean]
         : [...INTRO_WORDS[context.outcome], ...INTRO_WORDS.any];
-  if (context.moves <= 15) options.push(...INTRO_WORDS.short);
-  if (context.moves >= 60) options.push(...INTRO_WORDS.long);
+  if (context.moves <= INTRO.shortGame) options.push(...INTRO_WORDS.short);
+  if (context.moves >= INTRO.longGame) options.push(...INTRO_WORDS.long);
   if (context.opening) options.push(...INTRO_WORDS.opening);
   return options[seed % options.length]
     .replace('{opponent}', context.opponent)

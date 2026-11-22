@@ -17,7 +17,7 @@ import {
   ReviewedMove,
   SideReview,
 } from './types';
-import { winPercent } from './winChances';
+import { CAP_CP, winPercent } from './winChances';
 
 export type ReviewMoveInput = { uci: string };
 
@@ -152,8 +152,8 @@ function bestPieceOf(fen: string, uci: string | undefined): string | null {
 }
 
 // How much of the score a move gave away, in centipawns from the mover's
-// side - each score held to ±10 pawns, past which it's all the same; null
-// with a mate on either side.
+// side - each score held to the cap winning chances have, past which it's
+// all the same; null with a mate on either side.
 function centipawnLoss(
   before: EngineScore,
   after: EngineScore,
@@ -161,7 +161,7 @@ function centipawnLoss(
 ): number | null {
   if (before.kind !== 'cp' || after.kind !== 'cp') return null;
   const sign = color === 'w' ? 1 : -1;
-  const held = (cp: number) => Math.max(-1000, Math.min(1000, cp * sign));
+  const held = (cp: number) => Math.max(-CAP_CP, Math.min(CAP_CP, cp * sign));
   return Math.max(0, held(before.cp) - held(after.cp));
 }
 

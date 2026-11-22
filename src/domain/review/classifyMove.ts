@@ -1,36 +1,22 @@
+import {
+  BEST_WITHIN,
+  BRILLIANT,
+  CLASS_THRESHOLDS,
+  COMPLETELY_WINNING,
+  GENEROUS,
+  MATERIAL_MISTAKE,
+  ONLY_MOVE_GAP,
+  STANDING,
+  UNRATED,
+} from './thresholds';
 import type { MoveClass } from './types';
 
 // How a move's class is judged: by how much of the mover's winning chances
-// (0-100, see winChances) it gave away, as chess.com describes its own - 2,
-// 5, 10 and 20 points marking excellent, good, inaccuracy and mistake from
-// blunder.
-export const CLASS_THRESHOLDS = {
-  excellent: 2,
-  good: 5,
-  inaccuracy: 10,
-  mistake: 20,
-} as const;
+// (0-100, see winChances) it gave away, and where that leaves the mover -
+// every bar in thresholds.ts.
 
-// The only good move: the next best keeps this much less.
-export const ONLY_MOVE_GAP = 15;
-
-// Where a side stands by its winning chances: losing under the first,
-// winning from the second, level between.
-export const STANDING = { losing: 35, winning: 65 } as const;
-
-// Great is more generous to newer players, as chess.com's is: from a rating
-// of 2000 it's judged as above; from 1000 down, the only good move needs a
-// gap of 10, not 15. Between the two, in a straight line. A player with no
-// rating - a guest, a pasted game without Elo - is taken as a new one is
-// rated: 1500, the server's starting rating (Glicko-2, lichess's scale).
-export const GENEROUS = {
-  until: 2000,
-  fully: 1000,
-  onlyMoveGap: 10,
-} as const;
-export const UNRATED = 1500;
-
-// How generous, from 0 (from 2000) to 1 (1000 and below).
+// How generous, from 0 (rated GENEROUS.until and up) to 1 (GENEROUS.fully
+// and below).
 function generosity(rating: number | null): number {
   const at = rating ?? UNRATED;
   const share = (GENEROUS.until - at) / (GENEROUS.until - GENEROUS.fully);
@@ -40,16 +26,6 @@ function generosity(rating: number | null): number {
 // A bar moved from its value for strong players toward its generous one.
 const toward = (strong: number, generous: number, share: number) =>
   strong + (generous - strong) * share;
-
-// Completely winning: from here, what's given away hardly matters.
-export const COMPLETELY_WINNING = 80;
-
-// Winning chances barely move once a game is all but lost, so a piece thrown
-// away there would read as a good move: a move giving up this much material
-// over best play - and this much of the score - is a mistake whatever the
-// chances. Not while the mover is still completely winning after it, where
-// chess.com and lichess call it fine too.
-export const MATERIAL_MISTAKE = { pawns: 3, centipawns: 80 } as const;
 
 export type ClassifyInput = {
   // The engine's own first choice.
@@ -66,7 +42,7 @@ export type ClassifyInput = {
   rating: number | null;
   // The opponent's last move: how much it gave away.
   opponentLoss: number | null;
-  // A piece given up for good, or offered and turned down (sacrificeOf).
+  // A piece given up, that the opponent can take for less than it's worth.
   isSacrifice: boolean;
   // Taking back on the square the opponent just took on - the obvious move.
   isRecapture: boolean;
@@ -94,11 +70,17 @@ function atLeast(moveClass: MoveClass, floor: MoveClass): MoveClass {
   return index < 0 || index >= floorIndex ? moveClass : floor;
 }
 
-// Losing, level or winning, as 0, 1 or 2.
-function standing(win: number): number {
-  if (win < STANDING.losing) return 0;
-  return win < STANDING.winning ? 1 : 2;
+// Where a side stands, worst first.
+const STANDINGS = ['losing', 'level', 'winning'] as const;
+type Standing = (typeof STANDINGS)[number];
+
+function standing(win: number): Standing {
+  if (win < STANDING.losing) return 'losing';
+  return win < STANDING.winning ? 'level' : 'winning';
 }
+
+const standsBetter = (a: Standing, b: Standing) =>
+  STANDINGS.indexOf(a) > STANDINGS.indexOf(b);
 
 export function classifyMove(input: ClassifyInput): MoveClass {
   const moveClass = byWinChances(input);
@@ -118,15 +100,23 @@ export function classifyMove(input: ClassifyInput): MoveClass {
 function byWinChances(input: ClassifyInput): MoveClass {
   const loss = Math.max(0, input.winBefore - input.winAfter);
   if (input.isBook) return 'book';
-  if (input.isBest || loss < 0.5) {
+  if (input.isBest || loss < BEST_WITHIN) {
     const onlyGap =
       input.winSecond !== null &&
       input.winBefore - input.winSecond >= ONLY_MOVE_GAP &&
-      input.winAfter >= 30;
-    if (onlyGap && input.isSacrifice && input.winBefore < 95) {
+      input.winAfter >= BRILLIANT.onlyMoveAtLeast;
+    if (
+      onlyGap &&
+      input.isSacrifice &&
+      input.winBefore < BRILLIANT.onlyMoveUnlessBefore
+    ) {
       return 'brilliant';
     }
-    if (input.isSacrifice && input.winAfter >= 50 && input.winBefore < 90) {
+    if (
+      input.isSacrifice &&
+      input.winAfter >= BRILLIANT.atLeast &&
+      input.winBefore < BRILLIANT.unlessBefore
+    ) {
       return 'brilliant';
     }
     // Great: the only good move, and one that changes how the game stands -
@@ -136,7 +126,7 @@ function byWinChances(input: ClassifyInput): MoveClass {
       input.winSecond !== null &&
       input.winAfter - input.winSecond >=
         toward(ONLY_MOVE_GAP, GENEROUS.onlyMoveGap, generosity(input.rating)) &&
-      standing(input.winAfter) > standing(input.winSecond);
+      standsBetter(standing(input.winAfter), standing(input.winSecond));
     if (onlyMove && !input.isRecapture) return 'great';
     return 'best';
   }
@@ -148,8 +138,8 @@ function byWinChances(input: ClassifyInput): MoveClass {
     input.opponentLoss !== null &&
     input.opponentLoss >= CLASS_THRESHOLDS.inaccuracy &&
     loss >= CLASS_THRESHOLDS.inaccuracy &&
-    standing(input.winBefore) === 2 &&
-    standing(input.winAfter) === 1
+    standing(input.winBefore) === 'winning' &&
+    standing(input.winAfter) === 'level'
   ) {
     return 'miss';
   }

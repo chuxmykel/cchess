@@ -2,7 +2,8 @@ import { Chess, Color, Move, PieceSymbol, Square } from 'chess.js';
 
 import type { EngineScore } from '../evalScore';
 import { otherColor } from '../players';
-import type { MoveClass, MoveFact, PieceName } from './types';
+import { FACTS_BY_PLY, LINE_PLIES, MATERIAL } from './thresholds';
+import { isSlip, type MoveClass, type MoveFact, type PieceName } from './types';
 
 // What a review can say about a move, worked out from the position and the
 // engine's lines with chess.js: material won or lost along a line, mates,
@@ -18,6 +19,10 @@ export const PIECE_VALUE: Record<PieceSymbol, number> = {
   q: 9,
   k: 0,
 };
+
+// The king, lined up on a slider's line: worth more than anything behind it,
+// for a pin or a skewer.
+const KING_IN_LINE = 100;
 
 const PIECE_NAME: Record<Exclude<PieceSymbol, 'k'>, PieceName> = {
   p: 'pawn',
@@ -62,10 +67,6 @@ export function playLine(fen: string, line: string[], max = line.length) {
   }
   return moves;
 }
-
-// How deep into a line material is counted - far enough for an exchange to
-// finish, not so far the engine's guesses count.
-const LINE_PLIES = 10;
 
 type LineMaterial = {
   // What the side gains over the line, in pawns: less than 0 for a loss.
@@ -168,6 +169,10 @@ const DIRECTIONS: Record<'b' | 'r' | 'q', [number, number][]> = {
   ],
 };
 
+// A square's file and rank, 0 to 7 from a1.
+const fileOf = (square: Square) => square.charCodeAt(0) - 'a'.charCodeAt(0);
+const rankOf = (square: Square) => Number(square[1]) - 1;
+
 function squareAt(file: number, rank: number): Square | null {
   if (file < 0 || file > 7 || rank < 0 || rank > 7) return null;
   return `${'abcdefgh'[file]}${rank + 1}` as Square;
@@ -182,8 +187,8 @@ export function pinnedOrSkewered(
 ): PieceSymbol | null {
   const slider = chess.get(from);
   if (!slider || !(slider.type in DIRECTIONS)) return null;
-  const file = from.charCodeAt(0) - 97;
-  const rank = Number(from[1]) - 1;
+  const file = fileOf(from);
+  const rank = rankOf(from);
   for (const [df, dr] of DIRECTIONS[slider.type as 'b' | 'r' | 'q']) {
     const hit: { type: PieceSymbol; color: Color }[] = [];
     for (let step = 1; hit.length < 2; step++) {
@@ -196,15 +201,17 @@ export function pinnedOrSkewered(
     }
     if (hit.length < 2) continue;
     const [front, back] = hit;
-    const frontValue = front.type === 'k' ? 100 : PIECE_VALUE[front.type];
-    const backValue = back.type === 'k' ? 100 : PIECE_VALUE[back.type];
+    const valueOf = (type: PieceSymbol) =>
+      type === 'k' ? KING_IN_LINE : PIECE_VALUE[type];
+    const frontValue = valueOf(front.type);
+    const backValue = valueOf(back.type);
     if (backValue > frontValue && frontValue > PIECE_VALUE[slider.type]) {
       return front.type;
     }
     if (
       (front.type === 'k' || front.type === 'q') &&
       frontValue > backValue &&
-      backValue >= 3
+      backValue >= MATERIAL.piece
     ) {
       return back.type;
     }
@@ -243,13 +250,13 @@ function isTrapped(chess: Chess, square: Square): boolean {
 function isPassed(chess: Chess, square: Square): boolean {
   const pawn = chess.get(square);
   if (!pawn || pawn.type !== 'p') return false;
-  const file = square.charCodeAt(0) - 97;
-  const rank = Number(square[1]) - 1;
+  const file = fileOf(square);
   const ahead = pawn.color === 'w' ? 1 : -1;
   for (let f = file - 1; f <= file + 1; f++) {
-    for (let r = rank + ahead; r >= 0 && r <= 7; r += ahead) {
+    for (let r = rankOf(square) + ahead; ; r += ahead) {
       const at = squareAt(f, r);
-      const other = at && chess.get(at);
+      if (!at) break;
+      const other = chess.get(at);
       if (other && other.type === 'p' && other.color !== pawn.color) {
         return false;
       }
@@ -258,7 +265,6 @@ function isPassed(chess: Chess, square: Square): boolean {
   return true;
 }
 
-const BAD: MoveClass[] = ['inaccuracy', 'mistake', 'miss', 'blunder'];
 const CENTRE: Square[] = ['d4', 'e4', 'd5', 'e5'];
 
 export type MoveContext = {
@@ -281,7 +287,7 @@ export function moveFacts(context: MoveContext): MoveFact[] {
   if (context.moveClass === 'book') {
     return [{ kind: 'book', opening: context.opening }];
   }
-  return BAD.includes(context.moveClass)
+  return isSlip(context.moveClass)
     ? badMoveFacts(context)
     : goodMoveFacts(context);
 }
@@ -309,7 +315,11 @@ function badMoveFacts(context: MoveContext): MoveFact[] {
   const reply = lineMaterial(fenAfter, context.replyLine, color);
   const bestLine = lineMaterial(fenBefore, context.bestLine, color);
   const playedGain = gainOf(move, reply);
-  if (reply.lost && playedGain < 0 && bestLine.gain - playedGain >= 2) {
+  if (
+    reply.lost &&
+    playedGain < 0 &&
+    bestLine.gain - playedGain >= MATERIAL.worthSaying
+  ) {
     const lost = pieceName(reply.lost.type);
     const replyMoves = playLine(fenAfter, context.replyLine, LINE_PLIES);
     const afterReply = replyMoves[0] ? new Chess(replyMoves[0].after) : null;
@@ -319,7 +329,8 @@ function badMoveFacts(context: MoveContext): MoveFact[] {
     const takenAtOnce = replyMoves[0]?.captured;
     const hung =
       takenAtOnce &&
-      PIECE_VALUE[takenAtOnce] >= (reply.lost.ply === 0 ? 1 : 3) &&
+      PIECE_VALUE[takenAtOnce] >=
+        (reply.lost.ply === 0 ? PIECE_VALUE.p : MATERIAL.piece) &&
       !(
         move.captured && PIECE_VALUE[move.captured] >= PIECE_VALUE[takenAtOnce]
       );
@@ -334,7 +345,10 @@ function badMoveFacts(context: MoveContext): MoveFact[] {
     } else {
       facts.push({ kind: 'losesMaterial', piece: lost });
     }
-  } else if (bestLine.won && bestLine.gain - playedGain >= 2) {
+  } else if (
+    bestLine.won &&
+    bestLine.gain - playedGain >= MATERIAL.worthSaying
+  ) {
     facts.push({ kind: 'missesWin', piece: pieceName(bestLine.won.type) });
   }
   if (facts.length === 0) facts.push({ kind: 'slips' });
@@ -361,7 +375,7 @@ function goodMoveFacts(context: MoveContext): MoveFact[] {
   const reply = lineMaterial(fenAfter, context.replyLine, color);
   const taken = move.captured ? PIECE_VALUE[move.captured] : 0;
   const gain = reply.gain + taken;
-  if (gain >= 2) {
+  if (gain >= MATERIAL.worthSaying) {
     const won =
       reply.won && (!move.captured || PIECE_VALUE[reply.won.type] > taken)
         ? reply.won.type
@@ -375,7 +389,7 @@ function goodMoveFacts(context: MoveContext): MoveFact[] {
       });
     } else if (
       move.captured &&
-      PIECE_VALUE[move.captured] >= 3 &&
+      PIECE_VALUE[move.captured] >= MATERIAL.piece &&
       before.attackers(move.to, otherColor(color)).length === 0
     ) {
       facts.push({ kind: 'takesFree', piece: pieceName(move.captured) });
@@ -391,14 +405,18 @@ function goodMoveFacts(context: MoveContext): MoveFact[] {
   if (
     move.captured &&
     PIECE_VALUE[move.captured] === PIECE_VALUE[move.piece] &&
-    materialBalance(fenBefore, color) >= 2
+    materialBalance(fenBefore, color) >= MATERIAL.aheadToTrade
   ) {
     facts.push({ kind: 'trades' });
   }
-  if (move.piece === 'p' && isPassed(after, move.to) && ply > 20) {
+  if (
+    move.piece === 'p' &&
+    isPassed(after, move.to) &&
+    ply >= FACTS_BY_PLY.passedPawnFrom
+  ) {
     facts.push({ kind: 'passedPawn' });
   }
-  if (ply <= 24) {
+  if (ply <= FACTS_BY_PLY.openingUntil) {
     const homeRank = color === 'w' ? '1' : '8';
     if (
       (move.piece === 'n' || move.piece === 'b') &&

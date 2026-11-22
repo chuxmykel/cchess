@@ -179,6 +179,10 @@ lib/chessboard/  the board, written as a package of its own: outside the
     - `winChances.ts` - lichess's winning-chances curve (`evalBarFraction`
       shares it), a mate counted as ten pawns; `accuracy.ts` - lichess's
       move and game accuracy (volatility-weighted and harmonic means).
+    - `thresholds.ts` - every value a review judges by, in one place to
+      tune: the classes' bars, how far the engine's lines are followed,
+      what's worth saying, where a game's phases begin.
+      `types.ts`' `SLIP_CLASSES`/`isSlip` are the classes that are slips.
     - `classifyMove.ts` - brilliant, great, best, excellent, good, book,
       inaccuracy, mistake, miss, blunder: by the winning chances the move
       gave away (2/5/10/20 points), the book (`bookOpeningAt`, every move
