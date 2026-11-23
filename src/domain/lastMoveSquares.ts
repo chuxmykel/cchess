@@ -7,7 +7,7 @@ export type PlayedMove = MoveSquares & { piece: PieceSymbol };
 
 // The squares a board marks for the last move: where the piece left and
 // where it landed - but for a castle, the king's and the rook's starting
-// squares, as lichess and chess.com do, for either side.
+// squares, as lichess does, for either side.
 export function lastMoveSquares({ from, to, piece }: PlayedMove): MoveSquares {
   const files = to.charCodeAt(0) - from.charCodeAt(0);
   // Only castling moves a king two files.

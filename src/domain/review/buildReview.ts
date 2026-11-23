@@ -5,7 +5,7 @@ import { bookOpeningAt, openingAt } from '../openings';
 import { gameAccuracy, moveAccuracy } from './accuracy';
 import { classifyMove } from './classifyMove';
 import { gameRating } from './gameRating';
-import { isSacrifice, materialGivenUp, moveFacts, pieceName } from './motifs';
+import { materialGivenUp, moveFacts, pieceName, sacrificeOf } from './motifs';
 import { commentFor, seedOf } from './phrases';
 import {
   ClassCounts,
@@ -17,7 +17,7 @@ import {
   ReviewedMove,
   SideReview,
 } from './types';
-import { winPercent } from './winChances';
+import { CAP_CP, winPercent } from './winChances';
 
 export type ReviewMoveInput = { uci: string };
 
@@ -62,13 +62,15 @@ export function buildReview(
     stillInBook = book !== null;
     const previous = reviewed[i - 1];
     const moveClass = classifyMove({
+      legalMoves: new Chess(move.before).moves().length,
       isBest: before.pv[0] === move.lan,
       isBook: book !== null,
       winBefore,
       winAfter,
       winSecond: before.second ? winPercent(before.second, color) : null,
+      rating: ratings[color] ?? null,
       opponentLoss: previous ? previous.winLoss : null,
-      isSacrifice: isSacrifice(move),
+      isSacrifice: sacrificeOf(move, after.pv) !== null,
       isRecapture:
         !!move.captured &&
         !!played[i - 1]?.captured &&
@@ -151,8 +153,8 @@ function bestPieceOf(fen: string, uci: string | undefined): string | null {
 }
 
 // How much of the score a move gave away, in centipawns from the mover's
-// side - each score held to ±10 pawns, past which it's all the same; null
-// with a mate on either side.
+// side - each score held to the cap winning chances have, past which it's
+// all the same; null with a mate on either side.
 function centipawnLoss(
   before: EngineScore,
   after: EngineScore,
@@ -160,7 +162,7 @@ function centipawnLoss(
 ): number | null {
   if (before.kind !== 'cp' || after.kind !== 'cp') return null;
   const sign = color === 'w' ? 1 : -1;
-  const held = (cp: number) => Math.max(-1000, Math.min(1000, cp * sign));
+  const held = (cp: number) => Math.max(-CAP_CP, Math.min(CAP_CP, cp * sign));
   return Math.max(0, held(before.cp) - held(after.cp));
 }
 

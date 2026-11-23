@@ -1,27 +1,35 @@
+import {
+  BEST_WITHIN,
+  BRILLIANT_AT_LEAST,
+  CLASS_THRESHOLDS,
+  COMPLETELY_WINNING,
+  GENEROUS,
+  MATERIAL_MISTAKE,
+  ONLY_MOVE_GAP,
+  STANDING,
+  UNRATED,
+} from './thresholds';
 import type { MoveClass } from './types';
 
 // How a move's class is judged: by how much of the mover's winning chances
-// (0-100, see winChances) it gave away, as chess.com describes its own - 2,
-// 5, 10 and 20 points marking excellent, good, inaccuracy and mistake from
-// blunder.
-export const CLASS_THRESHOLDS = {
-  excellent: 2,
-  good: 5,
-  inaccuracy: 10,
-  mistake: 20,
-} as const;
+// (0-100, see winChances) it gave away, and where that leaves the mover -
+// every bar in thresholds.ts.
 
-// The only good move: the next best keeps this much less.
-export const ONLY_MOVE_GAP = 15;
+// How generous, from 0 (rated GENEROUS.until and up) to 1 (GENEROUS.fully
+// and below).
+function generosity(rating: number | null): number {
+  const at = rating ?? UNRATED;
+  const share = (GENEROUS.until - at) / (GENEROUS.until - GENEROUS.fully);
+  return Math.min(1, Math.max(0, share));
+}
 
-// Winning chances barely move once a game is all but decided, so a piece
-// thrown away there would read as a good move: a move giving up this much
-// material over best play - and this much of the score - is a mistake
-// whatever the chances, and one giving up a pawn at least an inaccuracy.
-export const MATERIAL_MISTAKE = { pawns: 3, centipawns: 80 } as const;
-export const MATERIAL_INACCURACY = { pawns: 1, centipawns: 50 } as const;
+// A bar moved from its value for strong players toward its generous one.
+const toward = (strong: number, generous: number, share: number) =>
+  strong + (generous - strong) * share;
 
 export type ClassifyInput = {
+  // How many legal moves there were: one, and the move was forced.
+  legalMoves: number;
   // The engine's own first choice.
   isBest: boolean;
   // Still in the opening book, and every move before it too.
@@ -32,9 +40,11 @@ export type ClassifyInput = {
   winBefore: number;
   winAfter: number;
   winSecond: number | null;
+  // The mover's rating going into the game, or null when unrated.
+  rating: number | null;
   // The opponent's last move: how much it gave away.
   opponentLoss: number | null;
-  // A piece given up, that the opponent can take for less than it's worth.
+  // A piece given up for good, or offered and turned down (sacrificeOf).
   isSacrifice: boolean;
   // Taking back on the square the opponent just took on - the obvious move.
   isRecapture: boolean;
@@ -62,52 +72,86 @@ function atLeast(moveClass: MoveClass, floor: MoveClass): MoveClass {
   return index < 0 || index >= floorIndex ? moveClass : floor;
 }
 
+// Where a side stands, worst first.
+const STANDINGS = ['losing', 'level', 'winning'] as const;
+type Standing = (typeof STANDINGS)[number];
+
+function standing(win: number): Standing {
+  if (win < STANDING.losing) return 'losing';
+  return win < STANDING.winning ? 'level' : 'winning';
+}
+
+const standsBetter = (a: Standing, b: Standing) =>
+  STANDINGS.indexOf(a) > STANDINGS.indexOf(b);
+
 export function classifyMove(input: ClassifyInput): MoveClass {
   const moveClass = byWinChances(input);
-  if (moveClass === 'book' || input.isBest || input.scoreLoss === null) {
+  if (
+    moveClass === 'book' ||
+    moveClass === 'forced' ||
+    input.isBest ||
+    input.scoreLoss === null
+  ) {
     return moveClass;
   }
   if (
     input.materialLoss >= MATERIAL_MISTAKE.pawns &&
-    input.scoreLoss >= MATERIAL_MISTAKE.centipawns
+    input.scoreLoss >= MATERIAL_MISTAKE.centipawns &&
+    input.winAfter < COMPLETELY_WINNING
   ) {
     return atLeast(moveClass, 'mistake');
-  }
-  if (
-    input.materialLoss >= MATERIAL_INACCURACY.pawns &&
-    input.scoreLoss >= MATERIAL_INACCURACY.centipawns
-  ) {
-    return atLeast(moveClass, 'inaccuracy');
   }
   return moveClass;
 }
 
 function byWinChances(input: ClassifyInput): MoveClass {
   const loss = Math.max(0, input.winBefore - input.winAfter);
+  // The only legal move: nothing to choose, so neither a find nor a slip -
+  // however the game stands after it.
+  if (input.legalMoves === 1) return 'forced';
   if (input.isBook) return 'book';
-  if (input.isBest || loss < 0.5) {
-    const onlyMove =
-      input.winSecond !== null &&
-      input.winBefore - input.winSecond >= ONLY_MOVE_GAP &&
-      input.winAfter >= 30;
-    if (onlyMove && input.isSacrifice && input.winBefore < 95) {
+  if (input.isBest || loss < BEST_WITHIN) {
+    // The best move there was other than this one: the engine's next best
+    // for its own first choice, or else its first choice - its next best
+    // line could be this move.
+    const alternative = input.isBest ? input.winSecond : input.winBefore;
+    // The only good move: the next best keeps the gap less, and the move
+    // changes how the game stands - level where the next best loses, winning
+    // where it's level - so a move winning anyway is never it.
+    const onlyMove = (gap: number) =>
+      alternative !== null &&
+      input.winAfter - alternative >= gap &&
+      standsBetter(standing(input.winAfter), standing(alternative));
+    // Brilliant: a sound sacrifice that's the only good move, judged as for
+    // strong players at every rating, not leaving the mover in a bad
+    // position.
+    if (
+      input.isSacrifice &&
+      onlyMove(ONLY_MOVE_GAP) &&
+      input.winAfter >= BRILLIANT_AT_LEAST
+    ) {
       return 'brilliant';
     }
-    if (input.isSacrifice && input.winAfter >= 50 && input.winBefore < 90) {
-      return 'brilliant';
-    }
-    if (onlyMove && !input.isRecapture) return 'great';
+    // Great: the only good move - more generous to newer players. Not an
+    // obvious recapture.
+    const gap = toward(
+      ONLY_MOVE_GAP,
+      GENEROUS.onlyMoveGap,
+      generosity(input.rating),
+    );
+    if (onlyMove(gap) && !input.isRecapture) return 'great';
     return 'best';
   }
   if (loss < CLASS_THRESHOLDS.excellent) return 'excellent';
   if (loss < CLASS_THRESHOLDS.good) return 'good';
-  // The opponent gave something away, and the move let it go - not losing,
-  // but missing the chance.
+  // The opponent's slip left a winning position there for the taking, and
+  // the move let it go - not winning after it, but not losing either.
   if (
     input.opponentLoss !== null &&
     input.opponentLoss >= CLASS_THRESHOLDS.inaccuracy &&
     loss >= CLASS_THRESHOLDS.inaccuracy &&
-    input.winAfter >= 40
+    standing(input.winBefore) === 'winning' &&
+    standing(input.winAfter) === 'level'
   ) {
     return 'miss';
   }

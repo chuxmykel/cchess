@@ -1,6 +1,5 @@
-// A game rating: the rating a side played this one game at. As chess.com
-// describes its own, it's the quality of the moves set against what's
-// expected of a player at their rating: so it's anchored on the player's
+// A game rating: the rating a side played this one game at - the quality of
+// the moves set against what's expected of a player at their rating: so it's anchored on the player's
 // rating going into the game, and moved from there by how far their
 // accuracy is from what that rating usually plays - above it for a game
 // played better than usual, below for one played worse - and over many

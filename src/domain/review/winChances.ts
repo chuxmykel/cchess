@@ -7,7 +7,7 @@ import type { EngineScore } from '../evalScore';
 const CURVE = 0.00368208;
 // Scores past ten pawns change nothing - and a mate counts as that much, so a
 // line that mates and one that's a rook up read alike, as lichess has it.
-const CAP_CP = 1000;
+export const CAP_CP = 1000;
 
 // White's winning chances from -1 (lost) to 1 (won).
 export function whiteWinningChances(score: EngineScore): number {

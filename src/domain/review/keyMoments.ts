@@ -1,16 +1,13 @@
 import { Color } from 'chess.js';
 
-import type { MoveClass, ReviewedMove } from './types';
+import { type MoveClass, type ReviewedMove, SLIP_CLASSES } from './types';
 
 // The moves worth stopping at, for the side reviewed: its standout moves and
 // its slips - and where the book ran out.
-const KEY_CLASSES: MoveClass[] = [
+const KEY_CLASSES: readonly MoveClass[] = [
   'brilliant',
   'great',
-  'inaccuracy',
-  'miss',
-  'mistake',
-  'blunder',
+  ...SLIP_CLASSES,
 ];
 
 // The indexes (into the review's moves) that Next steps between, in order.

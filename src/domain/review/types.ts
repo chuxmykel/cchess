@@ -11,6 +11,7 @@ export const MOVE_CLASSES = [
   'excellent',
   'good',
   'book',
+  'forced',
   'inaccuracy',
   'mistake',
   'miss',
@@ -18,6 +19,17 @@ export const MOVE_CLASSES = [
 ] as const;
 
 export type MoveClass = (typeof MOVE_CLASSES)[number];
+
+// The classes that are slips: the move gave something away.
+export const SLIP_CLASSES: readonly MoveClass[] = [
+  'inaccuracy',
+  'mistake',
+  'miss',
+  'blunder',
+];
+
+export const isSlip = (moveClass: MoveClass) =>
+  SLIP_CLASSES.includes(moveClass);
 
 // What the engine made of one position: all a review keeps of a search, and
 // what the server stores, so the classes and words can be worked out afresh.

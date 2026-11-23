@@ -20,8 +20,20 @@ describe('hasBetterMove', () => {
     expect(hasBetterMove(move({ uci: 'b1c3', bestLine: [] }))).toBe(false);
   });
 
+  it('is never there for a forced move', () => {
+    expect(hasBetterMove(move({ uci: 'b1c3', moveClass: 'forced' }))).toBe(
+      false,
+    );
+  });
+
   it('is never there for a book move', () => {
     expect(hasBetterMove(move({ uci: 'b1c3', moveClass: 'book' }))).toBe(false);
+  });
+
+  it("is never there for a brilliant move, the engine's first choice or not", () => {
+    expect(hasBetterMove(move({ uci: 'b1c3', moveClass: 'brilliant' }))).toBe(
+      false,
+    );
   });
 });
 

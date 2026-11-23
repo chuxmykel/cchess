@@ -22,7 +22,11 @@ async function renderSummary() {
       }}
       black={{
         player: black,
-        review: { accuracy: 74, rating: 1400, counts: counts({ blunder: 2 }) },
+        review: {
+          accuracy: 74,
+          rating: 1400,
+          counts: counts({ blunder: 2, forced: 1 }),
+        },
       }}
       side="w"
     />,
@@ -52,5 +56,18 @@ describe('ReviewSummary', () => {
     expect(inRow.getByText('Best')).toBeTruthy();
     expect(inRow.getByTestId('move-class-best')).toBeTruthy();
     expect(inRow.getByTestId('review-count-b-best')).toBeTruthy();
+  });
+
+  it('counts forced moves under Book, marked with an arrow', async () => {
+    const screen = await renderSummary();
+
+    expect(screen.getByTestId('review-count-b-forced')).toHaveTextContent('1');
+    const row = screen.getByTestId('review-count-b-forced').parent!.parent!
+      .parent!;
+    expect(within(row).getByText('Forced')).toBeTruthy();
+    const mark = within(row).getByTestId('move-class-forced');
+    // The icon, drawn as a Text keeping its props under Jest.
+    const icon = mark.children[0] as unknown as { props: { name: string } };
+    expect(icon.props.name).toBe('arrow-right-bold');
   });
 });

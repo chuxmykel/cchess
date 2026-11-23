@@ -23,6 +23,6 @@ tags:
 - tapOn:
     id: "color-scheme-light"
 - tapOn:
-    id: "board-theme-lichess.org"
+    id: "board-theme-wood"
 - runFlow: common/pause.yaml
 - takeScreenshot: appearance

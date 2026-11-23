@@ -11,7 +11,7 @@ interface SquareBadgesProps {
 }
 
 // A badge is this much of a square across, and stands this much of itself
-// over the square's top-right corner, as on lichess and chess.com.
+// over the square's top-right corner, as on lichess.
 const BADGE_SIZE = 0.42;
 const OVERHANG = 0.3;
 

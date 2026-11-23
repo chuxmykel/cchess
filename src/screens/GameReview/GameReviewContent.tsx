@@ -14,7 +14,11 @@ import ReviewToolbar from '../../components/ReviewToolbar';
 import { ReviewSettings } from '../../constants/review';
 import { defeatedColor } from '../../domain/players';
 import { introLine, IntroContext, seedOf } from '../../domain/review/phrases';
-import type { GameReview, MoveClass } from '../../domain/review/types';
+import {
+  type GameReview,
+  isSlip,
+  type MoveClass,
+} from '../../domain/review/types';
 import { reviewView } from '../../hooks/reviewView';
 import {
   useBrilliantSound,
@@ -222,11 +226,7 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
     );
   }
 
-  const isSlip =
-    !!stepper.move &&
-    ['inaccuracy', 'mistake', 'miss', 'blunder'].includes(
-      stepper.move.moveClass,
-    );
+  const slipShown = !!stepper.move && isSlip(stepper.move.moveClass);
   const atEnd = stepper.index >= lastIndex + stepper.cards.length;
   const primary = atEnd
     ? { label: 'Analyse', onPress: () => onAnalyse(shownIndex + 1) }
@@ -338,7 +338,7 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
           </>
         ) : (
           <ReviewToolbar
-            onRetry={isSlip ? stepper.retry : undefined}
+            onRetry={slipShown ? stepper.retry : undefined}
             showingLine={stepper.lineStep !== null}
             onToggleLine={stepper.toggleLine}
             canShowLine={stepper.canShowLine}

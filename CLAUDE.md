@@ -178,16 +178,33 @@ lib/chessboard/  the board, written as a package of its own: outside the
     - `winChances.ts` - lichess's winning-chances curve (`evalBarFraction`
       shares it), a mate counted as ten pawns; `accuracy.ts` - lichess's
       move and game accuracy (volatility-weighted and harmonic means).
+    - `thresholds.ts` - every value a review judges by, in one place to
+      tune: the classes' bars, how far the engine's lines are followed,
+      what's worth saying, where a game's phases begin.
+      `types.ts`' `SLIP_CLASSES`/`isSlip` are the classes that are slips.
     - `classifyMove.ts` - brilliant, great, best, excellent, good, book,
-      inaccuracy, mistake, miss, blunder: by the winning chances the move
+      forced, inaccuracy, mistake, miss, blunder: forced for the only
+      legal move (never a find or a slip, marked with an arrow), otherwise by the winning chances the move
       gave away (2/5/10/20 points), the book (`bookOpeningAt`, every move
-      before it in it too), a sacrifice that's best (brilliant - a piece
-      left where it's taken for less, never counting a king, which can't
-      take a defended one), the only good move, not a recapture (great),
-      and the opponent's slip let go (miss). Winning chances barely move
-      once a game's decided, so a move giving away material over best play
-      (`materialGivenUp`) and enough of the score is at least an inaccuracy
-      (a pawn) or a mistake (a piece) whatever the chances.
+      before it in it too), and where a side stands - losing, level or
+      winning (under 35, from 65). Great is the only good move, changing
+      where the side stands (level where the next best loses, winning
+      where it's level), not a recapture. Brilliant is what "!!" means in
+      an annotated game, about one move in 1,500: a great move that's also
+      a sound sacrifice, at the gap for strong players whatever the
+      rating, not leaving the mover in a bad position. The sacrifice is `motifs.ts`' `sacrificeOf`: a
+      piece the move leaves where it's taken for less, never counting a
+      king, which can't take a defended one (the moved one, one it no
+      longer covers, or one already attacked another move would have
+      kept), taken along the engine's answer without the material coming
+      straight back, or turned down when taking it was there and wouldn't
+      only have traded (a capture winning material back counted net of the
+      piece taking). Miss is the winning position the opponent's slip left
+      let go, to level. Great is more generous below a rating of 2000
+      (fully from 1000; an unrated player taken as 1500); a slip is the same at every rating. Winning chances barely move
+      once a game's lost, so a move giving away a piece over best play
+      (`materialGivenUp`) and enough of the score is a mistake whatever
+      the chances, unless the mover is still completely winning.
     - `motifs.ts` - what a move did, with chess.js along the engine's
       lines: material over the line, mates allowed or missed, a piece left
       hanging, a fork, pin or skewer, a piece trapped; for a good one,
@@ -203,8 +220,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
       Ideas marked `*like this*` (underlined in the bubble, unmarked aloud);
       `spokenText.ts` - SAN as said ("knight takes e5, check").
     - `buildReview.ts` - `buildReview(start, moves, evals, seed)`: every move's class, facts and comment, each side's accuracy, counts and
-      game rating (`gameRating.ts` - the rating it played at: as
-      chess.com describes its own, the player's rating going into the game
+      game rating (`gameRating.ts` - the rating it played at: the
+      player's rating going into the game
       - `buildReview`'s `ratings` - moved halfway toward what their
         accuracy alone reads as on our own curve, so over many games it
         averages out near their rating; the curve alone for a guest);
@@ -412,10 +429,10 @@ lib/chessboard/  the board, written as a package of its own: outside the
     brought in (a pasted PGN), from its own start, analysed each time and
     kept nowhere, its players made from the PGN's tags; both give a
     `ReviewedGame` (seed, players, result) rather than a snapshot. `useReviewStepper` - the summary, then Next playing every move on the
-    board, a move every 0.17s as chess.com's does, stopping at each key moment (tapped as they
+    board, a move every 0.17s, stopping at each key moment (tapped as they
     play, Skip, straight there) and then through the closing cards, which
     come after the last move; wherever ‹ ›, the move list or a scroll along
-    it go is where the review is, as chess.com's is - Next plays on from
+    it go is where the review is - Next plays on from
     there, as if it had come that way, ‹ ›, Show (the line from the move -
     answering it, or following Best - played out on the board a move every
     0.65s, 8 at most; Hide puts the board back), Best (the best move in its place) and Retry (the position before
@@ -856,7 +873,7 @@ lib/chessboard/  the board, written as a package of its own: outside the
   shown, the voice quiet until it comes to rest) - and `ReviewToolbar`
   (Retry, Show, Best, Next), held a little up from the bottom: Show and
   Best offered only where they say something (`domain/review/
-reviewActions.ts`: Best where another move was better, out of the book;
+reviewActions.ts`: Best where another move was better, not for a book, forced or brilliant move;
   Show after a slip, a great or brilliant move, or a tactic - not a quiet
   move); and to close, the theme cards over the game's last position,
   then Analyse. The eval bar's along the top, then room kept for two lines
@@ -874,7 +891,7 @@ reviewActions.ts`: Best where another move was better, out of the book;
   cchess-be's `docs/features.md`, "Game review", for why the engine runs on the
   device.
 
-- **Daily games** - chess.com's: 1, 2, 3, 5, 7 or 14 days a move, a game
+- **Daily games** - 1, 2, 3, 5, 7 or 14 days a move, a game
   type and rating category of their own (`daily`), played alongside live
   games and each other (see cchess-be's `docs/features.md`, "Daily games"). A daily
   time control is its days in `initialSeconds`, no increment
@@ -1223,7 +1240,7 @@ keyboard.ts` sends each platform's keyboard events; `isSwitchOn` reads
   double-quoted (`"it's"`), and JSX text writes `&apos;` - which
   `react/no-unescaped-entities` asks for in place of a bare `'`.
 - Board color themes live in `src/theme/boardThemes.ts`
-  (`chess.com`, `lichess.org`, `monochrome`, `powderblue`, `test` - shown
+  (`green`, `wood`, `monochrome`, `powderblue`, `test` - shown
   as Green, Wood, Monochrome, Powder blue and Blue), chosen in Appearance;
   `test`, the blue, is the default.
 - `eslint-plugin-react-hooks`'s React-Compiler-readiness rules

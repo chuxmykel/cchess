@@ -4,16 +4,16 @@ export interface BoardTheme {
 }
 
 export type BoardThemeName =
-  'chess.com' | 'lichess.org' | 'monochrome' | 'powderblue' | 'test';
+  'green' | 'wood' | 'monochrome' | 'powderblue' | 'test';
 
 // The squares' colors, chosen on their own in Appearance rather than with
 // light or dark mode: a board reads the same on either.
 export const BOARD_THEMES: Record<BoardThemeName, BoardTheme> = {
-  'chess.com': {
+  green: {
     dark: '#769656',
     light: '#eeeed2',
   },
-  'lichess.org': {
+  wood: {
     dark: '#b58863',
     light: '#f1d9b4',
   },
@@ -34,8 +34,8 @@ export const BOARD_THEMES: Record<BoardThemeName, BoardTheme> = {
 // In the order Appearance lists them.
 export const BOARD_THEME_LABELS: Record<BoardThemeName, string> = {
   test: 'Blue',
-  'chess.com': 'Green',
-  'lichess.org': 'Wood',
+  green: 'Green',
+  wood: 'Wood',
   powderblue: 'Powder blue',
   monochrome: 'Monochrome',
 };

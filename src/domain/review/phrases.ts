@@ -1,4 +1,5 @@
 import { sanToSpeech, textToSpeech } from './spokenText';
+import { INTRO } from './thresholds';
 import type { MoveClass, MoveFact, ReviewComment } from './types';
 
 // Everything a review says, in one place - none of it is stored: it's made
@@ -251,6 +252,11 @@ const CLASS_WORDS: Record<MoveClass, string[]> = {
     'Still in the opening book.',
     'Theory - many have played this before.',
   ],
+  forced: [
+    'The only legal move.',
+    "No choice here: it's the one move there is.",
+    'Forced - nothing else was possible.',
+  ],
   inaccuracy: SLIP_WORDS.inaccuracy,
   mistake: SLIP_WORDS.mistake,
   miss: SLIP_WORDS.miss,
@@ -264,6 +270,7 @@ const HEADLINES: Record<MoveClass, string> = {
   excellent: 'is excellent',
   good: 'is good',
   book: 'is a book move',
+  forced: 'is forced',
   inaccuracy: 'is an inaccuracy',
   mistake: 'is a mistake',
   miss: 'is a miss',
@@ -384,11 +391,11 @@ export function introLine(context: IntroContext, seed: number): string {
   const options =
     context.outcome === null
       ? [...INTRO_WORDS.watched]
-      : context.slips === 0 && context.accuracy >= 85
+      : context.slips === 0 && context.accuracy >= INTRO.cleanAccuracy
         ? [...INTRO_WORDS.clean]
         : [...INTRO_WORDS[context.outcome], ...INTRO_WORDS.any];
-  if (context.moves <= 15) options.push(...INTRO_WORDS.short);
-  if (context.moves >= 60) options.push(...INTRO_WORDS.long);
+  if (context.moves <= INTRO.shortGame) options.push(...INTRO_WORDS.short);
+  if (context.moves >= INTRO.longGame) options.push(...INTRO_WORDS.long);
   if (context.opening) options.push(...INTRO_WORDS.opening);
   return options[seed % options.length]
     .replace('{opponent}', context.opponent)

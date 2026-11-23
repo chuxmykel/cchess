@@ -2,7 +2,18 @@ import { Color } from 'chess.js';
 
 import { materialBalance, PIECE_VALUE } from './motifs';
 import { THEME_WORDS } from './phrases';
-import type { GameReview, MoveFact, ReviewedMove, ThemeCard } from './types';
+import {
+  ENDGAME_MATERIAL,
+  OPENING_PLIES_AFTER_BOOK,
+  STRATEGY_SLIPS,
+} from './thresholds';
+import {
+  type GameReview,
+  isSlip,
+  type MoveFact,
+  type ReviewedMove,
+  type ThemeCard,
+} from './types';
 
 // What a review closes on: a few things to take from the game, for the side
 // reviewed - where it went wrong (the opening, tactics, the quieter moves of
@@ -19,8 +30,6 @@ const TACTICAL: MoveFact['kind'][] = [
   'missesWin',
 ];
 
-const SLIPS = ['inaccuracy', 'mistake', 'miss', 'blunder'];
-
 // Little left on the board: no queens, or not much besides.
 function isEndgame(fen: string): boolean {
   let pieces = 0;
@@ -32,20 +41,25 @@ function isEndgame(fen: string): boolean {
       pieces += PIECE_VALUE[type];
     }
   }
-  return queens === 0 ? pieces <= 26 : pieces <= 13;
+  return (
+    pieces <=
+    (queens === 0
+      ? ENDGAME_MATERIAL.withoutQueens
+      : ENDGAME_MATERIAL.withQueens)
+  );
 }
 
 // The opening: the book, and the ten moves either side makes after it.
 function isOpening(moves: ReviewedMove[], index: number): boolean {
   const lastBook = moves.findLastIndex((m) => m.moveClass === 'book');
-  return index <= Math.max(lastBook, 0) + 20;
+  return index <= Math.max(lastBook, 0) + OPENING_PLIES_AFTER_BOOK;
 }
 
 export function themeCards(review: GameReview, side: Color): ThemeCard[] {
   const mine = review.moves
     .map((move, index) => ({ move, index }))
     .filter(({ move }) => move.color === side);
-  const slips = mine.filter(({ move }) => SLIPS.includes(move.moveClass));
+  const slips = mine.filter(({ move }) => isSlip(move.moveClass));
   const cards: ThemeCard[] = [];
 
   const openingSlips = slips.filter(({ index }) =>
@@ -92,7 +106,7 @@ export function themeCards(review: GameReview, side: Color): ThemeCard[] {
       !move.facts.some((fact) => TACTICAL.includes(fact.kind)) &&
       !isEndgame(move.fenBefore),
   );
-  if (quiet.length >= 2) {
+  if (quiet.length >= STRATEGY_SLIPS) {
     cards.push({
       theme: 'strategy',
       title: THEME_WORDS.strategy.title,
