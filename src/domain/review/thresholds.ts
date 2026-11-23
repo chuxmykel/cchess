@@ -5,9 +5,8 @@
 
 // Classes (classifyMove)
 
-// How much of the mover's winning chances a move gives away, as chess.com
-// describes its own: 2, 5, 10 and 20 points marking excellent, good,
-// inaccuracy and mistake from blunder.
+// How much of the mover's winning chances a move gives away: 2, 5, 10 and
+// 20 points marking excellent, good, inaccuracy and mistake from blunder.
 export const CLASS_THRESHOLDS = {
   excellent: 2,
   good: 5,
@@ -35,7 +34,7 @@ export const COMPLETELY_WINNING = 80;
 // in 1,500.
 export const BRILLIANT_AT_LEAST = 45;
 
-// Great is more generous to newer players, as chess.com's is: from a rating
+// Great is more generous to newer players. From a rating
 // of `until` it's judged as above; from `fully` down, the only good move
 // needs a gap of 10, not 15. Between the two, in a straight line.
 export const GENEROUS = {
@@ -52,8 +51,7 @@ export const UNRATED = 1500;
 // Winning chances barely move once a game is all but lost, so a piece thrown
 // away there would read as a good move: a move giving up this much material
 // over best play - and this much of the score - is a mistake whatever the
-// chances. Not while the mover is still completely winning after it, where
-// chess.com and lichess call it fine too.
+// chances. Not while the mover is still completely winning after it.
 export const MATERIAL_MISTAKE = { pawns: 3, centipawns: 80 } as const;
 
 // Material along the engine's lines (motifs)

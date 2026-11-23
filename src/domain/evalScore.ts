@@ -4,8 +4,8 @@ import { otherColor } from './players';
 import { whiteWinningChances } from './review/winChances';
 import { RawScore } from './uci';
 
-// A score as analysis shows it: from white's point of view, as on lichess and
-// chess.com - plus is good for white - or a mate, and for whom.
+// A score as analysis shows it: from white's point of view, as on lichess -
+// plus is good for white - or a mate, and for whom.
 export type EngineScore =
   { kind: 'cp'; cp: number } | { kind: 'mate'; moves: number; winner: Color };
 

@@ -127,7 +127,7 @@ export interface ThemeColors {
     check: string;
     // A queued pre-move's two squares: apart from lastMove's green, and
     // from the default board's blue - lichess's dark blue would vanish on
-    // it - so a red, as chess.com marks them.
+    // it - so a red.
     premove: string;
     promotionTile: string;
     promotionTilePressed: string;

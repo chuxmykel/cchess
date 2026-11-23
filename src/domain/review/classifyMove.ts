@@ -132,8 +132,8 @@ function byWinChances(input: ClassifyInput): MoveClass {
     ) {
       return 'brilliant';
     }
-    // Great: the only good move, as chess.com describes it - more generous to
-    // newer players. Not an obvious recapture.
+    // Great: the only good move - more generous to newer players. Not an
+    // obvious recapture.
     const gap = toward(
       ONLY_MOVE_GAP,
       GENEROUS.onlyMoveGap,

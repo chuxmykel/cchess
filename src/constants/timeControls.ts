@@ -23,7 +23,7 @@ export const GAME_TYPE_LABELS: Record<GameType, string> = {
 
 export const SECONDS_PER_DAY = 24 * 60 * 60;
 
-/** The days a daily game gives each move, chess.com's. A daily time
+/** The days a daily game gives each move. A daily time
  * control is one of these as whole days in initialSeconds, with no
  * increment: every move resets the mover's clock to it, so it never builds
  * up (the server's time-control.ts). */

@@ -64,8 +64,8 @@ export const DEFAULT_REVIEW_SETTINGS: ReviewSettings = {
   strength: 'standard',
 };
 
-// Next plays the moves on to the next key moment, one this often - as
-// quickly as chess.com's review does.
+// Next plays the moves on to the next key moment, one this often - quick,
+// but each one seen.
 export const REVIEW_PLAY_STEP_MS = 170;
 
 // Show plays out the line from a move, one move this often - slower, to
