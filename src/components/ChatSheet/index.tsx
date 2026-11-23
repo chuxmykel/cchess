@@ -13,6 +13,7 @@ import EmptyState from '../EmptyState';
 import Icon from '../Icon';
 import { MAX_CHAT_MESSAGE_LENGTH } from '../../constants/chat';
 import { GameChat } from '../../hooks/useGameChat';
+import { useRunAfterDismiss } from '../../hooks/useRunAfterDismiss';
 import { ChatMessage, GameUserSummary } from '../../network/socketEvents';
 import { makeStyles, useTheme } from '../../theme';
 
@@ -42,11 +43,21 @@ interface ChatSheetProps {
   chat: GameChat;
   /** The game's players, named in the notes of what they did. */
   players: GameUserSummary[];
+  /** The opponent's message held down: report it - once the sheet has
+   * closed, so the screen it opens isn't hidden behind it. */
+  onReport?: (message: ChatMessage) => void;
 }
 
-const ChatSheet: React.FC<ChatSheetProps> = ({ chat, players }) => {
+const ChatSheet: React.FC<ChatSheetProps> = ({ chat, players, onReport }) => {
   const styles = useStyles();
   const { colors } = useTheme();
+  const { runAfterDismiss, handleDismiss } = useRunAfterDismiss();
+
+  function report(message: ChatMessage) {
+    if (!onReport) return;
+    chat.close();
+    runAfterDismiss(() => onReport(message));
+  }
 
   const { messages, myUserId, isClosed } = chat;
   const [draft, setDraft] = useState('');
@@ -63,6 +74,7 @@ const ChatSheet: React.FC<ChatSheetProps> = ({ chat, players }) => {
     <BottomSheet
       visible={chat.isOpen}
       onClose={chat.close}
+      onDismiss={handleDismiss}
       heightRatio={SHEET_HEIGHT_RATIO}
     >
       <View style={styles.container} testID="chat-sheet">
@@ -106,15 +118,20 @@ const ChatSheet: React.FC<ChatSheetProps> = ({ chat, players }) => {
               }
               const isMine = message.userId === myUserId;
               return (
-                <View
+                <Pressable
                   key={message.id}
                   style={[styles.bubble, isMine ? styles.mine : styles.theirs]}
+                  onLongPress={isMine ? undefined : () => report(message)}
+                  disabled={isMine || !onReport}
+                  accessibilityHint={
+                    isMine || !onReport ? undefined : 'Hold to report'
+                  }
                   testID={`chat-message-${message.id}`}
                 >
                   <Text style={isMine ? styles.mineText : styles.theirsText}>
                     {message.text}
                   </Text>
-                </View>
+                </Pressable>
               );
             })
           )}

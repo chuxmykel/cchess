@@ -20,6 +20,16 @@ const Account: React.FC<AccountProps> = ({ navigation }) => {
       <ActionList
         items={[
           {
+            label: 'Blocked players',
+            icon: 'account-cancel-outline',
+            onPress: () => navigation.navigate('BlockedPlayers'),
+            testID: 'blocked-players-row',
+          },
+        ]}
+      />
+      <ActionList
+        items={[
+          {
             label: 'Delete account',
             icon: 'account-remove-outline',
             destructive: true,

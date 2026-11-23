@@ -6,6 +6,9 @@ import { ChatHistoryPayload, ChatMessage } from '../network/socketEvents';
 export type UseGameChatResult = {
   messages: ChatMessage[];
   unreadCount: number;
+  /** Whether the two players may chat - friends, or strangers who both
+   * chose to - as the server said with the history; true until then. */
+  isEnabled: boolean;
   send: (text: string) => void;
 };
 
@@ -50,6 +53,7 @@ export function useGameChat(
 ): UseGameChatResult {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [read, setRead] = useState<ReadMark>({ at: null, isLocal: false });
+  const [isEnabled, setIsEnabled] = useState(true);
 
   useEffect(() => {
     function handleMessage(message: ChatMessage) {
@@ -62,6 +66,7 @@ export function useGameChat(
       if (payload.gameId === gameId) {
         setMessages(payload.messages);
         setRead({ at: payload.readAt, isLocal: false });
+        setIsEnabled(payload.enabled ?? true);
       }
     }
 
@@ -110,7 +115,7 @@ export function useGameChat(
     [socket, gameId],
   );
 
-  return { messages, unreadCount, send };
+  return { messages, unreadCount, isEnabled, send };
 }
 
 // A game's chat as a game screen shows it: in a sheet, opened and closed

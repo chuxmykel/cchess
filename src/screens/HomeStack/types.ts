@@ -15,6 +15,15 @@ export type ConversationPartner = {
   avatarColor: string;
 };
 
+export type ReportTarget = {
+  username: string;
+  displayName: string;
+  gameId?: string;
+  messageId?: string;
+  /** The message's words, to show what's being reported. */
+  messageText?: string;
+};
+
 export type HomeStackParamList = {
   HomeTabs: undefined;
   LiveGame: { seek: Seek } | { gameId: string };
@@ -68,6 +77,11 @@ export type HomeStackParamList = {
   Account: undefined;
   /** Deleting your account, its password confirming it. */
   DeleteAccount: undefined;
+  /** The players you've blocked, to unblock. */
+  BlockedPlayers: undefined;
+  /** Reporting a player - for something they said (a chat message of
+   * gameId's, or a direct message), or just them. */
+  Report: ReportTarget;
   /** Credit and licences for what the app uses, the engine's above all. */
   Licenses: undefined;
   Appearance: undefined;

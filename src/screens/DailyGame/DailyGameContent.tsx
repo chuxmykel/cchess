@@ -20,6 +20,7 @@ import GameToolbar from '../../components/GameToolbar';
 import ConfirmMoveBar from '../../components/ConfirmMoveBar';
 import BottomBar from '../../components/BottomBar';
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
+import { chatReportTarget } from '../chatReportTarget';
 import ChatSheet from '../../components/ChatSheet';
 import DrawOfferPrompt from '../../components/DrawOfferPrompt';
 import { useConditionalMoves } from '../../hooks/useConditionalMoves';
@@ -467,7 +468,7 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
           >
             <GameToolbar
               onOpenMenu={() => setIsMenuOpen(true)}
-              onOpenChat={chat.open}
+              onOpenChat={chat.isEnabled ? chat.open : undefined}
               unreadChatCount={chat.unreadCount}
               onAnalyse={() =>
                 navigation.navigate('DailyAnalysis', { gameId: snapshot.id })
@@ -489,7 +490,13 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
         actions={menuActions}
       />
 
-      <ChatSheet chat={chat} players={[snapshot.white, snapshot.black]} />
+      <ChatSheet
+        chat={chat}
+        players={[snapshot.white, snapshot.black]}
+        onReport={(message) =>
+          navigation.navigate('Report', chatReportTarget(snapshot, message))
+        }
+      />
     </View>
   );
 };

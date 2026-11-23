@@ -18,6 +18,7 @@ import GameScreenHeader from '../../components/GameScreenHeader';
 import GameToolbar from '../../components/GameToolbar';
 import BottomBar from '../../components/BottomBar';
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
+import { chatReportTarget } from '../chatReportTarget';
 import ChatSheet from '../../components/ChatSheet';
 import DrawOfferPrompt from '../../components/DrawOfferPrompt';
 import GameOverCard from '../../components/GameOverCard';
@@ -366,7 +367,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
           onOpenMenu={() => setIsMenuOpen(true)}
           onResign={confirmResign}
           canResign={!isGameOver && !canAbort}
-          onOpenChat={chat.open}
+          onOpenChat={chat.isEnabled ? chat.open : undefined}
           unreadChatCount={chat.unreadCount}
           moveSteps={moveNavigation}
         />
@@ -378,7 +379,13 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         actions={menuActions}
       />
 
-      <ChatSheet chat={chat} players={[snapshot.white, snapshot.black]} />
+      <ChatSheet
+        chat={chat}
+        players={[snapshot.white, snapshot.black]}
+        onReport={(message) =>
+          navigation.navigate('Report', chatReportTarget(snapshot, message))
+        }
+      />
     </View>
   );
 };

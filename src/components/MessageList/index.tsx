@@ -30,6 +30,8 @@ interface MessageListProps {
   /** They're typing to you. */
   isTyping?: boolean;
   onRetry?: (messageId: string) => void;
+  /** One of theirs held down: report it. */
+  onReportMessage?: (message: ShownMessage) => void;
   onOpenGame?: (gameId: string) => void;
   onOpenPosition?: (fen: string) => void;
   /** For "today" and "yesterday" - now, unless a test says. */
@@ -47,6 +49,7 @@ const MessageList: React.FC<MessageListProps> = ({
   theirLastReadAt = null,
   isTyping = false,
   onRetry = noop,
+  onReportMessage,
   onOpenGame = noop,
   onOpenPosition = noop,
   now,
@@ -120,7 +123,17 @@ const MessageList: React.FC<MessageListProps> = ({
               <Text style={styles.bigEmoji}>{message.text}</Text>
             ) : (
               message.text !== '' && (
-                <View
+                <Pressable
+                  onLongPress={
+                    !isMine && onReportMessage
+                      ? () => onReportMessage(message)
+                      : undefined
+                  }
+                  disabled={isMine || !onReportMessage}
+                  accessibilityHint={
+                    !isMine && onReportMessage ? 'Hold to report' : undefined
+                  }
+                  testID={`message-${message.id}-bubble`}
                   style={[
                     styles.bubble,
                     isMine ? styles.mine : styles.theirs,
@@ -134,7 +147,7 @@ const MessageList: React.FC<MessageListProps> = ({
                   <Text style={isMine ? styles.mineText : styles.theirsText}>
                     {message.text}
                   </Text>
-                </View>
+                </Pressable>
               )
             )}
             {failed ? (

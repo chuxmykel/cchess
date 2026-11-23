@@ -30,6 +30,7 @@ import GameRow from '../../components/RecentGamesList/GameRow';
 import SectionHeader from '../../components/SectionHeader';
 import Toast from '../../components/Toast';
 import { useSocialContext } from '../../context/SocialContext';
+import { useBlocking } from '../../hooks/useBlocking';
 import { useFriendActions } from '../../hooks/useFriendActions';
 import { usePagedGames } from '../../hooks/usePagedGames';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
@@ -61,6 +62,7 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
 
   const { username } = route.params;
   const social = useSocialContext();
+  const blocking = useBlocking();
   const toast = useToast();
   const { state, reload: reloadProfile } = useUserProfile(username);
   const { state: friendsState, reload: reloadFriends } =
@@ -197,7 +199,7 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
           runThenReload(social.respondToFriendRequest(requestId, true)),
         testID: 'profile-accept-request',
       });
-    } else {
+    } else if (!profile.blockedByYou) {
       items.push({
         label: 'Add friend',
         icon: 'account-plus-outline',
@@ -206,6 +208,34 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
         testID: 'profile-add-friend',
       });
     }
+    items.push(
+      profile.blockedByYou
+        ? {
+            label: 'Unblock',
+            icon: 'account-lock-open-outline',
+            onPress: () => runThenReload(blocking.unblock(profile.username)),
+            testID: 'profile-unblock',
+          }
+        : {
+            label: 'Block',
+            icon: 'account-cancel-outline',
+            onPress: () =>
+              runThenReload(blocking.confirmBlock(profile).then(() => {})),
+            destructive: true,
+            testID: 'profile-block',
+          },
+      {
+        label: 'Report',
+        icon: 'flag-outline',
+        onPress: () =>
+          navigation.navigate('Report', {
+            username: profile.username,
+            displayName: profile.displayName,
+          }),
+        destructive: true,
+        testID: 'profile-report',
+      },
+    );
     return items;
   }
 
