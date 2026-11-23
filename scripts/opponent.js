@@ -124,6 +124,10 @@ ENVIRONMENT
               as Expo does for the app, unless it's already set in the
               environment. Default: http://localhost:3000.
 
+       BOT_PASSWORD
+              The account's password, instead of "password" - for an
+              account on a real server, such as a house bot's.
+
        NODE_EXTRA_CA_CERTS
               A certificate authority to trust besides the usual ones -
               Node's own variable, for an https server whose certificate
@@ -153,7 +157,9 @@ EXAMPLES
 const SERVER_URL =
   process.env.EXPO_PUBLIC_SERVER_URL ?? 'http://localhost:3000';
 const DEFAULT_USER = 'bot_1';
-const BOT_PASSWORD = 'password';
+// The seeded bots' password - or BOT_PASSWORD, for accounts on a real
+// server (the house bots).
+const BOT_PASSWORD = process.env.BOT_PASSWORD || 'password';
 
 const { values: args } = parseArgs({
   options: {
@@ -341,8 +347,10 @@ async function main() {
 
   function playIfMyTurn(fen, turn) {
     if (!gameId || turn !== myColor || args.idle) return;
-    const move =
-      scriptedMove(new Chess(fen)) ?? findBestMove(new Chess(fen), level);
+    const chess = new Chess(fen);
+    // Mated or stalemated: the push of the move that ended it.
+    if (chess.isGameOver()) return;
+    const move = scriptedMove(chess) ?? findBestMove(chess, level);
     if (!move) return;
     const playingIn = gameId;
     setTimeout(() => {
@@ -369,7 +377,21 @@ async function main() {
   // The game it's offered a draw in, so it offers one once a game.
   let drawOfferedIn = null;
 
-  const token = session.accessToken;
+  let token = session.accessToken;
+  let refreshToken = session.refreshToken;
+  // Access tokens last 15 minutes: a fresh pair every 10, for the REST
+  // calls and for the socket, should it have to connect again - a house bot
+  // runs for days.
+  setInterval(async () => {
+    try {
+      const fresh = await postJson('/auth/refresh', { refreshToken });
+      token = fresh.accessToken;
+      refreshToken = fresh.refreshToken;
+      socket.auth.token = token;
+    } catch (error) {
+      log('could not refresh the token:', error.message);
+    }
+  }, 10 * 60_000).unref();
   const friendMode = Boolean(args.friend);
 
   // The color --color asks for, as the server names it; random without.
@@ -414,7 +436,12 @@ async function main() {
     if (!friendMode) {
       seek();
     } else if (args.challenge) {
-      challengeFriend().catch(fail);
+      challengeFriend().catch((error) => {
+        // Refused because a game has started meanwhile - a rematch after
+        // all: play that one.
+        if (gameId) log('challenge not needed:', error.message);
+        else fail(error);
+      });
     } else {
       log(`waiting for a challenge from ${args.friend}`);
     }
@@ -432,6 +459,15 @@ async function main() {
     seek();
   });
 
+  // The server refusing the socket (connecting again with a stale token)
+  // leaves it closed for good, with no connect_error: say so and stop,
+  // rather than wait for pushes that never come.
+  socket.on('disconnect', (reason) => {
+    if (reason !== 'io server disconnect' || exiting) return;
+    console.error('[opponent] disconnected by the server');
+    exit(1);
+  });
+
   socket.on('connect_error', (error) => {
     console.error('[opponent] connect_error', error.message);
     exit(1);
@@ -446,8 +482,13 @@ async function main() {
   });
   socket.on('game:error', (payload) => {
     log('game:error', payload.message);
-    // A rematch that can't start (the opponent is in another game, say).
-    if (finishedGameId && payload.gameId === finishedGameId) {
+    // A rematch that can't start (the opponent is in another game, say) -
+    // not one both sides offered at once, which has started all the same.
+    if (
+      finishedGameId &&
+      payload.gameId === finishedGameId &&
+      !/already started/i.test(payload.message)
+    ) {
       lookForNextGame();
     }
   });
