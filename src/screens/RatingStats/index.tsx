@@ -46,6 +46,14 @@ function chartStart(stats: RatingStats, now: Date): Date {
   return subDays(now, RATING_PERIOD_DAYS[stats.period]);
 }
 
+/** Whether there's a rating to chart: a period's rated games, or the rating
+ * it held all period - once they've played this category at all. All time
+ * with no games has no start to draw it from. */
+function hasChart(stats: RatingStats): boolean {
+  if (stats.history.length > 0) return true;
+  return stats.period !== 'all' && stats.rating.gamesPlayed > 0;
+}
+
 type RatingStatsProps = Pick<
   HomeStackScreenProps<'RatingStats'>,
   'navigation' | 'route'
@@ -143,12 +151,13 @@ const RatingStatsScreen: React.FC<RatingStatsProps> = ({
         style={[styles.body, (isUpdating || didFail) && styles.updating]}
         testID={isUpdating ? 'rating-stats-updating' : undefined}
       >
-        {stats.history.length > 0 ? (
+        {hasChart(stats) ? (
           <View style={styles.chart}>
             <RatingChart
               history={stats.history}
               from={chartStart(stats, now)}
               to={now}
+              currentRating={stats.rating.rating}
               testID="rating-chart"
             />
           </View>
@@ -156,7 +165,7 @@ const RatingStatsScreen: React.FC<RatingStatsProps> = ({
           <EmptyState
             illustration="activity"
             title="No rated games"
-            message={`${displayName}'s rating will be charted here once they play rated ${GAME_TYPE_LABELS[stats.rating.category]} games in this period.`}
+            message={`${displayName}'s rating will be charted here once they play rated ${GAME_TYPE_LABELS[stats.rating.category]} games.`}
             compact
             testID="rating-chart-empty"
           />

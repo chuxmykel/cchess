@@ -1124,7 +1124,9 @@ reviewActions.ts`: Best where another move was better, not for a book, forced or
   "Playing right now"/"Online"/"Active 5 minutes ago", and the order
   friends are listed in), the friend list's orders (`friendSort.ts`) and
   the rating chart's data (`ratingChart.ts`:
-  the points, the last rating held to the period's end, and the point
+  the points, the first rating drawn back to the period's start - or,
+  with no games in it, the current rating across it - the last held to
+  its end, and the point
   nearest a tap - victory-native picks the rating axis and its ticks), independent of the chess domain. Dates are formatted with `date-fns` rather than helpers
   here.
 

@@ -33,6 +33,8 @@ interface RatingChartProps {
   /** The start and end of the period shown. */
   from: Date;
   to: Date;
+  /** The rating drawn across the period when `history` has none. */
+  currentRating?: number;
   testID?: string;
 }
 
@@ -61,6 +63,7 @@ const RatingChart: React.FC<RatingChartProps> = ({
   history,
   from,
   to,
+  currentRating,
   testID,
 }) => {
   const styles = useStyles();
@@ -72,8 +75,8 @@ const RatingChart: React.FC<RatingChartProps> = ({
   const fromMs = Math.floor(from.getTime() / MINUTE_MS) * MINUTE_MS;
   const toMs = Math.floor(to.getTime() / MINUTE_MS) * MINUTE_MS;
   const data = useMemo(
-    () => ratingChartData(history, fromMs, toMs),
-    [history, fromMs, toMs],
+    () => ratingChartData(history, fromMs, toMs, currentRating),
+    [history, fromMs, toMs, currentRating],
   );
   const { state: pressState } = useChartPressState({
     x: 0,
