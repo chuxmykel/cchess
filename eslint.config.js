@@ -142,13 +142,6 @@ module.exports = defineConfig([
   // Must come last so it can disable stylistic rules that Prettier owns.
   eslintConfigPrettier,
   {
-    ignores: [
-      'node_modules/*',
-      '.expo/*',
-      'dist/*',
-      'web-build/*',
-      // The review harness's games, evals and downloaded engine
-      '.review-harness/*',
-    ],
+    ignores: ['node_modules/*', '.expo/*', 'dist/*', 'web-build/*'],
   },
 ]);

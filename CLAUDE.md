@@ -29,7 +29,6 @@ npm run test:e2e:ios     # Maestro e2e suite on the iOS Simulator, against a see
 npm run test:e2e:android # ...and on the Android emulator
 scripts/e2e/run.sh --platform android .maestro/tap-to-move.yaml  # a single flow, while iterating
 scripts/demo/record.sh   # the README's demo GIFs and screenshots, recorded afresh (iOS Simulator)
-npx tsx scripts/review-harness/report.ts --label <name>  # game review's judgements against chess.com's and lichess's (see its README)
 
 npm run lint             # eslint . (flat config: eslint-config-expo + prettier)
 npm run lint:fix

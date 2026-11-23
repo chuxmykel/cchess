@@ -1,8 +1,7 @@
 // Every value a game review judges by, in one place to tune: the classes'
 // bars, how far the engine's lines are followed, what's worth saying, and
 // where a game's phases begin. Winning chances are a side's, 0 to 100 (see
-// winChances); material is in pawns (motifs' PIECE_VALUE). The scripts in
-// scripts/review-harness measure what a change here does to real games.
+// winChances); material is in pawns (motifs' PIECE_VALUE).
 
 // Classes (classifyMove)
 
