@@ -20,13 +20,25 @@ describe('RatingChart', () => {
     return screen.getByTestId('cartesian-chart').props;
   }
 
-  it('plots the ratings over the whole period, held to its end', async () => {
+  it('plots the ratings over the whole period, from its start to its end', async () => {
     const chart = await renderChart();
 
     expect(chart.data.map((datum: { rating: number }) => datum.rating)).toEqual(
-      [1503, 1547, 1547],
+      [1503, 1503, 1547, 1547],
     );
+    expect(chart.data[0].time).toBe(from.getTime());
     expect(chart.domain).toEqual({ x: [from.getTime(), to.getTime()] });
+  });
+
+  it('draws the current rating across a period with no games', async () => {
+    const screen = await render(
+      <RatingChart history={[]} from={from} to={to} currentRating={1620} />,
+    );
+    const chart = screen.getByTestId('cartesian-chart').props;
+
+    expect(chart.data.map((datum: { rating: number }) => datum.rating)).toEqual(
+      [1620, 1620],
+    );
   });
 
   it('scrubs on a sideways drag at once, letting vertical drags scroll', async () => {
@@ -89,6 +101,16 @@ describe('RatingChart', () => {
 
       expect(screen.getByTestId('rating-chart-pressed')).toHaveTextContent(
         /^1547 · Oct 20, 2026/,
+      );
+    });
+
+    it('dates the rating drawn back to the start of the period', async () => {
+      const screen = await renderWithBounds();
+
+      await tapAt(screen, 0);
+
+      expect(screen.getByTestId('rating-chart-pressed')).toHaveTextContent(
+        /^1503 · Sep 27, 2026/,
       );
     });
 

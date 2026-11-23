@@ -99,20 +99,55 @@ describe('RatingStats', () => {
     expect(screen.getByText('Past year')).toBeTruthy();
   });
 
-  it('says there is nothing to chart without rated games', async () => {
+  const noGamesInPeriod = {
+    history: [],
+    highest: null,
+    lowest: null,
+    ratingChange: null,
+  };
+
+  it('draws the rating across a period with no rated games in it', async () => {
+    (getRatingStats as jest.Mock).mockResolvedValue(
+      makeRatingStats(noGamesInPeriod),
+    );
+
+    const { screen } = await renderScreen();
+
+    const chart = screen.getByTestId('cartesian-chart').props;
+    expect(chart.data.map((datum: { rating: number }) => datum.rating)).toEqual(
+      [1662, 1662],
+    );
+    expect(screen.queryByTestId('rating-chart-empty')).toBeNull();
+    expect(screen.queryByTestId('rating-stats-change')).toBeNull();
+  });
+
+  it('says there is nothing to chart before any rated games', async () => {
     (getRatingStats as jest.Mock).mockResolvedValue(
       makeRatingStats({
-        history: [],
-        highest: null,
-        lowest: null,
-        ratingChange: null,
+        ...noGamesInPeriod,
+        rating: {
+          category: 'blitz',
+          rating: 1500,
+          gamesPlayed: 0,
+          provisional: true,
+        },
       }),
     );
 
     const { screen } = await renderScreen();
 
     expect(screen.getByTestId('rating-chart-empty')).toBeTruthy();
-    expect(screen.queryByTestId('rating-stats-change')).toBeNull();
+    expect(screen.queryByTestId('cartesian-chart')).toBeNull();
+  });
+
+  it('says there is nothing to chart for all time with no rated games', async () => {
+    (getRatingStats as jest.Mock).mockResolvedValue(
+      makeRatingStats({ ...noGamesInPeriod, period: 'all' }),
+    );
+
+    const { screen } = await renderScreen();
+
+    expect(screen.getByTestId('rating-chart-empty')).toBeTruthy();
   });
 
   it('opens the best win', async () => {

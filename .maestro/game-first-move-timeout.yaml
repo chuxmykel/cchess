@@ -5,7 +5,7 @@ tags:
 ---
 # White never moves: black's bar counts down the seconds white has left to
 # play a first move, and when they're up the game is aborted (the server's
-# 30s, GAME_FIRST_MOVE_TIMEOUT_MS).
+# 20s in bullet, 30s otherwise, GAME_FIRST_MOVE_TIMEOUT_MS).
 - runFlow:
     file: common/to-board.yaml
     env:

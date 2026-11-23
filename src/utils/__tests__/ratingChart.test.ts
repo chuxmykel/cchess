@@ -3,7 +3,7 @@ import { nearestDatumIndex, ratingChartData } from '../ratingChart';
 const at = (time: number) => new Date(time).toISOString();
 
 describe('ratingChartData', () => {
-  it('plots each rating, then holds the last one to the end of the period', () => {
+  it('draws the first rating back to the start of the period, plots each, then holds the last one to its end', () => {
     const data = ratingChartData(
       [
         { at: at(10), rating: 1500 },
@@ -14,19 +14,30 @@ describe('ratingChartData', () => {
     );
 
     expect(data).toEqual([
+      { time: 0, rating: 1500, isHeld: false },
       { time: 10, rating: 1500, isHeld: false },
       { time: 50, rating: 1540, isHeld: false },
       { time: 100, rating: 1540, isHeld: true },
     ]);
   });
 
-  it('keeps a rating from before the period at its start', () => {
-    const [first] = ratingChartData([{ at: at(-50), rating: 1500 }], 0, 10);
+  it('keeps a rating from before the period at its start, drawn once', () => {
+    const data = ratingChartData([{ at: at(-50), rating: 1500 }], 0, 10);
 
-    expect(first.time).toBe(0);
+    expect(data).toEqual([
+      { time: 0, rating: 1500, isHeld: false },
+      { time: 10, rating: 1500, isHeld: true },
+    ]);
   });
 
-  it('is empty without a history', () => {
+  it('draws the current rating across a period with no games', () => {
+    expect(ratingChartData([], 0, 10, 1620)).toEqual([
+      { time: 0, rating: 1620, isHeld: false },
+      { time: 10, rating: 1620, isHeld: true },
+    ]);
+  });
+
+  it('is empty without a history or a current rating', () => {
     expect(ratingChartData([], 0, 10)).toEqual([]);
   });
 });
