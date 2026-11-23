@@ -14,6 +14,8 @@ function load(key?: string) {
   else process.env.EXPO_PUBLIC_POSTHOG_KEY = key;
   let module: typeof import('../analytics');
   jest.isolateModules(() => {
+    // Loaded afresh for each key: the module reads it once.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     module = require('../analytics');
   });
   return module!;
