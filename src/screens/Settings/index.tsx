@@ -1,6 +1,7 @@
-import { ScrollView } from 'react-native';
+import { Linking, ScrollView } from 'react-native';
 
 import ActionList from '../../components/ActionList';
+import { PRIVACY_URL, SUPPORT_EMAIL, TERMS_URL } from '../../constants/legal';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { HomeStackScreenProps } from '../HomeStack/types';
 import { makeStyles } from '../../theme';
@@ -63,6 +64,24 @@ const Settings: React.FC<SettingsProps> = ({ navigation }) => {
       />
       <ActionList
         items={[
+          {
+            label: 'Privacy policy',
+            icon: 'shield-account-outline',
+            onPress: () => Linking.openURL(PRIVACY_URL),
+            testID: 'privacy-row',
+          },
+          {
+            label: 'Terms of use',
+            icon: 'file-document-outline',
+            onPress: () => Linking.openURL(TERMS_URL),
+            testID: 'terms-row',
+          },
+          {
+            label: 'Contact support',
+            icon: 'email-outline',
+            onPress: () => Linking.openURL(`mailto:${SUPPORT_EMAIL}`),
+            testID: 'support-row',
+          },
           {
             label: 'Licenses',
             icon: 'scale-balance',

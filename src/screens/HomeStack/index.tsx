@@ -43,6 +43,7 @@ import BlockedPlayers from '../BlockedPlayers';
 import Report from '../Report';
 import Settings from '../Settings';
 import Appearance from '../Appearance';
+import TermsPrompt from '../../components/TermsPrompt';
 import { plainHeaderOptions } from '../plainHeaderOptions';
 import { HomeStackParamList, RootStackParamList } from './types';
 
@@ -281,6 +282,7 @@ const HomeStack: React.FC = () => {
                     })}
                   />
                 </Navigator>
+                <TermsPrompt />
               </ReviewSettingsProvider>
             </DailyGamePositionsProvider>
           </DailyGameSettingsProvider>

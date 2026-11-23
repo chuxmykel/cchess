@@ -179,6 +179,7 @@ describe('useAuthSessionLifecycle', () => {
             username: 'magnus',
             email: 'm@example.com',
             password: 'secret123',
+            acceptTerms: true,
           }),
       ],
     ] as const)(

@@ -84,6 +84,8 @@ export type NewAccount = {
   username: string;
   email: string;
   password: string;
+  /** The terms of use accepted - the server refuses a sign-up without. */
+  acceptTerms: true;
 };
 
 export async function createGuestSession(): Promise<AuthResponse> {

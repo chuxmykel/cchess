@@ -4,7 +4,7 @@ tags:
 ---
 # Creating an account from Home's guest prompt: a name already taken is
 # flagged as it's typed, a free one is accepted, and the new account is
-# signed in - the prompt gone.
+# signed in - the prompt gone. The terms have to be accepted first.
 - runFlow: common/launch-fresh.yaml
 - tapOn:
     id: "create-account-button"
@@ -43,6 +43,8 @@ tags:
       FIELD: "password-input"
       TEXT: "•{8}"
 - runFlow: common/dismiss-keyboard.yaml
+- tapOn:
+    id: "accept-terms-checkbox"
 - tapOn:
     id: "account-form-submit"
 # Back on Home - which a busy runner's backend can take most of a minute

@@ -41,6 +41,7 @@ describe('CreateAccount', () => {
     await fireEvent.changeText(screen.getByTestId('username-input'), username);
     await fireEvent.changeText(screen.getByTestId('email-input'), email);
     await fireEvent.changeText(screen.getByTestId('password-input'), password);
+    await fireEvent.press(screen.getByTestId('accept-terms-checkbox'));
   }
 
   beforeEach(() => {
@@ -64,6 +65,7 @@ describe('CreateAccount', () => {
       username: 'magnus',
       email: 'm@example.com',
       password: 'secret123',
+      acceptTerms: true,
     });
     expect(navigation.goBack).toHaveBeenCalledTimes(1);
   });
@@ -150,5 +152,17 @@ describe('CreateAccount', () => {
     await fireEvent.press(screen.getByTestId('account-form-switch'));
 
     expect(navigation.replace).toHaveBeenCalledWith('SignIn');
+  });
+
+  it("can't be submitted until the terms are accepted", async () => {
+    const { screenPromise, register } = renderScreen();
+    const screen = await screenPromise;
+
+    await fillIn(screen, {});
+    // fillIn ticks the box; untick it.
+    await fireEvent.press(screen.getByTestId('accept-terms-checkbox'));
+    await fireEvent.press(screen.getByTestId('account-form-submit'));
+
+    expect(register).not.toHaveBeenCalled();
   });
 });

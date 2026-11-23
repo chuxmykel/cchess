@@ -123,9 +123,15 @@ describe('restClient', () => {
             username: 'magnus',
             email: 'm@example.com',
             password: 'secret123',
+            acceptTerms: true,
           }),
         '/auth/register',
-        { username: 'magnus', email: 'm@example.com', password: 'secret123' },
+        {
+          username: 'magnus',
+          email: 'm@example.com',
+          password: 'secret123',
+          acceptTerms: true,
+        },
       ],
       [
         'refreshSession',
@@ -489,6 +495,7 @@ describe('restClient', () => {
         username: 'magnus',
         email: 'm@example.com',
         password: 'secret123',
+        acceptTerms: true,
       });
 
       await expect(failure).rejects.toBeInstanceOf(ApiError);
@@ -509,7 +516,12 @@ describe('restClient', () => {
       );
 
       await expect(
-        register({ username: 'magnus', email: 'nope', password: 'short' }),
+        register({
+          username: 'magnus',
+          email: 'nope',
+          password: 'short',
+          acceptTerms: true,
+        }),
       ).rejects.toMatchObject({
         message:
           'email must be an email\npassword must be longer than or equal to 8 characters',
