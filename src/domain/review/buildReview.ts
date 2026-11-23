@@ -5,7 +5,7 @@ import { bookOpeningAt, openingAt } from '../openings';
 import { gameAccuracy, moveAccuracy } from './accuracy';
 import { classifyMove } from './classifyMove';
 import { gameRating } from './gameRating';
-import { isSacrifice, materialGivenUp, moveFacts, pieceName } from './motifs';
+import { materialGivenUp, moveFacts, pieceName, sacrificeOf } from './motifs';
 import { commentFor, seedOf } from './phrases';
 import {
   ClassCounts,
@@ -69,7 +69,7 @@ export function buildReview(
       winSecond: before.second ? winPercent(before.second, color) : null,
       rating: ratings[color] ?? null,
       opponentLoss: previous ? previous.winLoss : null,
-      isSacrifice: isSacrifice(move),
+      isSacrifice: sacrificeOf(move, after.pv) !== null,
       isRecapture:
         !!move.captured &&
         !!played[i - 1]?.captured &&

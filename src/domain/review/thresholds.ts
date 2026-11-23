@@ -29,15 +29,12 @@ export const STANDING = { losing: 35, winning: 65 } as const;
 // Completely winning: from here, what's given away hardly matters.
 export const COMPLETELY_WINNING = 80;
 
-// A sacrifice that's best is brilliant leaving the mover this well off,
-// short of completely winning before it; or, the only good move, leaving it
-// this well off short of a won game.
-export const BRILLIANT = {
-  atLeast: 50,
-  unlessBefore: 90,
-  onlyMoveAtLeast: 30,
-  onlyMoveUnlessBefore: 95,
-} as const;
+// Brilliant: a sound sacrifice that's also the only good move - great's
+// test, at the gap for strong players whatever the rating - and leaves the
+// mover no worse than this, "not in a bad position": level or a little
+// worse. What "!!" means in an annotated game, and as rare: about one move
+// in 1,500.
+export const BRILLIANT_AT_LEAST = 45;
 
 // Great is more generous to newer players, as chess.com's is: from a rating
 // of `until` it's judged as above; from `fully` down, the only good move
@@ -66,6 +63,13 @@ export const MATERIAL_MISTAKE = { pawns: 3, centipawns: 80 } as const;
 // finish, not so far the engine's guesses count.
 export const LINE_PLIES = 10;
 
+// How far into the answer to a sacrifice its material is followed: the
+// opponent's first three moves, long enough to see a trade come back.
+export const SACRIFICE_PLIES = 6;
+// Down this much, and not won straight back: a piece for a pawn, or the
+// exchange.
+export const SACRIFICE_PAWNS = 2;
+
 export const MATERIAL = {
   // A piece - a knight or bishop and up - as against a pawn: what a skewer
   // wins, a free piece taken, or one lost further along the line that
@@ -76,6 +80,9 @@ export const MATERIAL = {
   worthSaying: 2,
   // Ahead by this much, trading pieces is a plan worth naming.
   aheadToTrade: 2,
+  // A piece taken and this much less won straight back is a trade: a knight
+  // for a bishop, or a rook for a minor piece and a pawn.
+  tradeWithin: 1,
 } as const;
 
 // What's worth saying of a good move, by its ply (1 for white's first move):

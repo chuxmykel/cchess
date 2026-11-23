@@ -2,7 +2,13 @@ import { Chess, Color, Move, PieceSymbol, Square } from 'chess.js';
 
 import type { EngineScore } from '../evalScore';
 import { otherColor } from '../players';
-import { FACTS_BY_PLY, LINE_PLIES, MATERIAL } from './thresholds';
+import {
+  FACTS_BY_PLY,
+  LINE_PLIES,
+  MATERIAL,
+  SACRIFICE_PAWNS,
+  SACRIFICE_PLIES,
+} from './thresholds';
 import { isSlip, type MoveClass, type MoveFact, type PieceName } from './types';
 
 // What a review can say about a move, worked out from the position and the
@@ -368,9 +374,9 @@ function goodMoveFacts(context: MoveContext): MoveFact[] {
     facts.push({ kind: 'forcesMate', moves: mating });
   }
 
-  const sacrificed = isSacrifice(move);
+  const sacrificed = sacrificeOf(move, context.replyLine);
   if (sacrificed && context.moveClass === 'brilliant') {
-    facts.push({ kind: 'sacrifice', piece: pieceName(move.piece) });
+    facts.push({ kind: 'sacrifice', piece: pieceName(sacrificed) });
   }
   const reply = lineMaterial(fenAfter, context.replyLine, color);
   const taken = move.captured ? PIECE_VALUE[move.captured] : 0;
@@ -453,12 +459,115 @@ export function materialGivenUp(
   return Math.max(0, best.gain - gainOf(move, reply));
 }
 
-// A piece worth having left where the opponent can take it for less than it's
-// worth - and not as a trade, taking as much as it gives.
-export function isSacrifice(move: Move): boolean {
-  if (move.piece === 'p' || move.piece === 'k') return false;
-  const given = PIECE_VALUE[move.promotion ?? move.piece];
-  const taken = move.captured ? PIECE_VALUE[move.captured] : 0;
-  if (taken >= given) return false;
-  return isLoose(new Chess(move.after), move.to);
+// The piece a move sacrifices, or null: one it leaves where the opponent can
+// take it for less than it's worth - the piece moved, or another it no longer
+// covers - taken in the answer without the material coming straight back, or
+// turned down: the answer takes nothing, though taking it was there and
+// wouldn't only have traded. A piece already under attack counts too, left
+// there when another move would have kept it. A trade, the material won
+// back at once, isn't one; nor is losing what no move could have saved, or
+// anything given with mate.
+export function sacrificeOf(
+  move: Move,
+  replyLine: string[],
+): PieceSymbol | null {
+  // A mate gives nothing up: the game's over.
+  if (move.san.endsWith('#')) return null;
+  const offered = offeredPiece(move);
+  if (!offered) return null;
+  const start = materialBalance(move.before, move.color);
+  const line = playLine(move.after, replyLine, SACRIFICE_PLIES);
+  const downAfter = (played: Move) =>
+    start - materialBalance(played.after, move.color);
+  let taken = false;
+  for (let i = 0; i < line.length; i += 2) {
+    if (line[i].to === offered.square && line[i].captured) taken = true;
+    if (!taken || downAfter(line[i]) < SACRIFICE_PAWNS) continue;
+    const answer = line[i + 1];
+    if (!answer || downAfter(answer) >= SACRIFICE_PAWNS) return offered.type;
+  }
+  if (taken) return null;
+  // Turned down: the answer takes nothing, though it could have taken the
+  // piece - not a check it had to answer instead - and taking it would have
+  // cost something, not only traded.
+  if (line[0]?.captured) return null;
+  return takingOnlyTrades(move.after, offered) === false ? offered.type : null;
+}
+
+// Whether taking a piece offered only trades: the opponent's cheapest piece
+// that can take it does, and the mover wins back as much, near enough, at
+// once - or mates. What a capture wins back is net of the piece taking, if
+// it can be taken in turn for less. Null when it can't be taken at all.
+function takingOnlyTrades(
+  fen: string,
+  offered: { type: PieceSymbol; square: Square },
+): boolean | null {
+  const valueOf = (type: PieceSymbol) =>
+    type === 'k' ? KING_IN_LINE : PIECE_VALUE[type];
+  const takes = new Chess(fen)
+    .moves({ verbose: true })
+    .filter((answer) => answer.to === offered.square)
+    .sort((a, b) => valueOf(a.piece) - valueOf(b.piece));
+  if (takes.length === 0) return null;
+  const position = new Chess(takes[0].after);
+  let wonBack = 0;
+  for (const answer of position.moves({ verbose: true })) {
+    if (answer.san.endsWith('#')) return false;
+    if (!answer.captured) continue;
+    const lost = isLoose(new Chess(answer.after), answer.to)
+      ? PIECE_VALUE[answer.piece]
+      : 0;
+    wonBack = Math.max(wonBack, PIECE_VALUE[answer.captured] - lost);
+  }
+  return wonBack >= PIECE_VALUE[offered.type] - MATERIAL.tradeWithin;
+}
+
+// A piece a move leaves where the opponent can take it for less than it's
+// worth: the one moved - and not as a trade, taking as much as it gives - or
+// another, one that wasn't there before or that another move would have
+// kept.
+function offeredPiece(
+  move: Move,
+): { type: PieceSymbol; square: Square } | null {
+  const after = new Chess(move.after);
+  const moved = move.promotion ?? move.piece;
+  if (moved !== 'p' && moved !== 'k') {
+    const taken = move.captured ? PIECE_VALUE[move.captured] : 0;
+    if (taken < PIECE_VALUE[moved] && isLoose(after, move.to)) {
+      return { type: moved, square: move.to };
+    }
+  }
+  const before = new Chess(move.before);
+  let offered: { type: PieceSymbol; square: Square } | null = null;
+  for (const row of after.board()) {
+    for (const cell of row) {
+      if (!cell || cell.color !== move.color || cell.square === move.to) {
+        continue;
+      }
+      if (cell.type === 'p' || cell.type === 'k') continue;
+      if (offered && PIECE_VALUE[cell.type] <= PIECE_VALUE[offered.type]) {
+        continue;
+      }
+      if (!isLoose(after, cell.square)) continue;
+      if (isLoose(before, cell.square) && !couldBeSaved(move, cell.square)) {
+        continue;
+      }
+      offered = { type: cell.type, square: cell.square };
+    }
+  }
+  return offered;
+}
+
+// Whether a move other than the one played would have left the piece on this
+// square no longer loose - moved somewhere safe, or covered. Not out of
+// check with every answer losing it, say, or a fork.
+function couldBeSaved(played: Move, square: Square): boolean {
+  const position = new Chess(played.before);
+  return position.moves({ verbose: true }).some((other) => {
+    if (other.lan === played.lan) return false;
+    const after = new Chess(other.after);
+    return other.from === square
+      ? !isLoose(after, other.to)
+      : !isLoose(after, square);
+  });
 }

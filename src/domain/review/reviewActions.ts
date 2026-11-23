@@ -1,7 +1,7 @@
 import type { MoveClass, MoveFact, ReviewedMove } from './types';
 
 // What a review offers at a move, as chess.com's does: Best only where there
-// was a better move, out of the book, and Show only where the line after it explains what's
+// was a better move, out of the book and not for a brilliant one, and Show only where the line after it explains what's
 // said - a slip and how it's punished, a standout move and why it works, a
 // tactic and how it plays out - not after a quiet move, where it's only
 // more moves.
@@ -33,10 +33,12 @@ const LINE_FACTS: MoveFact['kind'][] = [
 ];
 
 // Another move was better than the one played - not counting the book's,
-// which are all good.
+// which are all good, or a brilliant one's: as good as the engine's, if a
+// hair behind it.
 export function hasBetterMove(move: ReviewedMove): boolean {
   return (
     move.moveClass !== 'book' &&
+    move.moveClass !== 'brilliant' &&
     !!move.bestLine[0] &&
     move.bestLine[0] !== move.uci
   );

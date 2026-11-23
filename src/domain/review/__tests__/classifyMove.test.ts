@@ -68,22 +68,70 @@ describe('classifyMove', () => {
     );
   });
 
-  it('calls the best move that gives up a piece brilliant', () => {
-    expect(classOf({ isBest: true, isSacrifice: true, winAfter: 60 })).toBe(
-      'brilliant',
-    );
-  });
+  describe('brilliant', () => {
+    // A sacrifice, the engine's choice, level after it - where the next best
+    // loses.
+    const sacrifice = {
+      isBest: true,
+      isSacrifice: true,
+      winBefore: 55,
+      winAfter: 55,
+      winSecond: 25,
+    };
 
-  it("doesn't call a sacrifice brilliant when the game was already won", () => {
-    expect(
-      classOf({
-        isBest: true,
-        isSacrifice: true,
-        winBefore: 98,
-        winAfter: 98,
-        winSecond: 97,
-      }),
-    ).toBe('best');
+    it('is the only good move that gives up a piece', () => {
+      expect(classOf(sacrifice)).toBe('brilliant');
+    });
+
+    it('is the only move that wins, too', () => {
+      expect(
+        classOf({ ...sacrifice, winBefore: 85, winAfter: 85, winSecond: 55 }),
+      ).toBe('brilliant');
+    });
+
+    it("isn't a sacrifice where the next best is nearly as good", () => {
+      expect(classOf({ ...sacrifice, winSecond: 50 })).toBe('best');
+    });
+
+    it("isn't a sacrifice in a game won either way", () => {
+      // 26...Rxd5+, from a game: winning by more, but winning without it.
+      expect(
+        classOf({ ...sacrifice, winBefore: 94, winAfter: 94, winSecond: 89 }),
+      ).toBe('best');
+    });
+
+    it("isn't one leaving the mover in a bad position", () => {
+      expect(
+        classOf({ ...sacrifice, winBefore: 40, winAfter: 40, winSecond: 10 }),
+      ).toBe('great');
+    });
+
+    it("isn't one forced - the only legal move", () => {
+      expect(classOf({ ...sacrifice, winSecond: null })).toBe('best');
+    });
+
+    it('is judged as for strong players, whatever the rating', () => {
+      // A gap of 12: great for a newer player, never brilliant.
+      expect(
+        classOf({ ...sacrifice, winAfter: 45, winSecond: 33, rating: 1000 }),
+      ).toBe('great');
+    });
+
+    it("isn't a move a hair behind the engine's: the engine's was as good", () => {
+      // The engine's keeps 55; this one 54.8 - judged against the engine's
+      // own move, not its next best line, which may be this one.
+      expect(classOf({ ...sacrifice, isBest: false, winAfter: 54.8 })).toBe(
+        'best',
+      );
+      expect(
+        classOf({
+          ...sacrifice,
+          isBest: false,
+          isSacrifice: false,
+          winAfter: 54.8,
+        }),
+      ).toBe('best');
+    });
   });
 
   it("calls letting the opponent's slip go a miss", () => {
