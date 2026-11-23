@@ -5,6 +5,7 @@ import { useSocialContext } from '../../context/SocialContext';
 import HomeTabStack from '../HomeTabStack';
 import MenuStack from '../MenuStack';
 import MessagesStack from '../MessagesStack';
+import { FEATURES } from '../../constants/features';
 import PuzzlesStack from '../PuzzlesStack';
 import { HomeTabsParamList } from './types';
 import { useTheme } from '../../theme';
@@ -62,21 +63,23 @@ const HomeTabs: React.FC = () => {
           tabBarButtonTestID: 'home-tab',
         }}
       />
-      <Screen
-        name="PuzzlesStack"
-        component={PuzzlesStack}
-        options={{
-          tabBarLabel: 'Puzzles',
-          tabBarIcon: ({ focused, color, size }) => (
-            <Icon
-              name={focused ? 'puzzle' : 'puzzle-outline'}
-              size={size}
-              color={color}
-            />
-          ),
-          tabBarButtonTestID: 'puzzles-tab',
-        }}
-      />
+      {FEATURES.puzzles && (
+        <Screen
+          name="PuzzlesStack"
+          component={PuzzlesStack}
+          options={{
+            tabBarLabel: 'Puzzles',
+            tabBarIcon: ({ focused, color, size }) => (
+              <Icon
+                name={focused ? 'puzzle' : 'puzzle-outline'}
+                size={size}
+                color={color}
+              />
+            ),
+            tabBarButtonTestID: 'puzzles-tab',
+          }}
+        />
+      )}
       <Screen
         name="MessagesStack"
         component={MessagesStack}
