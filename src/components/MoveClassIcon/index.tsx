@@ -5,7 +5,9 @@ import { fontWeight, useTheme } from '../../theme';
 import Icon, { IconName } from '../Icon';
 
 // Each class of move's mark: the annotation chess players write for it
-// where there is one - !!, !, ?!, ?, ?? - and a picture where there isn't.
+// where there is one - !!, !, ?!, ?, ?? - and a picture where there isn't
+// (forced's arrow, as chess.com marks it, legible where chess's own square
+// isn't).
 const MARKS: Record<MoveClass, { glyph: string } | { icon: IconName }> = {
   brilliant: { glyph: '!!' },
   great: { glyph: '!' },
@@ -13,6 +15,7 @@ const MARKS: Record<MoveClass, { glyph: string } | { icon: IconName }> = {
   excellent: { icon: 'thumb-up' },
   good: { icon: 'check' },
   book: { icon: 'book-open-variant' },
+  forced: { icon: 'arrow-right-bold' },
   inaccuracy: { glyph: '?!' },
   mistake: { glyph: '?' },
   miss: { icon: 'close' },
@@ -26,6 +29,7 @@ export const MOVE_CLASS_NAMES: Record<MoveClass, string> = {
   excellent: 'Excellent',
   good: 'Good',
   book: 'Book',
+  forced: 'Forced',
   inaccuracy: 'Inaccuracy',
   mistake: 'Mistake',
   miss: 'Miss',

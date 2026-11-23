@@ -1,6 +1,7 @@
 import { classifyMove, ClassifyInput } from '../classifyMove';
 
 const base: ClassifyInput = {
+  legalMoves: 20,
   isBest: false,
   isBook: false,
   winBefore: 55,
@@ -20,6 +21,25 @@ const classOf = (input: Partial<ClassifyInput>) =>
 describe('classifyMove', () => {
   it('calls a move still in the book a book move', () => {
     expect(classOf({ isBook: true, isBest: true })).toBe('book');
+  });
+
+  it('calls the only legal move forced, before anything else', () => {
+    expect(classOf({ legalMoves: 1, isBest: true })).toBe('forced');
+    expect(classOf({ legalMoves: 1, isBook: true })).toBe('forced');
+    // The only move holding the game, and a sacrifice - still forced.
+    expect(
+      classOf({ legalMoves: 1, isBest: true, isSacrifice: true, winSecond: 5 }),
+    ).toBe('forced');
+  });
+
+  it('never calls a forced move a slip, however it leaves the game', () => {
+    expect(
+      classOf({ legalMoves: 1, winAfter: 10, materialLoss: 3, scoreLoss: 400 }),
+    ).toBe('forced');
+  });
+
+  it('judges a move with one other as any other', () => {
+    expect(classOf({ legalMoves: 2, isBest: true })).toBe('best');
   });
 
   it("calls the engine's choice best", () => {

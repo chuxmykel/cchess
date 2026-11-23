@@ -189,7 +189,8 @@ const sharedBoardColors = {
 
 // Green for the good, the stronger the better; then yellow, orange and red
 // for the slips, as lichess marks ?!, ? and ??; teal and blue for the
-// standouts, and brown for the book.
+// standouts, brown for the book, and a pale green for a forced move - the
+// only one there was, so the best, if no find.
 const moveClass: Record<MoveClass, string> = {
   brilliant: '#26a69a',
   great: '#5c8fd6',
@@ -197,6 +198,7 @@ const moveClass: Record<MoveClass, string> = {
   excellent: '#8bbf4e',
   good: '#93ae80',
   book: '#a3825c',
+  forced: '#9cc27a',
   inaccuracy: '#e2b31d',
   mistake: '#e8892a',
   miss: '#e2645a',

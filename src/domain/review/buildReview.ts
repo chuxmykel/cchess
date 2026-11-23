@@ -62,6 +62,7 @@ export function buildReview(
     stillInBook = book !== null;
     const previous = reviewed[i - 1];
     const moveClass = classifyMove({
+      legalMoves: new Chess(move.before).moves().length,
       isBest: before.pv[0] === move.lan,
       isBook: book !== null,
       winBefore,

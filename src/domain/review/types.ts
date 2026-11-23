@@ -11,6 +11,7 @@ export const MOVE_CLASSES = [
   'excellent',
   'good',
   'book',
+  'forced',
   'inaccuracy',
   'mistake',
   'miss',

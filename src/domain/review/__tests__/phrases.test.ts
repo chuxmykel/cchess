@@ -10,6 +10,7 @@ import {
 describe('phrases', () => {
   it('heads a move with its class', () => {
     expect(headline('Nf3', 'book')).toBe('Nf3 is a book move');
+    expect(headline('g6', 'forced')).toBe('g6 is forced');
     expect(headline('Bg3', 'mistake')).toBe('Bg3 is a mistake');
     expect(headline('a3', 'inaccuracy')).toBe('a3 is an inaccuracy');
   });

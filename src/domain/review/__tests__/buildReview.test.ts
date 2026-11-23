@@ -24,6 +24,24 @@ const evals: PositionEval[] = [
   at(cp(-300), ['g1f3', 'd7d6']),
 ];
 
+describe('a forced move', () => {
+  // 1. e4 f5 2. Qh5+ g6: the only legal move.
+  const forcedMoves = ['e2e4', 'f7f5', 'd1h5', 'g7g6'].map((uci) => ({ uci }));
+  const forcedEvals: PositionEval[] = [
+    at(cp(20), ['e2e4', 'e7e5']),
+    at(cp(30), ['e7e5', 'g1f3']),
+    at(cp(90), ['d1h5', 'g7g6']),
+    at(cp(80), ['g7g6', 'h5e5']),
+    at(cp(80), ['h5e5', 'g8f6']),
+  ];
+  const review = buildReview(DEFAULT_POSITION, forcedMoves, forcedEvals);
+
+  it('is called forced', () => {
+    expect(review.moves[3].moveClass).toBe('forced');
+    expect(review.black.counts.forced).toBe(1);
+  });
+});
+
 describe('buildReview', () => {
   const review = buildReview(DEFAULT_POSITION, moves, evals, 'game');
 

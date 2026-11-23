@@ -184,7 +184,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
       what's worth saying, where a game's phases begin.
       `types.ts`' `SLIP_CLASSES`/`isSlip` are the classes that are slips.
     - `classifyMove.ts` - brilliant, great, best, excellent, good, book,
-      inaccuracy, mistake, miss, blunder: by the winning chances the move
+      forced, inaccuracy, mistake, miss, blunder: forced for the only
+      legal move (never a find or a slip, marked with an arrow, as
+      chess.com's is), otherwise by the winning chances the move
       gave away (2/5/10/20 points), the book (`bookOpeningAt`, every move
       before it in it too), and where a side stands - losing, level or
       winning (under 35, from 65). Great is the only good move, changing
@@ -875,7 +877,7 @@ lib/chessboard/  the board, written as a package of its own: outside the
   shown, the voice quiet until it comes to rest) - and `ReviewToolbar`
   (Retry, Show, Best, Next), held a little up from the bottom: Show and
   Best offered only where they say something (`domain/review/
-reviewActions.ts`: Best where another move was better, out of the book and not for a brilliant one;
+reviewActions.ts`: Best where another move was better, not for a book, forced or brilliant move;
   Show after a slip, a great or brilliant move, or a tactic - not a quiet
   move); and to close, the theme cards over the game's last position,
   then Analyse. The eval bar's along the top, then room kept for two lines

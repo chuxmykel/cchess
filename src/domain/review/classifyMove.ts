@@ -28,6 +28,8 @@ const toward = (strong: number, generous: number, share: number) =>
   strong + (generous - strong) * share;
 
 export type ClassifyInput = {
+  // How many legal moves there were: one, and the move was forced.
+  legalMoves: number;
   // The engine's own first choice.
   isBest: boolean;
   // Still in the opening book, and every move before it too.
@@ -84,7 +86,12 @@ const standsBetter = (a: Standing, b: Standing) =>
 
 export function classifyMove(input: ClassifyInput): MoveClass {
   const moveClass = byWinChances(input);
-  if (moveClass === 'book' || input.isBest || input.scoreLoss === null) {
+  if (
+    moveClass === 'book' ||
+    moveClass === 'forced' ||
+    input.isBest ||
+    input.scoreLoss === null
+  ) {
     return moveClass;
   }
   if (
@@ -99,6 +106,9 @@ export function classifyMove(input: ClassifyInput): MoveClass {
 
 function byWinChances(input: ClassifyInput): MoveClass {
   const loss = Math.max(0, input.winBefore - input.winAfter);
+  // The only legal move: nothing to choose, so neither a find nor a slip -
+  // however the game stands after it.
+  if (input.legalMoves === 1) return 'forced';
   if (input.isBook) return 'book';
   if (input.isBest || loss < BEST_WITHIN) {
     // The best move there was other than this one: the engine's next best
