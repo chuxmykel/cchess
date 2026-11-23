@@ -2,7 +2,10 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 
 import Account from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
-import { setChatWithStrangers } from '../../network/restClient';
+import {
+  resendVerificationEmail,
+  setChatWithStrangers,
+} from '../../network/restClient';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { isSwitchOn } from '../../testUtils/switch';
 
@@ -12,12 +15,18 @@ jest.mock('../../context/AuthSessionContext', () => ({
 jest.mock('../../network/restClient', () => ({
   ...jest.requireActual('../../network/restClient'),
   setChatWithStrangers: jest.fn(),
+  resendVerificationEmail: jest.fn(),
 }));
 
 describe('Account', () => {
-  function renderAs(chatWithStrangers: boolean) {
+  function renderAs(chatWithStrangers: boolean, emailVerified = true) {
     const session = makeAuthSession({
-      user: { isGuest: false, chatWithStrangers },
+      user: {
+        isGuest: false,
+        chatWithStrangers,
+        email: 'ana@example.com',
+        emailVerified,
+      },
     });
     (useAuthSession as jest.Mock).mockReturnValue(session);
     const navigation = { navigate: jest.fn() };
@@ -31,6 +40,7 @@ describe('Account', () => {
   afterEach(() => jest.clearAllMocks());
 
   it.each([
+    ['change-email-row', 'ChangeEmail'],
     ['blocked-players-row', 'BlockedPlayers'],
     ['delete-account-row', 'DeleteAccount'],
   ])('%s opens %s', async (testID, route) => {
@@ -54,6 +64,22 @@ describe('Account', () => {
     expect(session.reloadUser).toHaveBeenCalled();
     expect(isSwitchOn(screen.getByTestId('chat-with-strangers-switch'))).toBe(
       true,
+    );
+  });
+
+  it('sends the verification link again while the email is unverified', async () => {
+    (resendVerificationEmail as jest.Mock).mockResolvedValue(undefined);
+    const verified = await renderAs(false, true).screenPromise;
+    expect(verified.getByTestId('account-email-status')).toHaveTextContent(
+      'Verified',
+    );
+    expect(verified.queryByTestId('resend-verification-button')).toBeNull();
+
+    const screen = await renderAs(false, false).screenPromise;
+    await fireEvent.press(screen.getByTestId('resend-verification-button'));
+    expect(resendVerificationEmail).toHaveBeenCalledWith('access-token');
+    expect(screen.getByTestId('account-email-status')).toHaveTextContent(
+      /we sent a new link/,
     );
   });
 });

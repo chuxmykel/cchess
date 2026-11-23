@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StyleSheet } from 'react-native';
 
 import HomeStack from './src/screens/HomeStack';
+import { linking } from './src/screens/linking';
 import { AuthSessionProvider } from './src/context/AuthSessionContext';
 import { EngineProvider } from './src/context/EngineContext';
 import { ThemeProvider } from './src/context/ThemeContext';
@@ -20,7 +21,7 @@ function ThemedNavigation() {
   const theme = useTheme();
   const navTheme = useMemo(() => navigationTheme(theme), [theme]);
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer theme={navTheme} linking={linking}>
       <Navigator
         id="RootNavigator"
         initialRouteName="HomeStack"

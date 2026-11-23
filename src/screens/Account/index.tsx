@@ -1,6 +1,12 @@
+import { useCallback, useState } from 'react';
 import { ScrollView, Switch, Text, View } from 'react-native';
 
 import ActionList from '../../components/ActionList';
+import Button from '../../components/Button';
+import { RESEND_VERIFICATION_FAILED_MESSAGE } from '../../constants/errorMessages';
+import { useAuthSession } from '../../context/AuthSessionContext';
+import { useAsyncAction } from '../../hooks/useAsyncAction';
+import { resendVerificationEmail } from '../../network/restClient';
 import { useChatWithStrangers } from '../../hooks/useChatWithStrangers';
 import { HomeStackScreenProps } from '../HomeStack/types';
 import { makeStyles, useTheme } from '../../theme';
@@ -14,12 +20,60 @@ const Account: React.FC<AccountProps> = ({ navigation }) => {
   const styles = useStyles();
   const { colors } = useTheme();
   const chat = useChatWithStrangers();
+  const session = useAuthSession();
+  const user = session.isReady ? session.user : null;
+  const [isResent, setIsResent] = useState(false);
+  const resend = useAsyncAction(
+    useCallback(() => session.authorized(resendVerificationEmail), [session]),
+    RESEND_VERIFICATION_FAILED_MESSAGE,
+  );
   return (
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
       testID="account-screen"
     >
+      {user?.email && (
+        <View style={styles.card}>
+          <Text style={styles.label} testID="account-email">
+            {user.email}
+          </Text>
+          <Text
+            style={user.emailVerified ? styles.note : styles.warning}
+            testID="account-email-status"
+          >
+            {user.emailVerified
+              ? 'Verified'
+              : isResent
+                ? 'Not verified yet - we sent a new link'
+                : 'Not verified - open the link we emailed you'}
+          </Text>
+          {!user.emailVerified && !isResent && (
+            <Button
+              label={resend.isRunning ? 'Sending…' : 'Send the link again'}
+              onPress={async () => {
+                if (await resend.run()) setIsResent(true);
+              }}
+              disabled={resend.isRunning}
+              variant="outline"
+              testID="resend-verification-button"
+            />
+          )}
+          {resend.errorMessage && (
+            <Text style={styles.error}>{resend.errorMessage}</Text>
+          )}
+        </View>
+      )}
+      <ActionList
+        items={[
+          {
+            label: 'Change email',
+            icon: 'email-edit-outline',
+            onPress: () => navigation.navigate('ChangeEmail'),
+            testID: 'change-email-row',
+          },
+        ]}
+      />
       <View style={styles.card}>
         <View style={styles.row}>
           <Text style={styles.label}>
@@ -93,6 +147,10 @@ const useStyles = makeStyles((t) => ({
   },
   note: {
     color: t.colors.textSecondary,
+    fontSize: t.fontSize.md,
+  },
+  warning: {
+    color: t.colors.danger,
     fontSize: t.fontSize.md,
   },
   error: {

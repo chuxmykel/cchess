@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import AccountForm from '../../components/AccountForm';
+import Button from '../../components/Button';
 import PasswordField from '../../components/PasswordField';
 import TextField from '../../components/TextField';
 import { SIGN_IN_FAILED_MESSAGE } from '../../constants/errorMessages';
@@ -61,6 +62,12 @@ const SignIn: React.FC<SignInProps> = ({ navigation }) => {
         returnKeyType="go"
         onSubmitEditing={() => canSubmit && submit()}
         testID="password-input"
+      />
+      <Button
+        label="Forgot password?"
+        onPress={() => navigation.navigate('ForgotPassword')}
+        variant="text"
+        testID="forgot-password-button"
       />
     </AccountForm>
   );

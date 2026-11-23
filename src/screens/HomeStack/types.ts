@@ -77,6 +77,14 @@ export type HomeStackParamList = {
   Account: undefined;
   /** Deleting your account, its password confirming it. */
   DeleteAccount: undefined;
+  /** Asking for a password reset link, from Sign in. */
+  ForgotPassword: undefined;
+  /** Opened by a reset link from an email (<server>/app/reset-password). */
+  ResetPassword: { token: string };
+  /** Opened by a verify link from an email (<server>/app/verify-email). */
+  VerifyEmail: { token: string };
+  /** A new email, confirmed by a link sent there. */
+  ChangeEmail: undefined;
   /** The players you've blocked, to unblock. */
   BlockedPlayers: undefined;
   /** Reporting a player - for something they said (a chat message of

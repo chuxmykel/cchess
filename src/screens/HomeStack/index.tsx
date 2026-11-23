@@ -40,6 +40,10 @@ import Licenses from '../Licenses';
 import Account from '../Account';
 import DeleteAccount from '../DeleteAccount';
 import BlockedPlayers from '../BlockedPlayers';
+import ChangeEmail from '../ChangeEmail';
+import ForgotPassword from '../ForgotPassword';
+import ResetPassword from '../ResetPassword';
+import VerifyEmail from '../VerifyEmail';
 import Report from '../Report';
 import Settings from '../Settings';
 import Appearance from '../Appearance';
@@ -255,6 +259,38 @@ const HomeStack: React.FC = () => {
                     options={({ navigation }) => ({
                       ...plainHeaderOptions(navigation),
                       title: 'Delete Account',
+                    })}
+                  />
+                  <Screen
+                    name="ForgotPassword"
+                    component={ForgotPassword}
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'Forgot Password',
+                    })}
+                  />
+                  <Screen
+                    name="ResetPassword"
+                    component={ResetPassword}
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'New Password',
+                    })}
+                  />
+                  <Screen
+                    name="VerifyEmail"
+                    component={VerifyEmail}
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'Confirm Email',
+                    })}
+                  />
+                  <Screen
+                    name="ChangeEmail"
+                    component={ChangeEmail}
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'Change Email',
                     })}
                   />
                   <Screen
