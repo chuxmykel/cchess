@@ -1227,6 +1227,15 @@ keyboard.ts` sends each platform's keyboard events; `isSwitchOn` reads
   are read and written with `.get()`/`.set()`, not `.value`, which the
   React-Compiler-readiness lint (`react-hooks/immutability`) refuses on a
   hook's arguments.
+- Store builds go through EAS (`eas.json`): `production` and `preview`
+  build against `https://api.chux.dev`, and `app.config.js` refuses one
+  whose `EXPO_PUBLIC_SERVER_URL` isn't https. The app is `dev.chux.cchess`
+  on both stores (permanent once uploaded); iOS's privacy manifest, the
+  links that open the app (`api.chux.dev/app/*`) and the permissions
+  Android is kept from asking for (the microphone `expo-audio` would add)
+  are in `app.json`. The icons are drawn by `node
+scripts/generate-icons.js` (the board's knight on the default board,
+  rendered with `rsvg-convert`).
 - This is an Expo managed-workflow project - no native `ios`/`android`
   directories are checked in. `expo prebuild` would generate them on demand
   if a bare workflow is ever needed.
