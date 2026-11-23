@@ -238,7 +238,7 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `ApiError`s carrying the server's own message - auth: guest, sign in,
   register, refresh, logout; plus `/users/me`, game history (yours or a
   player's, a page at a time), a single game, PGN, bookmarks, player
-  search, profiles, a player's friends, activity and rating stats, friends and friend requests, challenges, and direct messages - the inbox (`getConversations`), when they last read yours (`getTheirLastReadAt`), and a game or position sent along (`MessageAttachment`)),
+  search, profiles, a player's friends, activity and rating stats, friends and friend requests, challenges, and direct messages - the inbox (`getConversations`), when they last read yours (`getTheirLastReadAt`), and a game or position sent along (`MessageAttachment`); and account and safety - email links (verify, change, password reset), deleting the account, blocks, reports, the chat setting, the terms, and `getAppConfig`, read on launch),
   `accessToken.ts` (reads a JWT access token's expiry),
   `socketClient.ts` (the one `AppSocket` singleton - `connectSocket`/
   `disconnectSocket`/`getSocket`, plus `updateSocketToken` so later

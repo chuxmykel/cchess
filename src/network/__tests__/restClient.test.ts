@@ -1,8 +1,21 @@
 import { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
 import {
+  acceptTerms,
   apiClient,
   ApiError,
+  blockUser,
+  deleteAccount,
+  getAppConfig,
+  getBlockedUsers,
+  reportUser,
+  requestEmailChange,
+  requestPasswordReset,
+  resendVerificationEmail,
+  resetPassword,
+  setChatWithStrangers,
+  unblockUser,
+  verifyEmail,
   createGuestSession,
   getGamePgn,
   getMe,
@@ -511,5 +524,96 @@ describe('restClient', () => {
         message: 'Request failed',
       });
     });
+  });
+});
+
+describe('account and safety', () => {
+  let post: jest.SpyInstance;
+  let del: jest.SpyInstance;
+  let get: jest.SpyInstance;
+  let patch: jest.SpyInstance;
+
+  beforeEach(() => {
+    post = jest.spyOn(apiClient, 'post').mockResolvedValue({ data: {} });
+    del = jest.spyOn(apiClient, 'delete').mockResolvedValue({ data: null });
+    get = jest.spyOn(apiClient, 'get').mockResolvedValue({ data: [] });
+    patch = jest
+      .spyOn(apiClient, 'patch')
+      .mockResolvedValue({ data: AUTH_RESPONSE.user });
+  });
+
+  afterEach(() => jest.restoreAllMocks());
+
+  const auth = { headers: { Authorization: 'Bearer tok' } };
+
+  it('deletes the account with its password in the body', async () => {
+    await deleteAccount('pw', 'tok');
+    expect(del).toHaveBeenCalledWith('/users/me', {
+      ...auth,
+      data: { password: 'pw' },
+    });
+  });
+
+  it('blocks, unblocks and lists, by username', async () => {
+    await blockUser('a b', 'tok');
+    expect(post).toHaveBeenCalledWith('/users/a%20b/block', undefined, auth);
+    await unblockUser('ana', 'tok');
+    expect(del).toHaveBeenCalledWith('/users/ana/block', auth);
+    await getBlockedUsers('tok');
+    expect(get).toHaveBeenCalledWith('/users/me/blocks', auth);
+  });
+
+  it('reports with the message and game named', async () => {
+    const report = {
+      username: 'bob',
+      reason: 'abuse' as const,
+      gameId: 'g1',
+      messageId: 'm1',
+    };
+    await reportUser(report, 'tok');
+    expect(post).toHaveBeenCalledWith('/reports', report, auth);
+  });
+
+  it('asks for email links, and uses them, signed out', async () => {
+    await requestPasswordReset('a@b.test');
+    expect(post).toHaveBeenCalledWith('/auth/password/forgot', {
+      email: 'a@b.test',
+    });
+    await resetPassword('t', 'new-password');
+    expect(post).toHaveBeenCalledWith('/auth/password/reset', {
+      token: 't',
+      password: 'new-password',
+    });
+    await verifyEmail('t');
+    expect(post).toHaveBeenCalledWith('/auth/email/verify', { token: 't' });
+    await requestEmailChange('n@b.test', 'pw', 'tok');
+    expect(post).toHaveBeenCalledWith(
+      '/auth/email/change',
+      { email: 'n@b.test', password: 'pw' },
+      auth,
+    );
+    await resendVerificationEmail('tok');
+    expect(post).toHaveBeenCalledWith(
+      '/auth/email/verification',
+      undefined,
+      auth,
+    );
+  });
+
+  it('saves the chat setting and accepts the terms', async () => {
+    await setChatWithStrangers(true, 'tok');
+    expect(patch).toHaveBeenCalledWith(
+      '/users/me',
+      { chatWithStrangers: true },
+      auth,
+    );
+    await acceptTerms('tok');
+    expect(post).toHaveBeenCalledWith('/users/me/terms', undefined, auth);
+  });
+
+  it('reads the app config signed out', async () => {
+    get.mockResolvedValue({ data: { minimumVersion: '1.2.0' } });
+    expect((await getAppConfig()).minimumVersion).toBe('1.2.0');
+    expect(get).toHaveBeenCalledWith('/app/config');
   });
 });

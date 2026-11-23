@@ -185,6 +185,9 @@ export type ChatHistoryPayload = {
   messages: ChatMessage[];
   /** How far I've read the chat; null if I never have. */
   readAt: string | null;
+  /** Whether the two players may chat - friends, or strangers who both
+   * chose to; never a guest. Absent from an older server: chat as before. */
+  enabled?: boolean;
 };
 
 export type GamePresencePayload = {
