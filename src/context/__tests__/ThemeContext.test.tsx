@@ -68,10 +68,10 @@ describe('ThemeProvider', () => {
     expect(result.current.board).toBe(BOARD_THEMES.test);
 
     await act(async () =>
-      result.current.appearance.update({ boardTheme: 'lichess.org' }),
+      result.current.appearance.update({ boardTheme: 'wood' }),
     );
 
-    expect(result.current.board).toBe(BOARD_THEMES['lichess.org']);
+    expect(result.current.board).toBe(BOARD_THEMES.wood);
   });
 });
 

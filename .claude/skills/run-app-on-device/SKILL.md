@@ -363,7 +363,7 @@ resign or abort from the app (see `examples/resign.yaml` /
 - **Puzzles** (the tab): `puzzles-screen`, `puzzles-coming-soon`.
 - **Appearance**: `appearance-settings`, the radio buttons
   `color-scheme-<system|light|dark>`, and `board-theme-<name>` (`test` -
-  the default blue - `chess.com`, `lichess.org`, `powderblue`,
+  the default blue - `green`, `wood`, `powderblue`,
   `monochrome`). Saved on the device, in Expo Go's data: set them back to
   System and `test` after trying others. To see System follow iOS, switch
   the simulator with `xcrun simctl ui booted appearance dark` (and back

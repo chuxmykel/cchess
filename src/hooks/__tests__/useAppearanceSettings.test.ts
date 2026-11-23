@@ -19,7 +19,7 @@ describe('useAppearanceSettings', () => {
     await act(async () =>
       first.result.current.update({
         colorScheme: 'dark',
-        boardTheme: 'lichess.org',
+        boardTheme: 'wood',
       }),
     );
 
@@ -28,7 +28,7 @@ describe('useAppearanceSettings', () => {
 
     expect(again.result.current.settings).toEqual({
       colorScheme: 'dark',
-      boardTheme: 'lichess.org',
+      boardTheme: 'wood',
       pieceSet: 'standard',
     });
   });

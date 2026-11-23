@@ -1240,7 +1240,7 @@ keyboard.ts` sends each platform's keyboard events; `isSwitchOn` reads
   double-quoted (`"it's"`), and JSX text writes `&apos;` - which
   `react/no-unescaped-entities` asks for in place of a bare `'`.
 - Board color themes live in `src/theme/boardThemes.ts`
-  (`chess.com`, `lichess.org`, `monochrome`, `powderblue`, `test` - shown
+  (`green`, `wood`, `monochrome`, `powderblue`, `test` - shown
   as Green, Wood, Monochrome, Powder blue and Blue), chosen in Appearance;
   `test`, the blue, is the default.
 - `eslint-plugin-react-hooks`'s React-Compiler-readiness rules

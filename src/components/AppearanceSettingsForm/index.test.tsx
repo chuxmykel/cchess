@@ -24,13 +24,13 @@ describe('AppearanceSettingsForm', () => {
   it("marks the board in use, and picks another's colors", async () => {
     const { screen, onChange } = await renderForm({
       ...DEFAULT_APPEARANCE_SETTINGS,
-      boardTheme: 'chess.com',
+      boardTheme: 'green',
     });
-    expect(screen.getByTestId('board-theme-chess.com')).toBeChecked();
+    expect(screen.getByTestId('board-theme-green')).toBeChecked();
     expect(screen.getByTestId('board-theme-test')).not.toBeChecked();
 
-    await fireEvent.press(screen.getByTestId('board-theme-lichess.org'));
+    await fireEvent.press(screen.getByTestId('board-theme-wood'));
 
-    expect(onChange).toHaveBeenCalledWith({ boardTheme: 'lichess.org' });
+    expect(onChange).toHaveBeenCalledWith({ boardTheme: 'wood' });
   });
 });
