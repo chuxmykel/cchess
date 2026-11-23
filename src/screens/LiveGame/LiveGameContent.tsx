@@ -18,6 +18,7 @@ import GameScreenHeader from '../../components/GameScreenHeader';
 import GameToolbar from '../../components/GameToolbar';
 import BottomBar from '../../components/BottomBar';
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
+import { useGameFinishedEvent } from '../../hooks/useGameFinishedEvent';
 import { chatReportTarget } from '../chatReportTarget';
 import ChatSheet from '../../components/ChatSheet';
 import DrawOfferPrompt from '../../components/DrawOfferPrompt';
@@ -249,6 +250,15 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   });
 
   const myPlayer = playerOf(snapshot, myColor);
+  useGameFinishedEvent({
+    isGameOver,
+    gameStatus,
+    gameType: snapshot.gameType,
+    rated: snapshot.rated,
+    myColor,
+    result,
+    resultReason,
+  });
   const myRatingDiff = ratingDiffOf(
     { whiteRatingDiff, blackRatingDiff },
     myColor,

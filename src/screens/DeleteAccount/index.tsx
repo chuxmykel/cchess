@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Text } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { analytics } from '../../analytics/analytics';
 import AccountForm from '../../components/AccountForm';
 import PasswordField from '../../components/PasswordField';
 import { DELETE_ACCOUNT_FAILED_MESSAGE } from '../../constants/errorMessages';
@@ -35,6 +36,7 @@ const DeleteAccount: React.FC<DeleteAccountProps> = ({ navigation }) => {
 
   async function submit() {
     if (await deletion.run()) {
+      analytics.capture('account_deleted');
       navigation.popToTop();
     }
   }

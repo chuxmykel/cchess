@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { analytics } from '../../analytics/analytics';
 import AccountForm from '../../components/AccountForm';
 import Button from '../../components/Button';
 import Icon from '../../components/Icon';
@@ -63,7 +64,10 @@ const Report: React.FC<ReportProps> = ({ navigation, route }) => {
   );
 
   async function submit() {
-    if (await submission.run()) setIsSent(true);
+    if (await submission.run()) {
+      analytics.capture('report_sent', { reason });
+      setIsSent(true);
+    }
   }
 
   async function block() {

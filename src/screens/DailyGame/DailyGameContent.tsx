@@ -20,6 +20,7 @@ import GameToolbar from '../../components/GameToolbar';
 import ConfirmMoveBar from '../../components/ConfirmMoveBar';
 import BottomBar from '../../components/BottomBar';
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
+import { useGameFinishedEvent } from '../../hooks/useGameFinishedEvent';
 import { chatReportTarget } from '../chatReportTarget';
 import ChatSheet from '../../components/ChatSheet';
 import DrawOfferPrompt from '../../components/DrawOfferPrompt';
@@ -215,6 +216,15 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
     confirmMove,
     cancelMove,
   } = useOnlineChessGameContext();
+  useGameFinishedEvent({
+    isGameOver,
+    gameStatus,
+    gameType: snapshot.gameType,
+    rated: snapshot.rated,
+    myColor,
+    result,
+    resultReason,
+  });
   const rematch = useDailyRematch({
     opponent: playerOf(snapshot, otherColor(myColor)),
     initialSeconds: snapshot.initialSeconds,

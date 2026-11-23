@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { analytics } from '../../analytics/analytics';
 import AccountForm from '../../components/AccountForm';
 import PasswordField from '../../components/PasswordField';
 import TermsCheckbox from '../../components/TermsCheckbox';
@@ -49,6 +50,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
 
   async function submit() {
     if (await registration.run()) {
+      analytics.capture('account_created');
       navigation.goBack();
     }
   }
