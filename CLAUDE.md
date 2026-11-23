@@ -1078,6 +1078,35 @@ reviewActions.ts`: Best where another move was better, not for a book, forced or
   `LiveGame` covers the tabs and locks swipe-back - and Android's back -
   while playing.
 
+- **Accounts and safety** (what both stores require - see cchess-be's
+  `docs/features.md`, "Accounts and safety"):
+  - Settings > `Account` (signed in only): the email, verified or not
+    (`resendVerificationEmail`), `ChangeEmail`, the chat-with-strangers
+    switch (`useChatWithStrangers` - off by default; game chat with a
+    stranger needs both on), `BlockedPlayers` (`useBlockedPlayers`) and
+    `DeleteAccount` (the password, then a new guest).
+  - `Report` (a reason and details, then an offer to block) from a
+    profile, a conversation's menu, or holding someone else's message -
+    in `MessageList` and the game `ChatSheet` (after the sheet closes,
+    `useRunAfterDismiss`); `useBlocking` asks before blocking. A game's
+    chat button is left out when `useGameChat`'s `isEnabled` is false.
+  - Signing up needs `TermsCheckbox`; `TermsPrompt` (in `HomeStack`) asks
+    an account whose `termsAccepted` is false. `constants/legal.ts` has
+    the server's terms, privacy and deletion pages, linked in Settings.
+  - `ForgotPassword` from Sign in; `VerifyEmail` and `ResetPassword` open
+    from the emails' links (`screens/linking.ts`: `cchess://` and the
+    server's `/app/` paths, Home beneath).
+  - `useUpdateRequired` reads `GET /app/config` on launch: an app older
+    than its `minimumVersion` shows `UpdateRequired` in place of
+    everything (`constants/stores.ts` - set `APP_STORE_ID` once the App
+    Store record exists).
+  - `src/analytics/` - PostHog (EU), only with `EXPO_PUBLIC_POSTHOG_KEY`,
+    loaded lazily: screens (from the navigation container), a few events
+    (`AnalyticsEvent`, `useGameFinishedEvent`), uncaught errors; accounts
+    identified by ID only (`useAnalyticsIdentity`); Settings' switch
+    (`useAnalyticsConsent`) opts out.
+  - `constants/features.ts` hides what isn't built yet (Puzzles, Play
+    Stockfish): the stores refuse placeholders.
 - **`src/theme/`** - the app's style guide, every color, space, corner,
   type size and shadow its styles are drawn from. `tokens.ts`: the scales
   that are the same in both modes - `spacing` (a 4pt grid, `xxs` 2 to
