@@ -37,6 +37,8 @@ import { GameType } from '../../domain/types';
 import SignIn from '../SignIn';
 import CreateAccount from '../CreateAccount';
 import Licenses from '../Licenses';
+import Account from '../Account';
+import DeleteAccount from '../DeleteAccount';
 import Settings from '../Settings';
 import Appearance from '../Appearance';
 import { plainHeaderOptions } from '../plainHeaderOptions';
@@ -234,6 +236,22 @@ const HomeStack: React.FC = () => {
                     options={({ navigation }) => ({
                       ...plainHeaderOptions(navigation),
                       title: 'Appearance',
+                    })}
+                  />
+                  <Screen
+                    name="Account"
+                    component={Account}
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'Account',
+                    })}
+                  />
+                  <Screen
+                    name="DeleteAccount"
+                    component={DeleteAccount}
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'Delete Account',
                     })}
                   />
                   <Screen

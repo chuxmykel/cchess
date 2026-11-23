@@ -1,6 +1,7 @@
 import { ScrollView } from 'react-native';
 
 import ActionList from '../../components/ActionList';
+import { useAuthSession } from '../../context/AuthSessionContext';
 import { HomeStackScreenProps } from '../HomeStack/types';
 import { makeStyles } from '../../theme';
 
@@ -9,15 +10,29 @@ type SettingsProps = {
 };
 
 // Every setting in the app, in one place - each kept on the device, so a
-// guest has them too.
+// guest has them too; the account's own, signed in only.
 const Settings: React.FC<SettingsProps> = ({ navigation }) => {
   const styles = useStyles();
+  const session = useAuthSession();
+  const isSignedIn = session.isReady && !session.user.isGuest;
   return (
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
       testID="settings-screen"
     >
+      {isSignedIn && (
+        <ActionList
+          items={[
+            {
+              label: 'Account',
+              icon: 'account-cog-outline',
+              onPress: () => navigation.navigate('Account'),
+              testID: 'account-row',
+            },
+          ]}
+        />
+      )}
       <ActionList
         items={[
           {

@@ -63,6 +63,11 @@ export type HomeStackParamList = {
   DailyGameSettings: undefined;
   /** The game review's settings, over one or from Settings. */
   ReviewSettings: undefined;
+  /** Your account, from Settings: email, chat, blocked players, deleting
+   * it. Signed in only. */
+  Account: undefined;
+  /** Deleting your account, its password confirming it. */
+  DeleteAccount: undefined;
   /** Credit and licences for what the app uses, the engine's above all. */
   Licenses: undefined;
   Appearance: undefined;
