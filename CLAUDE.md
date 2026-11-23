@@ -187,19 +187,26 @@ lib/chessboard/  the board, written as a package of its own: outside the
       inaccuracy, mistake, miss, blunder: by the winning chances the move
       gave away (2/5/10/20 points), the book (`bookOpeningAt`, every move
       before it in it too), and where a side stands - losing, level or
-      winning (under 35, from 65). Brilliant is a sacrifice that's best (a
-      piece left where it's taken for less, never counting a king, which
-      can't take a defended one). Great is the only good move, changing
+      winning (under 35, from 65). Great is the only good move, changing
       where the side stands (level where the next best loses, winning
-      where it's level), not a recapture; miss,
-      the winning position the opponent's slip left let go, to level.
-      Great is more generous below a rating of 2000 (fully from 1000; an
-      unrated player taken as 1500), as chess.com's is; a slip is the same
-      at every rating.
-      Winning chances barely move once a game's lost, so a move giving
-      away a piece over best play (`materialGivenUp`) and enough of the
-      score is a mistake whatever the chances - unless the mover is still
-      completely winning.
+      where it's level), not a recapture. Brilliant is what "!!" means in
+      an annotated game, about one move in 1,500: a great move that's also
+      a sound sacrifice, at the gap for strong players whatever the
+      rating, not leaving the mover in a bad position (not chess.com's
+      looser brilliant). The sacrifice is `motifs.ts`' `sacrificeOf`: a
+      piece the move leaves where it's taken for less, never counting a
+      king, which can't take a defended one (the moved one, one it no
+      longer covers, or one already attacked another move would have
+      kept), taken along the engine's answer without the material coming
+      straight back, or turned down when taking it was there and wouldn't
+      only have traded (a capture winning material back counted net of the
+      piece taking). Miss is the winning position the opponent's slip left
+      let go, to level. Great is more generous below a rating of 2000
+      (fully from 1000; an unrated player taken as 1500), as chess.com's
+      is; a slip is the same at every rating. Winning chances barely move
+      once a game's lost, so a move giving away a piece over best play
+      (`materialGivenUp`) and enough of the score is a mistake whatever
+      the chances, unless the mover is still completely winning.
     - `motifs.ts` - what a move did, with chess.js along the engine's
       lines: material over the line, mates allowed or missed, a piece left
       hanging, a fork, pin or skewer, a piece trapped; for a good one,
@@ -868,7 +875,7 @@ lib/chessboard/  the board, written as a package of its own: outside the
   shown, the voice quiet until it comes to rest) - and `ReviewToolbar`
   (Retry, Show, Best, Next), held a little up from the bottom: Show and
   Best offered only where they say something (`domain/review/
-reviewActions.ts`: Best where another move was better, out of the book;
+reviewActions.ts`: Best where another move was better, out of the book and not for a brilliant one;
   Show after a slip, a great or brilliant move, or a tactic - not a quiet
   move); and to close, the theme cards over the game's last position,
   then Analyse. The eval bar's along the top, then room kept for two lines
