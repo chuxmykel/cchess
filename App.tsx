@@ -6,6 +6,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StyleSheet } from 'react-native';
 
+import UpdateRequired from './src/components/UpdateRequired';
+import { useUpdateRequired } from './src/hooks/useUpdateRequired';
 import HomeStack from './src/screens/HomeStack';
 import { linking } from './src/screens/linking';
 import { AuthSessionProvider } from './src/context/AuthSessionContext';
@@ -20,6 +22,10 @@ const { Navigator, Screen } = createNativeStackNavigator();
 function ThemedNavigation() {
   const theme = useTheme();
   const navTheme = useMemo(() => navigationTheme(theme), [theme]);
+  const isUpdateRequired = useUpdateRequired();
+  if (isUpdateRequired) {
+    return <UpdateRequired />;
+  }
   return (
     <NavigationContainer theme={navTheme} linking={linking}>
       <Navigator
