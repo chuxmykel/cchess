@@ -18,7 +18,7 @@ describe('DeleteAccount', () => {
   async function renderScreen() {
     const session = makeAuthSession({ user: { isGuest: false } });
     (useAuthSession as jest.Mock).mockReturnValue(session);
-    const navigation = { popToTop: jest.fn() };
+    const navigation = { navigate: jest.fn() };
     const props = {
       navigation,
       route: { key: 'DeleteAccount', name: 'DeleteAccount' },
@@ -38,7 +38,9 @@ describe('DeleteAccount', () => {
 
     expect(deleteAccount).toHaveBeenCalledWith('secret', 'access-token');
     expect(session.signOut).toHaveBeenCalledTimes(1);
-    expect(navigation.popToTop).toHaveBeenCalledTimes(1);
+    expect(navigation.navigate).toHaveBeenCalledWith('HomeTabs', {
+      screen: 'HomeTabStack',
+    });
   });
 
   it("shows the server's reason, and stays signed in, on a wrong password", async () => {
@@ -54,7 +56,7 @@ describe('DeleteAccount', () => {
       'Wrong password',
     );
     expect(session.signOut).not.toHaveBeenCalled();
-    expect(navigation.popToTop).not.toHaveBeenCalled();
+    expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
   it("can't be submitted without the password", async () => {

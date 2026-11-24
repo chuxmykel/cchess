@@ -3,6 +3,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Color } from 'chess.js';
 
 import { Seek } from '../../constants/seek';
+import type { HomeTabsParamList } from '../HomeTabs/types';
 import { GameType } from '../../domain/types';
 import { AnalysisSource } from '../../hooks/useAnalysisSource';
 import { ExplorerLine } from '../../hooks/useExplorerLine';
@@ -25,7 +26,8 @@ export type ReportTarget = {
 };
 
 export type HomeStackParamList = {
-  HomeTabs: undefined;
+  /** The tabs - a tab named to open it there. */
+  HomeTabs: NavigatorScreenParams<HomeTabsParamList> | undefined;
   LiveGame: { seek: Seek } | { gameId: string };
   /** One of your daily games, to play a move in whenever you like. */
   DailyGame: { gameId: string };

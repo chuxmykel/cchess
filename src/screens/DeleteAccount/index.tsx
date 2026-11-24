@@ -37,7 +37,7 @@ const DeleteAccount: React.FC<DeleteAccountProps> = ({ navigation }) => {
   async function submit() {
     if (await deletion.run()) {
       analytics.capture('account_deleted');
-      navigation.popToTop();
+      navigation.navigate('HomeTabs', { screen: 'HomeTabStack' });
     }
   }
 
