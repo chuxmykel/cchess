@@ -29,6 +29,12 @@ jest.mock('expo-audio', () => {
 
 // expo-speech's native module isn't there under Jest: what's said is kept
 // by the mock's `speak`, and the voices are a basic and an enhanced one.
+// expo-linking reads the app's scheme from the manifest, which Jest has
+// none of: Expo Go's own link prefix, as it would build it.
+jest.mock('expo-linking', () => ({
+  createURL: (path) => `exp://127.0.0.1:8081/--${path}`,
+}));
+
 jest.mock('expo-speech', () => ({
   speak: jest.fn(),
   stop: jest.fn(() => Promise.resolve()),

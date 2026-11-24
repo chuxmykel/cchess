@@ -16,3 +16,9 @@ describe('linking', () => {
     expect(homeStack?.routes[1].params).toEqual({ token: 'abc' });
   });
 });
+
+describe('linking in Expo Go', () => {
+  it("takes Expo Go's own links too", () => {
+    expect(linking.prefixes).toContain('exp://127.0.0.1:8081/--/');
+  });
+});
