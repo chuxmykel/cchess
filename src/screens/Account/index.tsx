@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { ScrollView, Switch, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 import ActionList from '../../components/ActionList';
 import Button from '../../components/Button';
@@ -23,6 +24,14 @@ const Account: React.FC<AccountProps> = ({ navigation }) => {
   const session = useAuthSession();
   const user = session.isReady ? session.user : null;
   const [isResent, setIsResent] = useState(false);
+  // The account as the server has it now, each time it's shown - an email
+  // verified from a link meanwhile shows as verified.
+  const { reloadUser } = session;
+  useFocusEffect(
+    useCallback(() => {
+      reloadUser().catch(() => {});
+    }, [reloadUser]),
+  );
   const resend = useAsyncAction(
     useCallback(() => session.authorized(resendVerificationEmail), [session]),
     RESEND_VERIFICATION_FAILED_MESSAGE,

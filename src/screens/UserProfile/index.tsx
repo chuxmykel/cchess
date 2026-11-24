@@ -15,6 +15,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
 
 import ActionList, { ActionListItem } from '../../components/ActionList';
@@ -71,6 +72,16 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
     reloadProfile();
     reloadFriends();
   }, [reloadProfile, reloadFriends]);
+  // Back from a screen that changed what the profile shows - a report that
+  // went on to block them - the profile is fetched again. Not on the first
+  // focus: it's just been fetched.
+  const hasBeenFocused = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (hasBeenFocused.current) reloadProfile();
+      hasBeenFocused.current = true;
+    }, [reloadProfile]),
+  );
   const friendActions = useFriendActions(navigation, (friend) =>
     toast.show(`Challenge sent to ${friend.displayName}`),
   );

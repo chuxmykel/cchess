@@ -9,6 +9,9 @@ import {
 import { makeAuthSession } from '../../testUtils/authSession';
 import { isSwitchOn } from '../../testUtils/switch';
 
+jest.mock('@react-navigation/native', () =>
+  jest.requireActual('../../testUtils/focusEffectRunsOnMount'),
+);
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
 }));

@@ -25,6 +25,9 @@ import {
   makeUserProfile,
 } from '../../testUtils/social';
 
+jest.mock('@react-navigation/native', () =>
+  jest.requireActual('../../testUtils/focusEffectRunsOnMount'),
+);
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
 }));
