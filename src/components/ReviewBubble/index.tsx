@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import Icon, { IconName } from '../Icon';
 import MoveClassIcon from '../MoveClassIcon';
 import type { NumberedMove } from '../../domain/evalScore';
+import type { ReviewStyle } from '../../constants/review';
 import type { MoveClass } from '../../domain/review/types';
 import { makeStyles, useTheme } from '../../theme';
 
@@ -10,6 +11,8 @@ interface ReviewBubbleProps {
   // What the bubble's about: a move's class, or a theme's icon - or neither,
   // for the review's opening and closing words.
   moveClass?: MoveClass | null;
+  // How the class is marked (see MoveClassIcon).
+  markStyle?: ReviewStyle;
   icon?: IconName;
   title?: string;
   // The position's score, as the eval bar shows it.
@@ -42,6 +45,7 @@ function marked(text: string, plain: object, underlined: object) {
 // speech bubble, saying what a move was and why.
 const ReviewBubble: React.FC<ReviewBubbleProps> = ({
   moveClass,
+  markStyle = 'classic',
   icon,
   title,
   score,
@@ -65,7 +69,11 @@ const ReviewBubble: React.FC<ReviewBubbleProps> = ({
         {(title || moveClass || icon) && (
           <View style={styles.header}>
             {moveClass ? (
-              <MoveClassIcon moveClass={moveClass} size={20} />
+              <MoveClassIcon
+                moveClass={moveClass}
+                size={20}
+                markStyle={markStyle}
+              />
             ) : icon ? (
               <Icon name={icon} size={20} color={colors.accent} />
             ) : null}

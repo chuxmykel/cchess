@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Color } from 'chess.js';
 
 import Button from '../../components/Button';
+import CchessReviewSummary from '../../components/CchessReviewSummary';
 import EvalBar from '../../components/EvalBar';
 import EvalGraph from '../../components/EvalGraph';
 import { ToolbarButton } from '../../components/GameToolbar';
@@ -11,13 +12,30 @@ import MoveList from '../../components/MoveList';
 import ReviewBubble from '../../components/ReviewBubble';
 import ReviewSummary from '../../components/ReviewSummary';
 import ReviewToolbar from '../../components/ReviewToolbar';
+import TimeGraph from '../../components/TimeGraph';
 import { ReviewSettings } from '../../constants/review';
 import { defeatedColor } from '../../domain/players';
-import { introLine, IntroContext, seedOf } from '../../domain/review/phrases';
+import {
+  formatSpent,
+  guessTally,
+  introLine,
+  IntroContext,
+  type Names,
+  seedOf,
+  timeLines,
+} from '../../domain/review/phrases';
+import {
+  chapterAt,
+  chapters,
+  decisiveMoment,
+  storyStops,
+} from '../../domain/review/story';
+import { calledOut, moveTimes, timeReport } from '../../domain/review/time';
 import {
   type GameReview,
   isSlip,
   type MoveClass,
+  type ThemeCard,
 } from '../../domain/review/types';
 import { reviewView } from '../../hooks/reviewView';
 import {
@@ -57,6 +75,8 @@ const THEME_ICONS = {
   tactics: 'target',
   strategy: 'chess-knight',
   endgame: 'chess-king',
+  time: 'timer-outline',
+  turns: 'flag-checkered',
 } as const;
 
 // What the review's intro is chosen by: how the game went for the side
@@ -109,11 +129,73 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
   // the bottom up.
   const [topRoom, setTopRoom] = useState(BUBBLE_ROOM);
   const judge = useRetryJudge(retrying);
-  const stepper = useReviewStepper(review, side, judge);
-  const isRetrying = stepper.mode.kind === 'retry';
+
+  // The cchess style: the game's story - its chapters, the move that
+  // decided it, where Next stops and asks for the move - and its clock.
+  const cchess = settings.style === 'cchess';
+  const names = useMemo<Names>(
+    () => ({ w: game.white.displayName, b: game.black.displayName }),
+    [game],
+  );
+  const story = useMemo(
+    () => (cchess ? chapters(review, names, game.result) : []),
+    [cchess, review, names, game.result],
+  );
+  const decisive = useMemo(
+    () => decisiveMoment(review, names),
+    [review, names],
+  );
+  const clock = useMemo(() => {
+    if (!cchess || !game.clock) return null;
+    const colors = review.moves.map((move) => move.color);
+    const times = moveTimes(game.clock, colors);
+    // A clock no move took any time on says nothing.
+    if (times.every((ms) => ms === 0)) return null;
+    const report = timeReport(review.moves, game.clock, side);
+    return {
+      times,
+      colors,
+      report,
+      // "Your longest think" to the player reviewed, else by name.
+      lines: timeLines(report, viewerColor === side ? null : names[side]),
+      ...calledOut(report),
+    };
+  }, [cchess, game.clock, review, side, viewerColor, names]);
+  const stepperOptions = useMemo(() => {
+    if (!cchess) return undefined;
+    const { stops, guesses } = storyStops(story, review.moves, side);
+    const extraCards: ThemeCard[] = [];
+    if (clock && clock.lines.length > 0) {
+      extraCards.push({
+        theme: 'time',
+        title: 'Time',
+        text: clock.lines.join(' '),
+      });
+    }
+    if (guesses.length > 0) {
+      extraCards.push({ theme: 'turns', title: 'Turning points', text: '' });
+    }
+    return { stops, guesses, extraCards };
+  }, [cchess, story, review, side, clock]);
+  const stepper = useReviewStepper(review, side, judge, stepperOptions);
+  const asked = stepperOptions?.guesses.length ?? 0;
+  const answered = Object.values(stepper.guessResults);
+  const tally =
+    asked > 0 && answered.length > 0
+      ? { found: answered.filter((r) => r === 'found').length, asked }
+      : null;
+  const isGuessing = stepper.mode.kind === 'guess';
+  const isRetrying = stepper.mode.kind === 'retry' || isGuessing;
   if (isRetrying !== retrying) setRetrying(isRetrying);
   const voice = useReviewVoice(settings.voice, settings.voiceId);
-  const theme = stepper.card;
+  // The guesses' card says how they went, as they're made.
+  const theme =
+    stepper.card?.theme === 'turns'
+      ? {
+          ...stepper.card,
+          text: guessTally(tally?.found ?? 0, asked),
+        }
+      : stepper.card;
   const lastIndex = review.moves.length - 1;
   // The move on the board: on a closing card, the last.
   const shownIndex = Math.min(stepper.index, lastIndex);
@@ -136,6 +218,14 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
     showBestMoves: settings.showBestMoves,
     theme,
     intro,
+    style: settings.style,
+    names,
+    // None for a move that took none - a side's first, which starts no
+    // clock.
+    timeSpent:
+      clock && shownIndex >= 0 && clock.times[shownIndex] > 0
+        ? formatSpent(clock.times[shownIndex])
+        : null,
   });
 
   // Each new thing said is read aloud, in place of the last - but not the
@@ -208,16 +298,49 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
             index={stepper.index}
             onSelect={stepper.goTo}
           />
+          {clock && (
+            <View style={styles.time} testID="review-time">
+              <TimeGraph
+                times={clock.times}
+                colors={clock.colors}
+                side={side}
+                index={stepper.index}
+                slow={clock.slow}
+                hasty={clock.hasty}
+                onSelect={stepper.goTo}
+              />
+              {clock.lines.map((line) => (
+                <Text key={line} style={styles.timeLine}>
+                  {line}
+                </Text>
+              ))}
+            </View>
+          )}
           {review.opening && (
             <Text style={styles.opening} testID="review-opening">
               {review.opening.name}
             </Text>
           )}
-          <ReviewSummary
-            white={{ player: players.white, review: review.white }}
-            black={{ player: players.black, review: review.black }}
-            side={side}
-          />
+          {cchess ? (
+            <CchessReviewSummary
+              moves={review.moves}
+              names={names}
+              white={review.white}
+              black={review.black}
+              side={side}
+              decisive={decisive}
+              story={story}
+              guesses={tally}
+              onSelectMove={stepper.goTo}
+              onStartChapter={(i) => stepper.goTo(story[i].start)}
+            />
+          ) : (
+            <ReviewSummary
+              white={{ player: players.white, review: review.white }}
+              black={{ player: players.black, review: review.black }}
+              side={side}
+            />
+          )}
         </ScrollView>
         {/* Pinned under the summary, which can run taller than the screen,
             so it's never scrolled out of reach. */}
@@ -233,12 +356,28 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
   }
 
   const slipShown = !!stepper.move && isSlip(stepper.move.moveClass);
+  // The list stops before the next move it'll ask for - while asking, or
+  // on the way there - since showing it, or what followed, would give it
+  // away.
+  const nextAsked = stepperOptions?.guesses.find(
+    (g) =>
+      !(g in stepper.guessResults) &&
+      (isGuessing ? g >= shownIndex : g > shownIndex),
+  );
+  const listedMoves =
+    nextAsked === undefined ? review.moves : review.moves.slice(0, nextAsked);
   const atEnd = stepper.index >= lastIndex + stepper.cards.length;
-  const primary = atEnd
-    ? { label: 'Analyse', onPress: () => onAnalyse(shownIndex + 1) }
-    : stepper.isPlaying
-      ? { label: 'Skip', onPress: stepper.next }
-      : { label: 'Next', onPress: stepper.next };
+  const guessTried = stepper.mode.kind === 'guess' ? stepper.mode.tried : null;
+  const primary = isGuessing
+    ? {
+        label: guessTried?.verdict === 'right' ? 'Continue' : 'Reveal',
+        onPress: stepper.reveal,
+      }
+    : atEnd
+      ? { label: 'Analyse', onPress: () => onAnalyse(shownIndex + 1) }
+      : stepper.isPlaying
+        ? { label: 'Skip', onPress: stepper.next }
+        : { label: 'Next', onPress: stepper.next };
 
   return (
     <View style={styles.screen} testID="game-review-stepping">
@@ -262,6 +401,7 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
           orientation={side}
           lastMove={view.lastMove}
           moveClass={view.moveClass}
+          markStyle={settings.style}
           arrows={arrows}
           movableColor={view.movableColor}
           onMove={stepper.tryMove}
@@ -277,6 +417,7 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
         >
           <ReviewBubble
             moveClass={view.bubble.moveClass}
+            markStyle={settings.style}
             icon={theme ? THEME_ICONS[theme.theme] : undefined}
             title={view.bubble.title ?? undefined}
             score={view.bubble.score}
@@ -286,6 +427,11 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
           />
         </View>
       </View>
+      {cchess && story.length > 0 && !stepper.card && (
+        <Text style={styles.chapterStrip} testID="review-chapter-strip">
+          {chapterStripText(story, shownIndex)}
+        </Text>
+      )}
       <View style={styles.moves}>
         <ToolbarButton
           icon="chevron-left"
@@ -297,19 +443,28 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
         />
         <View style={styles.moveList}>
           <MoveList
-            moves={review.moves}
-            currentPly={stepper.card ? 0 : (review.moves[shownIndex]?.ply ?? 0)}
+            moves={listedMoves}
+            currentPly={
+              stepper.card
+                ? 0
+                : isGuessing
+                  ? (review.moves[shownIndex - 1]?.ply ?? 0)
+                  : (review.moves[shownIndex]?.ply ?? 0)
+            }
             onSelectPly={(ply) =>
               stepper.goTo(review.moves.findIndex((m) => m.ply === ply))
             }
             moveClasses={moveClasses}
-            endItems={stepper.cards.map((card, i) => ({
-              key: card.theme,
-              icon: THEME_ICONS[card.theme],
-              label: card.title,
-              selected: stepper.card === card,
-              onPress: () => stepper.goTo(lastIndex + 1 + i),
-            }))}
+            markStyle={settings.style}
+            endItems={(nextAsked === undefined ? stepper.cards : []).map(
+              (card, i) => ({
+                key: card.theme,
+                icon: THEME_ICONS[card.theme],
+                label: card.title,
+                selected: stepper.card === card,
+                onPress: () => stepper.goTo(lastIndex + 1 + i),
+              }),
+            )}
             onScrub={stepper.goTo}
             onScrubbingChange={setScrubbing}
           />
@@ -344,13 +499,13 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
           </>
         ) : (
           <ReviewToolbar
-            onRetry={slipShown ? stepper.retry : undefined}
+            onRetry={slipShown && !isGuessing ? stepper.retry : undefined}
             showingLine={stepper.lineStep !== null}
             onToggleLine={stepper.toggleLine}
             canShowLine={stepper.canShowLine}
             showingBest={stepper.mode.kind === 'best'}
             onToggleBest={stepper.toggleBest}
-            canShowBest={stepper.canShowBest}
+            canShowBest={stepper.canShowBest && !isGuessing}
             primaryLabel={primary.label}
             onPrimary={primary.onPress}
           />
@@ -361,6 +516,15 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
 };
 
 export default GameReviewContent;
+
+// "Chapter 2 of 4 · Move 14": where the move shown is in the story.
+function chapterStripText(
+  story: ReturnType<typeof chapters>,
+  index: number,
+): string {
+  const at = Math.max(0, chapterAt(story, Math.max(0, index)));
+  return `Chapter ${at + 1} of ${story.length} · ${story[at].title}`;
+}
 
 const useStyles = makeStyles((t) => ({
   screen: {
@@ -382,6 +546,20 @@ const useStyles = makeStyles((t) => ({
     paddingBottom: t.spacing.xxl,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: t.colors.separator,
+  },
+  time: {
+    gap: t.spacing.xs,
+  },
+  timeLine: {
+    fontSize: t.fontSize.md,
+    color: t.colors.textSecondary,
+  },
+  chapterStrip: {
+    fontSize: t.fontSize.sm,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.accentText,
+    textAlign: 'center',
+    paddingTop: t.spacing.xs,
   },
   opening: {
     fontSize: t.fontSize.md,

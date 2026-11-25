@@ -63,14 +63,16 @@ async function renderReview({
   status,
   voice = false,
   params = { gameId: 'game-1' },
+  style = 'classic',
 }: {
   status?: EngineStatus;
   voice?: boolean;
   params?: { gameId: string } | { imported: ImportedReview };
+  style?: 'classic' | 'cchess';
 } = {}) {
   await AsyncStorage.setItem(
     'cchess.reviewSettings',
-    JSON.stringify({ voice }),
+    JSON.stringify({ voice, style }),
   );
   const main = makeFakeEngine();
   const threat = makeFakeEngine();
@@ -473,8 +475,11 @@ describe('GameReview', () => {
       },
     };
 
-    async function analyseImported(imported = IMPORTED) {
-      const rendered = await renderReview({ params: { imported } });
+    async function analyseImported(
+      imported = IMPORTED,
+      style: 'classic' | 'cchess' = 'classic',
+    ) {
+      const rendered = await renderReview({ params: { imported }, style });
       for (let i = 0; i < EVALS.length; i++) {
         const engine = i % 2 === 0 ? rendered.main : rendered.threat;
         const { score, pv } = EVALS[i];
@@ -526,6 +531,136 @@ describe('GameReview', () => {
       expect(navigation.navigate).toHaveBeenCalledWith('AnalysisBoard', {
         source: { kind: 'import', ...IMPORTED, ply: 3 },
       });
+    });
+
+    it('has no clock to show in the cchess style', async () => {
+      const { screen } = await analyseImported(IMPORTED, 'cchess');
+
+      expect(screen.getByTestId('cchess-summary')).toBeTruthy();
+      expect(screen.queryByTestId('review-time')).toBeNull();
+    });
+  });
+
+  describe('in the cchess style', () => {
+    // White's clock: Ba6 in 4s, from 300s to 296s.
+    const CLOCKED = {
+      ...GAME,
+      moves: GAME.moves.map((move, i) => ({
+        ...move,
+        clockAfterMs: [300_000, 300_000, 296_000, 290_000][i],
+      })),
+    };
+    beforeEach(() => (getGame as jest.Mock).mockResolvedValue(CLOCKED));
+
+    const renderCchess = () => renderReview({ style: 'cchess' });
+
+    it('opens on the decisive move, the chapters and the marks - no rating', async () => {
+      const { screen } = await renderCchess();
+
+      expect(screen.getByTestId('review-decisive-text')).toHaveTextContent(
+        'Ba6?? took White from level to losing.',
+      );
+      expect(screen.getByTestId('review-chapter-0')).toHaveTextContent(
+        /The opening/,
+      );
+      expect(screen.getByTestId('review-chapter-1')).toHaveTextContent(
+        /Move 2.*White played Ba6\?\?/,
+      );
+      expect(screen.getByTestId('review-marks-w-??')).toHaveTextContent('1');
+      expect(screen.queryByTestId('review-summary')).toBeNull();
+      expect(screen.queryByTestId('review-rating-w')).toBeNull();
+    });
+
+    it('shows where the time went', async () => {
+      const { screen } = await renderCchess();
+
+      expect(screen.getByTestId('time-graph')).toBeTruthy();
+      expect(screen.getByTestId('review-time')).toHaveTextContent(
+        /Ba6\?\? came in 4s/,
+      );
+    });
+
+    it('has no clock where no move took any time', async () => {
+      (getGame as jest.Mock).mockResolvedValue(GAME);
+      const { screen } = await renderCchess();
+
+      expect(screen.getByTestId('cchess-summary')).toBeTruthy();
+      expect(screen.queryByTestId('review-time')).toBeNull();
+    });
+
+    it('has no clock for a daily game', async () => {
+      (getGame as jest.Mock).mockResolvedValue({ ...CLOCKED, daysPerMove: 3 });
+      const { screen } = await renderCchess();
+
+      expect(screen.getByTestId('cchess-summary')).toBeTruthy();
+      expect(screen.queryByTestId('review-time')).toBeNull();
+    });
+
+    it('goes to the decisive move when it is tapped', async () => {
+      const { screen } = await renderCchess();
+
+      await fireEvent.press(screen.getByTestId('review-decisive'));
+
+      expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+        'Ba6?? · Blunder',
+      );
+      expect(screen.getByTestId('review-bubble-score')).toHaveTextContent(
+        /· 4s$/,
+      );
+    });
+
+    it('asks for the move at a turning point, then reveals it', async () => {
+      const { screen } = await renderCchess();
+      await fireEvent.press(screen.getByTestId('review-start'));
+      // Straight to the opening's end, 1... e5 - book, unmarked.
+      await fireEvent.press(screen.getByTestId('review-next'));
+      await settleAnimations();
+      expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+        'e5 · Book move',
+      );
+      expect(screen.getByTestId('review-chapter-strip')).toHaveTextContent(
+        'Chapter 1 of 3 · The opening',
+      );
+      // Nor does the list show the turning point coming, or what follows.
+      expect(screen.queryByTestId('move-3')).toBeNull();
+      // Black's first move, which starts no clock: no time beside it.
+      expect(screen.getByTestId('review-bubble-score')).not.toHaveTextContent(
+        /·/,
+      );
+
+      await nextMoment(screen);
+      expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+        'Your move',
+      );
+      expect(screen.getByTestId('review-bubble-text')).toHaveTextContent(
+        'Move 2 for White: what would you play?',
+      );
+      expect(screen.getByTestId('review-next')).toHaveTextContent('Reveal');
+      // The list stops before the move asked for, giving nothing away.
+      expect(screen.getByTestId('move-2')).toBeTruthy();
+      expect(screen.queryByTestId('move-3')).toBeNull();
+      expect(screen.queryByTestId('move-4')).toBeNull();
+
+      await fireEvent.press(screen.getByTestId('review-next'));
+      await settleAnimations();
+      expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+        'Ba6?? · Blunder',
+      );
+      expect(screen.getByTestId('review-chapter-strip')).toHaveTextContent(
+        'Chapter 2 of 3 · Move 2',
+      );
+      expect(screen.getByTestId('move-4')).toBeTruthy();
+    });
+
+    it('starts the review at a chapter tapped', async () => {
+      const { screen } = await renderCchess();
+
+      await fireEvent.press(screen.getByTestId('review-chapter-2'));
+
+      expect(screen.getByTestId('game-review-stepping')).toBeTruthy();
+      expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+        'bxa6 · Best move',
+      );
     });
   });
 });

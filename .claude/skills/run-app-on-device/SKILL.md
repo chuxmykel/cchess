@@ -417,7 +417,19 @@ resign or abort from the app (see `examples/resign.yaml` /
   `review-progress-retry`); then `game-review-summary`: `review-intro`,
   `eval-graph` (`eval-graph-dot-<i>`, `eval-graph-cursor`),
   `review-opening`, `review-accuracy-<w|b>`, `review-rating-<w|b>` (the game rating),
-  `review-count-<w|b>-<class>`, `review-start`. Stepping
+  `review-count-<w|b>-<class>`, `review-start` - that's the Classic
+  style's summary (`review-summary`). The cchess style, the default
+  (Review settings' `review-style-<cchess|classic>`), has
+  `cchess-summary` in its place: `review-decisive` (tap: its move) with
+  `review-decisive-text`, `review-chapter-<i>` (tap: the review starts
+  there), `review-guess-tally`, `review-marks` with
+  `review-marks-<w|b>-<!!|!|?!|?|??>` and `review-accuracy-<w|b>`; and,
+  for a live game, `review-time` with `time-graph`
+  (`time-graph-bar-<i>`, `time-graph-cursor`). Stepping in it,
+  `review-chapter-strip` ("Chapter 2 of 4 · Move 14") sits over the move
+  list, and at a guess the bubble's title is "Your move", the side's
+  pieces movable, and `review-next` reads Reveal (Continue once found).
+  Stepping
   (`game-review-stepping`): `eval-bar`, `review-bubble` with
   `-title`, `-score`, `-text`, `-line` (`-line-current`, the move of
   Show's line on the board); `review-board` with
@@ -430,7 +442,7 @@ resign or abort from the app (see `examples/resign.yaml` /
   line out a move every 0.65s (a Maestro tap waits ~1.5s for the screen
   to settle, so screenshots straight after miss it - record with
   `simctl io booted recordVideo` to see it play); at the close,
-  `move-list-end-<opening|tactics|strategy|endgame>` (the cards, after
+  `move-list-end-<opening|tactics|strategy|endgame|time|turns>` (the cards, after
   the last move in the `move-list`) and `review-summary-button`. Swiping
   along the move list scrolls it, the review going through the moves as
   they pass (finger right goes back) - on iPhone 18 Pro it runs along
@@ -441,7 +453,8 @@ resign or abort from the app (see `examples/resign.yaml` /
   `review-analyse-button` (the head icon, beside the ⚙) opens the analysis board at the move shown
   (the result card has no Analyse any more - ☰ `analyse-action` in a
   game), and `review-settings-button` opens `review-settings`
-  (`review-setting-<voice|showBestMoves|evalBar>`,
+  (`review-style-<cchess|classic>`, `review-style-hint`,
+  `review-setting-<voice|showBestMoves|evalBar>`,
   `review-voice-<identifier>`, `review-voice-hear-<identifier>`,
   `review-as-<me|white|black>`, `review-strength-<fast|standard|deep>`);
   Settings has `review-settings-row`. A 53-ply game took ~10s and a

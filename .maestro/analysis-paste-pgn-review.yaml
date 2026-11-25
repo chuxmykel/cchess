@@ -1,7 +1,7 @@
 # A pasted PGN's review, from its analysis board's toolbar - where Flip
 # board was, now in the menu: analysed on the device (the engine downloaded
 # first, a fresh launch having cleared it), its players named from the
-# PGN's tags. It never checks what the engine said, which varies.
+# PGN's tags, in the cchess style. It never checks what the engine said, which varies.
 appId: ${APP_ID}
 tags:
   - engine
@@ -37,6 +37,11 @@ tags:
     timeout: 180000
 - assertVisible: "Ann"
 - assertVisible: "Bo"
+# The cchess style, the default: no clock in a pasted PGN.
+- assertVisible:
+    id: "review-decisive"
+- assertNotVisible:
+    id: "review-time"
 - tapOn:
     id: "review-start"
 - assertVisible:

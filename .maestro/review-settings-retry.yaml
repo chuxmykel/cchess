@@ -3,8 +3,9 @@ tags:
   - account
   - engine
 ---
-# The review's settings, from its header's cog; and Retry at a slip, which
-# puts the position before it back on the board to find a better move.
+# The review's settings, from its header's cog - the classic style chosen
+# there - and Retry at a slip, which puts the position before it back on
+# the board to find a better move.
 - runFlow: common/sign-in.yaml
 - extendedWaitUntil:
     visible:
@@ -23,7 +24,16 @@ tags:
     id: "review-settings-button"
 - assertVisible:
     id: "review-settings"
+# The classic style, chosen here: a class for every move, and Retry.
+- tapOn:
+    id: "review-style-classic"
+- runFlow:
+    file: common/assert-checked.yaml
+    env:
+      ID: review-style-classic
 - runFlow: common/header-back.yaml
+- assertVisible:
+    id: "review-summary"
 - tapOn:
     id: "review-start"
 - tapOn:

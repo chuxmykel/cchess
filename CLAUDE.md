@@ -233,6 +233,21 @@ lib/chessboard/  the board, written as a package of its own: outside the
         have done. `keyMoments.ts` - where Next stops: the side's
         standouts and slips, after the book's last move; `themes.ts` - the
         closing cards (opening, tactics, strategy, endgame).
+    - The cchess style's own (presentation over the same review, nothing
+      stored): `marks.ts` - chess's symbols (!!, !, ?!, ?, ??) only on the
+      classes that matter, a miss as a mistake, and every class in plain
+      words; `story.ts` - the decisive moment (the largest turning point:
+      a move giving away 10 points of winning chances), the game in
+      chapters (the opening, one ending on each of up to three turning
+      points, kept apart, then the finish - or by phase with none), and
+      where Next stops and asks for a guess (`storyStops`: the side's own
+      turns and standouts); `time.ts` - each move's time from the clock
+      (`moveTimes`, increment added back, a first move none) and
+      `timeReport`: the longest think, a slip in under 10s, accuracy with
+      under a quarter of the time left against more (said to the side
+      reviewed, or of it by name for a game only watched; a move that took
+      no time - a side's first - shows none). Their words are in
+      `phrases.ts`, their limits in `thresholds.ts`.
 
 - **`src/network/`** - a second framework-agnostic layer, mirroring
   `domain/`'s pure-infra style but for talking to `cchess-be` (the
@@ -434,7 +449,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
     `useImportedGameReview(imported, strength)` - the same for a game
     brought in (a pasted PGN), from its own start, analysed each time and
     kept nowhere, its players made from the PGN's tags; both give a
-    `ReviewedGame` (seed, players, result) rather than a snapshot. `useReviewStepper` - the summary, then Next playing every move on the
+    `ReviewedGame` (seed, players, result, and a live game's `clock` -
+    none for a daily game or a pasted PGN) rather than a snapshot. `useReviewStepper` - the summary, then Next playing every move on the
     board, a move every 0.17s, stopping at each key moment (tapped as they
     play, Skip, straight there) and then through the closing cards, which
     come after the last move; wherever ‹ ›, the move list or a scroll along
@@ -443,8 +459,14 @@ lib/chessboard/  the board, written as a package of its own: outside the
     answering it, or following Best - played out on the board a move every
     0.65s, 8 at most; Hide puts the board back), Best (the best move in its place) and Retry (the position before
     a slip, to find a better move: the best one taken at once, another
-    judged by `useRetryJudge`, a quick search). `reviewView.ts` - what the
-    board and the bubble show at each of those, and what's said.
+    judged by `useRetryJudge`, a quick search); given `stops` (the cchess
+    style's) it stops there instead, and at its `guesses` first asks for
+    the move (`mode` `guess`, judged as Retry is, a move played that
+    wasn't a slip counting too) until `reveal`, keeping each guess's first
+    verdict (`guessResults`). `reviewView.ts` - what the
+    board and the bubble show at each of those, and what's said - in the
+    cchess style only marked classes badged, headlines in plain words
+    ("Ba6?? · Blunder"), the time a move took by its score.
     `useReviewVoice` - each comment read aloud with `expo-speech` (the
     device's own voices - iOS's, in the app's audio session, or Android's
     text-to-speech engine - stopped in the background and on leaving), the
@@ -866,11 +888,20 @@ lib/chessboard/  the board, written as a package of its own: outside the
   Flip goes in ☰; route params `{ gameId }` or `{ imported }`): while it's analysed, the game played through on the
   board as far into it as the progress bar is (half way at 50%), a chess
   fact changing every 6s, and
-  `ReviewProgress` (the engine's download, then the game); then `ReviewSummary` (a column under each player's avatar - accuracy, each
+  `ReviewProgress` (the engine's download, then the game); then, told
+  in one of two styles (Review settings' Review style - cchess, the
+  default, or Classic): Classic's `ReviewSummary` (a column under each player's avatar - accuracy, each
   class's count with its mark between the two, and the game rating -
   under `EvalGraph` -
   white's winning chances drawn in SVG, dots at the standouts and slips,
-  touched to go to a move - and the opening's name); then the moves:
+  touched to go to a move - and the opening's name); or cchess's
+  `CchessReviewSummary` - the decisive moment's card (tapped, its move),
+  the game in chapters (each a small board; tapped, the review starts
+  there), how many turning points were found, and each side's accuracy
+  and marks, with no game rating - under the eval graph and, for a live
+  game, `TimeGraph` (a bar a move, the side's in the accent, the longest
+  think and a hasty slip called out) and what the clock says; then the
+  moves:
   `EvalBar`, `ReviewBubble` (a lightbulb, not a face - the class's
   `MoveClassIcon`, the headline, the score, the words and the line),
   `ReviewBoard`, `MoveList` with its `moveClasses` marked - the theme
@@ -883,14 +914,19 @@ lib/chessboard/  the board, written as a package of its own: outside the
 reviewActions.ts`: Best where another move was better, not for a book, forced or brilliant move;
   Show after a slip, a great or brilliant move, or a tactic - not a quiet
   move); and to close, the theme cards over the game's last position,
-  then Analyse. The eval bar's along the top, then room kept for two lines
+  then Analyse. In the cchess style Next stops at the chapters' turns
+  and ends (a strip above the move list naming the chapter), asking first
+  at the side's own turning points and standouts - Reveal shows the move
+  played; the move list stops short of the next move still to be asked,
+  so it never gives one away - marks only what matters (`MoveClassIcon`'s `markStyle`), and
+  closes with a Time card and the turning points found. The eval bar's along the top, then room kept for two lines
   of the bubble: a longer one grows up over the eval bar, then down over
   the board, which never moves. A brilliant move
   stopped on has its own sound (`useBrilliantSound`). Its header's
   analysis button (the app's `head-cog-outline`, beside the ⚙ in one
   header item, so they sit close) opens `AnalysisBoard` at the move shown (the game's end from the
   summary), and its ⚙ `ReviewSettings`
-  (`ReviewSettingsForm`: the voice and which one, each with a button to
+  (`ReviewSettingsForm`: the review style, the voice and which one, each with a button to
   hear it, best-move arrows, the eval bar, whose moves to review - yours,
   white's or black's - and the strength: fast, standard or deep,
   `constants/review.ts`), also in Settings. Accuracy shows in Recent Games
