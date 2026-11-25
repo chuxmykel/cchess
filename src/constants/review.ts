@@ -42,8 +42,28 @@ export const REVIEW_AS_LABELS: Record<ReviewAs, string> = {
   black: 'Black',
 };
 
+// How the review is told: cchess's own - chess's marks only where they
+// matter, the game in turning-point chapters with a guess at each, the
+// decisive moment and the clock - or the classic coach, a class for every
+// move.
+export type ReviewStyle = 'cchess' | 'classic';
+
+export const REVIEW_STYLES: readonly ReviewStyle[] = ['cchess', 'classic'];
+
+export const REVIEW_STYLE_LABELS: Record<ReviewStyle, string> = {
+  cchess: 'cchess',
+  classic: 'Classic',
+};
+
+export const REVIEW_STYLE_HINTS: Record<ReviewStyle, string> = {
+  cchess:
+    'The game in chapters, a guess at each turning point, the clock and the move that decided it.',
+  classic: 'Every move graded, stepping from one key moment to the next.',
+};
+
 // The review's settings, kept on the device.
 export type ReviewSettings = {
+  style: ReviewStyle;
   // Each comment read aloud, in this voice - null for the best English
   // voice on the device.
   voice: boolean;
@@ -56,6 +76,7 @@ export type ReviewSettings = {
 };
 
 export const DEFAULT_REVIEW_SETTINGS: ReviewSettings = {
+  style: 'cchess',
   voice: true,
   voiceId: null,
   showBestMoves: false,

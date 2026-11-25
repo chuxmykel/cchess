@@ -94,4 +94,25 @@ describe('ReviewSettingsForm', () => {
     await fireEvent.press(screen.getByTestId('review-strength-deep'));
     expect(onChange).toHaveBeenLastCalledWith({ strength: 'deep' });
   });
+
+  it('chooses the review style, saying what each is', async () => {
+    const { screen, onChange } = await renderForm();
+    expect(screen.getByTestId('review-style-hint')).toHaveTextContent(
+      /chapters/,
+    );
+
+    await fireEvent.press(screen.getByTestId('review-style-classic'));
+    expect(onChange).toHaveBeenLastCalledWith({ style: 'classic' });
+
+    await screen.rerender(
+      <ReviewSettingsForm
+        settings={{ ...DEFAULT_REVIEW_SETTINGS, style: 'classic' }}
+        onChange={onChange}
+        voices={[]}
+      />,
+    );
+    expect(screen.getByTestId('review-style-hint')).toHaveTextContent(
+      /Every move graded/,
+    );
+  });
 });
