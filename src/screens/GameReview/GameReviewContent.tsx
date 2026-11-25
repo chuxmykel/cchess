@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Color } from 'chess.js';
 
 import Button from '../../components/Button';
@@ -195,34 +195,40 @@ const GameReviewContent: React.FC<GameReviewContentProps> = ({
 
   if (stepper.phase === 'summary') {
     return (
-      <ScrollView
-        style={styles.screen}
-        contentContainerStyle={styles.summary}
-        testID="game-review-summary"
-      >
-        <ReviewBubble text={view.bubble.text} testID="review-intro" />
-        <EvalGraph
-          scores={review.scores}
-          moves={review.moves}
-          index={stepper.index}
-          onSelect={stepper.goTo}
-        />
-        {review.opening && (
-          <Text style={styles.opening} testID="review-opening">
-            {review.opening.name}
-          </Text>
-        )}
-        <ReviewSummary
-          white={{ player: players.white, review: review.white }}
-          black={{ player: players.black, review: review.black }}
-          side={side}
-        />
-        <Button
-          label="Start review"
-          onPress={stepper.start}
-          testID="review-start"
-        />
-      </ScrollView>
+      <View style={styles.screen}>
+        <ScrollView
+          style={styles.summaryScroll}
+          contentContainerStyle={styles.summary}
+          testID="game-review-summary"
+        >
+          <ReviewBubble text={view.bubble.text} testID="review-intro" />
+          <EvalGraph
+            scores={review.scores}
+            moves={review.moves}
+            index={stepper.index}
+            onSelect={stepper.goTo}
+          />
+          {review.opening && (
+            <Text style={styles.opening} testID="review-opening">
+              {review.opening.name}
+            </Text>
+          )}
+          <ReviewSummary
+            white={{ player: players.white, review: review.white }}
+            black={{ player: players.black, review: review.black }}
+            side={side}
+          />
+        </ScrollView>
+        {/* Pinned under the summary, which can run taller than the screen,
+            so it's never scrolled out of reach. */}
+        <View style={styles.summaryFooter}>
+          <Button
+            label="Start review"
+            onPress={stepper.start}
+            testID="review-start"
+          />
+        </View>
+      </View>
     );
   }
 
@@ -362,9 +368,20 @@ const useStyles = makeStyles((t) => ({
     width: '100%',
     backgroundColor: t.colors.background,
   },
+  summaryScroll: {
+    flex: 1,
+  },
   summary: {
     padding: t.spacing.lg,
     gap: t.spacing.lg,
+  },
+  // Start review, a little up from the bottom as the stepping controls are.
+  summaryFooter: {
+    paddingHorizontal: t.spacing.lg,
+    paddingTop: t.spacing.md,
+    paddingBottom: t.spacing.xxl,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: t.colors.separator,
   },
   opening: {
     fontSize: t.fontSize.md,

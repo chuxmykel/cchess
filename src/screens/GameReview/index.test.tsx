@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render, within } from '@testing-library/react-native';
 import * as Speech from 'expo-speech';
 import { DEFAULT_POSITION } from 'chess.js';
 
@@ -128,6 +128,14 @@ describe('GameReview', () => {
   afterEach(() => {
     jest.clearAllMocks();
     jest.useRealTimers();
+  });
+
+  it('keeps Start review out of the summary scrolling under it, always in view', async () => {
+    const { screen } = await renderReview();
+
+    const summary = screen.getByTestId('game-review-summary');
+    expect(within(summary).queryByTestId('review-start')).toBeNull();
+    expect(screen.getByTestId('review-start')).toBeTruthy();
   });
 
   it("opens on the summary: the graph, each side's accuracy and moves", async () => {
