@@ -670,7 +670,7 @@ lib/chessboard/  the board, written as a package of its own: outside the
   in soft red).
 
 - **Analysis components** - `EvalBar` (white's share, animated, with the
-  score - across the board above or below it, or beside it from white's
+  score and a line half way marking level, in the theme's accent - across the board above or below it, or beside it from white's
   end, as the settings say, the board narrowing for it; it keeps the last
   score while the next position's comes, so stepping through glides from
   one to the next), `EngineLines` (0-3 lines, each its score chip -
