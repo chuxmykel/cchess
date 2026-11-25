@@ -162,6 +162,10 @@ lib/chessboard/  the board, written as a package of its own: outside the
       row, as lichess writes them - and for a PGN, its `game`
       (`ImportedGame`): the players' names and Elo and the result, from
       its tags.
+    - `pgnExport.ts` - `analysisToPgn(tree)`: an analysis as a PGN, to
+      share - the Seven Tag Roster left unknown, `SetUp`/`FEN` for a
+      set-up start, and its variations in brackets (`toMoveListTokens`'
+      numbering).
     - `positionSetup.ts` - a position set up by hand: `setupToFen`/
       `setupFromFen`, `availableCastling` (king and rook on their
       squares), and `validateSetup` (one king a side, no pawns on the back
@@ -417,7 +421,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
     room stays the same once the game's over), `useAnalysisSettings`
     (saved as they change), `useAppearanceSettings` (light or dark mode
     and the board's colors, saved the same way - behind `ThemeProvider`), `usePositionEditor` (a piece, the eraser, or
-    the hand, which drags pieces), `useAnalysisSounds` (in
+    the hand, which drags pieces), `useAnalysisShare` (☰'s Share FEN - the
+    position shown - and Share PGN, through the native share sheet),
+    `useAnalysisSounds` (in
     `useGameSounds.ts`) and `useAppIsActive` (searches pause in the
     background; iOS can say 'unknown' at first, counted as active).
   - Game review: `useGameReview(gameId, strength)` - the review the

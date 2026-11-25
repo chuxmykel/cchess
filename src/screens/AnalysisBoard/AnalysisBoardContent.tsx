@@ -21,6 +21,7 @@ import { finalScore } from '../../domain/evalScore';
 import { nullMoveFen } from '../../domain/threat';
 import { AnalysisStart } from '../../hooks/useAnalysisTree';
 import { useAnalysisWorkspace } from '../../hooks/useAnalysisWorkspace';
+import { useAnalysisShare } from '../../hooks/useAnalysisShare';
 import { useAppIsActive } from '../../hooks/useAppIsActive';
 import { useEngineAnalysis } from '../../hooks/useEngineAnalysis';
 import { useSendToFriend } from '../../hooks/useSendToFriend';
@@ -79,6 +80,11 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
   const { fen } = analysis.current;
   const toast = useToast();
   const sendToFriend = useSendToFriend(toast.show);
+  const { shareFen, sharePgn } = useAnalysisShare(
+    analysis.tree,
+    fen,
+    toast.show,
+  );
   const over = useMemo(() => finalScore(fen), [fen]);
   // Searching only while it's seen: not behind another screen, nor with the
   // app in the background.
@@ -159,6 +165,16 @@ const AnalysisBoardContent: React.FC<AnalysisBoardContentProps> = ({
       testID: 'edit-position-action',
     },
     ...(onReview ? [flipBoardAction(flip)] : []),
+    {
+      label: 'Share FEN',
+      onPress: shareFen,
+      testID: 'share-fen-action',
+    },
+    {
+      label: 'Share PGN',
+      onPress: sharePgn,
+      testID: 'share-pgn-action',
+    },
     ...(sendToFriend.isAvailable
       ? [
           {
