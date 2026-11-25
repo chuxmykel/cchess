@@ -1088,8 +1088,10 @@ reviewActions.ts`: Best where another move was better, not for a book, forced or
   - `Report` (a reason and details, then an offer to block) from a
     profile, a conversation's menu, or holding someone else's message -
     in `MessageList` and the game `ChatSheet` (after the sheet closes,
-    `useRunAfterDismiss`); `useBlocking` asks before blocking. A game's
-    chat button is left out when `useGameChat`'s `isEnabled` is false.
+    `useRunAfterDismiss`); `useBlocking` asks before blocking. Where the
+    players can't chat (`useGameChat`'s `isEnabled` false), a game's chat
+    button shows only once a draw's been offered (`isShown`), its sheet the
+    draws' notes alone and no way to send ("Chat is off for this game").
   - Signing up needs `TermsCheckbox`; `TermsPrompt` (in `HomeStack`) asks
     an account whose `termsAccepted` is false. `constants/legal.ts` has
     the server's terms, privacy and deletion pages, linked in Settings.

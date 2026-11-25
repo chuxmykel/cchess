@@ -103,6 +103,32 @@ describe('useGameChat', () => {
     expect(result.current.unreadCount).toBe(3);
   });
 
+  it("shows only the draws' notes where the players can't chat", async () => {
+    const { socket, trigger } = createFakeSocket();
+    const { result } = await renderHook(() =>
+      useGameChat(socket, GAME_ID, ME, false),
+    );
+
+    await act(() =>
+      trigger('game:chatHistory', {
+        gameId: GAME_ID,
+        messages: [message('1', OPPONENT)],
+        readAt: null,
+        enabled: false,
+      }),
+    );
+    // Nothing to show yet - so nothing to open.
+    expect(result.current.messages).toEqual([]);
+    expect(result.current.isShown).toBe(false);
+
+    await act(() =>
+      trigger('game:chat', message('2', OPPONENT, { kind: 'draw-offered' })),
+    );
+    expect(result.current.messages.map((m) => m.id)).toEqual(['2']);
+    expect(result.current.unreadCount).toBe(1);
+    expect(result.current.isShown).toBe(true);
+  });
+
   it('marks the chat read on the server while it is open', async () => {
     const { socket, trigger } = createFakeSocket();
     const { rerender } = await renderHook(

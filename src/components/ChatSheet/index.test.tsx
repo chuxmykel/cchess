@@ -33,6 +33,7 @@ function openChat(overrides: Partial<GameChat> = {}): GameChat {
     messages: [],
     unreadCount: 0,
     isEnabled: true,
+    isShown: true,
     send: jest.fn(),
     myUserId: 'me',
     isOpen: true,
@@ -121,6 +122,19 @@ describe('ChatSheet', () => {
     );
 
     expect(screen.getByTestId('chat-closed')).toBeTruthy();
+    expect(screen.queryByTestId('chat-input')).toBeNull();
+  });
+
+  it("shows the draws' notes but no way to send where chat is off", async () => {
+    const screen = await render(
+      withSafeArea(
+        <ChatSheet chat={openChat({ isEnabled: false })} players={PLAYERS} />,
+      ),
+    );
+
+    expect(screen.getByTestId('chat-off')).toHaveTextContent(
+      'Chat is off for this game',
+    );
     expect(screen.queryByTestId('chat-input')).toBeNull();
   });
 });

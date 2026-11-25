@@ -377,7 +377,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
           onOpenMenu={() => setIsMenuOpen(true)}
           onResign={confirmResign}
           canResign={!isGameOver && !canAbort}
-          onOpenChat={chat.isEnabled ? chat.open : undefined}
+          onOpenChat={chat.isShown ? chat.open : undefined}
           unreadChatCount={chat.unreadCount}
           moveSteps={moveNavigation}
         />

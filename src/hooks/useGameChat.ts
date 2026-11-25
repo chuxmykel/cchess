@@ -9,6 +9,9 @@ export type UseGameChatResult = {
   /** Whether the two players may chat - friends, or strangers who both
    * chose to - as the server said with the history; true until then. */
   isEnabled: boolean;
+  /** Whether the game offers its chat at all: where the players can't
+   * chat, only once a draw has been offered, for its notes to be read. */
+  isShown: boolean;
   send: (text: string) => void;
 };
 
@@ -99,7 +102,13 @@ export function useGameChat(
     }
   }, [read, socket, gameId]);
 
-  const unreadCount = messages.filter(
+  // Where they can't chat, only the server's notes of draws are shown -
+  // never words from before it was turned off, by a block say.
+  const shown = isEnabled
+    ? messages
+    : messages.filter((message) => message.kind !== 'message');
+
+  const unreadCount = shown.filter(
     (message) =>
       (read.at === null || message.createdAt > read.at) &&
       countsAsUnread(message, myUserId),
@@ -115,7 +124,13 @@ export function useGameChat(
     [socket, gameId],
   );
 
-  return { messages, unreadCount, isEnabled, send };
+  return {
+    messages: shown,
+    unreadCount,
+    isEnabled,
+    isShown: isEnabled || shown.length > 0,
+    send,
+  };
 }
 
 // A game's chat as a game screen shows it: in a sheet, opened and closed

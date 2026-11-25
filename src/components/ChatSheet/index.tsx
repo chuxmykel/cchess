@@ -140,6 +140,10 @@ const ChatSheet: React.FC<ChatSheetProps> = ({ chat, players, onReport }) => {
           <Text style={styles.closed} testID="chat-closed">
             Chat is closed for this game
           </Text>
+        ) : !chat.isEnabled ? (
+          <Text style={styles.closed} testID="chat-off">
+            Chat is off for this game
+          </Text>
         ) : (
           <View style={styles.composer}>
             <TextInput

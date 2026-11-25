@@ -211,7 +211,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
       <BottomBar>
         <GameToolbar
           onOpenMenu={() => setIsMenuOpen(true)}
-          onOpenChat={chat?.isEnabled ? chat.open : undefined}
+          onOpenChat={chat?.isShown ? chat.open : undefined}
           unreadChatCount={chat?.unreadCount}
           moveSteps={moveNavigation}
         />
