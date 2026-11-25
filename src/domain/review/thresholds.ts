@@ -106,3 +106,18 @@ export const INTRO = {
   shortGame: 15,
   longGame: 60,
 } as const;
+
+// The cchess review's story (story.ts): a turning point gives away this
+// much of the mover's winning chances - a mistake's - and the game's told
+// around at most this many, this many moves apart at least.
+export const TURNING_POINT = { loss: 10, most: 3, apart: 3 } as const;
+
+// The cchess review's clock (time.ts): a slip played this fast is called
+// out; and a side's accuracy is compared with less than this share of its
+// starting time left against more, once it's made this many moves either
+// side of the line.
+export const TIME = {
+  hastySlipMs: 10_000,
+  lowTimeShare: 0.25,
+  lowTimeMoves: 3,
+} as const;

@@ -31,7 +31,7 @@ const TACTICAL: MoveFact['kind'][] = [
 ];
 
 // Little left on the board: no queens, or not much besides.
-function isEndgame(fen: string): boolean {
+export function isEndgame(fen: string): boolean {
   let pieces = 0;
   let queens = 0;
   for (const char of fen.split(' ')[0]) {
