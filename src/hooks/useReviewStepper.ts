@@ -8,6 +8,7 @@ import {
 } from '../constants/review';
 import { bestMoveOf, BestMoveView } from '../domain/review/buildReview';
 import { keyMoments, nextKeyMoment } from '../domain/review/keyMoments';
+import { isSlip } from '../domain/review/types';
 import {
   hasBetterMove,
   lineWorthShowing,
@@ -28,7 +29,21 @@ export type ReviewPhase = 'summary' | 'stepping' | 'done';
 export type ReviewMode =
   | { kind: 'move' }
   | { kind: 'best'; best: BestMoveView }
-  | { kind: 'retry'; tried: RetryAttempt | null };
+  | { kind: 'retry'; tried: RetryAttempt | null }
+  // Asked what you'd play, before the move's revealed (the cchess style).
+  | { kind: 'guess'; tried: RetryAttempt | null };
+
+// How a guess went, by its first try: found, missed, or revealed untried.
+export type GuessResult = 'found' | 'missed' | 'skipped';
+
+export type ReviewStepperOptions = {
+  // Where Next stops, in place of the key moments.
+  stops?: number[];
+  // The stops where, arriving, it asks for the move first.
+  guesses?: number[];
+  // Closing cards after the theme cards.
+  extraCards?: ThemeCard[];
+};
 
 export type RetryAttempt = {
   uci: string;
@@ -73,6 +88,8 @@ export type ReviewStepper = {
   // where there was a better one.
   canShowLine: boolean;
   canShowBest: boolean;
+  // How each guess went, by move index.
+  guessResults: Record<number, GuessResult>;
   start: () => void;
   next: () => void;
   back: () => void;
@@ -82,6 +99,8 @@ export type ReviewStepper = {
   toggleBest: () => void;
   retry: () => void;
   tryMove: (from: Square, to: Square) => void;
+  // Out of a guess: the move played shown.
+  reveal: () => void;
   backToSummary: () => void;
 };
 
@@ -91,10 +110,14 @@ export type ReviewStepper = {
 // closing cards. Wherever ‹ › or the move list go is where the review is:
 // Next plays on from there, as if it had come that way. From any move the
 // best one can be shown, or tried for, and the line from it played out.
+//
+// Given stops, Next stops there instead - the cchess style's chapters - and
+// at a guess stop it first asks what you'd play.
 export function useReviewStepper(
   review: GameReview | null,
   side: Color,
   judge: RetryJudge,
+  { stops, guesses, extraCards }: ReviewStepperOptions = {},
 ): ReviewStepper {
   const [started, setStarted] = useState(false);
   const [index, setIndex] = useState(-1);
@@ -104,11 +127,23 @@ export function useReviewStepper(
   // moment, or the end.
   const [playing, setPlaying] = useState<PlayTarget | null>(null);
   const moves = useMemo(() => review?.moves ?? [], [review]);
-  const moments = useMemo(() => keyMoments(moves, side), [moves, side]);
-  const cards = useMemo(
-    () => (review ? themeCards(review, side) : []),
-    [review, side],
+  const moments = useMemo(
+    () => stops ?? keyMoments(moves, side),
+    [stops, moves, side],
   );
+  const cards = useMemo(
+    () => (review ? [...themeCards(review, side), ...(extraCards ?? [])] : []),
+    [review, side, extraCards],
+  );
+  const [guessResults, setGuessResults] = useState<Record<number, GuessResult>>(
+    {},
+  );
+  // The first verdict on a guess is the one that counts.
+  const recordGuess = useCallback((at: number, result: GuessResult) => {
+    setGuessResults((results) =>
+      at in results ? results : { ...results, [at]: result },
+    );
+  }, []);
   const last = moves.length - 1;
   const end = last + cards.length;
 
@@ -118,13 +153,17 @@ export function useReviewStepper(
     setLineStep(null);
   }, []);
 
-  // Arrived where the moves were played to: stop there.
+  // Arrived where the moves were played to: stop there - asking for the
+  // move first, at a guess stop not yet guessed.
   const arrive = useCallback(
     (target: PlayTarget) => {
       setPlaying(null);
       show(target.index);
+      if (guesses?.includes(target.index) && !(target.index in guessResults)) {
+        setMode({ kind: 'guess', tried: null });
+      }
     },
-    [show],
+    [show, guesses, guessResults],
   );
 
   // The next stop after a move: its next key moment, or else the end -
@@ -204,7 +243,9 @@ export function useReviewStepper(
 
   const tryMove = useCallback(
     (from: Square, to: Square) => {
-      if (!move || mode.kind !== 'retry') return;
+      if (!move || (mode.kind !== 'retry' && mode.kind !== 'guess')) return;
+      const kind = mode.kind;
+      const at = index;
       let played;
       try {
         // A pawn tried to its last rank is made a queen.
@@ -218,25 +259,43 @@ export function useReviewStepper(
         fenAfter: played.after,
         verdict: 'checking',
       };
-      if (played.lan === move.uci) tried.verdict = 'wrong';
-      else if (played.lan === move.bestLine[0]) tried.verdict = 'right';
-      setMode({ kind: 'retry', tried });
-      if (tried.verdict !== 'checking') return;
+      // The move played is wrong to retry - it's the slip - but right to
+      // guess, unless it was one.
+      if (played.lan === move.uci) {
+        tried.verdict =
+          kind === 'guess' && !isSlip(move.moveClass) ? 'right' : 'wrong';
+      } else if (played.lan === move.bestLine[0]) tried.verdict = 'right';
+      setMode({ kind, tried });
+      const settle = (verdict: 'right' | 'wrong') => {
+        if (kind === 'guess') {
+          recordGuess(at, verdict === 'right' ? 'found' : 'missed');
+        }
+      };
+      if (tried.verdict !== 'checking') {
+        settle(tried.verdict);
+        return;
+      }
       judge(move, played.lan, played.after).then(
-        (good) =>
+        (good) => {
+          const verdict = good ? 'right' : 'wrong';
           setMode((current) =>
-            current.kind === 'retry' && current.tried?.uci === tried.uci
-              ? {
-                  kind: 'retry',
-                  tried: { ...tried, verdict: good ? 'right' : 'wrong' },
-                }
+            current.kind === kind && current.tried?.uci === tried.uci
+              ? { kind, tried: { ...tried, verdict } }
               : current,
-          ),
+          );
+          settle(verdict);
+        },
         () => {},
       );
     },
-    [move, mode, judge],
+    [move, mode, index, judge, recordGuess],
   );
+
+  const reveal = useCallback(() => {
+    if (mode.kind !== 'guess') return;
+    recordGuess(index, 'skipped');
+    setMode({ kind: 'move' });
+  }, [mode, index, recordGuess]);
 
   const line = useMemo(() => {
     if (!move) return null;
@@ -286,6 +345,7 @@ export function useReviewStepper(
       !!line?.moves.length &&
       (mode.kind === 'best' || (!!move && lineWorthShowing(move))),
     canShowBest: mode.kind === 'best' || (!!move && hasBetterMove(move)),
+    guessResults,
     start,
     next,
     back,
@@ -295,6 +355,7 @@ export function useReviewStepper(
     toggleBest,
     retry,
     tryMove,
+    reveal,
     backToSummary,
   };
 }

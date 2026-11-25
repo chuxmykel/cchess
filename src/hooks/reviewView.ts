@@ -7,9 +7,20 @@ import {
   numberMoves,
   pvToSan,
 } from '../domain/evalScore';
-import { REVIEW_LINE_SHOWN } from '../constants/review';
+import { REVIEW_LINE_SHOWN, ReviewStyle } from '../constants/review';
+import { markOf } from '../domain/review/marks';
 import { playLine } from '../domain/review/motifs';
-import { headline, RETRY_TITLE, retryLine } from '../domain/review/phrases';
+import {
+  cchessHeadline,
+  cchessSpoken,
+  GUESS_TITLE,
+  guessLine,
+  guessPrompt,
+  headline,
+  type Names,
+  RETRY_TITLE,
+  retryLine,
+} from '../domain/review/phrases';
 import { sanToSpeech, textToSpeech } from '../domain/review/spokenText';
 import type { GameReview, MoveClass, ThemeCard } from '../domain/review/types';
 import { MoveSquares } from '../domain/types';
@@ -94,6 +105,12 @@ export type ReviewViewInput = {
   theme: ThemeCard | null;
   // What the review opens with (see introLine).
   intro: string;
+  // How it's told - classic unless said - and, for cchess, the players'
+  // names and the time the move shown took ("12s"), if the game had a
+  // clock.
+  style?: ReviewStyle;
+  names?: Names;
+  timeSpent?: string | null;
 };
 
 export function reviewView({
@@ -106,9 +123,19 @@ export function reviewView({
   showBestMoves,
   theme,
   intro,
+  style = 'classic',
+  names = { w: 'White', b: 'Black' },
+  timeSpent = null,
 }: ReviewViewInput): ReviewView {
   const move = index >= 0 ? review.moves[index] : null;
   const shown = lineShown(line, lineStep);
+  const cchess = style === 'cchess';
+  // A class as the board and the bubble mark it: in the cchess style only
+  // where there's a mark.
+  const marked = (moveClass: MoveClass): MoveClass | null =>
+    !cchess || markOf(moveClass) ? moveClass : null;
+  const titleOf = (san: string, moveClass: MoveClass) =>
+    cchess ? cchessHeadline(san, moveClass) : headline(san, moveClass);
 
   if (!move) {
     return {
@@ -136,19 +163,46 @@ export function reviewView({
     return {
       fen: shown?.fen ?? best.fenAfter,
       lastMove: shown ? shown.lastMove : squaresOf(best.uci),
-      moveClass: shown ? null : 'best',
+      moveClass: shown ? null : marked('best'),
       arrows: [],
       movableColor: null,
       score: move.scoreBefore,
       bubble: {
-        moveClass: 'best',
-        title: headline(best.san, 'best'),
+        moveClass: marked('best'),
+        title: titleOf(best.san, 'best'),
         score: formatScore(move.scoreBefore),
         text,
         line: shown?.numbered ?? null,
         lineAt: shown?.at ?? null,
       },
-      spoken: best.comment.spoken,
+      spoken: cchess
+        ? cchessSpoken(best.san, 'best', text)
+        : best.comment.spoken,
+    };
+  }
+
+  if (mode.kind === 'guess') {
+    const { tried } = mode;
+    const stillTrying = !tried || tried.verdict === 'wrong';
+    const text = tried
+      ? guessLine({ ...tried, isPlayed: tried.uci === move.uci })
+      : guessPrompt(move.ply, names[move.color]);
+    return {
+      fen: stillTrying ? move.fenBefore : tried.fenAfter,
+      lastMove: stillTrying ? null : squaresOf(tried.uci),
+      moveClass: null,
+      arrows: [],
+      movableColor: stillTrying ? move.color : null,
+      score: move.scoreBefore,
+      bubble: {
+        moveClass: null,
+        title: GUESS_TITLE,
+        score: null,
+        text,
+        line: null,
+        lineAt: null,
+      },
+      spoken: tried ? text.replace(tried.san, sanToSpeech(tried.san)) : text,
     };
   }
 
@@ -193,7 +247,7 @@ export function reviewView({
   return {
     fen: shown?.fen ?? move.fenAfter,
     lastMove: shown ? shown.lastMove : squaresOf(move.uci),
-    moveClass: shown ? null : move.moveClass,
+    moveClass: shown ? null : marked(move.moveClass),
     arrows,
     movableColor: null,
     score: move.scoreAfter,
@@ -207,15 +261,19 @@ export function reviewView({
           lineAt: null,
         }
       : {
-          moveClass: move.moveClass,
-          title: headline(move.san, move.moveClass),
-          score: formatScore(move.scoreAfter),
+          moveClass: marked(move.moveClass),
+          title: titleOf(move.san, move.moveClass),
+          score: timeSpent
+            ? `${formatScore(move.scoreAfter)} · ${timeSpent}`
+            : formatScore(move.scoreAfter),
           text: move.comment.text,
           line: shown?.numbered ?? null,
           lineAt: shown?.at ?? null,
         },
     spoken: closing
       ? `${theme.title}. ${textToSpeech(theme.text)}`
-      : move.comment.spoken,
+      : cchess
+        ? cchessSpoken(move.san, move.moveClass, move.comment.text)
+        : move.comment.spoken,
   };
 }
