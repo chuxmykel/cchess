@@ -1278,8 +1278,13 @@ keyboard.ts` sends each platform's keyboard events; `isSwitchOn` reads
   links that open the app (`api.chux.dev/app/*`) and the permissions
   Android is kept from asking for (the microphone `expo-audio` would add)
   are in `app.json`. The icons are drawn by `node
-scripts/generate-icons.js` (the board's knight on the default board,
-  rendered with `rsvg-convert`).
+scripts/generate-icons.js` (the cchess mark - a board's corner, two
+  paper squares on vermilion, Paper & Vermilion's - the default color
+  theme - as cchess-be's web pages draw it - rendered with
+  `rsvg-convert`); the splash is the mark's vermilion in light and dark
+  alike - iOS draws it in the device's mode before the app's own
+  Appearance setting (mode or color theme) is known, so it follows
+  neither on purpose.
 - This is an Expo managed-workflow project - no native `ios`/`android`
   directories are checked in. `expo prebuild` would generate them on demand
   if a bare workflow is ever needed.
