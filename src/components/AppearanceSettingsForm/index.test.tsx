@@ -33,4 +33,17 @@ describe('AppearanceSettingsForm', () => {
 
     expect(onChange).toHaveBeenCalledWith({ boardTheme: 'wood' });
   });
+
+  it("picks a color theme, and switches the board to the theme's own", async () => {
+    const { screen, onChange } = await renderForm();
+    expect(screen.getByTestId('color-theme-vermilion')).toBeChecked();
+    expect(screen.getByTestId('color-theme-classic')).not.toBeChecked();
+
+    await fireEvent.press(screen.getByTestId('color-theme-violet'));
+
+    expect(onChange).toHaveBeenCalledWith({
+      colorTheme: 'violet',
+      boardTheme: 'lavender',
+    });
+  });
 });

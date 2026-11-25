@@ -1,13 +1,16 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import AppLogo from '../AppLogo';
 import Icon from '../Icon';
 import RadioRow from '../RadioRow';
 import {
   AppearanceSettings,
+  COLOR_THEME_OPTIONS,
   ColorSchemePreference,
 } from '../../constants/appearance';
 import {
   BOARD_THEME_LABELS,
+  COLOR_THEMES,
   BOARD_THEMES,
   BoardThemeName,
   makeStyles,
@@ -27,13 +30,13 @@ const COLOR_SCHEMES: { key: ColorSchemePreference; label: string }[] = [
 
 const BOARD_THEME_NAMES = Object.keys(BOARD_THEME_LABELS) as BoardThemeName[];
 
-// Light or dark mode, and the board's colors.
+// The color theme, light or dark mode, and the board's colors.
 const AppearanceSettingsForm: React.FC<AppearanceSettingsFormProps> = ({
   settings,
   onChange,
 }) => {
   const styles = useStyles();
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
 
   return (
     <ScrollView
@@ -42,7 +45,43 @@ const AppearanceSettingsForm: React.FC<AppearanceSettingsFormProps> = ({
       testID="appearance-settings"
     >
       <View style={styles.section}>
-        <Text style={styles.label}>Theme</Text>
+        <Text style={styles.label}>Color theme</Text>
+        <View accessibilityRole="radiogroup">
+          {COLOR_THEME_OPTIONS.map(({ key, label, board }) => {
+            const isSelected = key === settings.colorTheme;
+            return (
+              <Pressable
+                key={key}
+                onPress={() => onChange({ colorTheme: key, boardTheme: board })}
+                style={styles.boardRow}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: isSelected }}
+                accessibilityLabel={label}
+                testID={`color-theme-${key}`}
+              >
+                <AppLogo
+                  size={SWATCH_SIZE}
+                  colors={COLOR_THEMES[key][mode].colors.logo}
+                />
+                <Text
+                  style={[styles.boardLabel, isSelected && styles.selected]}
+                >
+                  {label}
+                </Text>
+                {isSelected && (
+                  <Icon name="check" size={20} color={colors.accent} />
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
+        <Text style={styles.hint}>
+          Each theme comes with its own board, which you can still change below.
+        </Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.label}>Mode</Text>
         <RadioRow
           options={COLOR_SCHEMES}
           selected={settings.colorScheme}

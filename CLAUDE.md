@@ -532,12 +532,13 @@ lib/chessboard/  the board, written as a package of its own: outside the
   - `ThemeContext.tsx` - `ThemeProvider`, mounted at the root of
     `App.tsx`, wrapping `useAppearanceSettings`: the theme in use - dark
     while the device is (`app.json`'s `userInterfaceStyle` is `automatic`),
-    unless Appearance says always light or always dark - for `useTheme()`,
+    unless Appearance says always light or always dark, in the color theme
+    Appearance chose - for `useTheme()`,
     the settings for `useAppearance()`, the chosen board's squares for
     `useBoardColors()` and its pieces' set for `usePieceSetName()`. Outside a provider - a component rendered alone in
     a test - `useTheme`, `useBoardColors` and `usePieceSetName` give the
-    light theme, the default board and the default pieces, so tests need no
-    wrapper.
+    default color theme's light theme, the default board and the default
+    pieces, so tests need no wrapper.
   - `AnalysisSettingsContext.tsx` - wraps `useAnalysisSettings`, mounted
     in `HomeStack`, so the analysis board and the settings screen over it
     share one set. `ReviewSettingsContext.tsx` does the same for
@@ -1114,12 +1115,24 @@ reviewActions.ts`: Best where another move was better, not for a book, forced or
   that are the same in both modes - `spacing` (a 4pt grid, `xxs` 2 to
   `xxl` 32), `radius`, `fontSize`, `fontWeight`, `fontFamily` (the system
   font, in one place to swap), `typography` (ready-made text styles) and
-  `elevation` (three shadow tiers). `themes.ts`: `lightTheme` and
-  `darkTheme`, each a `Theme` - those scales plus `colors`, named for what
-  they're for (`background`, `surface`, `text`, `textMuted`, `accent`,
-  `danger`, `separator`, the `board`'s overlays, the `gameType`s, ...), not
+  `elevation` (three shadow tiers). `themes.ts`: `COLOR_THEMES`, the color
+  themes Appearance offers - Paper & Vermilion (`vermilion`, the default),
+  Midnight & Brass (`brass`), Deep Teal (`teal`), Violet Night (`violet`)
+  and Classic (`classic`, the green the app started with) - each a light
+  and a dark `Theme`: those scales plus `colors`, named for what they're
+  for (`background`, `surface`, `text`, `textMuted`, `accent`, `danger`,
+  `separator`, the `board`'s overlays, the `gameType`s, `logo`, ...), not
   what they look like, so each mode gives every role its own value.
-  `boardThemes.ts`: the boards' square colors, chosen apart from the mode.
+  Classic's are written out; the others are each worked out from a few
+  chosen colors a mode (`Palette`, `themeFrom`), keeping Classic's colors
+  that mean something - on the board, in a review, a chart.
+  `lightTheme`/`darkTheme` are the default theme's.
+  `boardThemes.ts`: the boards' square colors, chosen apart from the mode;
+  picking a color theme switches to its own board
+  (`constants/appearance.ts`' `COLOR_THEME_OPTIONS`), which can still be
+  changed after. Home's header draws the mark in the theme's `logo`
+  colors (`AppLogo`); the app icon and the splash, drawn by the system,
+  can't follow the theme.
   `colors.moveClass` is a game review's classes' colors, the same in both
   modes (they're drawn on the board).
   `makeStyles((t) => ({...}))` returns a `useStyles()` hook giving the
@@ -1282,9 +1295,10 @@ scripts/generate-icons.js` (the board's knight on the default board,
   double-quoted (`"it's"`), and JSX text writes `&apos;` - which
   `react/no-unescaped-entities` asks for in place of a bare `'`.
 - Board color themes live in `src/theme/boardThemes.ts`
-  (`green`, `wood`, `monochrome`, `powderblue`, `test` - shown
-  as Green, Wood, Monochrome, Powder blue and Blue), chosen in Appearance;
-  `test`, the blue, is the default.
+  (`stone`, `slate`, `teal`, `lavender` - the color themes' own - then
+  `test`, `green`, `wood`, `powderblue`, `monochrome`; shown as Stone,
+  Slate, Teal, Lavender, Blue, Green, Wood, Powder blue and Monochrome),
+  chosen in Appearance; `stone`, Paper & Vermilion's, is the default.
 - `eslint-plugin-react-hooks`'s React-Compiler-readiness rules
   (`react-hooks/refs`, `react-hooks/set-state-in-effect`) are kept at their
   default `error` severity project-wide - this project doesn't have

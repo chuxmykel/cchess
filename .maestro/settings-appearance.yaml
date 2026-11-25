@@ -1,7 +1,8 @@
 appId: ${APP_ID}
 ---
-# Appearance, from the Menu's Settings: dark mode chosen, and still chosen
-# after the app is closed and opened again - it's kept on the device.
+# Appearance, from the Menu's Settings: a color theme - its board with it -
+# and dark mode chosen, and still chosen after the app is closed and opened
+# again - they're kept on the device.
 - runFlow: common/launch-fresh.yaml
 - tapOn:
     id: "menu-tab"
@@ -11,6 +12,16 @@ appId: ${APP_ID}
     retryTapIfNoChange: true
 - tapOn:
     id: "appearance-row"
+- tapOn:
+    id: "color-theme-violet"
+- runFlow:
+    file: common/assert-checked.yaml
+    env:
+      ID: color-theme-violet
+- runFlow:
+    file: common/assert-checked.yaml
+    env:
+      ID: board-theme-lavender
 - tapOn:
     id: "color-scheme-dark"
 - runFlow:
@@ -48,3 +59,7 @@ appId: ${APP_ID}
     file: common/assert-checked.yaml
     env:
       ID: color-scheme-dark
+- runFlow:
+    file: common/assert-checked.yaml
+    env:
+      ID: color-theme-violet

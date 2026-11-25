@@ -10,22 +10,23 @@ import {
   useAppearanceSettings,
 } from '../hooks/useAppearanceSettings';
 import { BOARD_THEMES, BoardTheme } from '../theme/boardThemes';
-import { darkTheme, lightTheme, Theme } from '../theme/themes';
+import { COLOR_THEMES, lightTheme, Theme } from '../theme/themes';
 
 const ThemeContext = createContext<Theme | null>(null);
 const AppearanceContext = createContext<AppearanceSettingsState | null>(null);
 
 // The theme every component's styles are drawn from, for the whole app -
-// dark while the device is, unless Appearance says always light or dark -
-// and the appearance settings behind it.
+// the color theme chosen in Appearance, dark while the device is unless
+// Appearance says always light or dark - and the appearance settings
+// behind it.
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const appearance = useAppearanceSettings();
   const systemScheme = useColorScheme();
-  const { colorScheme } = appearance.settings;
+  const { colorScheme, colorTheme } = appearance.settings;
   const scheme = colorScheme === 'system' ? systemScheme : colorScheme;
-  const theme = scheme === 'dark' ? darkTheme : lightTheme;
+  const theme = COLOR_THEMES[colorTheme][scheme === 'dark' ? 'dark' : 'light'];
   return (
     <AppearanceContext.Provider value={appearance}>
       <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
@@ -33,7 +34,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-// The light theme outside a ThemeProvider, so a component renders on its own
+// The default color theme's light theme outside a ThemeProvider, so a component renders on its own
 // - in a test, say - just as it does in the app by default.
 export function useTheme(): Theme {
   return useContext(ThemeContext) ?? lightTheme;

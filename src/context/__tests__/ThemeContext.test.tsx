@@ -9,7 +9,7 @@ import {
   useTheme,
 } from '../ThemeContext';
 import { BOARD_THEMES } from '../../theme/boardThemes';
-import { darkTheme, lightTheme } from '../../theme/themes';
+import { COLOR_THEMES, darkTheme, lightTheme } from '../../theme/themes';
 
 function useThemeAndAppearance() {
   return {
@@ -63,9 +63,21 @@ describe('ThemeProvider', () => {
     },
   );
 
+  it('gives the chosen color theme, in the mode in use', async () => {
+    jest.spyOn(ReactNative, 'useColorScheme').mockReturnValue('dark');
+    const { result } = await renderInProvider();
+    expect(result.current.theme).toBe(COLOR_THEMES.vermilion.dark);
+
+    await act(async () =>
+      result.current.appearance.update({ colorTheme: 'teal' }),
+    );
+
+    expect(result.current.theme).toBe(COLOR_THEMES.teal.dark);
+  });
+
   it("gives the chosen board's colors", async () => {
     const { result } = await renderInProvider();
-    expect(result.current.board).toBe(BOARD_THEMES.test);
+    expect(result.current.board).toBe(BOARD_THEMES.stone);
 
     await act(async () =>
       result.current.appearance.update({ boardTheme: 'wood' }),
@@ -83,7 +95,7 @@ describe('outside a ThemeProvider', () => {
     }));
 
     expect(result.current.theme).toBe(lightTheme);
-    expect(result.current.board).toBe(BOARD_THEMES.test);
+    expect(result.current.board).toBe(BOARD_THEMES.stone);
   });
 
   it('has no appearance settings to change', async () => {
