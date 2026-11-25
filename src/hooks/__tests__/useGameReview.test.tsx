@@ -114,6 +114,24 @@ describe('useGameReview', () => {
     expect(acquire).not.toHaveBeenCalled();
   });
 
+  it("carries a live game's clock, and none for a daily game", async () => {
+    (getGameReview as jest.Mock).mockResolvedValue(STORED);
+    const live = await renderReview();
+    await flush();
+    if (live.result.current.status !== 'ready') throw new Error('not ready');
+    expect(live.result.current.game.clock).toEqual({
+      initialMs: GAME.initialSeconds * 1000,
+      incrementMs: GAME.incrementSeconds * 1000,
+      afterMs: GAME.moves.map((m) => m.clockAfterMs),
+    });
+
+    (getGame as jest.Mock).mockResolvedValue({ ...GAME, daysPerMove: 3 });
+    const daily = await renderReview();
+    await flush();
+    if (daily.result.current.status !== 'ready') throw new Error('not ready');
+    expect(daily.result.current.game.clock).toBeNull();
+  });
+
   it('analyses the game on the device, then keeps the review on the server', async () => {
     const { result, main, threat, acquire } = await renderReview();
     await flush();
