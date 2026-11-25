@@ -1,15 +1,26 @@
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
 import { Keyboard } from 'react-native';
 import { DEFAULT_POSITION } from 'chess.js';
 
 import PasteGame from '.';
+import { withSafeArea } from '../../testUtils/safeArea';
 
 describe('PasteGame', () => {
   async function renderPaste() {
     const navigation = { navigate: jest.fn() };
-    const screen = await render(<PasteGame navigation={navigation} />);
+    const screen = await render(
+      withSafeArea(<PasteGame navigation={navigation} />),
+    );
     return { screen, navigation };
   }
+
+  it('keeps Analyse out of what scrolls, always in view', async () => {
+    const { screen } = await renderPaste();
+
+    const scrolled = screen.getByTestId('paste-game');
+    expect(within(scrolled).queryByTestId('paste-game-analyse')).toBeNull();
+    expect(screen.getByTestId('paste-game-analyse')).toBeTruthy();
+  });
 
   it('analyses a pasted PGN', async () => {
     const { screen, navigation } = await renderPaste();
