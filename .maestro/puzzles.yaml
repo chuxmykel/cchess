@@ -1,0 +1,71 @@
+appId: ${APP_ID}
+tags:
+  - account
+---
+# A pool puzzle, from the Puzzles tab's Mate in 1 theme: the e2e backend
+# seeds e2emate1-5 (cchess-be's e2e-fixtures seeder) - black plays a7-a6,
+# then white's Rd1-d8 mates. A wrong move first, missed; Retry; back to
+# the start and forward with ‹ ›; a hint, the arrow; then the mate, solved
+# with the hint, and the puzzle rating moved.
+- runFlow: common/sign-in.yaml
+- tapOn:
+    id: "puzzles-tab"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible:
+      id: "puzzle-rating"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: "puzzle-theme-mateIn1"
+    direction: DOWN
+- tapOn:
+    id: "puzzle-theme-mateIn1"
+# The opponent's move played, then white's to find.
+- extendedWaitUntil:
+    visible:
+      id: "puzzle-prompt"
+      text: "White to move.*"
+    timeout: 10000
+- tapOn:
+    id: "square-d1"
+- tapOn:
+    id: "square-d7"
+- assertVisible:
+    id: "puzzle-prompt"
+    text: "Rd7 isn't it."
+- tapOn:
+    id: "puzzle-retry"
+- extendedWaitUntil:
+    visible:
+      id: "puzzle-prompt"
+      text: "White to move.*"
+    timeout: 10000
+- tapOn:
+    id: "puzzle-back"
+- tapOn:
+    id: "puzzle-forward"
+- tapOn:
+    id: "puzzle-hint"
+- assertVisible:
+    id: "puzzle-prompt"
+    text: "The arrow shows the next move."
+- tapOn:
+    id: "square-d1"
+- tapOn:
+    id: "square-d8"
+- assertVisible:
+    id: "puzzle-prompt"
+    text: "Solved, with a hint."
+- extendedWaitUntil:
+    visible:
+      id: "puzzle-rating-change"
+    timeout: 10000
+# The next one, another of the seeded five.
+- tapOn:
+    id: "puzzle-next"
+- extendedWaitUntil:
+    visible:
+      id: "puzzle-prompt"
+      text: "White to move.*"
+    timeout: 10000

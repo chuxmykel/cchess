@@ -1203,6 +1203,66 @@ export async function getPatterns(
   ).data;
 }
 
+/** A puzzle from the pool - lichess's: `fen` before the opponent's move,
+ * `moves` that move and then the solution. */
+export type PoolPuzzle = {
+  id: string;
+  fen: string;
+  moves: string[];
+  rating: number;
+  themes: string[];
+};
+
+export type PuzzleRatingInfo = {
+  rating: number;
+  deviation: number;
+  attempts: number;
+};
+
+/** A pool puzzle near your puzzle rating, of the theme if given - null
+ * when the pool has none left for you. */
+export async function getNextPuzzle(
+  accessToken: string,
+  theme?: string,
+): Promise<PoolPuzzle | null> {
+  try {
+    return (
+      await apiClient.get<PoolPuzzle>('/puzzles/next', {
+        ...bearer(accessToken),
+        params: theme ? { theme } : undefined,
+      })
+    ).data;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+export async function attemptPuzzle(
+  id: string,
+  solved: boolean,
+  accessToken: string,
+): Promise<{ ratingBefore: number; ratingAfter: number }> {
+  return (
+    await apiClient.post<{ ratingBefore: number; ratingAfter: number }>(
+      `/puzzles/${encodeURIComponent(id)}/attempt`,
+      { solved },
+      bearer(accessToken),
+    )
+  ).data;
+}
+
+export async function getPuzzleRating(
+  accessToken: string,
+): Promise<PuzzleRatingInfo> {
+  return (
+    await apiClient.get<PuzzleRatingInfo>(
+      '/puzzles/rating',
+      bearer(accessToken),
+    )
+  ).data;
+}
+
 /** A tactic you missed in one of your games, kept to practise: the position
  * (you to move) and the line that won. */
 export type PersonalPuzzle = {
@@ -1228,6 +1288,14 @@ export type NewPersonalPuzzle = Pick<
   'ply' | 'fen' | 'solution' | 'themes'
 >;
 
+export async function getMyPuzzles(
+  accessToken: string,
+): Promise<PersonalPuzzles> {
+  return (
+    await apiClient.get<PersonalPuzzles>('/puzzles/mine', bearer(accessToken))
+  ).data;
+}
+
 export async function addMyPuzzles(
   gameId: string,
   puzzles: NewPersonalPuzzle[],
@@ -1240,4 +1308,18 @@ export async function addMyPuzzles(
       bearer(accessToken),
     )
   ).data.added;
+}
+
+export async function attemptMyPuzzle(
+  id: string,
+  solved: boolean,
+  accessToken: string,
+): Promise<PersonalPuzzle> {
+  return (
+    await apiClient.post<PersonalPuzzle>(
+      `/puzzles/mine/${encodeURIComponent(id)}/attempt`,
+      { solved },
+      bearer(accessToken),
+    )
+  ).data;
 }

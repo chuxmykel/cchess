@@ -18,6 +18,7 @@ import DailyGame from '../DailyGame';
 import DailyAnalysis from '../DailyAnalysis';
 import GameViewer from '../GameViewer';
 import AnalysisBoard from '../AnalysisBoard';
+import Puzzle from '../Puzzle';
 import AnalysisSettings from '../AnalysisSettings';
 import DailyGameSettings from '../DailyGameSettings';
 import ReviewSettings from '../ReviewSettings';
@@ -103,6 +104,16 @@ const HomeStack: React.FC = () => {
                     // Its summary and its moves are a stack of its own, each
                     // with its header.
                     options={{ headerShown: false }}
+                  />
+                  <Screen
+                    name="Puzzle"
+                    component={Puzzle}
+                    // Over the tabs, like the analysis board: its toolbar
+                    // is the only one at the bottom.
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'Puzzle',
+                    })}
                   />
                   <Screen
                     name="AnalysisBoard"

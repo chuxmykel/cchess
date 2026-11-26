@@ -8,6 +8,7 @@ import { GameType } from '../../domain/types';
 import { AnalysisSource } from '../../hooks/useAnalysisSource';
 import { ExplorerLine } from '../../hooks/useExplorerLine';
 import type { ImportedReview } from '../../hooks/useGameReview';
+import type { PuzzleDeck } from '../../hooks/usePuzzles';
 
 export type ConversationPartner = {
   userId: string;
@@ -51,6 +52,9 @@ export type HomeStackParamList = {
   /** The analysis board, over the tabs - opened from the Menu tab, or
    * from a game, so Back returns there. */
   AnalysisBoard: { source: AnalysisSource; explorerLine?: ExplorerLine };
+  /** A run of puzzles from a deck - your own due ones, or the pool's -
+   * over the tabs, so its own toolbar is the only one at the bottom. */
+  Puzzle: { deck: PuzzleDeck };
   UserProfile: { username: string };
   Conversation: ConversationPartner;
   /** Friends over the tabs, for screens there to open; focusSearch opens

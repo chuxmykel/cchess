@@ -5,12 +5,12 @@ import {
   plainHeaderOptions,
   tabRootHeaderOptions,
 } from '../plainHeaderOptions';
+import type { PuzzlesStackParamList } from './types';
 
-const { Navigator, Screen } = createNativeStackNavigator<{
-  Puzzles: undefined;
-}>();
+const { Navigator, Screen } =
+  createNativeStackNavigator<PuzzlesStackParamList>();
 
-// The Puzzles tab - for now, what's coming.
+// The Puzzles tab: its home. A run of puzzles opens over the tabs.
 const PuzzlesStack: React.FC = () => (
   <Navigator
     id="PuzzlesStack"

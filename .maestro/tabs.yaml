@@ -1,11 +1,18 @@
-# The tabs as a guest: Messages asks to sign in (a guest has no friends to
-# message), and the Menu opens the settings. Puzzles is hidden until it's
-# built (src/constants/features.ts).
+# The tabs as a guest: Puzzles opens on its home (a guest has a puzzle
+# rating too), Messages asks to sign in (a guest has no friends to
+# message), and the Menu opens the settings.
 appId: ${APP_ID}
 ---
 - runFlow: common/launch-fresh.yaml
-- assertNotVisible:
+- tapOn:
     id: "puzzles-tab"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible:
+      id: "puzzle-rating"
+    timeout: 10000
+- assertVisible:
+    id: "puzzles-mine"
 - tapOn:
     id: "messages-tab"
     retryTapIfNoChange: true
