@@ -50,7 +50,7 @@ export function isEndgame(fen: string): boolean {
 }
 
 // The opening: the book, and the ten moves either side makes after it.
-function isOpening(moves: ReviewedMove[], index: number): boolean {
+export function isOpening(moves: ReviewedMove[], index: number): boolean {
   const lastBook = moves.findLastIndex((m) => m.moveClass === 'book');
   return index <= Math.max(lastBook, 0) + OPENING_PLIES_AFTER_BOOK;
 }

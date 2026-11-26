@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, Color, DEFAULT_POSITION, Square } from 'chess.js';
 
 import { ENGINE_VERSION } from '../constants/engine';
@@ -12,10 +12,19 @@ import { useAuthSession } from '../context/AuthSessionContext';
 import { useEngineWhen } from '../context/EngineContext';
 import type { ImportedGame, ImportedPlayer } from '../domain/pgnImport';
 import { buildReview } from '../domain/review/buildReview';
+import { reviewDigests } from '../domain/review/digest';
+import { missedTactics } from '../domain/review/missedTactics';
+import { colorPlayedBy } from '../domain/players';
 import type { ReviewClock } from '../domain/review/time';
 import type { GameReview, PositionEval } from '../domain/review/types';
 import { runReview } from '../engine/reviewRunner';
-import { getGame, getGameReview, saveGameReview } from '../network/restClient';
+import {
+  addMyPuzzles,
+  getGame,
+  getGameReview,
+  saveGameReview,
+  saveReviewDigests,
+} from '../network/restClient';
 import type { GameSnapshot, GameUserSummary } from '../network/socketEvents';
 import { useAppIsActive } from './useAppIsActive';
 import { startOfGame } from './useAnalysisSource';
@@ -94,6 +103,8 @@ type Loaded = {
   // anchored on - none for a guest.
   ratings: Record<Color, number | null>;
   stored: PositionEval[] | null;
+  // Whether the review kept already came with its digests.
+  storedDigests: boolean;
 };
 
 // What's been worked out of each game so far, by game and strength - so
@@ -220,7 +231,9 @@ export function useGameReview(
   gameId: string,
   strength: ReviewStrength,
 ): GameReviewState {
-  const { authorized } = useAuthSession();
+  const auth = useAuthSession();
+  const { authorized } = auth;
+  const userId = auth.isReady ? auth.user.id : null;
   const [attempt, setAttempt] = useState(0);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
@@ -264,6 +277,7 @@ export function useGameReview(
             stored && stored.evals.length === positions.length
               ? stored.evals
               : null,
+          storedDigests: !!stored?.digests,
         });
       })
       .catch(() => {
@@ -295,12 +309,15 @@ export function useGameReview(
             whiteAccuracy: built.white.accuracy,
             blackAccuracy: built.black.accuracy,
             evals,
+            digests: loaded
+              ? reviewDigests(built, loaded.game.result, loaded.game.clock)
+              : undefined,
           },
           token,
         ),
       ).catch(() => {});
     },
-    [authorized, gameId, strength],
+    [authorized, gameId, strength, loaded],
   );
   const analysis = useReviewAnalysis(
     gameId,
@@ -309,6 +326,33 @@ export function useGameReview(
     unavailable,
     save,
   );
+
+  // Once the review's ready: the digests of one kept without them, and the
+  // tactics the player missed, kept to practise - each sent once, and
+  // nothing lost if it fails (the next look sends it again).
+  const ready = analysis.review;
+  const sentFor = useRef<GameReview | null>(null);
+  useEffect(() => {
+    if (!loaded || !ready || unavailable || sentFor.current === ready) return;
+    sentFor.current = ready;
+    if (loaded.stored && !loaded.storedDigests) {
+      const digests = reviewDigests(
+        ready,
+        loaded.game.result,
+        loaded.game.clock,
+      );
+      authorized((token) => saveReviewDigests(gameId, digests, token)).catch(
+        () => {},
+      );
+    }
+    const color = userId ? colorPlayedBy(loaded.game, userId) : null;
+    const missed = color ? missedTactics(ready, color) : [];
+    if (missed.length > 0) {
+      authorized((token) => addMyPuzzles(gameId, missed, token)).catch(
+        () => {},
+      );
+    }
+  }, [loaded, ready, unavailable, authorized, gameId, userId]);
 
   return useMemo((): GameReviewState => {
     if (failed) return { status: 'error', retry };
@@ -379,6 +423,7 @@ export function useImportedGameReview(
       uciMoves,
       ratings: { w: game.white.rating, b: game.black.rating },
       stored: null,
+      storedDigests: false,
     };
   }, [startFen, uciMoves, game, seed]);
   const unavailable = uciMoves.length === 0 ? 'no-moves' : null;

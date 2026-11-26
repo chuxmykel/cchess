@@ -2,6 +2,8 @@ import { AxiosError, create } from 'axios';
 import type { Color, Square } from 'chess.js';
 
 import type { LichessRating, LichessSpeed } from '../constants/explorer';
+import type { ReviewDigests, SideDigest } from '../domain/review/digest';
+import type { BadgeCounts } from '../domain/review/patterns';
 import type { PositionEval } from '../domain/review/types';
 import { GameType } from '../domain/types';
 import { SERVER_URL } from './env';
@@ -410,6 +412,8 @@ export type StoredGameReview = {
   whiteAccuracy: number;
   blackAccuracy: number;
   evals: PositionEval[];
+  /** Each side's review boiled down - none until the app's sent them. */
+  digests?: ReviewDigests | null;
   createdAt: string;
 };
 
@@ -1160,4 +1164,80 @@ export async function reportUser(
   accessToken: string,
 ): Promise<void> {
   await apiClient.post('/reports', report, bearer(accessToken));
+}
+
+/** The digests of a review kept without them (see StoredGameReview). */
+export async function saveReviewDigests(
+  gameId: string,
+  digests: ReviewDigests,
+  accessToken: string,
+): Promise<void> {
+  await apiClient.put(
+    `/games/${encodeURIComponent(gameId)}/review/digests`,
+    { digests },
+    bearer(accessToken),
+  );
+}
+
+/** A player's last reviewed games' digests - their own alone, for others
+ * none - and the badges their reviewed games earned them. */
+export type PlayerPatterns = {
+  games: {
+    gameId: string;
+    color: Color;
+    endedAt: string | null;
+    digest: SideDigest;
+  }[];
+  badges: BadgeCounts;
+};
+
+export async function getPatterns(
+  username: string,
+  accessToken: string,
+): Promise<PlayerPatterns> {
+  return (
+    await apiClient.get<PlayerPatterns>(
+      `/users/${encodeURIComponent(username)}/patterns`,
+      bearer(accessToken),
+    )
+  ).data;
+}
+
+/** A tactic you missed in one of your games, kept to practise: the position
+ * (you to move) and the line that won. */
+export type PersonalPuzzle = {
+  id: string;
+  gameId: string;
+  ply: number;
+  fen: string;
+  solution: string[];
+  themes: string[];
+  dueAt: string;
+  step: number;
+};
+
+export type PersonalPuzzles = {
+  due: PersonalPuzzle[];
+  dueCount: number;
+  learning: number;
+  mastered: number;
+};
+
+export type NewPersonalPuzzle = Pick<
+  PersonalPuzzle,
+  'ply' | 'fen' | 'solution' | 'themes'
+>;
+
+export async function addMyPuzzles(
+  gameId: string,
+  puzzles: NewPersonalPuzzle[],
+  accessToken: string,
+): Promise<number> {
+  return (
+    await apiClient.post<{ added: number }>(
+      '/puzzles/mine',
+      { gameId, puzzles },
+      bearer(accessToken),
+    )
+  ).data.added;
 }

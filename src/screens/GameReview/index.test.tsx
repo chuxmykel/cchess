@@ -40,6 +40,8 @@ jest.mock('../../network/restClient', () => ({
   getGame: jest.fn(),
   getGameReview: jest.fn(),
   saveGameReview: jest.fn(() => Promise.resolve({})),
+  saveReviewDigests: jest.fn(() => Promise.resolve()),
+  addMyPuzzles: jest.fn(() => Promise.resolve(0)),
 }));
 
 // 1. e4 e5 2. Ba6?? bxa6 - white, me, blunders a bishop.
