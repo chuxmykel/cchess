@@ -1,7 +1,13 @@
 import { Pressable, Text, View } from 'react-native';
 import { Color, Square } from 'chess.js';
 
+import BadgeIcon from '../BadgeIcon';
 import { PositionBoard } from '../Board';
+import {
+  BADGE_DESCRIPTIONS,
+  BADGE_LABELS,
+  type BadgeKind,
+} from '../../domain/review/badges';
 import {
   MARK_CLASSES,
   MARK_GLYPHS,
@@ -25,6 +31,8 @@ interface CchessReviewSummaryProps {
   guesses: { found: number; asked: number } | null;
   // The side's hardest find: its move, and how hard ("Only move").
   hardest?: { san: string; label: string } | null;
+  // What the game earned the side reviewed.
+  badges?: BadgeKind[];
   // A tap on the decisive moment goes to its move; on a chapter, starts the
   // review there.
   onSelectMove: (index: number) => void;
@@ -51,6 +59,7 @@ const CchessReviewSummary: React.FC<CchessReviewSummaryProps> = ({
   story,
   guesses,
   hardest = null,
+  badges = [],
   onSelectMove,
   onStartChapter,
 }) => {
@@ -90,6 +99,24 @@ const CchessReviewSummary: React.FC<CchessReviewSummaryProps> = ({
           </Text>
         </View>
       </Pressable>
+
+      {badges.length > 0 && (
+        <View style={styles.badges} testID="review-badges">
+          {badges.map((kind) => (
+            <View
+              key={kind}
+              style={styles.badge}
+              testID={`review-badge-${kind}`}
+            >
+              <BadgeIcon kind={kind} size={32} />
+              <View style={styles.cardText}>
+                <Text style={styles.badgeTitle}>{BADGE_LABELS[kind]}</Text>
+                <Text style={styles.small}>{BADGE_DESCRIPTIONS[kind]}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
 
       {story.length > 0 && (
         <View style={styles.section}>
@@ -224,6 +251,22 @@ const useStyles = makeStyles((t) => ({
   body: {
     fontSize: t.fontSize.md,
     color: t.colors.textSecondary,
+  },
+  badges: {
+    gap: t.spacing.sm,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.spacing.md,
+    padding: t.spacing.sm,
+    borderRadius: t.radius.md,
+    backgroundColor: t.colors.surface,
+  },
+  badgeTitle: {
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.bold,
+    color: t.colors.text,
   },
   section: {
     gap: t.spacing.sm,

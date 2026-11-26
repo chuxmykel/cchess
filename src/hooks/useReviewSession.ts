@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Color } from 'chess.js';
 
 import { ReviewSettings } from '../constants/review';
+import { badgesOf } from '../domain/review/badges';
 import { DIFFICULTY_LABELS, hardestFind } from '../domain/review/difficulty';
 import {
   formatSpent,
@@ -100,6 +101,10 @@ export function useReviewSession({
       ? { san: found.move.san, label: DIFFICULTY_LABELS[found.difficulty] }
       : null;
   }, [review, side]);
+  const badges = useMemo(
+    () => (cchess ? badgesOf(review, side, game.result) : []),
+    [cchess, review, side, game.result],
+  );
   const decisive = useMemo(
     () => decisiveMoment(review, names),
     [review, names],
@@ -238,6 +243,7 @@ export function useReviewSession({
     story,
     decisive,
     hardest,
+    badges,
     clock,
     guesses: stepperOptions?.guesses ?? [],
     tally,

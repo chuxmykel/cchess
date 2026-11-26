@@ -1,7 +1,7 @@
 import type { EngineScore } from '../evalScore';
 import { markOf, wordOf } from './marks';
 import { sanToSpeech, textToSpeech } from './spokenText';
-import { INTRO, STANDING } from './thresholds';
+import { INTRO, MOMENTUM, STANDING } from './thresholds';
 import type { MoveClass, MoveFact, ReviewComment, ReviewedMove } from './types';
 import { winPercent } from './winChances';
 
@@ -705,4 +705,33 @@ export function timeLines(
     );
   }
   return lines;
+}
+
+// The momentum rope's caption: what it is, at rest; while it replays, the
+// move it's at and who's ahead after it - "Move 3... h6?? · Bo is winning"
+// - a turning point said so.
+export const MOMENTUM_IDLE =
+  'Who was winning, move by move. Replay to watch the game pull the rope.';
+
+export function momentumStanding(
+  whiteChances: number,
+  names: { w: string; b: string },
+): string {
+  const lead = Math.abs(whiteChances);
+  if (lead < MOMENTUM.betterFrom) return 'level';
+  const name = whiteChances > 0 ? names.w : names.b;
+  return lead < MOMENTUM.winningFrom
+    ? `${name} is better`
+    : `${name} is winning`;
+}
+
+export function momentumCaption(
+  move: { ply: number; color: 'w' | 'b'; san: string; glyph: string } | null,
+  standing: string,
+  isTurn: boolean,
+): string {
+  if (!move) return `The start · ${standing}`;
+  const number = Math.ceil(move.ply / 2);
+  const label = `Move ${number}${move.color === 'w' ? '.' : '...'} ${move.san}${move.glyph}`;
+  return `${label} · ${standing}${isTurn ? ' · Turning point' : ''}`;
 }

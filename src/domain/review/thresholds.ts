@@ -125,3 +125,25 @@ export const TIME = {
   lowTimeShare: 0.25,
   lowTimeMoves: 3,
 } as const;
+
+// The momentum rope's replay: about this long in all, each move shown for
+// between these, a turning point held a moment longer so it registers; and
+// how far white's winning chances (-1 to 1) lean before a side is said to
+// be better, then winning.
+export const MOMENTUM = {
+  replayMs: 8000,
+  minStepMs: 120,
+  maxStepMs: 600,
+  turnHoldMs: 1000,
+  betterFrom: 0.2,
+  winningFrom: 0.5,
+} as const;
+
+// Badges (badges.ts): a swindle - the game all but lost, and not lost; a
+// comeback or a draw held - from a losing position (STANDING.losing); a
+// clean game - no ? or ??, this accurate, over this many moves of its own.
+export const BADGES = {
+  swindleBelow: 10,
+  cleanAccuracy: 90,
+  cleanMoves: 20,
+} as const;

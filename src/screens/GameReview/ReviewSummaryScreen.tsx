@@ -12,6 +12,7 @@ import { ReviewBoard } from '../../components/Board';
 import Button from '../../components/Button';
 import CchessReviewSummary from '../../components/CchessReviewSummary';
 import EvalGraph from '../../components/EvalGraph';
+import MomentumRope from '../../components/MomentumRope';
 import ReviewBubble from '../../components/ReviewBubble';
 import ReviewProgress from '../../components/ReviewProgress';
 import ReviewSummary from '../../components/ReviewSummary';
@@ -30,11 +31,13 @@ import type {
   ReviewUnavailableReason,
 } from '../../hooks/useGameReview';
 import { useMoveNavigationSounds } from '../../hooks/useGameSounds';
+import { useMomentumReplay } from '../../hooks/useMomentumReplay';
 import { makeStyles } from '../../theme';
 import { reviewedSide } from './reviewedSide';
 import type { ReviewStackScreenProps } from './types';
 
 const NO_POSITIONS: ReviewPosition[] = [];
+const NO_MOVES: { san: string }[] = [];
 
 const UNAVAILABLE: Record<ReviewUnavailableReason, string> = {
   'in-play':
@@ -70,6 +73,15 @@ const ReviewSummaryScreen: React.FC<Props> = ({ navigation }) => {
   const { width } = useWindowDimensions();
   const { state, seed, rememberShownPly } = useGameReviewLoad();
   const session = useReviewSessionContext();
+  // The momentum rope's replay, sounding the turning points it passes.
+  const turns = useMemo(
+    () =>
+      (session?.story ?? [])
+        .map((chapter) => chapter.turn)
+        .filter((turn): turn is number => turn !== null),
+    [session?.story],
+  );
+  const momentum = useMomentumReplay(session?.review.moves ?? NO_MOVES, turns);
   const auth = useAuthSession();
   const userId = auth.isReady ? auth.user.id : null;
   const { settings } = useReviewSettingsContext();
@@ -188,9 +200,22 @@ const ReviewSummaryScreen: React.FC<Props> = ({ navigation }) => {
         <EvalGraph
           scores={review.scores}
           moves={review.moves}
-          index={stepper.index}
+          // Following the momentum's replay while it plays.
+          index={momentum.at !== null ? momentum.at - 1 : stepper.index}
           onSelect={openMoves}
         />
+        {cchess && (
+          <MomentumRope
+            scores={review.scores}
+            at={momentum.at}
+            moves={review.moves}
+            turns={turns}
+            names={session.names}
+            isPlaying={momentum.isPlaying}
+            onReplay={momentum.play}
+            onStop={momentum.stop}
+          />
+        )}
         {clock && (
           <View style={styles.time} testID="review-time">
             <TimeGraph
@@ -225,6 +250,7 @@ const ReviewSummaryScreen: React.FC<Props> = ({ navigation }) => {
             story={session.story}
             guesses={session.tally}
             hardest={session.hardest}
+            badges={session.badges}
             onSelectMove={openMoves}
             onStartChapter={(i) => openMoves(session.story[i].start)}
           />

@@ -126,3 +126,16 @@ describe('CchessReviewSummary', () => {
     );
   });
 });
+it('shows the badges the game earned, and none when it earned none', async () => {
+  const { screen } = await renderSummary({
+    badges: ['comeback', 'sacrifice'],
+  });
+
+  expect(screen.getByTestId('review-badge-comeback')).toHaveTextContent(
+    /Comeback.*Won from a losing position/,
+  );
+  expect(screen.getByTestId('review-badge-sacrifice')).toBeTruthy();
+
+  const none = await renderSummary();
+  expect(none.screen.queryByTestId('review-badges')).toBeNull();
+});
