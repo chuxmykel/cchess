@@ -1,6 +1,9 @@
+import type { EngineScore } from '../evalScore';
+import { markOf, wordOf } from './marks';
 import { sanToSpeech, textToSpeech } from './spokenText';
-import { INTRO } from './thresholds';
-import type { MoveClass, MoveFact, ReviewComment } from './types';
+import { INTRO, STANDING } from './thresholds';
+import type { MoveClass, MoveFact, ReviewComment, ReviewedMove } from './types';
+import { winPercent } from './winChances';
 
 // Everything a review says, in one place - none of it is stored: it's made
 // afresh from the engine's evals each time a review is shown, so rewording
@@ -10,6 +13,8 @@ import type { MoveClass, MoveFact, ReviewComment } from './types';
 //   filled in with the piece, the count and the opening.
 // - The intro, chosen to fit the game; the chess facts shown while it's
 //   analysed; Retry's lines; and the closing themes' advice.
+// - The cchess review's own: its headlines, the decisive moment, the
+//   chapters, the guesses and the clock.
 //
 // Where there are several wordings, a seed from the game picks one, so the
 // same review always reads the same. A word marked *like this* is an idea
@@ -486,3 +491,206 @@ export const THEME_WORDS = {
       'The endgame is where it slipped. With fewer pieces, your king becomes a fighting piece - bring it in.',
   },
 };
+
+// The cchess review's words.
+
+// The players' names, by color.
+export type Names = { w: string; b: string };
+
+// Where a side stands.
+export type Standing = 'losing' | 'level' | 'winning';
+
+// A move with its mark, if it has one: "Nxe5??".
+export function markedSan(move: { san: string; moveClass: MoveClass }): string {
+  return `${move.san}${markOf(move.moveClass)?.glyph ?? ''}`;
+}
+
+// "Nxe5?? · Blunder", "Nf3 · Best move".
+export function cchessHeadline(san: string, moveClass: MoveClass): string {
+  return `${markedSan({ san, moveClass })} · ${wordOf(moveClass)}`;
+}
+
+// What's read aloud for a move: its words, then the comment.
+export function cchessSpoken(
+  san: string,
+  moveClass: MoveClass,
+  text: string,
+): string {
+  return `${sanToSpeech(san)}: ${wordOf(moveClass).toLowerCase()}. ${textToSpeech(text)}`;
+}
+
+// The game as it stands after a score, said of whoever's ahead.
+function standingNow(score: EngineScore, names: Names): string {
+  const white = winPercent(score, 'w');
+  if (white >= STANDING.winning) return `${names.w} is winning`;
+  if (white < STANDING.losing) return `${names.b} is winning`;
+  return 'the game is level';
+}
+
+function standingThen(score: EngineScore, names: Names): string {
+  const white = winPercent(score, 'w');
+  if (white >= STANDING.winning) return `${names.w} was winning`;
+  if (white < STANDING.losing) return `${names.b} was winning`;
+  return 'the game was level';
+}
+
+const moveNumberOf = (ply: number) => Math.ceil(ply / 2);
+
+export function resultLine(
+  result: 'white' | 'black' | 'draw' | null,
+  names: Names,
+): string {
+  if (result === 'white') return `${names.w} won.`;
+  if (result === 'black') return `${names.b} won.`;
+  if (result === 'draw') return 'A draw.';
+  return 'That was the game.';
+}
+
+const capitalise = (text: string) => text[0].toUpperCase() + text.slice(1);
+
+// A chapter's title and what it says: how it ended, and for a turning
+// point, who turned it and how.
+export function chapterText(
+  kind: 'opening' | 'turn' | 'middlegame' | 'endgame' | 'finish',
+  moves: ReviewedMove[],
+  start: number,
+  end: number,
+  context: {
+    names: Names;
+    result: 'white' | 'black' | 'draw' | null;
+    opening: string | null;
+  },
+): { title: string; text: string } {
+  const { names, result, opening } = context;
+  const after = moves[end].scoreAfter;
+  switch (kind) {
+    case 'opening':
+      return {
+        title: 'The opening',
+        text: `${opening ? `${opening}. ` : ''}Out of the opening, ${standingNow(after, names)}.`,
+      };
+    case 'turn': {
+      const move = moves[end];
+      const then = standingThen(move.scoreBefore, names);
+      const now = standingNow(after, names);
+      const played = `${names[move.color]} played ${markedSan(move)}`;
+      return {
+        title: `Move ${moveNumberOf(move.ply)}`,
+        text:
+          then.replace('was', 'is') === now
+            ? `${played}, the biggest swing of this stretch.`
+            : `${played}: ${then}; now ${now}.`,
+      };
+    }
+    case 'middlegame':
+      return {
+        title: 'The middlegame',
+        text: `${capitalise(standingNow(after, names))} by its end.`,
+      };
+    case 'endgame':
+      return {
+        title: 'The endgame',
+        text: `${capitalise(standingNow(after, names))} at the finish. ${resultLine(result, names)}`,
+      };
+    default:
+      return { title: 'The finish', text: resultLine(result, names) };
+  }
+}
+
+// What the decisive-moment card says.
+export function decisiveLine(
+  of:
+    | { move: ReviewedMove; before: Standing; after: Standing }
+    | { closest: ReviewedMove }
+    | null,
+  names: Names,
+): string {
+  if (!of) return 'There were no moves to speak of.';
+  if ('closest' in of) {
+    return `No single move decided it - the closest was ${markedSan(of.closest)}.`;
+  }
+  const { move, before, after } = of;
+  return before === after
+    ? `${markedSan(move)} was the game's biggest swing.`
+    : `${markedSan(move)} took ${names[move.color]} from ${before} to ${after}.`;
+}
+
+// Guessing at a turning point, before it's revealed.
+export const GUESS_TITLE = 'Your move';
+
+export function guessPrompt(ply: number, name: string): string {
+  return `Move ${moveNumberOf(ply)} for ${name}: what would you play?`;
+}
+
+export function guessLine(tried: {
+  san: string;
+  verdict: 'checking' | 'right' | 'wrong';
+  isPlayed: boolean;
+}): string {
+  switch (tried.verdict) {
+    case 'checking':
+      return `Let's see about ${tried.san}...`;
+    case 'right':
+      return tried.isPlayed
+        ? `${tried.san} - just as played. Well found!`
+        : `${tried.san} works. Well found!`;
+    default:
+      return tried.isPlayed
+        ? "That's the move played, and it's where it went wrong. Try another, or reveal it."
+        : `Not quite - ${tried.san} isn't it. Try again, or reveal the move.`;
+  }
+}
+
+// The closing card on the guesses.
+export function guessTally(found: number, asked: number): string {
+  if (found === asked) {
+    return asked === 1
+      ? 'You found the turning point. Well played.'
+      : `You found all ${asked} turning points. Well played.`;
+  }
+  return `You found ${found} of ${asked} turning points. The ones you missed are worth another look.`;
+}
+
+// Time spent on a move: "4.2s", "12s", "1m 30s".
+export function formatSpent(ms: number): string {
+  const seconds = ms / 1000;
+  if (seconds < 10) return `${Math.round(seconds * 10) / 10}s`;
+  if (seconds < 60) return `${Math.round(seconds)}s`;
+  const whole = Math.round(seconds);
+  const rest = whole % 60;
+  return `${Math.floor(whole / 60)}m${rest ? ` ${rest}s` : ''}`;
+}
+
+// What the clock says about a side: its longest think, a slip played in a
+// hurry, and how its play held up as its time ran down - said to the side
+// reviewed, or of it by name (`name`) when the viewer didn't play it.
+export function timeLines(
+  report: {
+    longest: { move: ReviewedMove; ms: number } | null;
+    hastySlip: { move: ReviewedMove; ms: number } | null;
+    lowTime: { plenty: number; short: number } | null;
+  },
+  name: string | null = null,
+): string[] {
+  const lines: string[] = [];
+  if (report.longest) {
+    const { move, ms } = report.longest;
+    const whose = name ? `${name}'s` : 'Your';
+    lines.push(
+      `${whose} longest think: ${formatSpent(ms)} on ${markedSan(move)}, ${wordOf(move.moveClass).toLowerCase()}.`,
+    );
+  }
+  if (report.hastySlip) {
+    const { move, ms } = report.hastySlip;
+    lines.push(
+      `${markedSan(move)} came in ${formatSpent(ms)} - a moment longer might have saved it.`,
+    );
+  }
+  if (report.lowTime) {
+    const { plenty, short } = report.lowTime;
+    lines.push(
+      `Accuracy ${Math.round(plenty)}% with time to spare, ${Math.round(short)}% when it ran short.`,
+    );
+  }
+  return lines;
+}

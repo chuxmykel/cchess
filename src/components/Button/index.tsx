@@ -3,11 +3,14 @@ import { Text, Pressable, StyleProp, ViewStyle } from 'react-native';
 import Icon, { IconName } from '../Icon';
 import { makeStyles, ThemeColors, useTheme } from '../../theme';
 
-type ButtonVariant = 'primary' | 'outline' | 'text';
+type ButtonVariant = 'primary' | 'outline' | 'text' | 'danger';
 
-// A variant's label and icon color: white on the accent, else the accent.
+// A variant's label and icon color: white on the accent (or the danger
+// color), else the accent.
 function variantColor(colors: ThemeColors, variant: ButtonVariant): string {
-  return variant === 'primary' ? colors.textOnAccent : colors.accent;
+  return variant === 'primary' || variant === 'danger'
+    ? colors.textOnAccent
+    : colors.accent;
 }
 
 interface ButtonProps {
@@ -127,6 +130,9 @@ const useVariantStyles = makeStyles((t) => ({
     paddingVertical: 0,
     paddingHorizontal: 0,
   },
+  danger: {
+    backgroundColor: t.colors.danger,
+  },
 }));
 
 const useVariantLabelStyles = makeStyles((t) => ({
@@ -138,5 +144,8 @@ const useVariantLabelStyles = makeStyles((t) => ({
   },
   text: {
     color: variantColor(t.colors, 'text'),
+  },
+  danger: {
+    color: variantColor(t.colors, 'danger'),
   },
 }));

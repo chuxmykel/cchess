@@ -17,7 +17,9 @@ appId: ${APP_ID}
     env:
       FIELD: "paste-game-input"
       TEXT: "6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1"
-- runFlow: common/dismiss-keyboard.yaml
+# Analyse is pinned above the keyboard, so there's no closing it first -
+# on Android that's a back press, which leaves the screen when no
+# on-screen keyboard is up.
 - tapOn:
     id: "paste-game-analyse"
 - assertVisible:

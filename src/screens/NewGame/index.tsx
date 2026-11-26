@@ -12,6 +12,7 @@ import { DAILY_SEEK_FAILED_MESSAGE } from '../../constants/errorMessages';
 import { useSeekDailyGame } from '../../hooks/useSeekDailyGame';
 import { useLastTimeControl } from '../../hooks/useLastTimeControl';
 import { ColorChoice } from '../../network/socketEvents';
+import { FEATURES } from '../../constants/features';
 import { daysPerMove, isDailyTimeControl } from '../../constants/timeControls';
 import { makeStyles } from '../../theme';
 
@@ -120,14 +121,16 @@ const NewGame: React.FC<NewGameProps> = ({ navigation }) => {
             style={styles.secondaryButtonSpacing}
             testID="challenge-friend-button"
           />
-          <Button
-            label="Play Stockfish"
-            onDisabledPress={playStockfish}
-            appearsDisabled
-            variant="outline"
-            icon="robot-outline"
-            testID="play-stockfish-button"
-          />
+          {FEATURES.playStockfish && (
+            <Button
+              label="Play Stockfish"
+              onDisabledPress={playStockfish}
+              appearsDisabled
+              variant="outline"
+              icon="robot-outline"
+              testID="play-stockfish-button"
+            />
+          )}
         </View>
       </View>
       <Toast toasts={toast.toasts} />

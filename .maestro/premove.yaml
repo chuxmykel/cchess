@@ -13,15 +13,18 @@ tags:
 # White hasn't moved yet: queue e7-e5, marked. On Android the first-move
 # countdown ticking keeps Maestro from settling on a square to aim at - up
 # to 14s a tap, longer than white waits - so there the squares are tapped by
-# point (the Pixel 8's, board turned for black).
+# point (the Pixel 8's, board turned for black), without waiting for the
+# screen to settle after each: it never does while the countdown ticks.
 - runFlow:
     when:
       platform: Android
     commands:
       - tapOn:
           point: "472,1577"
+          waitToSettleTimeoutMs: 500
       - tapOn:
           point: "472,1307"
+          waitToSettleTimeoutMs: 500
 - runFlow:
     when:
       platform: iOS

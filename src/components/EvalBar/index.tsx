@@ -25,11 +25,12 @@ interface EvalBarProps {
 }
 
 export const EVAL_BAR_THICKNESS = 18;
+const MIDPOINT_WIDTH = 2;
 const FILL_TIMING = { duration: 300 };
 
 // How the engine sees the position: white's share of the bar - from the left
 // across the board, or from white's end beside it - black's the rest, and the
-// score on it. While a new position's score is coming, the last one stays,
+// score on it, with a line half way along marking level. While a new position's score is coming, the last one stays,
 // so stepping through moves glides from one score to the next rather than
 // dropping back to even in between.
 const EvalBar: React.FC<EvalBarProps> = ({
@@ -65,6 +66,13 @@ const EvalBar: React.FC<EvalBarProps> = ({
       <Animated.View
         style={[styles.white, FILL_FROM[whiteEnd], fillStyle]}
         testID="eval-bar-fill"
+      />
+      <View
+        style={[
+          styles.midpoint,
+          vertical ? styles.midpointVertical : styles.midpointHorizontal,
+        ]}
+        testID="eval-bar-midpoint"
       />
       {shown && (
         <Text
@@ -120,6 +128,25 @@ const useStyles = makeStyles((t) => ({
   white: {
     position: 'absolute',
     backgroundColor: t.colors.evalBar.white,
+  },
+  midpoint: {
+    position: 'absolute',
+    // The theme's own color, showing on either side.
+    backgroundColor: t.colors.accent,
+  },
+  midpointHorizontal: {
+    left: '50%',
+    top: 0,
+    bottom: 0,
+    width: MIDPOINT_WIDTH,
+    marginLeft: -MIDPOINT_WIDTH / 2,
+  },
+  midpointVertical: {
+    top: '50%',
+    left: 0,
+    right: 0,
+    height: MIDPOINT_WIDTH,
+    marginTop: -MIDPOINT_WIDTH / 2,
   },
   score: {
     color: t.colors.text,

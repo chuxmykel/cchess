@@ -19,6 +19,7 @@ describe('useAppearanceSettings', () => {
     await act(async () =>
       first.result.current.update({
         colorScheme: 'dark',
+        colorTheme: 'violet',
         boardTheme: 'wood',
       }),
     );
@@ -28,6 +29,7 @@ describe('useAppearanceSettings', () => {
 
     expect(again.result.current.settings).toEqual({
       colorScheme: 'dark',
+      colorTheme: 'violet',
       boardTheme: 'wood',
       pieceSet: 'standard',
     });
@@ -38,6 +40,7 @@ describe('useAppearanceSettings', () => {
       'cchess.appearanceSettings',
       JSON.stringify({
         colorScheme: 'sepia',
+        colorTheme: 'chess.com',
         boardTheme: 'toString',
         pieceSet: 'cardboard',
       }),

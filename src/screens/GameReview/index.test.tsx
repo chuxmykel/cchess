@@ -1,7 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render, within } from '@testing-library/react-native';
 import * as Speech from 'expo-speech';
 import { DEFAULT_POSITION } from 'chess.js';
+import { Text } from 'react-native';
+import {
+  createNavigationContainerRef,
+  NavigationContainer,
+} from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import GameReview from '.';
 import { REVIEW_FACT_MS } from '../../constants/review';
@@ -17,7 +23,6 @@ import {
 } from '../../network/restClient';
 import { makeFakeEngine } from '../../testUtils/fakeEngine';
 import { makeFinishedGame } from '../../testUtils/gameSnapshot';
-import { headerRightOf } from '../../testUtils/headerRight';
 import { withSafeArea } from '../../testUtils/safeArea';
 import { settleAnimations } from '../../testUtils/pieceGestures';
 
@@ -63,14 +68,16 @@ async function renderReview({
   status,
   voice = false,
   params = { gameId: 'game-1' },
+  style = 'classic',
 }: {
   status?: EngineStatus;
   voice?: boolean;
   params?: { gameId: string } | { imported: ImportedReview };
+  style?: 'classic' | 'cchess';
 } = {}) {
   await AsyncStorage.setItem(
     'cchess.reviewSettings',
-    JSON.stringify({ voice }),
+    JSON.stringify({ voice, style }),
   );
   const main = makeFakeEngine();
   const threat = makeFakeEngine();
@@ -79,26 +86,58 @@ async function renderReview({
     acquire: jest.fn(() => () => {}),
     retry: jest.fn(),
   };
-  const navigation = {
-    navigate: jest.fn(),
-    goBack: jest.fn(),
-    setOptions: jest.fn(),
-  };
-  const props = {
-    navigation,
-    route: { key: 'review', name: 'GameReview', params },
-  } as unknown as React.ComponentProps<typeof GameReview>;
+  // The review opened over a screen, as from a game or the analysis board,
+  // with the screens it opens standing in, showing what they were given.
+  const navigation = createNavigationContainerRef<Record<string, object>>();
   const screen = await render(
     withSafeArea(
       <ReviewSettingsProvider>
         <EngineContext.Provider value={engine}>
-          <GameReview {...props} />
+          <NavigationContainer ref={navigation}>
+            <Stack.Navigator id={undefined}>
+              <Stack.Screen name="Home" component={StandIn} />
+              <Stack.Screen
+                name="GameReview"
+                component={GameReview as React.ComponentType<object>}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen name="AnalysisBoard" component={StandIn} />
+              <Stack.Screen name="ReviewSettings" component={StandIn} />
+            </Stack.Navigator>
+          </NavigationContainer>
         </EngineContext.Provider>
       </ReviewSettingsProvider>,
     ),
   );
+  await act(async () => navigation.navigate('GameReview', params));
   await act(async () => {});
   return { screen, navigation, main, threat, engine };
+}
+
+const Stack = createNativeStackNavigator();
+
+// A screen the review opens, showing the params it was opened with.
+function StandIn({ route }: { route: { name: string; params?: object } }) {
+  return (
+    <Text testID={`stand-in-${route.name}`}>
+      {JSON.stringify(route.params ?? null)}
+    </Text>
+  );
+}
+
+type Screen = Awaited<ReturnType<typeof render>>;
+
+// What a screen the review opened was given.
+function openedWith(screen: Screen, name: string): unknown {
+  return JSON.parse(
+    screen.getByTestId(`stand-in-${name}`).props.children as string,
+  );
+}
+
+// A header button of the screen on top - the summary's header stays drawn
+// under the moves'.
+function headerButton(screen: Screen, testID: string) {
+  return screen.getAllByTestId(testID).at(-1)!;
 }
 
 // On to the next key moment: Next plays the moves there, and tapped again
@@ -130,6 +169,14 @@ describe('GameReview', () => {
     jest.useRealTimers();
   });
 
+  it('keeps Start review out of the summary scrolling under it, always in view', async () => {
+    const { screen } = await renderReview();
+
+    const summary = screen.getByTestId('game-review-summary');
+    expect(within(summary).queryByTestId('review-start')).toBeNull();
+    expect(screen.getByTestId('review-start')).toBeTruthy();
+  });
+
   it("opens on the summary: the graph, each side's accuracy and moves", async () => {
     const { screen } = await renderReview();
 
@@ -148,7 +195,7 @@ describe('GameReview', () => {
   });
 
   it('plays through to my key moments, then closes on what to take away', async () => {
-    const { screen, navigation } = await renderReview();
+    const { screen } = await renderReview();
 
     // Every move's played on the way - tapped while they play, Skip goes
     // straight to where they stop.
@@ -183,7 +230,7 @@ describe('GameReview', () => {
     );
     await fireEvent.press(screen.getByTestId('review-next'));
     // From the game's last position.
-    expect(navigation.navigate).toHaveBeenCalledWith('AnalysisBoard', {
+    expect(openedWith(screen, 'AnalysisBoard')).toEqual({
       source: { kind: 'game', gameId: 'game-1', ply: 4 },
     });
   });
@@ -427,28 +474,51 @@ describe('GameReview', () => {
     );
   });
 
-  // The header's buttons, drawn on their own.
-  async function headerButtons(navigation: { setOptions: jest.Mock }) {
-    const [options] = navigation.setOptions.mock.calls.at(-1);
-    return render(headerRightOf(options));
-  }
+  it('goes back from the moves to the summary, and from there out of the review', async () => {
+    const { screen, navigation } = await renderReview();
+    await toBlunder(screen);
+    expect(navigation.getCurrentRoute()?.name).toBe('ReviewMoves');
+
+    await act(async () => navigation.goBack());
+    expect(navigation.getCurrentRoute()?.name).toBe('ReviewSummary');
+    expect(screen.queryByTestId('game-review-stepping')).toBeNull();
+    // Back at the start, as the summary is.
+    await fireEvent.press(screen.getByTestId('review-start'));
+    await fireEvent.press(screen.getByTestId('review-next'));
+    await settleAnimations();
+    expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+      'e5 is a book move',
+    );
+
+    await act(async () => navigation.goBack());
+    await act(async () => navigation.goBack());
+    expect(navigation.getCurrentRoute()?.name).toBe('Home');
+  });
+
+  it('goes back to the summary from its close', async () => {
+    const { screen, navigation } = await renderReview();
+    await toBlunder(screen);
+    // On through the last moves to the close.
+    await nextMoment(screen);
+
+    await fireEvent.press(screen.getByTestId('review-summary-button'));
+    expect(navigation.getCurrentRoute()?.name).toBe('ReviewSummary');
+  });
 
   it('opens its settings from the header', async () => {
-    const { navigation } = await renderReview();
-    const settings = await headerButtons(navigation);
+    const { screen } = await renderReview();
 
-    await fireEvent.press(settings.getByTestId('review-settings-button'));
-    expect(navigation.navigate).toHaveBeenCalledWith('ReviewSettings');
+    await fireEvent.press(screen.getByTestId('review-settings-button'));
+    expect(screen.getByTestId('stand-in-ReviewSettings')).toBeTruthy();
   });
 
   it('opens the analysis board at the move shown, from the header', async () => {
-    const { screen, navigation } = await renderReview();
+    const { screen } = await renderReview();
     await toBlunder(screen);
-    const analyse = await headerButtons(navigation);
 
-    await fireEvent.press(analyse.getByTestId('review-analyse-button'));
+    await fireEvent.press(headerButton(screen, 'review-analyse-button'));
     // 2. Ba6, the third move.
-    expect(navigation.navigate).toHaveBeenCalledWith('AnalysisBoard', {
+    expect(openedWith(screen, 'AnalysisBoard')).toEqual({
       source: { kind: 'game', gameId: 'game-1', ply: 3 },
     });
   });
@@ -465,8 +535,11 @@ describe('GameReview', () => {
       },
     };
 
-    async function analyseImported(imported = IMPORTED) {
-      const rendered = await renderReview({ params: { imported } });
+    async function analyseImported(
+      imported = IMPORTED,
+      style: 'classic' | 'cchess' = 'classic',
+    ) {
+      const rendered = await renderReview({ params: { imported }, style });
       for (let i = 0; i < EVALS.length; i++) {
         const engine = i % 2 === 0 ? rendered.main : rendered.threat;
         const { score, pv } = EVALS[i];
@@ -509,15 +582,143 @@ describe('GameReview', () => {
     });
 
     it('opens the analysis board on the pasted game, at the move shown', async () => {
-      const { screen, navigation } = await analyseImported();
+      const { screen } = await analyseImported();
       await toBlunder(screen);
-      const [options] = navigation.setOptions.mock.calls.at(-1);
-      const analyse = await render(headerRightOf(options));
 
-      await fireEvent.press(analyse.getByTestId('review-analyse-button'));
-      expect(navigation.navigate).toHaveBeenCalledWith('AnalysisBoard', {
+      await fireEvent.press(headerButton(screen, 'review-analyse-button'));
+      expect(openedWith(screen, 'AnalysisBoard')).toEqual({
         source: { kind: 'import', ...IMPORTED, ply: 3 },
       });
+    });
+
+    it('has no clock to show in the cchess style', async () => {
+      const { screen } = await analyseImported(IMPORTED, 'cchess');
+
+      expect(screen.getByTestId('cchess-summary')).toBeTruthy();
+      expect(screen.queryByTestId('review-time')).toBeNull();
+    });
+  });
+
+  describe('in the cchess style', () => {
+    // White's clock: Ba6 in 4s, from 300s to 296s.
+    const CLOCKED = {
+      ...GAME,
+      moves: GAME.moves.map((move, i) => ({
+        ...move,
+        clockAfterMs: [300_000, 300_000, 296_000, 290_000][i],
+      })),
+    };
+    beforeEach(() => (getGame as jest.Mock).mockResolvedValue(CLOCKED));
+
+    const renderCchess = () => renderReview({ style: 'cchess' });
+
+    it('opens on the decisive move, the chapters and the marks - no rating', async () => {
+      const { screen } = await renderCchess();
+
+      expect(screen.getByTestId('review-decisive-text')).toHaveTextContent(
+        'Ba6?? took White from level to losing.',
+      );
+      expect(screen.getByTestId('review-chapter-0')).toHaveTextContent(
+        /The opening/,
+      );
+      expect(screen.getByTestId('review-chapter-1')).toHaveTextContent(
+        /Move 2.*White played Ba6\?\?/,
+      );
+      expect(screen.getByTestId('review-marks-w-??')).toHaveTextContent('1');
+      expect(screen.queryByTestId('review-summary')).toBeNull();
+      expect(screen.queryByTestId('review-rating-w')).toBeNull();
+    });
+
+    it('shows where the time went', async () => {
+      const { screen } = await renderCchess();
+
+      expect(screen.getByTestId('time-graph')).toBeTruthy();
+      expect(screen.getByTestId('review-time')).toHaveTextContent(
+        /Ba6\?\? came in 4s/,
+      );
+    });
+
+    it('has no clock where no move took any time', async () => {
+      (getGame as jest.Mock).mockResolvedValue(GAME);
+      const { screen } = await renderCchess();
+
+      expect(screen.getByTestId('cchess-summary')).toBeTruthy();
+      expect(screen.queryByTestId('review-time')).toBeNull();
+    });
+
+    it('has no clock for a daily game', async () => {
+      (getGame as jest.Mock).mockResolvedValue({ ...CLOCKED, daysPerMove: 3 });
+      const { screen } = await renderCchess();
+
+      expect(screen.getByTestId('cchess-summary')).toBeTruthy();
+      expect(screen.queryByTestId('review-time')).toBeNull();
+    });
+
+    it('goes to the decisive move when it is tapped', async () => {
+      const { screen } = await renderCchess();
+
+      await fireEvent.press(screen.getByTestId('review-decisive'));
+
+      expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+        'Ba6?? · Blunder',
+      );
+      expect(screen.getByTestId('review-bubble-score')).toHaveTextContent(
+        /· 4s$/,
+      );
+    });
+
+    it('asks for the move at a turning point, then reveals it', async () => {
+      const { screen } = await renderCchess();
+      await fireEvent.press(screen.getByTestId('review-start'));
+      // Straight to the opening's end, 1... e5 - book, unmarked.
+      await fireEvent.press(screen.getByTestId('review-next'));
+      await settleAnimations();
+      expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+        'e5 · Book move',
+      );
+      expect(screen.getByTestId('review-chapter-strip')).toHaveTextContent(
+        'Chapter 1 of 3 · The opening',
+      );
+      // Nor does the list show the turning point coming, or what follows.
+      expect(screen.queryByTestId('move-3')).toBeNull();
+      // Black's first move, which starts no clock: no time beside it.
+      expect(screen.getByTestId('review-bubble-score')).not.toHaveTextContent(
+        /·/,
+      );
+
+      await nextMoment(screen);
+      expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+        'Your move',
+      );
+      expect(screen.getByTestId('review-bubble-text')).toHaveTextContent(
+        'Move 2 for White: what would you play?',
+      );
+      expect(screen.getByTestId('review-next')).toHaveTextContent('Reveal');
+      // The list stops before the move asked for, giving nothing away.
+      expect(screen.getByTestId('move-2')).toBeTruthy();
+      expect(screen.queryByTestId('move-3')).toBeNull();
+      expect(screen.queryByTestId('move-4')).toBeNull();
+
+      await fireEvent.press(screen.getByTestId('review-next'));
+      await settleAnimations();
+      expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+        'Ba6?? · Blunder',
+      );
+      expect(screen.getByTestId('review-chapter-strip')).toHaveTextContent(
+        'Chapter 2 of 3 · Move 2',
+      );
+      expect(screen.getByTestId('move-4')).toBeTruthy();
+    });
+
+    it('starts the review at a chapter tapped', async () => {
+      const { screen } = await renderCchess();
+
+      await fireEvent.press(screen.getByTestId('review-chapter-2'));
+
+      expect(screen.getByTestId('game-review-stepping')).toBeTruthy();
+      expect(screen.getByTestId('review-bubble-title')).toHaveTextContent(
+        'bxa6 · Best move',
+      );
     });
   });
 });

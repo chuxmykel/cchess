@@ -6,8 +6,8 @@ tags:
 # A finished game's review, from Home's newest recent game - e2e_main's
 # seeded blunder (6...Qxg5??, see cchess-be's e2e-fixtures seeder):
 # analysed on the device (the engine downloaded first, a fresh launch
-# having cleared it) - then its summary, a key moment, Show, Best and
-# stepping back. It never checks what the engine said, which varies.
+# having cleared it) - then, in the cchess style, its summary, the
+# chapters, a guess at the turning point, Show, Best and stepping back. It never checks what the engine said, which varies.
 - runFlow: common/sign-in.yaml
 - extendedWaitUntil:
     visible:
@@ -25,17 +25,40 @@ tags:
     timeout: 180000
 - assertVisible:
     id: "eval-graph"
+# The cchess style, the default: the move that decided it, the game in
+# chapters, then - further down - each side's accuracy and marks.
 - assertVisible:
-    id: "review-accuracy-w"
+    id: "review-decisive"
+- assertVisible:
+    id: "review-chapter-0"
+- scrollUntilVisible:
+    element:
+      id: "review-accuracy-w"
+    direction: DOWN
 - tapOn:
     id: "review-start"
 - assertVisible:
     id: "review-bubble-title"
-# On to the first key moment after the book.
+- assertVisible:
+    id: "review-chapter-strip"
+# On from chapter to chapter until it asks for e2e_main's move at the
+# blunder's turning point.
+- repeat:
+    while:
+      notVisible:
+        id: "review-next"
+        text: "Reveal"
+    times: 6
+    commands:
+      - tapOn:
+          id: "review-next"
+- assertVisible:
+    id: "review-bubble-title"
+    text: "Your move"
+# Revealed: the move played, marked, its line to Show and the Best move.
 - tapOn:
     id: "review-next"
-- assertVisible:
-    id: "review-board"
+    text: "Reveal"
 - tapOn:
     id: "review-show"
 - assertVisible:
@@ -43,7 +66,7 @@ tags:
 - tapOn:
     id: "review-best"
 - assertVisible:
-    text: ".* is best"
+    text: ".* · Best move"
 # A move stepped back to is where the review is: Next plays on from there.
 - tapOn:
     id: "review-back"

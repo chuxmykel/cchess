@@ -52,6 +52,27 @@ describe('PlayerBar', () => {
     );
   }
 
+  it('tags a computer opponent as a bot', async () => {
+    const screen = await render(
+      <PlayerBar
+        color="b"
+        white={white}
+        black={{ ...black, isBot: true }}
+        clock={clock}
+        turn="w"
+        isGameOver={false}
+        firstMoveSecondsLeft={null}
+      />,
+    );
+
+    expect(screen.getByTestId('player-bot-b')).toHaveTextContent('BOT');
+  });
+
+  it('tags nobody else', async () => {
+    const screen = await renderBar('w');
+    expect(screen.queryByTestId('player-bot-w')).toBeNull();
+  });
+
   it("shows white's name and clock for the white bar", async () => {
     const screen = await renderBar('w');
 

@@ -60,4 +60,18 @@ describe('EvalBar', () => {
     });
     expect(screen.getByTestId('eval-bar-fill')).toHaveStyle({ top: 0 });
   });
+
+  it('marks level half way along, either way round', async () => {
+    const screen = await render(<EvalBar score={{ kind: 'cp', cp: 300 }} />);
+    expect(screen.getByTestId('eval-bar-midpoint')).toHaveStyle({
+      left: '50%',
+    });
+
+    await screen.rerender(
+      <EvalBar score={{ kind: 'cp', cp: 300 }} direction="vertical" />,
+    );
+    expect(screen.getByTestId('eval-bar-midpoint')).toHaveStyle({
+      top: '50%',
+    });
+  });
 });

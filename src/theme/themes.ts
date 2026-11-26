@@ -147,6 +147,8 @@ export interface ThemeColors {
   onMoveClass: string;
   // The review's speech bubble.
   reviewBubble: string;
+  // The app's mark, as Home's header draws it: a tile and its two squares.
+  logo: { tile: string; squares: string };
 }
 
 export interface Theme {
@@ -212,7 +214,7 @@ const evalBar = {
   onBlack: '#eee',
 };
 
-export const lightTheme: Theme = {
+const classicLightTheme: Theme = {
   mode: 'light',
   ...scales,
   colors: {
@@ -295,6 +297,7 @@ export const lightTheme: Theme = {
     moveClass,
     onMoveClass: '#fff',
     reviewBubble: '#fff',
+    logo: { tile: '#769656', squares: '#eeeed2' },
   },
 };
 
@@ -302,7 +305,7 @@ export const lightTheme: Theme = {
 // status colors lifted so they read on the darker ground. Hex colors stay
 // six digits where a component adds an alpha to them (the rating chart's
 // fill under its line).
-export const darkTheme: Theme = {
+const classicDarkTheme: Theme = {
   mode: 'dark',
   ...scales,
   colors: {
@@ -385,8 +388,269 @@ export const darkTheme: Theme = {
     moveClass,
     onMoveClass: '#fff',
     reviewBubble: '#33312d',
+    logo: { tile: '#769656', squares: '#eeeed2' },
   },
 };
+
+// The app's color themes, chosen in Appearance: each a light and a dark
+// theme. Classic is the green the app started with; the others are drawn
+// from a few colors each (`Palette`), the rest worked out from them - the
+// colors that mean something on the board, in a review or a chart stay
+// Classic's.
+export type ColorThemeName =
+  'classic' | 'brass' | 'vermilion' | 'teal' | 'violet';
+
+// A theme's few chosen colors, in one mode.
+interface Palette {
+  background: string;
+  // Cards and sheets: lighter than the background in light mode, as paper
+  // on a desk.
+  surface: string;
+  text: string;
+  textMuted: string;
+  separator: string;
+  accent: string;
+  textOnAccent: string;
+  // The accent as text, dark (or light) enough to read on the background.
+  accentText: string;
+  accentSubtle: string;
+  // The last move's squares, drawn see-through over the board.
+  lastMove: string;
+  // The logo: its tile and its two squares.
+  logo: { tile: string; squares: string };
+}
+
+function channels(hex: string): number[] {
+  const value = hex.replace('#', '');
+  return [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16));
+}
+
+// `from` moved `amount` (0-1) of the way to `to`, as a six-digit hex.
+function mix(from: string, to: string, amount: number): string {
+  const a = channels(from);
+  const b = channels(to);
+  return `#${a
+    .map((c, i) =>
+      Math.round(c + (b[i] - c) * amount)
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`;
+}
+
+function withAlpha(hex: string, alpha: number): string {
+  const [r, g, b] = channels(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// A theme from Classic's, in the same mode, with a palette's colors in
+// every role that carries the look.
+function themeFrom(base: Theme, p: Palette): Theme {
+  const dark = base.mode === 'dark';
+  const { colors } = base;
+  return {
+    ...base,
+    colors: {
+      ...colors,
+      background: p.background,
+      surface: p.surface,
+      surfaceSubtle: mix(p.background, p.text, dark ? 0.03 : 0.025),
+      surfaceStrong: mix(p.background, p.text, dark ? 0.12 : 0.07),
+      surfaceRaised: dark ? mix(p.surface, p.text, 0.03) : p.surface,
+      surfaceTranslucent: withAlpha(
+        dark ? mix(p.surface, p.text, 0.03) : p.surface,
+        0.96,
+      ),
+      skeleton: mix(p.background, p.text, dark ? 0.1 : 0.07),
+      separator: p.separator,
+      border: mix(p.separator, p.text, dark ? 0.12 : 0.08),
+      divider: mix(p.separator, p.background, 0.3),
+      text: p.text,
+      textSecondary: mix(p.text, p.background, dark ? 0.22 : 0.28),
+      textMuted: p.textMuted,
+      textFaint: mix(p.textMuted, p.background, 0.35),
+      disabled: mix(p.textMuted, p.background, 0.5),
+      textOnAccent: p.textOnAccent,
+      textOnAccentMuted: withAlpha(p.textOnAccent, 0.8),
+      accent: p.accent,
+      accentSubtle: p.accentSubtle,
+      accentSoft: mix(p.background, p.accent, dark ? 0.24 : 0.16),
+      pieceChoiceSelected: dark
+        ? mix(colors.pieceChoice, p.accent, 0.35)
+        : p.accentSubtle,
+      pieceChoiceLabelSelected: p.accentText,
+      accentText: p.accentText,
+      inverseSurface: dark ? p.text : colors.inverseSurface,
+      inverseText: dark ? p.background : colors.inverseText,
+      chart: {
+        selection: mix(p.accent, p.background, dark ? 0.25 : 0.4),
+        guide: mix(p.textMuted, p.background, 0.4),
+        grid: p.separator,
+      },
+      illustration: {
+        ...colors.illustration,
+        light: mix(p.background, p.accent, dark ? 0.28 : 0.2),
+        pale: mix(p.background, p.accent, dark ? 0.12 : 0.08),
+      },
+      logo: p.logo,
+      board: {
+        ...colors.board,
+        lastMove: withAlpha(p.lastMove, 0.5),
+        veil: dark ? withAlpha(p.background, 0.55) : colors.board.veil,
+      },
+      reviewBubble: dark ? mix(p.background, p.text, 0.12) : p.surface,
+    },
+  };
+}
+
+const PALETTES: Record<
+  Exclude<ColorThemeName, 'classic'>,
+  Record<ThemeMode, Palette>
+> = {
+  // Navy and brass: a club room at night.
+  brass: {
+    light: {
+      background: '#f5f4ef',
+      surface: '#ffffff',
+      text: '#1b2230',
+      textMuted: '#5b6373',
+      separator: '#e1dfd6',
+      accent: '#1f3a5f',
+      textOnAccent: '#ffffff',
+      accentText: '#1f3a5f',
+      accentSubtle: '#e6eaf0',
+      lastMove: '#d4a24c',
+      logo: { tile: '#1f3a5f', squares: '#d4a24c' },
+    },
+    dark: {
+      background: '#0e1421',
+      surface: '#172033',
+      text: '#e9ecf2',
+      textMuted: '#9aa3b5',
+      separator: '#263049',
+      accent: '#d4a24c',
+      textOnAccent: '#1b1405',
+      accentText: '#e3b866',
+      accentSubtle: '#22304a',
+      lastMove: '#d4a24c',
+      logo: { tile: '#d4a24c', squares: '#0e1421' },
+    },
+  },
+  // Paper, ink and one vermilion red: a printed chess book.
+  vermilion: {
+    light: {
+      background: '#faf7f0',
+      surface: '#ffffff',
+      text: '#1f1a17',
+      textMuted: '#685f57',
+      separator: '#e6dfd2',
+      accent: '#c2411a',
+      textOnAccent: '#ffffff',
+      accentText: '#b03a16',
+      accentSubtle: '#f6e6de',
+      lastMove: '#e8673f',
+      logo: { tile: '#c2411a', squares: '#faf7f0' },
+    },
+    dark: {
+      background: '#191613',
+      surface: '#24201c',
+      text: '#f1ebe2',
+      textMuted: '#a89f94',
+      separator: '#39332d',
+      accent: '#e8673f',
+      textOnAccent: '#1a0e08',
+      accentText: '#f08a66',
+      accentSubtle: '#3a2a22',
+      lastMove: '#e8673f',
+      logo: { tile: '#e8673f', squares: '#191613' },
+    },
+  },
+  // Teal with a yellow highlight: an analysis tool.
+  teal: {
+    light: {
+      background: '#f2f6f6',
+      surface: '#ffffff',
+      text: '#10201f',
+      textMuted: '#566866',
+      separator: '#dae3e2',
+      accent: '#0f766e',
+      textOnAccent: '#ffffff',
+      accentText: '#0e6b64',
+      accentSubtle: '#ddf0ee',
+      lastMove: '#f2c94c',
+      logo: { tile: '#0f766e', squares: '#ccfbf1' },
+    },
+    dark: {
+      background: '#0a1312',
+      surface: '#131f1e',
+      text: '#e3eeec',
+      textMuted: '#8fa5a2',
+      separator: '#22322f',
+      accent: '#2dd4bf',
+      textOnAccent: '#04201c',
+      accentText: '#5ee0cf',
+      accentSubtle: '#163330',
+      lastMove: '#f2c94c',
+      logo: { tile: '#2dd4bf', squares: '#0a1312' },
+    },
+  },
+  // Violet with an amber highlight: friendly, a little playful.
+  violet: {
+    light: {
+      background: '#f6f5fb',
+      surface: '#ffffff',
+      text: '#1c1a2e',
+      textMuted: '#5f5c75',
+      separator: '#e2e0ee',
+      accent: '#5b4bd6',
+      textOnAccent: '#ffffff',
+      accentText: '#4f3fc8',
+      accentSubtle: '#ece9fb',
+      lastMove: '#f5b14c',
+      logo: { tile: '#5b4bd6', squares: '#f6f5fb' },
+    },
+    dark: {
+      background: '#110f21',
+      surface: '#1b1830',
+      text: '#eceaf7',
+      textMuted: '#a09cbd',
+      separator: '#2c2846',
+      accent: '#8b7cf6',
+      textOnAccent: '#120e2b',
+      accentText: '#a99df8',
+      accentSubtle: '#272246',
+      lastMove: '#f5b14c',
+      logo: { tile: '#8b7cf6', squares: '#110f21' },
+    },
+  },
+};
+
+export const COLOR_THEMES: Record<ColorThemeName, Record<ThemeMode, Theme>> = {
+  classic: { light: classicLightTheme, dark: classicDarkTheme },
+  brass: {
+    light: themeFrom(classicLightTheme, PALETTES.brass.light),
+    dark: themeFrom(classicDarkTheme, PALETTES.brass.dark),
+  },
+  vermilion: {
+    light: themeFrom(classicLightTheme, PALETTES.vermilion.light),
+    dark: themeFrom(classicDarkTheme, PALETTES.vermilion.dark),
+  },
+  teal: {
+    light: themeFrom(classicLightTheme, PALETTES.teal.light),
+    dark: themeFrom(classicDarkTheme, PALETTES.teal.dark),
+  },
+  violet: {
+    light: themeFrom(classicLightTheme, PALETTES.violet.light),
+    dark: themeFrom(classicDarkTheme, PALETTES.violet.dark),
+  },
+};
+
+export const DEFAULT_COLOR_THEME: ColorThemeName = 'vermilion';
+
+// The default color theme's: what a new install shows, and what a
+// component rendered outside a ThemeProvider - in a test - gets.
+export const lightTheme = COLOR_THEMES[DEFAULT_COLOR_THEME].light;
+export const darkTheme = COLOR_THEMES[DEFAULT_COLOR_THEME].dark;
 
 export const THEMES: Record<ThemeMode, Theme> = {
   light: lightTheme,

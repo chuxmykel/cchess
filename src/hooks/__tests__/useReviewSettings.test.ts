@@ -30,10 +30,27 @@ describe('useReviewSettings', () => {
     });
   });
 
+  it('opens in the cchess style, and keeps Classic once chosen', async () => {
+    const first = await renderHook(() => useReviewSettings());
+    await act(async () => {});
+    expect(first.result.current.settings.style).toBe('cchess');
+
+    await act(async () => first.result.current.update({ style: 'classic' }));
+    const again = await renderHook(() => useReviewSettings());
+    await act(async () => {});
+
+    expect(again.result.current.settings.style).toBe('classic');
+  });
+
   it('falls back to the default for a value it can not read', async () => {
     await AsyncStorage.setItem(
       'cchess.reviewSettings',
-      JSON.stringify({ voice: 'yes', strength: 'ludicrous', reviewAs: 'w' }),
+      JSON.stringify({
+        voice: 'yes',
+        strength: 'ludicrous',
+        reviewAs: 'w',
+        style: 'fancy',
+      }),
     );
     const { result } = await renderHook(() => useReviewSettings());
     await act(async () => {});

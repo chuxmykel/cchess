@@ -16,9 +16,13 @@ interface AccountFormProps {
   submitLabel: string;
   canSubmit: boolean;
   onSubmit: () => void;
-  switchPrompt: string;
-  switchLabel: string;
-  onSwitch: () => void;
+  /** The way to the other form, below the button - Sign in's to Create
+   * account; left out for a form with none. */
+  switchPrompt?: string;
+  switchLabel?: string;
+  onSwitch?: () => void;
+  /** A destructive submit, drawn in the danger color. */
+  destructive?: boolean;
   testID?: string;
 }
 
@@ -31,6 +35,7 @@ const AccountForm: React.FC<AccountFormProps> = ({
   switchPrompt,
   switchLabel,
   onSwitch,
+  destructive = false,
   testID,
 }) => {
   const styles = useStyles();
@@ -65,17 +70,20 @@ const AccountForm: React.FC<AccountFormProps> = ({
           onPress={onSubmit}
           disabled={!canSubmit}
           appearsDisabled={!canSubmit}
+          variant={destructive ? 'danger' : undefined}
           testID="account-form-submit"
         />
-        <View style={styles.switchRow}>
-          <Text style={styles.switchPrompt}>{switchPrompt}</Text>
-          <Button
-            label={switchLabel}
-            onPress={onSwitch}
-            variant="text"
-            testID="account-form-switch"
-          />
-        </View>
+        {switchLabel && onSwitch && (
+          <View style={styles.switchRow}>
+            <Text style={styles.switchPrompt}>{switchPrompt}</Text>
+            <Button
+              label={switchLabel}
+              onPress={onSwitch}
+              variant="text"
+              testID="account-form-switch"
+            />
+          </View>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );

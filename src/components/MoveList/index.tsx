@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 
 import Icon, { IconName } from '../Icon';
-import MoveClassIcon from '../MoveClassIcon';
+import MoveClassIcon, { isMarkedIn } from '../MoveClassIcon';
+import type { ReviewStyle } from '../../constants/review';
 import type { MoveClass } from '../../domain/review/types';
 import { GameMoveSummary } from '../../network/socketEvents';
 import { makeStyles, useTheme } from '../../theme';
@@ -24,6 +25,9 @@ interface MoveListProps {
   /** A review's class for each move, by ply: the standouts and slips
    * marked, in their colors. */
   moveClasses?: Partial<Record<number, MoveClass>>;
+  /** How the classes are marked: every one, or (cchess) only those that
+   * matter. */
+  markStyle?: ReviewStyle;
   /** Items after the last move - a game review's closing cards - each an
    * icon, the one `selected` set off as the current move is. */
   endItems?: MoveListEndItem[];
@@ -68,6 +72,7 @@ const MoveList: React.FC<MoveListProps> = ({
   currentPly,
   onSelectPly,
   moveClasses,
+  markStyle = 'classic',
   endItems,
   onScrub,
   onScrubbingChange,
@@ -166,7 +171,11 @@ const MoveList: React.FC<MoveListProps> = ({
         const isWhiteMove = move.color === 'w';
         const isCurrent = move.ply === currentPly;
         const moveClass = moveClasses?.[move.ply];
-        const isMarked = !!moveClass && MARKED_CLASSES.includes(moveClass);
+        const isMarked =
+          !!moveClass &&
+          (markStyle === 'cchess'
+            ? isMarkedIn(moveClass, 'cchess')
+            : MARKED_CLASSES.includes(moveClass));
         return (
           <Fragment key={move.ply}>
             {isWhiteMove && (
@@ -186,7 +195,13 @@ const MoveList: React.FC<MoveListProps> = ({
               accessibilityState={{ selected: isCurrent }}
               testID={`move-${move.ply}`}
             >
-              {isMarked && <MoveClassIcon moveClass={moveClass} size={16} />}
+              {isMarked && (
+                <MoveClassIcon
+                  moveClass={moveClass}
+                  size={16}
+                  markStyle={markStyle}
+                />
+              )}
               <Text
                 style={[
                   styles.san,

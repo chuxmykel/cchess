@@ -163,3 +163,26 @@ describe('MessageList', () => {
     expect(onLoadOlder).toHaveBeenCalled();
   });
 });
+
+describe('MessageList reporting', () => {
+  it('reports one of theirs held down, never one of yours', async () => {
+    const onReportMessage = jest.fn();
+    const theirs = shown({ id: 't1', senderId: 'them', text: 'hey' });
+    const mine = shown({ id: 'm1', senderId: 'me', text: 'hi' });
+    const screen = await render(
+      <MessageList
+        messages={[theirs, mine]}
+        myUserId="me"
+        otherName="Them"
+        hasOlder={false}
+        onLoadOlder={jest.fn()}
+        onReportMessage={onReportMessage}
+      />,
+    );
+
+    await fireEvent(screen.getByTestId('message-m1-bubble'), 'longPress');
+    expect(onReportMessage).not.toHaveBeenCalled();
+    await fireEvent(screen.getByTestId('message-t1-bubble'), 'longPress');
+    expect(onReportMessage).toHaveBeenCalledWith(theirs);
+  });
+});

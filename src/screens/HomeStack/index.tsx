@@ -37,8 +37,17 @@ import { GameType } from '../../domain/types';
 import SignIn from '../SignIn';
 import CreateAccount from '../CreateAccount';
 import Licenses from '../Licenses';
+import Account from '../Account';
+import DeleteAccount from '../DeleteAccount';
+import BlockedPlayers from '../BlockedPlayers';
+import ChangeEmail from '../ChangeEmail';
+import ForgotPassword from '../ForgotPassword';
+import ResetPassword from '../ResetPassword';
+import VerifyEmail from '../VerifyEmail';
+import Report from '../Report';
 import Settings from '../Settings';
 import Appearance from '../Appearance';
+import TermsPrompt from '../../components/TermsPrompt';
 import { plainHeaderOptions } from '../plainHeaderOptions';
 import { HomeStackParamList, RootStackParamList } from './types';
 
@@ -91,10 +100,9 @@ const HomeStack: React.FC = () => {
                   <Screen
                     name="GameReview"
                     component={GameReview}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Game Review',
-                    })}
+                    // Its summary and its moves are a stack of its own, each
+                    // with its header.
+                    options={{ headerShown: false }}
                   />
                   <Screen
                     name="AnalysisBoard"
@@ -237,6 +245,70 @@ const HomeStack: React.FC = () => {
                     })}
                   />
                   <Screen
+                    name="Account"
+                    component={Account}
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'Account',
+                    })}
+                  />
+                  <Screen
+                    name="DeleteAccount"
+                    component={DeleteAccount}
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'Delete Account',
+                    })}
+                  />
+                  <Screen
+                    name="ForgotPassword"
+                    component={ForgotPassword}
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'Forgot Password',
+                    })}
+                  />
+                  <Screen
+                    name="ResetPassword"
+                    component={ResetPassword}
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'New Password',
+                    })}
+                  />
+                  <Screen
+                    name="VerifyEmail"
+                    component={VerifyEmail}
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'Confirm Email',
+                    })}
+                  />
+                  <Screen
+                    name="ChangeEmail"
+                    component={ChangeEmail}
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'Change Email',
+                    })}
+                  />
+                  <Screen
+                    name="BlockedPlayers"
+                    component={BlockedPlayers}
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'Blocked Players',
+                    })}
+                  />
+                  <Screen
+                    name="Report"
+                    component={Report}
+                    options={({ navigation }) => ({
+                      ...plainHeaderOptions(navigation),
+                      title: 'Report',
+                    })}
+                  />
+                  <Screen
                     name="Licenses"
                     component={Licenses}
                     options={({ navigation }) => ({
@@ -245,6 +317,7 @@ const HomeStack: React.FC = () => {
                     })}
                   />
                 </Navigator>
+                <TermsPrompt />
               </ReviewSettingsProvider>
             </DailyGamePositionsProvider>
           </DailyGameSettingsProvider>

@@ -18,6 +18,8 @@ import GameScreenHeader from '../../components/GameScreenHeader';
 import GameToolbar from '../../components/GameToolbar';
 import BottomBar from '../../components/BottomBar';
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
+import { useGameFinishedEvent } from '../../hooks/useGameFinishedEvent';
+import { chatReportTarget } from '../chatReportTarget';
 import ChatSheet from '../../components/ChatSheet';
 import DrawOfferPrompt from '../../components/DrawOfferPrompt';
 import GameOverCard from '../../components/GameOverCard';
@@ -248,6 +250,15 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   });
 
   const myPlayer = playerOf(snapshot, myColor);
+  useGameFinishedEvent({
+    isGameOver,
+    gameStatus,
+    gameType: snapshot.gameType,
+    rated: snapshot.rated,
+    myColor,
+    result,
+    resultReason,
+  });
   const myRatingDiff = ratingDiffOf(
     { whiteRatingDiff, blackRatingDiff },
     myColor,
@@ -366,7 +377,7 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
           onOpenMenu={() => setIsMenuOpen(true)}
           onResign={confirmResign}
           canResign={!isGameOver && !canAbort}
-          onOpenChat={chat.open}
+          onOpenChat={chat.isShown ? chat.open : undefined}
           unreadChatCount={chat.unreadCount}
           moveSteps={moveNavigation}
         />
@@ -378,7 +389,13 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
         actions={menuActions}
       />
 
-      <ChatSheet chat={chat} players={[snapshot.white, snapshot.black]} />
+      <ChatSheet
+        chat={chat}
+        players={[snapshot.white, snapshot.black]}
+        onReport={(message) =>
+          navigation.navigate('Report', chatReportTarget(snapshot, message))
+        }
+      />
     </View>
   );
 };

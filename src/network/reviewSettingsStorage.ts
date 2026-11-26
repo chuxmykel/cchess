@@ -4,6 +4,7 @@ import {
   DEFAULT_REVIEW_SETTINGS,
   REVIEW_AS_LABELS,
   REVIEW_STRENGTHS,
+  REVIEW_STYLES,
   ReviewSettings,
 } from '../constants/review';
 
@@ -25,6 +26,7 @@ export async function loadReviewSettings(): Promise<ReviewSettings> {
     if (Object.keys(REVIEW_AS_LABELS).includes(parsed.reviewAs)) {
       settings.reviewAs = parsed.reviewAs;
     }
+    if (REVIEW_STYLES.includes(parsed.style)) settings.style = parsed.style;
     if (REVIEW_STRENGTHS.includes(parsed.strength)) {
       settings.strength = parsed.strength;
     }

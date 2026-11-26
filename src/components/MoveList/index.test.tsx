@@ -79,6 +79,22 @@ describe('MoveList', () => {
     expect(screen.getByTestId('move-class-blunder')).toBeTruthy();
   });
 
+  it('marks only what matters in the cchess style, a miss as a mistake', async () => {
+    const screen = await render(
+      <MoveList
+        moves={[...THREE_MOVES, move(4, 'Qh4')]}
+        currentPly={3}
+        onSelectPly={jest.fn()}
+        moveClasses={{ 1: 'book', 2: 'best', 3: 'blunder', 4: 'miss' }}
+        markStyle="cchess"
+      />,
+    );
+
+    expect(screen.queryByTestId('move-class-book')).toBeNull();
+    expect(screen.getByTestId('move-class-blunder')).toHaveTextContent('??');
+    expect(screen.getByTestId('move-class-miss')).toHaveTextContent('?');
+  });
+
   it('lists items after the last move, the selected one set off', async () => {
     const onPress = jest.fn();
     const screen = await render(

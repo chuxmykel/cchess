@@ -3,6 +3,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Color } from 'chess.js';
 
 import { Seek } from '../../constants/seek';
+import type { HomeTabsParamList } from '../HomeTabs/types';
 import { GameType } from '../../domain/types';
 import { AnalysisSource } from '../../hooks/useAnalysisSource';
 import { ExplorerLine } from '../../hooks/useExplorerLine';
@@ -15,8 +16,18 @@ export type ConversationPartner = {
   avatarColor: string;
 };
 
+export type ReportTarget = {
+  username: string;
+  displayName: string;
+  gameId?: string;
+  messageId?: string;
+  /** The message's words, to show what's being reported. */
+  messageText?: string;
+};
+
 export type HomeStackParamList = {
-  HomeTabs: undefined;
+  /** The tabs - a tab named to open it there. */
+  HomeTabs: NavigatorScreenParams<HomeTabsParamList> | undefined;
   LiveGame: { seek: Seek } | { gameId: string };
   /** One of your daily games, to play a move in whenever you like. */
   DailyGame: { gameId: string };
@@ -63,6 +74,24 @@ export type HomeStackParamList = {
   DailyGameSettings: undefined;
   /** The game review's settings, over one or from Settings. */
   ReviewSettings: undefined;
+  /** Your account, from Settings: email, chat, blocked players, deleting
+   * it. Signed in only. */
+  Account: undefined;
+  /** Deleting your account, its password confirming it. */
+  DeleteAccount: undefined;
+  /** Asking for a password reset link, from Sign in. */
+  ForgotPassword: undefined;
+  /** Opened by a reset link from an email (<server>/app/reset-password). */
+  ResetPassword: { token: string };
+  /** Opened by a verify link from an email (<server>/app/verify-email). */
+  VerifyEmail: { token: string };
+  /** A new email, confirmed by a link sent there. */
+  ChangeEmail: undefined;
+  /** The players you've blocked, to unblock. */
+  BlockedPlayers: undefined;
+  /** Reporting a player - for something they said (a chat message of
+   * gameId's, or a direct message), or just them. */
+  Report: ReportTarget;
   /** Credit and licences for what the app uses, the engine's above all. */
   Licenses: undefined;
   Appearance: undefined;

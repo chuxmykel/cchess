@@ -15,6 +15,9 @@ import {
   REVIEW_SPEECH_RATE,
   REVIEW_STRENGTH_LABELS,
   REVIEW_STRENGTHS,
+  REVIEW_STYLE_HINTS,
+  REVIEW_STYLE_LABELS,
+  REVIEW_STYLES,
   ReviewAs,
   ReviewSettings,
 } from '../../constants/review';
@@ -35,6 +38,10 @@ type Toggle = 'voice' | 'showBestMoves' | 'evalBar';
 const REVIEW_AS_OPTIONS = (Object.keys(REVIEW_AS_LABELS) as ReviewAs[]).map(
   (key) => ({ key, label: REVIEW_AS_LABELS[key] }),
 );
+const STYLE_OPTIONS = REVIEW_STYLES.map((key) => ({
+  key,
+  label: REVIEW_STYLE_LABELS[key],
+}));
 const STRENGTH_OPTIONS = REVIEW_STRENGTHS.map((key) => ({
   key,
   label: REVIEW_STRENGTH_LABELS[key],
@@ -83,6 +90,19 @@ const ReviewSettingsForm: React.FC<ReviewSettingsFormProps> = ({
       contentContainerStyle={styles.content}
       testID="review-settings"
     >
+      <View style={styles.section}>
+        <Text style={styles.label}>Review style</Text>
+        <RadioRow
+          options={STYLE_OPTIONS}
+          selected={settings.style}
+          onSelect={(style) => onChange({ style })}
+          testIDPrefix="review-style-"
+        />
+        <Text style={styles.hint} testID="review-style-hint">
+          {REVIEW_STYLE_HINTS[settings.style]}
+        </Text>
+      </View>
+
       <View style={styles.section}>
         {toggle('voice', 'Voice', 'Each comment read aloud.')}
         {settings.voice && voices && voices.length > 0 && (

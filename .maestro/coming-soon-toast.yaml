@@ -1,19 +1,17 @@
 appId: ${APP_ID}
 ---
-# New Game's two lower buttons look disabled but still answer a tap, with
-# a toast through a separate onDisabledPress path rather than the button's
-# real onPress (see Button's appearsDisabled prop): "Challenge a Friend"
-# asks a guest to sign in, and "Play Stockfish" isn't there yet. Each
-# assertion has to land in the same flow run right after its tap - the
-# toast goes after 2s (see useToast's DEFAULT_DURATION_MS).
+# New Game's "Challenge a Friend" looks disabled to a guest but still
+# answers a tap, with a toast through a separate onDisabledPress path
+# rather than the button's real onPress (see Button's appearsDisabled
+# prop), asking them to sign in. "Play Stockfish" is hidden until it's built
+# (src/constants/features.ts). The assertion has to land in the same flow
+# run right after the tap - the toast goes after 2s (see useToast's
+# DEFAULT_DURATION_MS).
 - runFlow: common/to-new-game.yaml
 
 - tapOn:
     id: "challenge-friend-button"
 - assertVisible:
     text: "Sign in to challenge friends."
-
-- tapOn:
+- assertNotVisible:
     id: "play-stockfish-button"
-- assertVisible:
-    text: "Coming soon"

@@ -1,8 +1,10 @@
 import { useCallback, useState } from 'react';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
+import { analytics } from '../../analytics/analytics';
 import AccountForm from '../../components/AccountForm';
 import PasswordField from '../../components/PasswordField';
+import TermsCheckbox from '../../components/TermsCheckbox';
 import TextField from '../../components/TextField';
 import UsernameAvailabilityIndicator from '../../components/UsernameAvailabilityIndicator';
 import { CREATE_ACCOUNT_FAILED_MESSAGE } from '../../constants/errorMessages';
@@ -24,12 +26,18 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const usernameAvailability = useUsernameAvailability(username);
 
   const registration = useAsyncAction(
     useCallback(
       () =>
-        register({ username: username.trim(), email: email.trim(), password }),
+        register({
+          username: username.trim(),
+          email: email.trim(),
+          password,
+          acceptTerms: true,
+        }),
       [register, username, email, password],
     ),
     CREATE_ACCOUNT_FAILED_MESSAGE,
@@ -37,10 +45,12 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
   const isFilledIn =
     username.trim() !== '' && email.trim() !== '' && password !== '';
   const isUsernameTaken = usernameAvailability === USERNAME_AVAILABILITY.TAKEN;
-  const canSubmit = isFilledIn && !isUsernameTaken && !registration.isRunning;
+  const canSubmit =
+    isFilledIn && acceptedTerms && !isUsernameTaken && !registration.isRunning;
 
   async function submit() {
     if (await registration.run()) {
+      analytics.capture('account_created');
       navigation.goBack();
     }
   }
@@ -90,6 +100,7 @@ const CreateAccount: React.FC<CreateAccountProps> = ({ navigation }) => {
         onSubmitEditing={() => canSubmit && submit()}
         testID="password-input"
       />
+      <TermsCheckbox checked={acceptedTerms} onChange={setAcceptedTerms} />
     </AccountForm>
   );
 };

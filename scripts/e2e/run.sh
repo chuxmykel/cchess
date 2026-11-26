@@ -328,8 +328,13 @@ run_flows() {
         sleep 2
       done
     fi
+    # Stopped if it hangs: two minutes a flow, at least twenty - a whole
+    # run's flows in one session, as a local run has, take the better
+    # part of an hour on the emulator.
+    limit=$((n * 120))
+    [ "$limit" -ge 1200 ] || limit=1200
     # shellcheck disable=SC2086 # these is a word list
-    with_deadline "${E2E_BATCH_TIMEOUT:-1200}" maestro --device "$device" test $these \
+    with_deadline "${E2E_BATCH_TIMEOUT:-$limit}" maestro --device "$device" test $these \
       -e "APP_ID=$APP_ID" \
       -e "METRO_URL=exp://$HOST:$E2E_METRO_PORT" \
       -e "BOT_URL=http://127.0.0.1:$E2E_BOT_PORT" \

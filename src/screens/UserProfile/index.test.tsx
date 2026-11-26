@@ -1,11 +1,13 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
 
-import { Animated } from 'react-native';
+import { Alert, Animated } from 'react-native';
 
 import UserProfile, { ACTIVITY_SHOWN } from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { useSocialContext } from '../../context/SocialContext';
 import {
+  blockUser,
+  unblockUser,
   ActivityDay,
   getUserActivity,
   getUserFriends,
@@ -23,6 +25,9 @@ import {
   makeUserProfile,
 } from '../../testUtils/social';
 
+jest.mock('@react-navigation/native', () =>
+  jest.requireActual('../../testUtils/focusEffectRunsOnMount'),
+);
 jest.mock('../../context/AuthSessionContext', () => ({
   useAuthSession: jest.fn(),
 }));
@@ -35,6 +40,8 @@ jest.mock('../../network/restClient', () => ({
   getUserActivity: jest.fn(),
   getUserGames: jest.fn(),
   getUserFriends: jest.fn(),
+  blockUser: jest.fn(),
+  unblockUser: jest.fn(),
 }));
 
 describe('UserProfile', () => {
@@ -123,6 +130,14 @@ describe('UserProfile', () => {
     await scrollTo(10);
     expect(fadedTo()).toBe(0);
     timing.mockRestore();
+  });
+
+  it('tags a bot as one, and nobody else', async () => {
+    const bot = await renderScreen(makeUserProfile({ isBot: true }));
+    expect(bot.screen.getByTestId('profile-bot')).toHaveTextContent('BOT');
+
+    const person = await renderScreen(makeUserProfile());
+    expect(person.screen.queryByTestId('profile-bot')).toBeNull();
   });
 
   it("opens a player's stats in a category", async () => {
@@ -384,5 +399,37 @@ describe('UserProfile', () => {
     expect(getUserActivity).toHaveBeenCalledTimes(1);
     expect(getUserFriends).toHaveBeenCalledTimes(1);
     expect(getUserGames).toHaveBeenCalledTimes(1);
+  });
+
+  describe('blocking and reporting', () => {
+    it('reports the player', async () => {
+      const { screen, navigation } = await renderScreen(makeUserProfile());
+      await fireEvent.press(screen.getByTestId('profile-report'));
+      expect(navigation.navigate).toHaveBeenCalledWith('Report', {
+        username: 'judit',
+        displayName: expect.any(String),
+      });
+    });
+
+    it('blocks once confirmed, and unblocks', async () => {
+      jest
+        .spyOn(Alert, 'alert')
+        .mockImplementation((_title, _message, buttons) =>
+          buttons?.find((button) => button.text === 'Block')?.onPress?.(),
+        );
+      (blockUser as jest.Mock).mockResolvedValue(undefined);
+      (unblockUser as jest.Mock).mockResolvedValue(undefined);
+      const { screen } = await renderScreen(makeUserProfile());
+
+      await fireEvent.press(screen.getByTestId('profile-block'));
+      expect(blockUser).toHaveBeenCalledWith('judit', 'access-token');
+
+      const blocked = await renderScreen(
+        makeUserProfile({ blockedByYou: true }),
+      );
+      expect(blocked.screen.queryByTestId('profile-add-friend')).toBeNull();
+      await fireEvent.press(blocked.screen.getByTestId('profile-unblock'));
+      expect(unblockUser).toHaveBeenCalledWith('judit', 'access-token');
+    });
   });
 });

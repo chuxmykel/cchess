@@ -57,6 +57,16 @@ export type AccountUser = {
   avatarColor: string;
   isGuest: boolean;
   ratings: UserRating[];
+  /** The account's email - null for a guest. Like the fields after it,
+   * absent from a server older than account emails. */
+  email?: string | null;
+  /** Whether the email has been confirmed by its link. */
+  emailVerified?: boolean;
+  /** Whether they chat in games with players who aren't friends. */
+  chatWithStrangers?: boolean;
+  /** Whether they've accepted the terms in force - false for a guest, and
+   * once the terms change. */
+  termsAccepted?: boolean;
 };
 
 export type AuthResponse = {
@@ -74,6 +84,8 @@ export type NewAccount = {
   username: string;
   email: string;
   password: string;
+  /** The terms of use accepted - the server refuses a sign-up without. */
+  acceptTerms: true;
 };
 
 export async function createGuestSession(): Promise<AuthResponse> {
@@ -571,6 +583,8 @@ export type UserProfile = {
   bio: string | null;
   avatarColor: string;
   isGuest: boolean;
+  /** A computer opponent - a house bot. */
+  isBot?: boolean;
   ratings: UserRating[];
   createdAt: string;
   lastSeenAt: string | null;
@@ -582,6 +596,8 @@ export type UserProfile = {
   friendship: { status: FriendshipStatus; requestId: string | null };
   /** Your results against them; null on your own profile. */
   score: Score | null;
+  /** Whether you've blocked them. */
+  blockedByYou?: boolean;
 };
 
 export type ActivityDay = Score & {
@@ -633,6 +649,7 @@ export type UserSearchResult = {
   username: string;
   displayName: string;
   avatarColor: string;
+  isBot?: boolean;
 };
 
 /** Registered players whose name contains the search, closest first. */
@@ -990,4 +1007,157 @@ export async function getUnreadMessageCounts(
   return (
     await apiClient.get<UnreadCount[]>('/messages/unread', bearer(accessToken))
   ).data;
+}
+
+// Account and safety: email, passwords, deletion, blocks, reports, the
+// terms, and what the server says about the app itself.
+
+/** What the app reads on launch, signed out or in. */
+export type AppConfig = {
+  /** The oldest app version the server works with - older ones update. */
+  minimumVersion: string;
+  termsVersion: string;
+  privacyVersion: string;
+  supportEmail: string;
+  termsUrl: string;
+  privacyUrl: string;
+  deleteAccountUrl: string;
+};
+
+export async function getAppConfig(): Promise<AppConfig> {
+  return (await apiClient.get<AppConfig>('/app/config')).data;
+}
+
+/** Deletes the signed-in account - its password confirming it. */
+export async function deleteAccount(
+  password: string,
+  accessToken: string,
+): Promise<void> {
+  await apiClient.delete('/users/me', {
+    ...bearer(accessToken),
+    data: { password },
+  });
+}
+
+export async function acceptTerms(accessToken: string): Promise<void> {
+  await apiClient.post('/users/me/terms', undefined, bearer(accessToken));
+}
+
+export async function setChatWithStrangers(
+  chatWithStrangers: boolean,
+  accessToken: string,
+): Promise<AccountUser> {
+  return (
+    await apiClient.patch<AccountUser>(
+      '/users/me',
+      { chatWithStrangers },
+      bearer(accessToken),
+    )
+  ).data;
+}
+
+/** Emails a new link to confirm the account's address. */
+export async function resendVerificationEmail(
+  accessToken: string,
+): Promise<void> {
+  await apiClient.post(
+    '/auth/email/verification',
+    undefined,
+    bearer(accessToken),
+  );
+}
+
+/** Emails a link to the new address; it changes once that's used. */
+export async function requestEmailChange(
+  email: string,
+  password: string,
+  accessToken: string,
+): Promise<void> {
+  await apiClient.post(
+    '/auth/email/change',
+    { email, password },
+    bearer(accessToken),
+  );
+}
+
+/** Uses a link from an email - confirming the address, or a new one. */
+export async function verifyEmail(token: string): Promise<{ email: string }> {
+  return (
+    await apiClient.post<{ email: string }>('/auth/email/verify', { token })
+  ).data;
+}
+
+/** Emails a reset link if the address has an account - the server never
+ * says whether it does. */
+export async function requestPasswordReset(email: string): Promise<void> {
+  await apiClient.post('/auth/password/forgot', { email });
+}
+
+export async function resetPassword(
+  token: string,
+  password: string,
+): Promise<void> {
+  await apiClient.post('/auth/password/reset', { token, password });
+}
+
+export type BlockedUser = {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarColor: string;
+  blockedAt: string;
+};
+
+export async function getBlockedUsers(
+  accessToken: string,
+): Promise<BlockedUser[]> {
+  return (
+    await apiClient.get<BlockedUser[]>('/users/me/blocks', bearer(accessToken))
+  ).data;
+}
+
+function blockPath(username: string): string {
+  return `/users/${encodeURIComponent(username)}/block`;
+}
+
+export async function blockUser(
+  username: string,
+  accessToken: string,
+): Promise<void> {
+  await apiClient.post(blockPath(username), undefined, bearer(accessToken));
+}
+
+export async function unblockUser(
+  username: string,
+  accessToken: string,
+): Promise<void> {
+  await apiClient.delete(blockPath(username), bearer(accessToken));
+}
+
+export const REPORT_REASONS = [
+  'abuse',
+  'hate',
+  'sexual',
+  'spam',
+  'cheating',
+  'username',
+  'other',
+] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+
+export type NewReport = {
+  username: string;
+  reason: ReportReason;
+  details?: string;
+  /** The game - for a message in its chat, or the game itself. */
+  gameId?: string;
+  /** The message reported: in gameId's chat, or else a direct message. */
+  messageId?: string;
+};
+
+export async function reportUser(
+  report: NewReport,
+  accessToken: string,
+): Promise<void> {
+  await apiClient.post('/reports', report, bearer(accessToken));
 }

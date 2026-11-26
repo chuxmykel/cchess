@@ -248,8 +248,8 @@ shards (Docker for
 the backend, KVM for the emulator), iOS on macOS in five, the most a free
 account runs at once (cchess-be run directly, on Postgres 18). Each shard
 uploads its `.e2e-logs/`, and runs its flows a few to a Maestro session
-(`E2E_MAESTRO_BATCH`), each stopped after 20 minutes if it hangs
-(`E2E_BATCH_TIMEOUT`). The app is served as a production bundle, through
+(`E2E_MAESTRO_BATCH`), each stopped if it hangs - after two minutes a
+flow, at least twenty (`E2E_BATCH_TIMEOUT`, in seconds, sets it). The app is served as a production bundle, through
 a cache that answers each launch's bundle and assets once Metro has
 built them (`scripts/e2e/metro-cache.js`), and Metro's own cache is kept
 between runs.

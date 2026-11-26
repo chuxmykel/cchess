@@ -12,6 +12,7 @@ import { useAuthSession } from '../context/AuthSessionContext';
 import { useEngineWhen } from '../context/EngineContext';
 import type { ImportedGame, ImportedPlayer } from '../domain/pgnImport';
 import { buildReview } from '../domain/review/buildReview';
+import type { ReviewClock } from '../domain/review/time';
 import type { GameReview, PositionEval } from '../domain/review/types';
 import { runReview } from '../engine/reviewRunner';
 import { getGame, getGameReview, saveGameReview } from '../network/restClient';
@@ -25,13 +26,25 @@ export type ReviewUnavailableReason =
   'in-play' | 'aborted' | 'no-moves' | 'unknown-start';
 
 // The game a review is of, whether played here or brought in: its seed -
-// the game's id, or for one brought in, its moves - its players and result.
+// the game's id, or for one brought in, its moves - its players and result,
+// and a live game's clock (none for a daily game, or one brought in).
 export type ReviewedGame = {
   seed: string;
   white: GameUserSummary;
   black: GameUserSummary;
   result: GameSnapshot['result'];
+  clock: ReviewClock | null;
 };
+
+// A live game's clock, as the server recorded it; a daily game's is days.
+function clockOf(snapshot: GameSnapshot): ReviewClock | null {
+  if (snapshot.daysPerMove !== null) return null;
+  return {
+    initialMs: snapshot.initialSeconds * 1000,
+    incrementMs: snapshot.incrementSeconds * 1000,
+    afterMs: snapshot.moves.map((move) => move.clockAfterMs),
+  };
+}
 
 // A position of the game, the start first, and the move that led there:
 // drawn, and sounded, while it's analysed.
@@ -241,6 +254,7 @@ export function useGameReview(
             white: fetched.white,
             black: fetched.black,
             result: fetched.result,
+            clock: clockOf(fetched),
           },
           startFen: DEFAULT_POSITION,
           positions,
@@ -358,6 +372,7 @@ export function useImportedGameReview(
         white: importedPlayer(game.white, 'White'),
         black: importedPlayer(game.black, 'Black'),
         result: game.result,
+        clock: null,
       },
       startFen,
       positions,

@@ -3,11 +3,34 @@ tags:
   - opponent
 ---
 # The game's chat: the opponent says good luck, marked unread on the chat
-# button; read in the sheet, and a message sent back shows there.
-- runFlow:
-    file: common/to-board.yaml
+# button; read in the sheet, and a message sent back shows there. Between
+# friends - e2e_main and e2e_friend, seeded so - since guests never chat,
+# and strangers only when both have chosen to.
+- runFlow: common/sign-in.yaml
+- repeat:
+    while:
+      notVisible:
+        id: "time-control-trigger"
+    times: 3
+    commands:
+      - tapOn:
+          id: "play-button"
+      - extendedWaitUntil:
+          visible:
+            id: "time-control-trigger"
+          timeout: 5000
+          optional: true
+- runScript:
+    file: common/bot-start.js
     env:
-      BOT_ARGS: "--guest --color b --level easy --delay 500 --chat"
+      BOT_ARGS: "--user e2e_friend --color b --level easy --delay 500 --chat"
+- tapOn:
+    id: "start-new-game-button"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible:
+      id: "game-toolbar"
+    timeout: 30000
 - extendedWaitUntil:
     visible:
       id: "chat-button-badge"
@@ -28,3 +51,21 @@ tags:
 - tapOn:
     id: "chat-send-button"
 - assertVisible: "Thanks, you too"
+# Aborted before a move - no rating changed, and nothing left in play for
+# the next flow signing in as e2e_main to resume.
+- runFlow: common/tap-backdrop.yaml
+- extendedWaitUntil:
+    notVisible:
+      id: "chat-sheet"
+    timeout: 5000
+- tapOn:
+    id: "game-menu-button"
+- tapOn:
+    id: "abort-game-action"
+- tapOn:
+    text: "Abort"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: "game-over-card"
+    timeout: 10000

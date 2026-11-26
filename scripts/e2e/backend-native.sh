@@ -28,7 +28,10 @@ export DB_HOST="${PGHOST:-127.0.0.1}" DB_PORT="${PGPORT:-5432}"
 export DB_USERNAME="${PGUSER:-$(whoami)}" DB_PASSWORD="${PGPASSWORD:-trusted}"
 export DB_NAME="$DB" PORT
 export JWT_ACCESS_SECRET=e2e-only-access JWT_REFRESH_SECRET=e2e-only-refresh
+# Every flow signs up and in from this one address, which the sign-in and
+# sign-up limits would soon refuse; and no email leaves.
 export NODE_ENV=test SEED_E2E=1 CLUSTER_WORKERS=1 GAME_START_FEN=''
+export AUTH_RATE_LIMITS=false RESEND_API_KEY=''
 export LICHESS_TOKEN='' LICHESS_EXPLORER_URL=http://127.0.0.1:9 EXPLORER_MAINTENANCE=false
 
 case "${1:-}" in

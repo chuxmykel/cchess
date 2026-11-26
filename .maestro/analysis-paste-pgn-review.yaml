@@ -1,7 +1,7 @@
 # A pasted PGN's review, from its analysis board's toolbar - where Flip
 # board was, now in the menu: analysed on the device (the engine downloaded
 # first, a fresh launch having cleared it), its players named from the
-# PGN's tags. It never checks what the engine said, which varies.
+# PGN's tags, in the cchess style. It never checks what the engine said, which varies.
 appId: ${APP_ID}
 tags:
   - engine
@@ -21,7 +21,9 @@ tags:
     env:
       FIELD: "paste-game-input"
       TEXT: ".*bxa6 0-1"
-- runFlow: common/dismiss-keyboard.yaml
+# Analyse is pinned above the keyboard, so there's no closing it first -
+# on Android that's a back press, which leaves the screen when no
+# on-screen keyboard is up.
 - tapOn:
     id: "paste-game-analyse"
 - assertVisible:
@@ -37,7 +39,20 @@ tags:
     timeout: 180000
 - assertVisible: "Ann"
 - assertVisible: "Bo"
+# The cchess style, the default: no clock in a pasted PGN.
+- assertVisible:
+    id: "review-decisive"
+- assertNotVisible:
+    id: "review-time"
 - tapOn:
     id: "review-start"
 - assertVisible:
     id: "review-bubble-title"
+# Back from the moves goes to the review's summary; from there, back to
+# the analysis board it came from.
+- runFlow: common/header-back.yaml
+- assertVisible:
+    id: "game-review-summary"
+- runFlow: common/header-back.yaml
+- assertVisible:
+    id: "analysis-board"

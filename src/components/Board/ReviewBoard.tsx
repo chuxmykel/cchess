@@ -9,6 +9,7 @@ import {
 } from '../../lib/chessboard';
 import { ChessEngine } from '../../domain/ChessEngine';
 import { kingInDanger } from '../../domain/kingInDanger';
+import type { ReviewStyle } from '../../constants/review';
 import type { MoveClass } from '../../domain/review/types';
 import { MoveSquares } from '../../domain/types';
 import { useTheme } from '../../theme';
@@ -25,6 +26,8 @@ interface ReviewBoardProps {
   // square it went to.
   lastMove?: MoveSquares | null;
   moveClass?: MoveClass | null;
+  // How the badge marks it (see MoveClassMark).
+  markStyle?: ReviewStyle;
   arrows?: BoardArrow[];
   // The side whose move is wanted - a review's Retry - its pieces movable to
   // wherever's legal; null draws the board only.
@@ -42,6 +45,7 @@ const ReviewBoard: React.FC<ReviewBoardProps> = ({
   orientation = 'w',
   lastMove = null,
   moveClass = null,
+  markStyle = 'classic',
   arrows,
   movableColor = null,
   onMove,
@@ -71,12 +75,13 @@ const ReviewBoard: React.FC<ReviewBoardProps> = ({
                 <MoveClassMark
                   moveClass={moveClass}
                   size={(width / 8) * 0.42}
+                  markStyle={markStyle}
                 />
               ),
             },
           ]
         : [],
-    [lastMove, moveClass, theme, width],
+    [lastMove, moveClass, theme, width, markStyle],
   );
   const movable = useMemo<Movable | null>(
     () =>

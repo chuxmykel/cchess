@@ -112,8 +112,10 @@ export type SideReview = {
   counts: ClassCounts;
 };
 
-// The themes a review closes on.
-export type ReviewTheme = 'opening' | 'tactics' | 'strategy' | 'endgame';
+// The themes a review closes on - the cchess style's own last: the clock,
+// and the turning points guessed.
+export type ReviewTheme =
+  'opening' | 'tactics' | 'strategy' | 'endgame' | 'time' | 'turns';
 
 export type ThemeCard = { theme: ReviewTheme; title: string; text: string };
 

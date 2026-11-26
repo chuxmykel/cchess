@@ -1,12 +1,11 @@
-# The tabs as a guest: Puzzles says what's coming, Messages asks to sign in
-# (a guest has no friends to message), and the Menu opens the settings.
+# The tabs as a guest: Messages asks to sign in (a guest has no friends to
+# message), and the Menu opens the settings. Puzzles is hidden until it's
+# built (src/constants/features.ts).
 appId: ${APP_ID}
 ---
 - runFlow: common/launch-fresh.yaml
-- tapOn:
+- assertNotVisible:
     id: "puzzles-tab"
-- assertVisible:
-    id: "puzzles-coming-soon"
 - tapOn:
     id: "messages-tab"
     retryTapIfNoChange: true

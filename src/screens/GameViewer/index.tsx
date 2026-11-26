@@ -13,7 +13,7 @@ import { colorPlayedBy } from '../../domain/players';
 import { useFollowPlayer } from '../../hooks/useFollowPlayer';
 import { useGameViewer } from '../../hooks/useGameViewer';
 import { useToast } from '../../hooks/useToast';
-import { HomeStackParamList } from '../HomeStack/types';
+import { HomeStackParamList, ReportTarget } from '../HomeStack/types';
 import GameViewerContent from './GameViewerContent';
 import ParticipantGameViewer from './ParticipantGameViewer';
 import { fontSize, spacing, makeStyles } from '../../theme';
@@ -94,6 +94,7 @@ const GameViewer: React.FC<GameViewerProps> = ({ navigation, route }) => {
       onReview: () =>
         navigation.navigate('GameReview', { gameId: snapshot.id }),
       onError: (message: string) => toast.show(message),
+      onReport: (target: ReportTarget) => navigation.navigate('Report', target),
     };
     if (viewerPlayedAs && session.isReady) {
       return (

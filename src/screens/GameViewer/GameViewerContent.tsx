@@ -5,6 +5,8 @@ import { formatDistanceToNowStrict, min } from 'date-fns';
 
 import ActionSheet, { ActionSheetAction } from '../../components/ActionSheet';
 import BottomBar from '../../components/BottomBar';
+import { chatReportTarget } from '../chatReportTarget';
+import { ReportTarget } from '../HomeStack/types';
 import ChatSheet from '../../components/ChatSheet';
 import { PositionBoard } from '../../components/Board';
 import GameScreenHeader from '../../components/GameScreenHeader';
@@ -60,6 +62,8 @@ interface GameViewerContentProps {
   // Opens the game's review.
   onReview: () => void;
   onError: (message: string) => void;
+  /** A message in the game's chat held down, to report. */
+  onReport: (target: ReportTarget) => void;
 }
 
 function whenPlayed(snapshot: GameSnapshot): string {
@@ -82,6 +86,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
   onAnalyse,
   onReview,
   onError,
+  onReport,
 }) => {
   // From your own side, or else that of the player being watched.
   const watchedPlayedAs = watchedUserId
@@ -206,7 +211,7 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
       <BottomBar>
         <GameToolbar
           onOpenMenu={() => setIsMenuOpen(true)}
-          onOpenChat={chat?.open}
+          onOpenChat={chat?.isShown ? chat.open : undefined}
           unreadChatCount={chat?.unreadCount}
           moveSteps={moveNavigation}
         />
@@ -219,7 +224,11 @@ const GameViewerContent: React.FC<GameViewerContentProps> = ({
       />
 
       {chat && (
-        <ChatSheet chat={chat} players={[snapshot.white, snapshot.black]} />
+        <ChatSheet
+          chat={chat}
+          players={[snapshot.white, snapshot.black]}
+          onReport={(message) => onReport(chatReportTarget(snapshot, message))}
+        />
       )}
     </View>
   );

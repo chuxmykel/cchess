@@ -3,6 +3,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import ChatSheet from '.';
 import { GameChat } from '../../hooks/useGameChat';
 import { ChatMessage, GameUserSummary } from '../../network/socketEvents';
+import { waitForSheetToClose } from '../../testUtils/modal';
 import { withSafeArea } from '../../testUtils/safeArea';
 
 function message(id: string, userId: string, text: string): ChatMessage {
@@ -31,6 +32,8 @@ function openChat(overrides: Partial<GameChat> = {}): GameChat {
   return {
     messages: [],
     unreadCount: 0,
+    isEnabled: true,
+    isShown: true,
     send: jest.fn(),
     myUserId: 'me',
     isOpen: true,
@@ -120,5 +123,67 @@ describe('ChatSheet', () => {
 
     expect(screen.getByTestId('chat-closed')).toBeTruthy();
     expect(screen.queryByTestId('chat-input')).toBeNull();
+  });
+
+  it("shows the draws' notes but no way to send where chat is off", async () => {
+    const screen = await render(
+      withSafeArea(
+        <ChatSheet chat={openChat({ isEnabled: false })} players={PLAYERS} />,
+      ),
+    );
+
+    expect(screen.getByTestId('chat-off')).toHaveTextContent(
+      'Chat is off for this game',
+    );
+    expect(screen.queryByTestId('chat-input')).toBeNull();
+  });
+});
+
+describe('ChatSheet reporting', () => {
+  it("reports the opponent's message, held down, once the sheet closes", async () => {
+    const onReport = jest.fn();
+    const close = jest.fn();
+    const theirs = { ...message('m1', 'them', 'rude words') };
+    const screen = await render(
+      withSafeArea(
+        <ChatSheet
+          chat={openChat({ messages: [theirs], close })}
+          players={PLAYERS}
+          onReport={onReport}
+        />,
+      ),
+    );
+
+    await fireEvent(screen.getByTestId('chat-message-m1'), 'longPress');
+    expect(close).toHaveBeenCalledTimes(1);
+
+    // iOS waits for the sheet to finish closing; Android runs it at once.
+    await screen.rerender(
+      withSafeArea(
+        <ChatSheet
+          chat={openChat({ messages: [theirs], close, isOpen: false })}
+          players={PLAYERS}
+          onReport={onReport}
+        />,
+      ),
+    );
+    await waitForSheetToClose();
+    expect(onReport).toHaveBeenCalledWith(theirs);
+  });
+
+  it("doesn't report your own message", async () => {
+    const onReport = jest.fn();
+    const mine = message('m2', 'me', 'hello');
+    const screen = await render(
+      withSafeArea(
+        <ChatSheet
+          chat={openChat({ messages: [mine] })}
+          players={PLAYERS}
+          onReport={onReport}
+        />,
+      ),
+    );
+    await fireEvent(screen.getByTestId('chat-message-m2'), 'longPress');
+    expect(onReport).not.toHaveBeenCalled();
   });
 });

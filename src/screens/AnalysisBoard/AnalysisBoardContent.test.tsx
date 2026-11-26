@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, fireEvent, render, within } from '@testing-library/react-native';
+import { Share } from 'react-native';
 import { DEFAULT_POSITION, Square } from 'chess.js';
 
 import AnalysisBoardContent from './AnalysisBoardContent';
@@ -373,5 +374,28 @@ describe('AnalysisBoardContent', () => {
     await fireEvent.press(screen.getByTestId('game-menu-button'));
 
     expect(screen.queryByTestId('send-position-action')).toBeNull();
+  });
+
+  it('shares the position shown as a FEN, and the moves as a PGN', async () => {
+    const share = jest.spyOn(Share, 'share').mockResolvedValue({
+      action: 'sharedAction',
+      activityType: null,
+    });
+    const { screen } = await renderAnalysis({ uciMoves: ['e2e4', 'e7e5'] });
+
+    await fireEvent.press(screen.getByTestId('game-menu-button'));
+    await fireEvent.press(screen.getByTestId('share-fen-action'));
+    await settleAnimations();
+    await fireEvent.press(screen.getByTestId('game-menu-button'));
+    await fireEvent.press(screen.getByTestId('share-pgn-action'));
+    await settleAnimations();
+
+    expect(share).toHaveBeenNthCalledWith(1, {
+      message: expect.stringMatching(
+        /^rnbqkbnr\/pppp1ppp\/8\/4p3\/4P3\/8\/PPPP1PPP\/RNBQKBNR w /,
+      ),
+    });
+    expect(share.mock.calls[1][0].message).toMatch(/\n\n1\. e4 e5 \*$/);
+    share.mockRestore();
   });
 });

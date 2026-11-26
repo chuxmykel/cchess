@@ -15,11 +15,13 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { format, parseISO } from 'date-fns';
 
 import ActionList, { ActionListItem } from '../../components/ActionList';
 import ActivityList from '../../components/ActivityList';
 import Avatar from '../../components/Avatar';
+import BotTag from '../../components/BotTag';
 import Button from '../../components/Button';
 import ChallengeSheet from '../../components/ChallengeSheet';
 import EmptyState from '../../components/EmptyState';
@@ -30,6 +32,7 @@ import GameRow from '../../components/RecentGamesList/GameRow';
 import SectionHeader from '../../components/SectionHeader';
 import Toast from '../../components/Toast';
 import { useSocialContext } from '../../context/SocialContext';
+import { useBlocking } from '../../hooks/useBlocking';
 import { useFriendActions } from '../../hooks/useFriendActions';
 import { usePagedGames } from '../../hooks/usePagedGames';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
@@ -61,6 +64,7 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
 
   const { username } = route.params;
   const social = useSocialContext();
+  const blocking = useBlocking();
   const toast = useToast();
   const { state, reload: reloadProfile } = useUserProfile(username);
   const { state: friendsState, reload: reloadFriends } =
@@ -69,6 +73,16 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
     reloadProfile();
     reloadFriends();
   }, [reloadProfile, reloadFriends]);
+  // Back from a screen that changed what the profile shows - a report that
+  // went on to block them - the profile is fetched again. Not on the first
+  // focus: it's just been fetched.
+  const hasBeenFocused = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (hasBeenFocused.current) reloadProfile();
+      hasBeenFocused.current = true;
+    }, [reloadProfile]),
+  );
   const friendActions = useFriendActions(navigation, (friend) =>
     toast.show(`Challenge sent to ${friend.displayName}`),
   );
@@ -197,7 +211,7 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
           runThenReload(social.respondToFriendRequest(requestId, true)),
         testID: 'profile-accept-request',
       });
-    } else {
+    } else if (!profile.blockedByYou) {
       items.push({
         label: 'Add friend',
         icon: 'account-plus-outline',
@@ -206,6 +220,34 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
         testID: 'profile-add-friend',
       });
     }
+    items.push(
+      profile.blockedByYou
+        ? {
+            label: 'Unblock',
+            icon: 'account-lock-open-outline',
+            onPress: () => runThenReload(blocking.unblock(profile.username)),
+            testID: 'profile-unblock',
+          }
+        : {
+            label: 'Block',
+            icon: 'account-cancel-outline',
+            onPress: () =>
+              runThenReload(blocking.confirmBlock(profile).then(() => {})),
+            destructive: true,
+            testID: 'profile-block',
+          },
+      {
+        label: 'Report',
+        icon: 'flag-outline',
+        onPress: () =>
+          navigation.navigate('Report', {
+            username: profile.username,
+            displayName: profile.displayName,
+          }),
+        destructive: true,
+        testID: 'profile-report',
+      },
+    );
     return items;
   }
 
@@ -259,7 +301,10 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
             size={64}
           />
           <View style={styles.identity}>
-            <Text style={styles.name}>{profile.displayName}</Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.name}>{profile.displayName}</Text>
+              {profile.isBot && <BotTag testID="profile-bot" />}
+            </View>
             <Text style={styles.username}>@{profile.username}</Text>
             <Text style={styles.presence} testID="profile-presence">
               {presenceLabel(presenceOf(profile))}
@@ -431,6 +476,11 @@ const useStyles = makeStyles((t) => ({
   },
   identity: {
     flex: 1,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.spacing.sm,
   },
   name: {
     color: t.colors.text,

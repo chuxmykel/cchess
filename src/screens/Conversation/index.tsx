@@ -1,3 +1,4 @@
+import { useBlocking } from '../../hooks/useBlocking';
 import { useCallback, useLayoutEffect, useState } from 'react';
 import {
   Alert,
@@ -47,6 +48,7 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
   const session = useAuthSession();
   const social = useSocialContext();
   const toast = useToast();
+  const blocking = useBlocking();
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
   const [draft, setDraft] = useState('');
@@ -188,6 +190,23 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
         ]
       : []),
     {
+      label: 'Report',
+      destructive: true,
+      onPress: () => navigation.navigate('Report', { username, displayName }),
+      testID: 'conversation-action-report',
+    },
+    {
+      label: 'Block',
+      destructive: true,
+      onPress: () => {
+        blocking
+          .confirmBlock(partner)
+          .then((blocked) => blocked && navigation.goBack())
+          .catch((error: Error) => toast.show(error.message));
+      },
+      testID: 'conversation-action-block',
+    },
+    {
       label: 'Delete conversation',
       destructive: true,
       onPress: confirmClear,
@@ -230,6 +249,14 @@ const Conversation: React.FC<ConversationProps> = ({ navigation, route }) => {
           theirLastReadAt={conversation.theirLastReadAt}
           isTyping={typing.has(userId)}
           onRetry={retry}
+          onReportMessage={(message) =>
+            navigation.navigate('Report', {
+              username,
+              displayName,
+              messageId: message.id,
+              messageText: message.text,
+            })
+          }
           onOpenGame={(gameId) => navigation.navigate('GameViewer', { gameId })}
           onOpenPosition={(fen) =>
             navigation.navigate('AnalysisBoard', {

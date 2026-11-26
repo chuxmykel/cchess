@@ -151,4 +151,66 @@ describe('reviewView', () => {
     });
     expect(view.spoken).toBe('Tactics. Watch for forks.');
   });
+
+  describe('in the cchess style', () => {
+    const names = { w: 'Ann', b: 'Bo' };
+
+    it('marks a slip with its symbol and says it in words, with the time taken', () => {
+      const view = viewAt({ style: 'cchess', names, timeSpent: '4.2s' });
+
+      expect(view.moveClass).toBe('blunder');
+      expect(view.bubble).toMatchObject({
+        moveClass: 'blunder',
+        title: 'Ba6?? · Blunder',
+        score: '-3.0 · 4.2s',
+      });
+      expect(view.spoken).toMatch(/^bishop a6: blunder\. /i);
+    });
+
+    it('leaves a move with no mark unmarked', () => {
+      // 1... e5, from the book.
+      const view = viewAt({ style: 'cchess', names, index: 1 });
+
+      expect(view.moveClass).toBeNull();
+      expect(view.bubble).toMatchObject({
+        moveClass: null,
+        title: 'e5 · Book move',
+      });
+    });
+
+    it('asks for the move, on the position before it', () => {
+      const view = viewAt({
+        style: 'cchess',
+        names,
+        mode: { kind: 'guess', tried: null },
+      });
+
+      expect(view.fen).toBe(REVIEW.moves[2].fenBefore);
+      expect(view.movableColor).toBe('w');
+      expect(view.bubble).toMatchObject({
+        title: 'Your move',
+        text: 'Move 2 for Ann: what would you play?',
+      });
+    });
+
+    it('shows a guess found on the board, asking no more', () => {
+      const view = viewAt({
+        style: 'cchess',
+        names,
+        mode: {
+          kind: 'guess',
+          tried: {
+            uci: 'g1f3',
+            san: 'Nf3',
+            fenAfter: REVIEW.moves[2].fenBefore,
+            verdict: 'right',
+          },
+        },
+      });
+
+      expect(view.movableColor).toBeNull();
+      expect(view.lastMove).toEqual({ from: 'g1', to: 'f3' });
+      expect(view.bubble.text).toBe('Nf3 works. Well found!');
+    });
+  });
 });

@@ -1,5 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import type { ReviewStyle } from '../../constants/review';
+import { markOf } from '../../domain/review/marks';
 import type { MoveClass } from '../../domain/review/types';
 import { fontWeight, useTheme } from '../../theme';
 import Icon, { IconName } from '../Icon';
@@ -37,6 +39,23 @@ export const MOVE_CLASS_NAMES: Record<MoveClass, string> = {
 interface MoveClassMarkProps {
   moveClass: MoveClass;
   size: number;
+  // The cchess style marks only what matters, with symbols alone; classic,
+  // every class.
+  markStyle?: ReviewStyle;
+}
+
+// A class's mark in a style - null for one cchess leaves unmarked.
+function markIn(
+  moveClass: MoveClass,
+  markStyle: ReviewStyle,
+): { glyph: string } | { icon: IconName } | null {
+  if (markStyle === 'classic') return MARKS[moveClass];
+  const mark = markOf(moveClass);
+  return mark ? { glyph: mark.glyph } : null;
+}
+
+export function isMarkedIn(moveClass: MoveClass, markStyle: ReviewStyle) {
+  return markIn(moveClass, markStyle) !== null;
 }
 
 // The mark alone, in the color drawn on a class's circle - for a board's
@@ -44,9 +63,11 @@ interface MoveClassMarkProps {
 export const MoveClassMark: React.FC<MoveClassMarkProps> = ({
   moveClass,
   size,
+  markStyle = 'classic',
 }) => {
   const { colors } = useTheme();
-  const mark = MARKS[moveClass];
+  const mark = markIn(moveClass, markStyle);
+  if (!mark) return null;
   if ('icon' in mark) {
     return (
       <Icon name={mark.icon} size={size * 0.62} color={colors.onMoveClass} />
@@ -78,9 +99,11 @@ interface MoveClassIconProps extends MoveClassMarkProps {
 const MoveClassIcon: React.FC<MoveClassIconProps> = ({
   moveClass,
   size,
+  markStyle = 'classic',
   testID,
 }) => {
   const { colors } = useTheme();
+  if (!isMarkedIn(moveClass, markStyle)) return null;
   return (
     <View
       style={[
@@ -95,7 +118,7 @@ const MoveClassIcon: React.FC<MoveClassIconProps> = ({
       testID={testID ?? `move-class-${moveClass}`}
       accessibilityLabel={MOVE_CLASS_NAMES[moveClass]}
     >
-      <MoveClassMark moveClass={moveClass} size={size} />
+      <MoveClassMark moveClass={moveClass} size={size} markStyle={markStyle} />
     </View>
   );
 };

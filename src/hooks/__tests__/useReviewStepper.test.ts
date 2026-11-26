@@ -276,4 +276,89 @@ describe('useReviewStepper', () => {
     await act(async () => result.current.goTo(4));
     expect(result.current.canShowLine).toBe(false);
   });
+
+  describe('with stops and guesses', () => {
+    const OPTIONS = {
+      stops: [2, 4],
+      guesses: [2],
+      extraCards: [
+        { theme: 'turns' as const, title: 'Turning points', text: '' },
+      ],
+    };
+    const stepper = (judge: RetryJudge = jest.fn()) =>
+      renderHook(() => useReviewStepper(REVIEW, 'w', judge, OPTIONS));
+
+    // Start, and play on to the first stop: 2. Ba6??, asked first.
+    async function toGuess(judge?: RetryJudge) {
+      const hook = await stepper(judge);
+      await act(async () => hook.result.current.start());
+      await play(3);
+      return hook;
+    }
+
+    it('stops there instead of at the key moments, asking for the move', async () => {
+      const { result } = await toGuess();
+
+      expect(result.current.moments).toEqual([2, 4]);
+      expect(result.current.move?.san).toBe('Ba6');
+      expect(result.current.mode).toEqual({ kind: 'guess', tried: null });
+    });
+
+    it('counts the best move found', async () => {
+      const { result } = await toGuess();
+
+      await act(async () => result.current.tryMove('g1', 'f3'));
+
+      expect(result.current.mode).toMatchObject({
+        kind: 'guess',
+        tried: { san: 'Nf3', verdict: 'right' },
+      });
+      expect(result.current.guessResults).toEqual({ 2: 'found' });
+    });
+
+    it('counts the slip played as missed, the first try counting', async () => {
+      const { result } = await toGuess();
+
+      await act(async () => result.current.tryMove('f1', 'a6'));
+      expect(result.current.mode).toMatchObject({
+        tried: { verdict: 'wrong' },
+      });
+      await act(async () => result.current.tryMove('g1', 'f3'));
+
+      expect(result.current.guessResults).toEqual({ 2: 'missed' });
+    });
+
+    it('judges another move, then reveals the move played', async () => {
+      const judge = jest.fn(() => Promise.resolve(true));
+      const { result } = await toGuess(judge);
+
+      await act(async () => result.current.tryMove('b1', 'c3'));
+      expect(judge).toHaveBeenCalled();
+      expect(result.current.guessResults).toEqual({ 2: 'found' });
+
+      await act(async () => result.current.reveal());
+      expect(result.current.mode).toEqual({ kind: 'move' });
+      expect(result.current.move?.san).toBe('Ba6');
+    });
+
+    it('counts a guess revealed untried as skipped, and asks no more once answered', async () => {
+      const { result } = await toGuess();
+
+      await act(async () => result.current.reveal());
+      expect(result.current.guessResults).toEqual({ 2: 'skipped' });
+
+      // Back to the start and on again: no asking twice.
+      await act(async () => result.current.goTo(-1));
+      await act(async () => result.current.next());
+      await play(3);
+      expect(result.current.move?.san).toBe('Ba6');
+      expect(result.current.mode).toEqual({ kind: 'move' });
+    });
+
+    it('closes on the extra cards after the themes', async () => {
+      const { result } = await stepper();
+      await act(async () => result.current.goTo(99));
+      expect(result.current.card?.theme).toBe('turns');
+    });
+  });
 });
