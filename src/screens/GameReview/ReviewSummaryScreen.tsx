@@ -224,6 +224,7 @@ const ReviewSummaryScreen: React.FC<Props> = ({ navigation }) => {
             decisive={session.decisive}
             story={session.story}
             guesses={session.tally}
+            hardest={session.hardest}
             onSelectMove={openMoves}
             onStartChapter={(i) => openMoves(session.story[i].start)}
           />

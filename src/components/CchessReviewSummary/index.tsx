@@ -23,6 +23,8 @@ interface CchessReviewSummaryProps {
   story: Chapter[];
   // How many of the turning points asked about were found, once any were.
   guesses: { found: number; asked: number } | null;
+  // The side's hardest find: its move, and how hard ("Only move").
+  hardest?: { san: string; label: string } | null;
   // A tap on the decisive moment goes to its move; on a chapter, starts the
   // review there.
   onSelectMove: (index: number) => void;
@@ -48,6 +50,7 @@ const CchessReviewSummary: React.FC<CchessReviewSummaryProps> = ({
   decisive,
   story,
   guesses,
+  hardest = null,
   onSelectMove,
   onStartChapter,
 }) => {
@@ -161,6 +164,14 @@ const CchessReviewSummary: React.FC<CchessReviewSummaryProps> = ({
             </Text>
           ))}
         </View>
+        {hardest && (
+          <View style={styles.row}>
+            <Text style={styles.label}>Hardest find</Text>
+            <Text style={styles.hardest} testID="review-hardest-find">
+              {hardest.san} · {hardest.label}
+            </Text>
+          </View>
+        )}
         {MARK_GLYPHS.map((glyph) => (
           <View key={glyph} style={styles.row}>
             <Text
@@ -275,6 +286,13 @@ const useStyles = makeStyles((t) => ({
     fontSize: t.fontSize.xl,
     fontWeight: t.fontWeight.bold,
     fontVariant: ['tabular-nums'],
+  },
+  hardest: {
+    width: 176,
+    textAlign: 'center',
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.semibold,
+    color: t.colors.accentText,
   },
   count: {
     fontSize: t.fontSize.md,

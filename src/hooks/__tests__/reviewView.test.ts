@@ -3,6 +3,7 @@ import { DEFAULT_POSITION } from 'chess.js';
 import { bestMoveOf, buildReview } from '../../domain/review/buildReview';
 import type { PositionEval } from '../../domain/review/types';
 import { reviewView, ReviewViewInput } from '../reviewView';
+import { makeReview, makeReviewedMove } from '../../testUtils/reviewedMove';
 
 const at = (cp: number, pv: string[]): PositionEval => ({
   score: { kind: 'cp', cp },
@@ -165,6 +166,59 @@ describe('reviewView', () => {
         score: '-3.0 · 4.2s',
       });
       expect(view.spoken).toMatch(/^bishop a6: blunder\. /i);
+    });
+
+    it("shows the opponent's idea at the side's slip, dashed", () => {
+      const view = viewAt({ style: 'cchess', names, side: 'w' });
+
+      expect(view.arrows).toContainEqual({
+        from: 'b7',
+        to: 'a6',
+        kind: 'threat',
+      });
+      expect(view.bubble.text).toMatch(/Their idea: bxa6\.$/);
+      expect(view.spoken).toMatch(/Their idea: b takes a6\.$/);
+    });
+
+    it("shows no idea at the other side's move, nor in the classic style", () => {
+      expect(
+        viewAt({ style: 'cchess', names, side: 'b' }).arrows,
+      ).not.toContainEqual(expect.objectContaining({ kind: 'threat' }));
+      expect(viewAt({ side: 'w' }).arrows).toEqual([]);
+    });
+
+    it("tags the side's only move, and says so of a guess that found it", () => {
+      const only = makeReview([
+        makeReviewedMove(0, { best: true, before: 0, second: -400 }),
+      ]);
+      const at = (mode: ReviewViewInput['mode']) =>
+        reviewView({
+          review: only,
+          phase: 'stepping',
+          index: 0,
+          mode,
+          line: null,
+          lineStep: null,
+          showBestMoves: false,
+          theme: null,
+          intro: '',
+          style: 'cchess',
+          side: 'w',
+          names,
+        });
+
+      expect(at({ kind: 'move' }).bubble.tag).toBe('Only move');
+      expect(
+        at({
+          kind: 'guess',
+          tried: {
+            uci: 'e2e4',
+            san: 'e4',
+            fenAfter: only.moves[0].fenAfter,
+            verdict: 'right',
+          },
+        }).bubble.text,
+      ).toMatch(/only move/);
     });
 
     it('leaves a move with no mark unmarked', () => {

@@ -20,6 +20,10 @@ export const BEST_WITHIN = 0.5;
 // The only good move: the next best keeps this much less.
 export const ONLY_MOVE_GAP = 15;
 
+// A best move hard to find (difficulty.ts): the next best keeps this much
+// less - short of an only move.
+export const HARD_FIND_GAP = 7;
+
 // Where a side stands: losing under the first, winning from the second,
 // level between.
 export const STANDING = { losing: 35, winning: 65 } as const;

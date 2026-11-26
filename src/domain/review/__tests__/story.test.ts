@@ -1,6 +1,3 @@
-import { Color } from 'chess.js';
-
-import type { EngineScore } from '../../evalScore';
 import { markCounts, markOf, wordOf } from '../marks';
 import { cchessHeadline, formatSpent, guessTally, timeLines } from '../phrases';
 import {
@@ -11,70 +8,17 @@ import {
   turningPoints,
 } from '../story';
 import { moveTimes, timeReport } from '../time';
+import { MOVE_CLASSES, type ReviewedMove } from '../types';
 import {
-  MOVE_CLASSES,
-  type GameReview,
-  type MoveClass,
-  type ReviewedMove,
-} from '../types';
+  ENDGAME,
+  MIDGAME,
+  makeReview,
+  makeReviewedMove,
+} from '../../../testUtils/reviewedMove';
 
-const MIDGAME =
-  'r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 4 4';
-const ENDGAME = '4k3/8/8/8/8/8/8/R3K3 w - - 0 40';
 const NAMES = { w: 'Ann', b: 'Bo' };
-const cp = (value: number): EngineScore => ({ kind: 'cp', cp: value });
-
-// A move of a made-up game: the score before and after, for white.
-function move(
-  index: number,
-  {
-    moveClass = 'good',
-    winLoss = 0,
-    before = 0,
-    after = before,
-    fen = MIDGAME,
-    accuracy = 90,
-  }: {
-    moveClass?: MoveClass;
-    winLoss?: number;
-    before?: number;
-    after?: number;
-    fen?: string;
-    accuracy?: number;
-  } = {},
-): ReviewedMove {
-  const color: Color = index % 2 === 0 ? 'w' : 'b';
-  return {
-    ply: index + 1,
-    color,
-    san: `M${index + 1}`,
-    uci: 'e2e4',
-    fenBefore: fen,
-    fenAfter: fen,
-    scoreBefore: cp(before),
-    scoreAfter: cp(after),
-    bestLine: [],
-    bestSan: null,
-    replyLine: [],
-    winLoss,
-    accuracy,
-    moveClass,
-    facts: [],
-    comment: { text: '', spoken: '' },
-  };
-}
-
-function reviewOf(moves: ReviewedMove[]): GameReview {
-  return {
-    startFen: MIDGAME,
-    scores: [],
-    moves,
-    white: {} as GameReview['white'],
-    black: {} as GameReview['black'],
-    opening: { eco: 'C47', name: 'Four Knights Game' } as GameReview['opening'],
-    depth: 14,
-  };
-}
+const move = makeReviewedMove;
+const reviewOf = (moves: ReviewedMove[]) => makeReview(moves);
 
 // 20 moves: the book's last at 3; white blunders at 8 (level to lost),
 // black slips back at 15.

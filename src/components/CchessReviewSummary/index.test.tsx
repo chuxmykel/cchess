@@ -115,4 +115,14 @@ describe('CchessReviewSummary', () => {
       '1 of 2 found',
     );
   });
+
+  it("names the side's hardest find", async () => {
+    const { screen } = await renderSummary({
+      hardest: { san: 'Bxf7+', label: 'Only move' },
+    });
+
+    expect(screen.getByTestId('review-hardest-find')).toHaveTextContent(
+      'Bxf7+ · Only move',
+    );
+  });
 });

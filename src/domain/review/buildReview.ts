@@ -61,6 +61,10 @@ export function buildReview(
     const book = stillInBook ? bookOpeningAt(move.after) : null;
     stillInBook = book !== null;
     const previous = reviewed[i - 1];
+    const isRecapture =
+      !!move.captured &&
+      !!played[i - 1]?.captured &&
+      played[i - 1].to === move.to;
     const moveClass = classifyMove({
       legalMoves: new Chess(move.before).moves().length,
       isBest: before.pv[0] === move.lan,
@@ -71,10 +75,7 @@ export function buildReview(
       rating: ratings[color] ?? null,
       opponentLoss: previous ? previous.winLoss : null,
       isSacrifice: sacrificeOf(move, after.pv) !== null,
-      isRecapture:
-        !!move.captured &&
-        !!played[i - 1]?.captured &&
-        played[i - 1].to === move.to,
+      isRecapture,
       materialLoss: materialGivenUp(move, before.pv, after.pv),
       scoreLoss: centipawnLoss(before.score, after.score, color),
     });
@@ -103,6 +104,8 @@ export function buildReview(
       fenAfter: move.after,
       scoreBefore: before.score,
       scoreAfter: after.score,
+      secondScore: before.second,
+      isRecapture,
       bestLine: before.pv,
       bestSan,
       replyLine: after.pv,

@@ -62,12 +62,22 @@ const ReviewMovesScreen: React.FC<Props> = ({ navigation }) => {
   const viewArrows = session?.view.arrows;
   const arrows = useMemo<BoardArrow[]>(
     () =>
-      (viewArrows ?? []).map((arrow) => ({
-        from: arrow.from,
-        to: arrow.to,
-        color: colors.board.arrows[0],
-        weight: 0.15,
-      })),
+      (viewArrows ?? []).map((arrow) =>
+        arrow.kind === 'threat'
+          ? {
+              from: arrow.from,
+              to: arrow.to,
+              color: colors.board.threatArrow,
+              weight: 0.15,
+              dashed: true,
+            }
+          : {
+              from: arrow.from,
+              to: arrow.to,
+              color: colors.board.arrows[0],
+              weight: 0.15,
+            },
+      ),
     [viewArrows, colors],
   );
 
@@ -162,6 +172,7 @@ const ReviewMovesScreen: React.FC<Props> = ({ navigation }) => {
             icon={theme ? THEME_ICONS[theme.theme] : undefined}
             title={view.bubble.title ?? undefined}
             score={view.bubble.score}
+            tag={view.bubble.tag}
             text={view.bubble.text}
             line={view.bubble.line}
             lineAt={view.bubble.lineAt}

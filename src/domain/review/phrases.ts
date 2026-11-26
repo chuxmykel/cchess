@@ -615,6 +615,11 @@ export function decisiveLine(
     : `${markedSan(move)} took ${names[move.color]} from ${before} to ${after}.`;
 }
 
+// At a slip, the opponent's idea: the reply that punished it.
+export function theirIdea(san: string): string {
+  return `Their idea: ${san}.`;
+}
+
 // Guessing at a turning point, before it's revealed.
 export const GUESS_TITLE = 'Your move';
 
@@ -639,6 +644,13 @@ export function guessLine(tried: {
         ? "That's the move played, and it's where it went wrong. Try another, or reveal it."
         : `Not quite - ${tried.san} isn't it. Try again, or reveal the move.`;
   }
+}
+
+// A guess found that was hard to find.
+export function foundHardLine(difficulty: 'only' | 'hard'): string {
+  return difficulty === 'only'
+    ? 'That was the only move - nothing else held.'
+    : "That one wasn't easy to see.";
 }
 
 // The closing card on the guesses.
