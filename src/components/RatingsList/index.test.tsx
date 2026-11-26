@@ -121,4 +121,43 @@ describe('RatingsList', () => {
 
     expect(screen.getByTestId('rating-blitz')).toBeDisabled();
   });
+
+  describe('the puzzle rating', () => {
+    it('comes last, with the puzzles tried, and opens nothing', async () => {
+      const onSelect = jest.fn();
+      const screen = await render(
+        <RatingsList
+          ratings={[]}
+          onSelect={onSelect}
+          puzzleRating={{ rating: 1352, attempts: 4, provisional: true }}
+        />,
+      );
+
+      expect(screen.getAllByTestId(/^rating-/).at(-1)?.props.testID).toBe(
+        'rating-puzzles',
+      );
+      const row = within(screen.getByTestId('rating-puzzles'));
+      expect(row.getByText('Puzzles')).toBeTruthy();
+      expect(row.getByText('4 puzzles')).toBeTruthy();
+      expect(row.getByText('1352?')).toBeTruthy();
+      await fireEvent.press(screen.getByTestId('rating-puzzles'));
+      expect(onSelect).not.toHaveBeenCalled();
+    });
+
+    it('says when none have been tried', async () => {
+      const screen = await render(
+        <RatingsList ratings={[]} puzzleRating={null} />,
+      );
+
+      const row = within(screen.getByTestId('rating-puzzles'));
+      expect(row.getByText('No puzzles yet')).toBeTruthy();
+      expect(row.getByText('—')).toBeTruthy();
+    });
+
+    it('has no row when left out', async () => {
+      const screen = await render(<RatingsList ratings={[]} />);
+
+      expect(screen.queryByTestId('rating-puzzles')).toBeNull();
+    });
+  });
 });

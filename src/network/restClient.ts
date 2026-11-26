@@ -602,6 +602,12 @@ export type UserProfile = {
   score: Score | null;
   /** Whether you've blocked them. */
   blockedByYou?: boolean;
+  /** Their puzzle rating; null until they've tried a pool puzzle. */
+  puzzleRating?: {
+    rating: number;
+    attempts: number;
+    provisional: boolean;
+  } | null;
 };
 
 export type ActivityDay = Score & {

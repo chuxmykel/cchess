@@ -547,4 +547,16 @@ describe('UserProfile', () => {
       expect(screen.queryByTestId('badge-shelf')).toBeNull();
     });
   });
+
+  it('lists their puzzle rating under the game ratings', async () => {
+    const { screen } = await renderScreen(
+      makeUserProfile({
+        puzzleRating: { rating: 1610, attempts: 1, provisional: true },
+      }),
+    );
+
+    expect(screen.getByTestId('rating-puzzles')).toHaveTextContent(
+      /Puzzles\s*1 puzzle\s*1610\?/,
+    );
+  });
 });

@@ -334,10 +334,11 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
           </Text>
         </View>
 
-        {profile.ratings.length > 0 && (
+        {(profile.ratings.length > 0 || profile.puzzleRating) && (
           <View style={styles.section}>
             <RatingsList
               ratings={profile.ratings}
+              puzzleRating={profile.puzzleRating ?? null}
               onSelect={(category) =>
                 navigation.navigate('RatingStats', {
                   username: profile.username,
