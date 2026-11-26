@@ -1,0 +1,56 @@
+appId: ${APP_ID}
+tags:
+  - account
+  - engine
+---
+# The cchess review's summary extras, on e2e_main's newest game: the
+# momentum rope and its replay, and Share - the summary's card drawn as an
+# image and handed to the system's share sheet, then closed.
+- runFlow: common/sign-in.yaml
+- extendedWaitUntil:
+    visible:
+      id: "game-row-.*"
+    timeout: 20000
+- tapOn:
+    id: "game-row-.*"
+    index: 0
+- tapOn:
+    id: "review-button"
+- extendedWaitUntil:
+    visible:
+      id: "game-review-summary"
+    timeout: 180000
+- assertVisible:
+    id: "momentum-rope"
+- tapOn:
+    id: "momentum-replay"
+- tapOn:
+    id: "review-share"
+# The card captured and handed to the system's share sheet, which covers
+# the summary's buttons (Share reads Sharing… under it until it's closed).
+# It's another process's, out of Maestro's sight: waited for by the buttons
+# going, kept in a screenshot, then closed - on iOS by a tap above it (iOS
+# 27's has no Close), on Android by Back.
+- extendedWaitUntil:
+    notVisible:
+      id: "review-start"
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: review-share-sheet
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          point: "50%,18%"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- extendedWaitUntil:
+    visible:
+      id: "review-share"
+      text: "Share"
+    timeout: 10000

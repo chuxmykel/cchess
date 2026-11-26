@@ -35,6 +35,16 @@ jest.mock('expo-linking', () => ({
   createURL: (path) => `exp://127.0.0.1:8081/--${path}`,
 }));
 
+// A view captured as a picture, and shared: neither native module is there
+// under Jest - the capture is a made-up file, and sharing just resolves.
+jest.mock('react-native-view-shot', () => ({
+  captureRef: jest.fn(() => Promise.resolve('file:///tmp/card.png')),
+}));
+jest.mock('expo-sharing', () => ({
+  shareAsync: jest.fn(() => Promise.resolve()),
+  isAvailableAsync: jest.fn(() => Promise.resolve(true)),
+}));
+
 jest.mock('expo-speech', () => ({
   speak: jest.fn(),
   stop: jest.fn(() => Promise.resolve()),

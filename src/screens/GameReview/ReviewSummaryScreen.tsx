@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
   useWindowDimensions,
   View,
 } from 'react-native';
+import { Square } from 'chess.js';
 
 import { ReviewBoard } from '../../components/Board';
+import ReviewShareCard from '../../components/ReviewShareCard';
 import Button from '../../components/Button';
 import CchessReviewSummary from '../../components/CchessReviewSummary';
 import EvalGraph from '../../components/EvalGraph';
@@ -32,6 +35,8 @@ import type {
 } from '../../hooks/useGameReview';
 import { useMoveNavigationSounds } from '../../hooks/useGameSounds';
 import { useMomentumReplay } from '../../hooks/useMomentumReplay';
+import type { ReviewSession } from '../../hooks/useReviewSession';
+import { useShareCard } from '../../hooks/useShareCard';
 import { makeStyles } from '../../theme';
 import { reviewedSide } from './reviewedSide';
 import type { ReviewStackScreenProps } from './types';
@@ -65,6 +70,31 @@ function progressLabel(
 
 type Props = ReviewStackScreenProps<'ReviewSummary'>;
 
+// What the share card shows: the move that decided the game - or, with
+// none, the game's last - what it did, and the side reviewed.
+function shareCardProps(session: ReviewSession) {
+  const { review, side, decisive, names, badges } = session;
+  const index = decisive.moment?.index ?? review.moves.length - 1;
+  const move = review.moves[index];
+  return {
+    fen: move?.fenAfter ?? review.startFen,
+    lastMove: move
+      ? {
+          from: move.uci.slice(0, 2) as Square,
+          to: move.uci.slice(2, 4) as Square,
+        }
+      : null,
+    orientation: side,
+    headline: decisive.moment
+      ? `Decided at move ${Math.ceil(move.ply / 2)}`
+      : 'No single move decided it',
+    text: decisive.text,
+    name: names[side],
+    accuracy: side === 'w' ? review.white.accuracy : review.black.accuracy,
+    badge: badges[0] ?? null,
+  };
+}
+
 // A review's first screen: the game loading, or analysed on the device -
 // played through on the board as it's analysed - then the review at a
 // glance, Start review pushing the moves over it.
@@ -82,6 +112,11 @@ const ReviewSummaryScreen: React.FC<Props> = ({ navigation }) => {
     [session?.story],
   );
   const momentum = useMomentumReplay(session?.review.moves ?? NO_MOVES, turns);
+  const {
+    ref: shareCardRef,
+    isSharing,
+    share: shareTheCard,
+  } = useShareCard((message) => Alert.alert(message));
   const auth = useAuthSession();
   const userId = auth.isReady ? auth.user.id : null;
   const { settings } = useReviewSettingsContext();
@@ -264,13 +299,30 @@ const ReviewSummaryScreen: React.FC<Props> = ({ navigation }) => {
       </ScrollView>
       {/* Pinned under the summary, which can run taller than the screen,
           so it's never scrolled out of reach. */}
-      <View style={styles.summaryFooter}>
+      <View style={[styles.summaryFooter, cchess && styles.footerRow]}>
+        {cchess && (
+          <Button
+            label={isSharing ? 'Sharing…' : 'Share'}
+            variant="outline"
+            onPress={shareTheCard}
+            disabled={isSharing}
+            style={styles.shareButton}
+            testID="review-share"
+          />
+        )}
         <Button
           label="Start review"
           onPress={() => openMoves()}
+          style={cchess ? styles.startButton : undefined}
           testID="review-start"
         />
       </View>
+      {/* The share card, off-screen until it's captured as a picture. */}
+      {cchess && (
+        <View style={styles.offscreen} pointerEvents="none">
+          <ReviewShareCard ref={shareCardRef} {...shareCardProps(session)} />
+        </View>
+      )}
     </View>
   );
 };
@@ -297,6 +349,22 @@ const useStyles = makeStyles((t) => ({
     paddingBottom: t.spacing.xxl,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: t.colors.separator,
+  },
+  // Share beside Start review, in the cchess style.
+  footerRow: {
+    flexDirection: 'row',
+    gap: t.spacing.md,
+  },
+  shareButton: {
+    flex: 1,
+  },
+  startButton: {
+    flex: 2,
+  },
+  offscreen: {
+    position: 'absolute',
+    left: -10_000,
+    top: 0,
   },
   time: {
     gap: t.spacing.xs,
