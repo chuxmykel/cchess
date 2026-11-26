@@ -48,3 +48,11 @@ tags:
     id: "review-start"
 - assertVisible:
     id: "review-bubble-title"
+# Back from the moves goes to the review's summary; from there, back to
+# the analysis board it came from.
+- runFlow: common/header-back.yaml
+- assertVisible:
+    id: "game-review-summary"
+- runFlow: common/header-back.yaml
+- assertVisible:
+    id: "analysis-board"

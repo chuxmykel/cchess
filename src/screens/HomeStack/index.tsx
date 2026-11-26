@@ -100,10 +100,9 @@ const HomeStack: React.FC = () => {
                   <Screen
                     name="GameReview"
                     component={GameReview}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Game Review',
-                    })}
+                    // Its summary and its moves are a stack of its own, each
+                    // with its header.
+                    options={{ headerShown: false }}
                   />
                   <Screen
                     name="AnalysisBoard"

@@ -922,7 +922,15 @@ reviewActions.ts`: Best where another move was better, not for a book, forced or
   closes with a Time card and the turning points found. The eval bar's along the top, then room kept for two lines
   of the bubble: a longer one grows up over the eval bar, then down over
   the board, which never moves. A brilliant move
-  stopped on has its own sound (`useBrilliantSound`). Its header's
+  stopped on has its own sound (`useBrilliantSound`). The summary and the moves
+  are a native stack of their own (`GameReview` hides the outer header;
+  `ReviewSummary`, then `ReviewMoves` pushed by Start review, a chapter
+  or the decisive card): Back - the header's, the swipe or Android's -
+  pops the moves to the summary, the review put back to its start, and
+  from the summary leaves the review (to the analysis board, for a pasted
+  PGN's). What they share is in `context/GameReview/GameReviewContext.tsx`:
+  the review as it loads, and once ready `useReviewSession` - the stepper,
+  the view, the voice and sounds, the story and the clock. Its header's
   analysis button (the app's `head-cog-outline`, beside the ⚙ in one
   header item, so they sit close) opens `AnalysisBoard` at the move shown (the game's end from the
   summary), and its ⚙ `ReviewSettings`
