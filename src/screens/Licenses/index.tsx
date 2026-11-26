@@ -6,10 +6,11 @@ import { makeStyles } from '../../theme';
 
 const GPL_URL = 'https://www.gnu.org/licenses/gpl-3.0.html';
 const OPENINGS_URL = 'https://github.com/lichess-org/chess-openings';
+const PUZZLES_URL = 'https://database.lichess.org/#puzzles';
 
-// Credit for the work the app builds on that isn't its own - with the
-// engine's licence and where its source is, as the GPL asks of whoever
-// hands it on.
+// Credit for the work the app builds on that isn't its own - the engine,
+// lichess's opening names and puzzles - with the engine's licence and
+// where its source is, as the GPL asks of whoever hands it on.
 const Licenses: React.FC = () => {
   const styles = useStyles();
   return (
@@ -58,6 +59,24 @@ const Licenses: React.FC = () => {
             icon: 'source-branch',
             onPress: () => Linking.openURL(OPENINGS_URL),
             testID: 'license-openings',
+          },
+        ]}
+      />
+      <View style={styles.section}>
+        <Text style={styles.title}>Puzzles</Text>
+        <Text style={styles.body}>
+          Practice puzzles come from lichess.org&apos;s puzzle database, which
+          is dedicated to the public domain (CC0). The puzzles from your own
+          games are your own.
+        </Text>
+      </View>
+      <ActionList
+        items={[
+          {
+            label: 'lichess.org puzzle database',
+            icon: 'puzzle-outline',
+            onPress: () => Linking.openURL(PUZZLES_URL),
+            testID: 'license-puzzles',
           },
         ]}
       />

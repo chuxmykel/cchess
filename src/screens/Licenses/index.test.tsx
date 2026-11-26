@@ -14,4 +14,16 @@ describe('Licenses', () => {
 
     expect(openURL).toHaveBeenCalledWith(ENGINE_SOURCE_URL);
   });
+
+  it("credits lichess's puzzles, and links to their database", async () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    const screen = await render(<Licenses />);
+
+    expect(screen.getByText(/lichess.org's puzzle database/)).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('license-puzzles'));
+
+    expect(openURL).toHaveBeenCalledWith(
+      'https://database.lichess.org/#puzzles',
+    );
+  });
 });
