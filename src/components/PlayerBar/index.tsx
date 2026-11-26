@@ -4,6 +4,7 @@ import { Color } from 'chess.js';
 import { GameUserSummary, SeriesScore } from '../../network/socketEvents';
 import { GameClockResult } from '../../hooks/useGameClock';
 import Avatar from '../Avatar';
+import BotTag from '../BotTag';
 import GameClock from '../GameClock';
 import CapturedPieces from '../CapturedPieces';
 import { SideMaterial } from '../../domain/material';
@@ -121,6 +122,7 @@ const PlayerBar: React.FC<PlayerBarProps> = ({
           <Text style={styles.name} numberOfLines={1}>
             {player.displayName}
           </Text>
+          {player.isBot && <BotTag testID={`player-bot-${color}`} />}
           {player.rating !== null && (
             <Text style={styles.rating} testID={`player-rating-${color}`}>
               {formatRating(player.rating, player.provisional)}

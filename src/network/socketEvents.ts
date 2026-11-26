@@ -27,6 +27,8 @@ export type GameUserSummary = {
   avatarColor: string;
   rating: number | null;
   provisional: boolean;
+  /** A computer opponent - a house bot. */
+  isBot?: boolean;
 };
 
 export type GameMoveSummary = {

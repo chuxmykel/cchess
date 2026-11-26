@@ -745,7 +745,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
   badge on its corner, and in a rematch series that side's points, "1.5",
   in a band across its bottom, the initials lifted clear of it - then the name, rating, clock, and under
   the name the first-move countdown or `CapturedPieces`, a line that keeps
-  its height empty or not, so the bar never changes size; tapping the
+  its height empty or not, so the bar never changes size; a "BOT" `BotTag` by a house bot's name - also on its profile
+  and in player search (`isBot`, from the server); tapping the
   avatar or name opens that player's profile, and Back returns to the
   game; dimmed only while the result card shows),
   `ChatSheet` (the server's notes of draws offered, declined and

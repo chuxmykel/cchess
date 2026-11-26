@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 
 import Avatar from '../Avatar';
+import BotTag from '../BotTag';
 import { UserSearch } from '../../hooks/useUserSearch';
 import { UserSearchResult } from '../../network/restClient';
 import { makeStyles } from '../../theme';
@@ -61,9 +62,14 @@ const UserSearchResults: React.FC<UserSearchResultsProps> = ({
         >
           <Avatar name={item.displayName} color={item.avatarColor} size={40} />
           <View style={styles.names}>
-            <Text style={styles.displayName} numberOfLines={1}>
-              {item.displayName}
-            </Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.displayName} numberOfLines={1}>
+                {item.displayName}
+              </Text>
+              {item.isBot && (
+                <BotTag testID={`user-search-result-${item.username}-bot`} />
+              )}
+            </View>
             <Text style={styles.username} numberOfLines={1}>
               @{item.username}
             </Text>
@@ -114,6 +120,11 @@ const useStyles = makeStyles((t) => ({
   },
   names: {
     flex: 1,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.spacing.xs,
   },
   displayName: {
     color: t.colors.text,

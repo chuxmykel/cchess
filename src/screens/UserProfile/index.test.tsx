@@ -132,6 +132,14 @@ describe('UserProfile', () => {
     timing.mockRestore();
   });
 
+  it('tags a bot as one, and nobody else', async () => {
+    const bot = await renderScreen(makeUserProfile({ isBot: true }));
+    expect(bot.screen.getByTestId('profile-bot')).toHaveTextContent('BOT');
+
+    const person = await renderScreen(makeUserProfile());
+    expect(person.screen.queryByTestId('profile-bot')).toBeNull();
+  });
+
   it("opens a player's stats in a category", async () => {
     const { screen, navigation } = await renderScreen(makeUserProfile());
 

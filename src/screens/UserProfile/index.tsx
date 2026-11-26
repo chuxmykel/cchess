@@ -21,6 +21,7 @@ import { format, parseISO } from 'date-fns';
 import ActionList, { ActionListItem } from '../../components/ActionList';
 import ActivityList from '../../components/ActivityList';
 import Avatar from '../../components/Avatar';
+import BotTag from '../../components/BotTag';
 import Button from '../../components/Button';
 import ChallengeSheet from '../../components/ChallengeSheet';
 import EmptyState from '../../components/EmptyState';
@@ -300,7 +301,10 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
             size={64}
           />
           <View style={styles.identity}>
-            <Text style={styles.name}>{profile.displayName}</Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.name}>{profile.displayName}</Text>
+              {profile.isBot && <BotTag testID="profile-bot" />}
+            </View>
             <Text style={styles.username}>@{profile.username}</Text>
             <Text style={styles.presence} testID="profile-presence">
               {presenceLabel(presenceOf(profile))}
@@ -472,6 +476,11 @@ const useStyles = makeStyles((t) => ({
   },
   identity: {
     flex: 1,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.spacing.sm,
   },
   name: {
     color: t.colors.text,

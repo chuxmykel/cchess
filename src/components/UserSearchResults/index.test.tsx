@@ -36,6 +36,20 @@ describe('UserSearchResults', () => {
     expect(dismiss).toHaveBeenCalled();
   });
 
+  it('tags a bot among the players', async () => {
+    const bot = { ...JUDIT, id: 'bot-id', username: 'housebot', isBot: true };
+    const screen = await render(
+      <UserSearchResults
+        query="h"
+        search={done({ results: [JUDIT, bot] })}
+        onSelect={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('user-search-result-housebot-bot')).toBeTruthy();
+    expect(screen.queryByTestId('user-search-result-judit-bot')).toBeNull();
+  });
+
   it('scrolls clear of the keyboard, closing it on a drag', async () => {
     const screen = await render(
       <UserSearchResults query="jud" search={done()} onSelect={jest.fn()} />,

@@ -583,6 +583,8 @@ export type UserProfile = {
   bio: string | null;
   avatarColor: string;
   isGuest: boolean;
+  /** A computer opponent - a house bot. */
+  isBot?: boolean;
   ratings: UserRating[];
   createdAt: string;
   lastSeenAt: string | null;
@@ -647,6 +649,7 @@ export type UserSearchResult = {
   username: string;
   displayName: string;
   avatarColor: string;
+  isBot?: boolean;
 };
 
 /** Registered players whose name contains the search, closest first. */
