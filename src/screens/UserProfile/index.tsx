@@ -20,12 +20,14 @@ import { format, parseISO } from 'date-fns';
 
 import ActionList, { ActionListItem } from '../../components/ActionList';
 import ActivityList from '../../components/ActivityList';
+import BadgeShelf from '../../components/BadgeShelf';
 import Avatar from '../../components/Avatar';
 import BotTag from '../../components/BotTag';
 import Button from '../../components/Button';
 import ChallengeSheet from '../../components/ChallengeSheet';
 import EmptyState from '../../components/EmptyState';
 import Placeholder from '../../components/Placeholder';
+import PatternsCard from '../../components/PatternsCard';
 import ProfileFriends from '../../components/ProfileFriends';
 import RatingsList from '../../components/RatingsList';
 import GameRow from '../../components/RecentGamesList/GameRow';
@@ -38,6 +40,7 @@ import { usePagedGames } from '../../hooks/usePagedGames';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useToast } from '../../hooks/useToast';
 import { useUserFriends } from '../../hooks/useUserFriends';
+import { usePlayerPatterns } from '../../hooks/usePlayerPatterns';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { getUserGames, GamesPage, UserProfile } from '../../network/restClient';
 import { presenceLabel } from '../../utils/presence';
@@ -69,6 +72,11 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
   const { state, reload: reloadProfile } = useUserProfile(username);
   const { state: friendsState, reload: reloadFriends } =
     useUserFriends(username);
+  const {
+    patterns,
+    badges,
+    reload: reloadPatterns,
+  } = usePlayerPatterns(username);
   const reload = useCallback(() => {
     reloadProfile();
     reloadFriends();
@@ -94,6 +102,7 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
   const refresh = usePullToRefresh(
     reloadProfile,
     reloadFriends,
+    reloadPatterns,
     recentGames.reload,
   );
   // The username goes in the header only once the avatar block showing it
@@ -374,6 +383,31 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
             }
           />
         </View>
+
+        {isSelf && patterns && (
+          <>
+            <View style={styles.section}>
+              <SectionHeader title="Patterns" />
+            </View>
+            <PatternsCard
+              patterns={patterns}
+              onPractise={(theme) =>
+                navigation.navigate('Puzzle', {
+                  deck: { deck: 'pool', theme },
+                })
+              }
+            />
+          </>
+        )}
+
+        {(isSelf || Object.values(badges).some((count) => count > 0)) && (
+          <>
+            <View style={styles.section}>
+              <SectionHeader title="Badges" />
+            </View>
+            <BadgeShelf badges={badges} showUnearned={isSelf} />
+          </>
+        )}
 
         <View style={styles.section}>
           <SectionHeader title="Activity" />
