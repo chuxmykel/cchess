@@ -247,7 +247,29 @@ lib/chessboard/  the board, written as a package of its own: outside the
       under a quarter of the time left against more (said to the side
       reviewed, or of it by name for a game only watched; a move that took
       no time - a side's first - shows none). Their words are in
-      `phrases.ts`, their limits in `thresholds.ts`.
+      `phrases.ts`, their limits in `thresholds.ts`. Also the cchess
+      style's: `difficulty.ts` - how hard a good move was to find, from the
+      gap to the next best (`ReviewedMove`'s `secondScore`): an only move,
+      hard to find, or nothing said (forced, a recapture), and
+      `hardestFind`, the side's hardest; `badges.ts` - what a side's game
+      earned (`badgesOf`: a swindle, a comeback, a held draw, a clean game,
+      a sacrifice that worked), read off the winning chances and the
+      result, each bar in `thresholds.ts`.
+    - Across games: `digest.ts` - `reviewDigests`, each side's review in a
+      few hundred bytes (accuracy, result, opening, each slip's mark, facts,
+      phase and clock, accuracy on the clock, badges), saved with the
+      review - the only part of it the server reads; `patterns.ts` -
+      `patternsOf`, a player's recent digests read for what keeps
+      happening (pieces left hanging by phase, accuracy short of time,
+      openings' results, `weakThemes` - the puzzle themes their slips come
+      down to); `missedTactics.ts` - `missedTactics(review, side)`, the
+      wins and mates a side let go, as puzzles (the position, the engine's
+      line cut to 5 plies and ending on the side's move, the themes).
+  - `puzzles/` - `themes.ts`: lichess's puzzle themes the app offers, their
+    labels, and `themeOfFact` (a review's fact as a theme); `puzzle.ts`:
+    `SolvablePuzzle`, from the pool (`fromPool` - lichess's start before
+    the opponent's move, `setup`) or your own (`fromMine`), and `isRight`
+    (the solution's move, or any mate where it mates).
 
 - **`src/network/`** - a second framework-agnostic layer, mirroring
   `domain/`'s pure-infra style but for talking to `cchess-be` (the
@@ -474,7 +496,23 @@ lib/chessboard/  the board, written as a package of its own: outside the
     Apple's Premium and Enhanced first; on Android, voices read on the
     device before those read online, named by their short name, "Voice
     TPF"); `useSpeechVoices`, the voices to choose from.
-    `useReviewSettings`.
+    `useReviewSettings`. `useMomentumReplay` - the summary's rope played
+    through the game (about 8s, each move 120-600ms, `thresholds.ts`'
+    `MOMENTUM`), a move's sound at each turning point, held there a moment;
+    `useShareCard` - the summary's card captured (`react-native-view-shot`)
+    and shared as a PNG (`expo-sharing`). `useGameReview` also sends the
+    review's digests (and fills them for a review kept without) and posts
+    the viewer's missed tactics as their own puzzles.
+  - Puzzles: `usePuzzleSolver(puzzle, onResult)` - the opponent's setting
+    move played a moment after it's shown, each of yours judged and
+    answered with the solution's reply until it's solved, or missed on the
+    first wrong move; then Retry, or the solution played out;
+    `usePuzzleHome` (your own deck's counts, your puzzle rating and the
+    themes your patterns suggest, reloaded each time the tab's shown) and
+    `usePuzzleRun(deck)` (the pool's next puzzle, or your due ones in turn,
+    and each result sent - the rating change back for a pool puzzle);
+    `usePlayerPatterns(username)` - a profile's patterns (yours only) and
+    badges.
   - Friends and everything around them: `useSocial` (backs
     `SocialContext`: friends with their live status, friend requests,
     challenges and unread message counts, kept current from the
@@ -598,7 +636,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
   (the squares marked), `promotion` (a pawn held on its promotion square),
   `check` (a king glowing red, tipped over once `fallen`), `arrows`,
   `squareBadges` (a round mark on a square's top-right corner, in a
-  color, around what the app draws in it),
+  color, around what the app draws in it), an arrow `dashed` (a review's
+  threat),
   `animation` and `viewOnly`, and calls back `onMove(from, to)` - return
   false to refuse it - `onPremove(from, to)` (the piece stays home),
   `onPremoveCancel` (anything else touched while one's queued), `onDropOff`, `onSquarePress`, `onSettled` and
@@ -869,7 +908,8 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `ActionList` row while they aren't in a game - and Message only to
   friends; your own - the same screen, opened from Home's avatar or the
   Menu - offers none of them. Its `RatingsList` rows
-  open `RatingStats` for that category:
+  open `RatingStats` for that category (a last row, Puzzles, shows the
+  puzzle rating - the profile's `puzzleRating` - and opens nothing):
   the rating with what it gained or lost over the period, a 1W/1M/3M/1Y/All
   `SegmentedTabs`, the chart, and the two cards. Once a game is over,
   the ☰ of `LiveGame` and `GameViewer` offers Analyse, opening
@@ -879,7 +919,26 @@ lib/chessboard/  the board, written as a package of its own: outside the
   (anyone's, guests too: it's kept on the device), `AnalysisSettings`,
   `DailyGameSettings`, and `Licenses`: the Stockfish build the app
   downloads, its GPL-3.0 and where its source is, and credit for
-  lichess's opening names. The Puzzles tab is a coming-soon page for now.
+  lichess's opening names and puzzles.
+
+- **Puzzles** - the Puzzles tab (`PuzzlesStack`): `Puzzles`, its home -
+  "From your games" (the tactics you missed in your reviewed games: due,
+  learning and learnt, on a 1/3/7/14/30-day schedule kept by the server)
+  and "Practice" (lichess's CC0 pool at your puzzle rating, the themes
+  your patterns suggest first, then every theme). A run from either deck
+  (`{ deck: 'mine' }` or `{ deck: 'pool', theme? }`) is `Puzzle`, over the
+  tabs in `HomeStack` so its `PuzzleToolbar` is the only one at the
+  bottom: a `ReviewBoard` turned to the side solving, the prompt, the
+  rating change for a pool puzzle, Next puzzle once it's done, and the
+  toolbar's Hint (the next move as an arrow - the puzzle then counts as
+  missed), Solution, Retry and ‹ › through the moves played (moves are
+  played only at the latest). A practice puzzle left unfinished comes back
+  on the next Start of that theme (`network/puzzleProgressStorage.ts`, by
+  account and theme, until it's tried); your own come back by themselves,
+  still due. See cchess-be's `docs/features.md`, "Puzzles". A profile has
+  a Badges shelf (anyone's - your own shows those still to earn, faded)
+  and, on your own, Patterns (`PatternsCard`), whose Practise opens the
+  theme you keep missing.
 
 - **Game review** - the `GameReview` screen (from a finished game's
   result card - `GameOverCard`'s `onReview`, "Game review" - or ☰
@@ -931,7 +990,18 @@ reviewActions.ts`: Best where another move was better, not for a book, forced or
   from the summary leaves the review (to the analysis board, for a pasted
   PGN's). What they share is in `context/GameReview/GameReviewContext.tsx`:
   the review as it loads, and once ready `useReviewSession` - the stepper,
-  the view, the voice and sounds, the story and the clock. Its header's
+  the view, the voice and sounds, the story and the clock, and in the
+  cchess style the hardest find and the badges. The cchess summary adds
+  `MomentumRope` (the game as a tug of war, Replay - Stop while it plays -
+  pulling it through at up to 0.6s a move, held a moment at each turning
+  point, the eval graph's cursor following it and a caption naming each
+  move and who's ahead after it; at rest, what the rope shows),
+  the game's badges (`BadgeIcon`) and its hardest find, and Share
+  (`review-share`): `ReviewShareCard` - the decisive moment, the side's
+  accuracy and a badge, in Paper & Vermilion whatever the theme - drawn
+  off screen and shared as an image. Its moves add, at the side's slip,
+  the reply that punished it as a red dashed arrow ("Their idea: Nxe5"),
+  and a "Hard to find"/"Only move" tag on the bubble. Its header's
   analysis button (the app's `head-cog-outline`, beside the ⚙ in one
   header item, so they sit close) opens `AnalysisBoard` at the move shown (the game's end from the
   summary), and its ⚙ `ReviewSettings`
@@ -1067,7 +1137,7 @@ reviewActions.ts`: Best where another move was better, not for a book, forced or
   `App.tsx` (root native-stack, inside a `GestureHandlerRootView` for
   the chart's gestures - the board brings its own, so it works wherever
   it's rendered, tests included) -> `HomeStack` (`HomeTabs`, `LiveGame`,
-  `DailyGame`, `DailyAnalysis`, `OpeningExplorer`, `GameNotes`,
+  `DailyGame`, `DailyAnalysis`, `OpeningExplorer`, `GameNotes`, `Puzzle`,
   `ConditionalMoves`, `DailyGamesList`, `DailyGameSettings`,
   `GameViewer`, `GameReview`, `ReviewSettings`, `AnalysisBoard`, `AnalysisSettings`, `UserProfile`, `Conversation`, `GamesList`,
   `RatingStats`, `UserFriends`, `FindFriends`, `SignIn`, `CreateAccount`,
@@ -1159,8 +1229,8 @@ reviewActions.ts`: Best where another move was better, not for a book, forced or
     (`AnalyticsEvent`, `useGameFinishedEvent`), uncaught errors; accounts
     identified by ID only (`useAnalyticsIdentity`); Settings' switch
     (`useAnalyticsConsent`) opts out.
-  - `constants/features.ts` hides what isn't built yet (Puzzles, Play
-    Stockfish): the stores refuse placeholders.
+  - `constants/features.ts` hides what isn't built yet (Play Stockfish):
+    the stores refuse placeholders.
 - **`src/theme/`** - the app's style guide, every color, space, corner,
   type size and shadow its styles are drawn from. `tokens.ts`: the scales
   that are the same in both modes - `spacing` (a 4pt grid, `xxs` 2 to

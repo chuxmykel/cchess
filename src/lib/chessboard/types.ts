@@ -83,6 +83,8 @@ export type BoardArrow = {
   color: string;
   // How thick, as a share of a square.
   weight: number;
+  // Drawn in dashes - an idea rather than a move, such as a threat.
+  dashed?: boolean;
 };
 
 // A round mark on a square's top-right corner - what the app makes of the

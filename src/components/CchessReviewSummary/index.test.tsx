@@ -115,4 +115,27 @@ describe('CchessReviewSummary', () => {
       '1 of 2 found',
     );
   });
+
+  it("names the side's hardest find", async () => {
+    const { screen } = await renderSummary({
+      hardest: { san: 'Bxf7+', label: 'Only move' },
+    });
+
+    expect(screen.getByTestId('review-hardest-find')).toHaveTextContent(
+      'Bxf7+ · Only move',
+    );
+  });
+});
+it('shows the badges the game earned, and none when it earned none', async () => {
+  const { screen } = await renderSummary({
+    badges: ['comeback', 'sacrifice'],
+  });
+
+  expect(screen.getByTestId('review-badge-comeback')).toHaveTextContent(
+    /Comeback.*Won from a losing position/,
+  );
+  expect(screen.getByTestId('review-badge-sacrifice')).toBeTruthy();
+
+  const none = await renderSummary();
+  expect(none.screen.queryByTestId('review-badges')).toBeNull();
 });

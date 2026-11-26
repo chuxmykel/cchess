@@ -8,29 +8,39 @@ import {
   pvToSan,
 } from '../domain/evalScore';
 import { REVIEW_LINE_SHOWN, ReviewStyle } from '../constants/review';
+import { DIFFICULTY_LABELS, difficultyOf } from '../domain/review/difficulty';
 import { markOf } from '../domain/review/marks';
 import { playLine } from '../domain/review/motifs';
 import {
   cchessHeadline,
   cchessSpoken,
   GUESS_TITLE,
+  foundHardLine,
   guessLine,
   guessPrompt,
   headline,
   type Names,
   RETRY_TITLE,
   retryLine,
+  theirIdea,
 } from '../domain/review/phrases';
 import { sanToSpeech, textToSpeech } from '../domain/review/spokenText';
-import type { GameReview, MoveClass, ThemeCard } from '../domain/review/types';
+import {
+  type GameReview,
+  isSlip,
+  type MoveClass,
+  type ThemeCard,
+} from '../domain/review/types';
 import { MoveSquares } from '../domain/types';
 import type { ReviewMode, ReviewPhase } from './useReviewStepper';
 
-// An arrow the review draws: the best move, where another was played.
+// An arrow the review draws: the best move, where another was played - or,
+// at a slip in the cchess style, the opponent's idea: the reply that
+// punished it.
 export type ReviewArrow = {
   from: Square;
   to: Square;
-  kind: 'best';
+  kind: 'best' | 'threat';
 };
 
 // What the review shows at a step: the board, and what it says.
@@ -51,6 +61,8 @@ export type ReviewView = {
     // The line's move on the board, while it's played out - an index into
     // `line`.
     lineAt: number | null;
+    // A tag after the title - how hard the move was to find (cchess).
+    tag: string | null;
   };
   // What's read aloud.
   spoken: string;
@@ -109,6 +121,8 @@ export type ReviewViewInput = {
   // names and the time the move shown took ("12s"), if the game had a
   // clock.
   style?: ReviewStyle;
+  // The side reviewed, whose slips show the opponent's idea (cchess).
+  side?: Color;
   names?: Names;
   timeSpent?: string | null;
 };
@@ -124,6 +138,7 @@ export function reviewView({
   theme,
   intro,
   style = 'classic',
+  side,
   names = { w: 'White', b: 'Black' },
   timeSpent = null,
 }: ReviewViewInput): ReviewView {
@@ -152,6 +167,7 @@ export function reviewView({
         text: intro,
         line: null,
         lineAt: null,
+        tag: null,
       },
       spoken: textToSpeech(intro),
     };
@@ -174,6 +190,7 @@ export function reviewView({
         text,
         line: shown?.numbered ?? null,
         lineAt: shown?.at ?? null,
+        tag: null,
       },
       spoken: cchess
         ? cchessSpoken(best.san, 'best', text)
@@ -184,9 +201,13 @@ export function reviewView({
   if (mode.kind === 'guess') {
     const { tried } = mode;
     const stillTrying = !tried || tried.verdict === 'wrong';
-    const text = tried
+    const found = difficultyOf(move);
+    const foundHard =
+      tried?.verdict === 'right' && tried.uci === move.bestLine[0] && found;
+    const guessed = tried
       ? guessLine({ ...tried, isPlayed: tried.uci === move.uci })
       : guessPrompt(move.ply, names[move.color]);
+    const text = foundHard ? `${guessed} ${foundHardLine(found)}` : guessed;
     return {
       fen: stillTrying ? move.fenBefore : tried.fenAfter,
       lastMove: stillTrying ? null : squaresOf(tried.uci),
@@ -201,6 +222,7 @@ export function reviewView({
         text,
         line: null,
         lineAt: null,
+        tag: null,
       },
       spoken: tried ? text.replace(tried.san, sanToSpeech(tried.san)) : text,
     };
@@ -231,6 +253,7 @@ export function reviewView({
         text,
         line: null,
         lineAt: null,
+        tag: null,
       },
       spoken,
     };
@@ -242,8 +265,32 @@ export function reviewView({
   if (showBestMoves && bestSquares && !isBest && !shown) {
     arrows.push({ ...bestSquares, kind: 'best' });
   }
-
   const closing = phase === 'done' && theme;
+  // How hard the side's move was to find (cchess).
+  const moveDifficulty =
+    cchess && !closing && move.color === side ? difficultyOf(move) : null;
+  // The opponent's idea at the side's slip: the reply that punished it.
+  const threatUci =
+    cchess &&
+    !shown &&
+    !closing &&
+    move.color === side &&
+    isSlip(move.moveClass)
+      ? move.replyLine[0]
+      : undefined;
+  const threatSquares = squaresOf(threatUci);
+  const threatSan = threatUci
+    ? (pvToSan(move.fenAfter, [threatUci], 1)[0] ?? null)
+    : null;
+  if (threatSquares) arrows.push({ ...threatSquares, kind: 'threat' });
+  const text = threatSan
+    ? `${move.comment.text} ${theirIdea(threatSan)}`
+    : move.comment.text;
+  // Read aloud, the move in words.
+  const spokenText = threatSan
+    ? `${move.comment.text} ${theirIdea(sanToSpeech(threatSan))}`
+    : move.comment.text;
+
   return {
     fen: shown?.fen ?? move.fenAfter,
     lastMove: shown ? shown.lastMove : squaresOf(move.uci),
@@ -259,6 +306,7 @@ export function reviewView({
           text: theme.text,
           line: null,
           lineAt: null,
+          tag: null,
         }
       : {
           moveClass: marked(move.moveClass),
@@ -266,14 +314,15 @@ export function reviewView({
           score: timeSpent
             ? `${formatScore(move.scoreAfter)} · ${timeSpent}`
             : formatScore(move.scoreAfter),
-          text: move.comment.text,
+          text,
           line: shown?.numbered ?? null,
           lineAt: shown?.at ?? null,
+          tag: moveDifficulty ? DIFFICULTY_LABELS[moveDifficulty] : null,
         },
     spoken: closing
       ? `${theme.title}. ${textToSpeech(theme.text)}`
       : cchess
-        ? cchessSpoken(move.san, move.moveClass, move.comment.text)
+        ? cchessSpoken(move.san, move.moveClass, spokenText)
         : move.comment.spoken,
   };
 }

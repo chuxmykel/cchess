@@ -6,10 +6,13 @@ import type { PositionEval } from '../../domain/review/types';
 import { EngineUpdate } from '../../engine/types';
 import {
   getGame,
+  addMyPuzzles,
   getGameReview,
   saveGameReview,
+  saveReviewDigests,
   StoredGameReview,
 } from '../../network/restClient';
+import { missedTactics } from '../../domain/review/missedTactics';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { makeFakeEngine } from '../../testUtils/fakeEngine';
@@ -29,6 +32,11 @@ jest.mock('../../network/restClient', () => ({
   getGame: jest.fn(),
   getGameReview: jest.fn(),
   saveGameReview: jest.fn(),
+  saveReviewDigests: jest.fn(() => Promise.resolve()),
+  addMyPuzzles: jest.fn(() => Promise.resolve(0)),
+}));
+jest.mock('../../domain/review/missedTactics', () => ({
+  missedTactics: jest.fn(() => []),
 }));
 
 const GAME = makeFinishedGame(['e4', 'e5', 'Ba6', 'bxa6'], { id: 'game-1' });
@@ -114,6 +122,53 @@ describe('useGameReview', () => {
     expect(acquire).not.toHaveBeenCalled();
   });
 
+  it('sends the digests a review was kept without, and none it has', async () => {
+    (getGameReview as jest.Mock).mockResolvedValue(STORED);
+    await renderReview();
+    await flush();
+    expect(saveReviewDigests).toHaveBeenCalledWith(
+      'game-1',
+      expect.objectContaining({
+        w: expect.objectContaining({ v: 1 }),
+        b: expect.objectContaining({ v: 1 }),
+      }),
+      expect.any(String),
+    );
+
+    jest.mocked(saveReviewDigests).mockClear();
+    (getGameReview as jest.Mock).mockResolvedValue({
+      ...STORED,
+      digests: { w: {}, b: {} },
+    });
+    await renderReview();
+    await flush();
+    expect(saveReviewDigests).not.toHaveBeenCalled();
+  });
+
+  it('keeps the tactics the player missed in their own game, to practise', async () => {
+    // Signed in as the game's white player.
+    (useAuthSession as jest.Mock).mockReturnValue(
+      makeAuthSession({ user: { id: 'white-user' } }),
+    );
+    (getGameReview as jest.Mock).mockResolvedValue(STORED);
+    const tactic = {
+      ply: 3,
+      fen: 'some-fen',
+      solution: ['g1f3'],
+      themes: ['advantage' as const],
+    };
+    jest.mocked(missedTactics).mockReturnValueOnce([tactic]);
+    await renderReview();
+    await flush();
+
+    expect(missedTactics).toHaveBeenCalledWith(expect.anything(), 'w');
+    expect(addMyPuzzles).toHaveBeenCalledWith(
+      'game-1',
+      [tactic],
+      expect.any(String),
+    );
+  });
+
   it("carries a live game's clock, and none for a daily game", async () => {
     (getGameReview as jest.Mock).mockResolvedValue(STORED);
     const live = await renderReview();
@@ -177,6 +232,9 @@ describe('useGameReview', () => {
     const saved = (saveGameReview as jest.Mock).mock.calls[0][1];
     expect(saved.evals).toHaveLength(5);
     expect(saved.whiteAccuracy).toBeLessThan(saved.blackAccuracy);
+    // With each side's digest: white blundered the bishop and lost.
+    expect(saved.digests.w).toMatchObject({ v: 1, result: 'loss' });
+    expect(saved.digests.w.slips[0]).toMatchObject({ mark: '??' });
   });
 
   it('says how the engine is coming along while it downloads', async () => {

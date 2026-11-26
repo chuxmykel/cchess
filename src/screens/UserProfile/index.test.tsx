@@ -12,9 +12,11 @@ import {
   getUserActivity,
   getUserFriends,
   getUserGames,
+  getPatterns,
   getUserProfile,
   UserProfile as Profile,
 } from '../../network/restClient';
+import type { SideDigest } from '../../domain/review/digest';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { makeGameSummary } from '../../testUtils/gameSummary';
 import { withSafeArea } from '../../testUtils/safeArea';
@@ -40,6 +42,7 @@ jest.mock('../../network/restClient', () => ({
   getUserActivity: jest.fn(),
   getUserGames: jest.fn(),
   getUserFriends: jest.fn(),
+  getPatterns: jest.fn(),
   blockUser: jest.fn(),
   unblockUser: jest.fn(),
 }));
@@ -51,6 +54,15 @@ describe('UserProfile', () => {
     games = [makeGameSummary({ id: 'their-game' })],
     friends = [makeUserFriend({ id: 'their-friend', username: 'zsuzsa' })],
     activity: ActivityDay[] = [],
+    patterns: {
+      games: {
+        gameId: string;
+        color: 'w' | 'b';
+        endedAt: null;
+        digest: SideDigest;
+      }[];
+      badges: Record<string, number>;
+    } = { games: [], badges: {} },
   ) {
     (useAuthSession as jest.Mock).mockReturnValue(
       makeAuthSession({ user: { isGuest: false } }),
@@ -60,6 +72,7 @@ describe('UserProfile', () => {
     (getUserActivity as jest.Mock).mockResolvedValue(activity);
     (getUserGames as jest.Mock).mockResolvedValue(games);
     (getUserFriends as jest.Mock).mockResolvedValue(friends);
+    (getPatterns as jest.Mock).mockResolvedValue(patterns);
     const navigation = {
       navigate: jest.fn(),
       push: jest.fn(),
@@ -431,5 +444,119 @@ describe('UserProfile', () => {
       await fireEvent.press(blocked.screen.getByTestId('profile-unblock'));
       expect(unblockUser).toHaveBeenCalledWith('judit', 'access-token');
     });
+  });
+
+  describe('patterns and badges', () => {
+    const SELF = { status: 'self' as const, requestId: null };
+    const digest = (overrides: Partial<SideDigest> = {}): SideDigest => ({
+      v: 1,
+      accuracy: 80,
+      result: 'loss',
+      opening: 'Sicilian Defense',
+      moves: 30,
+      missedTactics: 1,
+      slips: [
+        {
+          ply: 20,
+          mark: '??',
+          facts: ['hangs'],
+          phase: 'middlegame',
+          clockShare: 0.5,
+        },
+      ],
+      accuracyByClock: { plenty: 85, short: 62 },
+      badges: [],
+      ...overrides,
+    });
+    const game = (d: SideDigest) => ({
+      gameId: 'g',
+      color: 'w' as const,
+      endedAt: null,
+      digest: d,
+    });
+
+    it('shows your own patterns, and practises what you keep missing', async () => {
+      const { screen, navigation } = await renderScreen(
+        makeUserProfile({ friendship: SELF }),
+        makeSocial(),
+        [],
+        [],
+        [],
+        { games: [game(digest()), game(digest())], badges: {} },
+      );
+
+      expect(screen.getByTestId('profile-patterns')).toHaveTextContent(
+        /From your last 2 reviewed games/,
+      );
+      expect(screen.getByTestId('patterns-weakest')).toHaveTextContent(
+        /You keep missing hanging pieces/,
+      );
+      expect(
+        screen.getByTestId('patterns-hanging-middlegame'),
+      ).toHaveTextContent('2');
+      expect(screen.getByTestId('patterns-clock')).toHaveTextContent(
+        /85% with time to spare, 62% when short of it/,
+      );
+      expect(screen.getByTestId('patterns-openings')).toHaveTextContent(
+        /Sicilian Defense\s*0W 0D 2L/,
+      );
+
+      await fireEvent.press(screen.getByTestId('patterns-practise'));
+      expect(navigation.navigate).toHaveBeenCalledWith('Puzzle', {
+        deck: { deck: 'pool', theme: 'hangingPiece' },
+      });
+    });
+
+    it('shows your badges, with those still to earn', async () => {
+      const { screen } = await renderScreen(
+        makeUserProfile({ friendship: SELF }),
+        makeSocial(),
+        [],
+        [],
+        [],
+        { games: [], badges: { comeback: 3 } },
+      );
+
+      expect(screen.queryByTestId('profile-patterns')).toBeNull();
+      expect(
+        screen.getByTestId('badge-shelf-comeback-count'),
+      ).toHaveTextContent('×3');
+      expect(screen.getByTestId('badge-shelf-swindle-count')).toHaveTextContent(
+        '-',
+      );
+    });
+
+    it('shows only the badges someone else has earned, and none of their patterns', async () => {
+      const { screen } = await renderScreen(
+        makeUserProfile(),
+        makeSocial(),
+        [],
+        [],
+        [],
+        { games: [], badges: { clean: 1 } },
+      );
+
+      expect(screen.getByTestId('badge-shelf-clean')).toBeTruthy();
+      expect(screen.queryByTestId('badge-shelf-swindle')).toBeNull();
+      expect(screen.queryByTestId('profile-patterns')).toBeNull();
+    });
+
+    it('leaves the badges out for someone with none', async () => {
+      const { screen } = await renderScreen(makeUserProfile());
+
+      expect(screen.queryByTestId('badge-shelf')).toBeNull();
+    });
+  });
+
+  it('lists their puzzle rating under the game ratings', async () => {
+    const { screen } = await renderScreen(
+      makeUserProfile({
+        puzzleRating: { rating: 1610, attempts: 1, provisional: true },
+      }),
+    );
+
+    expect(screen.getByTestId('rating-puzzles')).toHaveTextContent(
+      /Puzzles\s*1 puzzle\s*1610\?/,
+    );
   });
 });

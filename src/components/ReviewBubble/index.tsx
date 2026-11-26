@@ -17,6 +17,8 @@ interface ReviewBubbleProps {
   title?: string;
   // The position's score, as the eval bar shows it.
   score?: string | null;
+  // A tag after the title - "Only move", "Hard to find".
+  tag?: string | null;
   // The words - an idea worth knowing marked *like this*, underlined.
   text: string;
   // A line of moves to show under them - the one played out on the board -
@@ -49,6 +51,7 @@ const ReviewBubble: React.FC<ReviewBubbleProps> = ({
   icon,
   title,
   score,
+  tag = null,
   text,
   line,
   lineAt = null,
@@ -85,6 +88,11 @@ const ReviewBubble: React.FC<ReviewBubbleProps> = ({
               >
                 {title}
               </Text>
+            )}
+            {tag && (
+              <View style={styles.tag} testID={`${testID}-tag`}>
+                <Text style={styles.tagText}>{tag}</Text>
+              </View>
             )}
             {score && (
               <View style={styles.score}>
@@ -133,6 +141,17 @@ export default ReviewBubble;
 const COACH_SIZE = 40;
 
 const useStyles = makeStyles((t) => ({
+  tag: {
+    paddingHorizontal: t.spacing.xs,
+    paddingVertical: t.spacing.xxs,
+    borderRadius: t.radius.xs,
+    backgroundColor: t.colors.accentSubtle,
+  },
+  tagText: {
+    color: t.colors.accentText,
+    fontSize: t.fontSize.xxs,
+    fontWeight: t.fontWeight.bold,
+  },
   // The coach at the top, beside the heading: a long comment grows down
   // over the board, and the coach stays clear of it.
   row: {

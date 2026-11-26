@@ -304,9 +304,15 @@ resign or abort from the app (see `examples/resign.yaml` /
   friends `profile-message` and `profile-remove-friend`, otherwise
   `profile-add-friend` / `profile-cancel-request` /
   `profile-accept-request`, `activity-list`, `profile-games-see-all`.
-  Its `rating-<category>` rows open the rating stats. Your own is the
+  Its `rating-<category>` rows open the rating stats; `rating-puzzles`,
+  the puzzle rating, opens nothing. Your own is the
   same screen, with none of those actions, and `profile-add-friends` on
-  its Friends section.
+  its Friends section. Below Friends: `badge-shelf` with
+  `badge-shelf-<kind>` and its `-count` (anyone's with a badge; your own
+  shows every kind) and, on your own with reviewed games,
+  `profile-patterns`: `patterns-weakest` with `patterns-practise` (opens
+  that theme's puzzles), `patterns-hanging-<phase>` (or
+  `patterns-hanging-none`), `patterns-clock`, `patterns-openings`.
 - **Rating stats**: `rating-stats-screen`, `rating-stats-rating`,
   `rating-stats-change` (the ▲/▼ points for the period), the period tabs
   `tab-1w` / `tab-1m` / `tab-3m` / `tab-1y` / `tab-all`, `rating-chart`
@@ -360,7 +366,20 @@ resign or abort from the app (see `examples/resign.yaml` /
   `analysis-settings-row`, `daily-game-settings-row`,
   `review-settings-row`, `licenses-row` -
   opens `licenses-screen`) and `sign-out-button`.
-- **Puzzles** (the tab): `puzzles-screen`, `puzzles-coming-soon`.
+- **Puzzles** (the tab): `puzzles-screen` - `puzzles-mine` with
+  `puzzles-mine-due` / `-learning` / `-mastered` and `puzzles-mine-start`
+  (or `puzzles-mine-none`), and `puzzles-practice` with `puzzle-rating`,
+  `puzzles-practice-start` and a `puzzle-theme-<theme>` chip a theme
+  (lichess's names: `puzzle-theme-mateIn1`); `puzzles-error`. A run
+  (`Puzzle`, over the tabs - no tab bar): `puzzle-loading`, then
+  `puzzle-screen` - `puzzle-prompt` ("White to move: find the best line.",
+  "Solved!", "Solved, with a hint.", "Rd7 isn't it."),
+  `puzzle-rating-change` (a pool puzzle, once tried), `review-board`,
+  `puzzle-next` (Next puzzle, once done), and `puzzle-toolbar`:
+  `puzzle-hint`, `puzzle-solution`, `puzzle-retry`, `puzzle-back`,
+  `puzzle-forward` - or `puzzle-done` / `puzzle-error` with a Back to
+  puzzles button. The e2e backend seeds pool
+  puzzles `e2emate1`-`5`: black plays a7-a6, then white's Rd1-d8 mates.
 - **Appearance**: `appearance-settings`, the radio buttons
   `color-scheme-<system|light|dark>`, and `board-theme-<name>` (`test` -
   the default blue - `green`, `wood`, `powderblue`,
@@ -423,7 +442,12 @@ resign or abort from the app (see `examples/resign.yaml` /
   `cchess-summary` in its place: `review-decisive` (tap: its move) with
   `review-decisive-text`, `review-chapter-<i>` (tap: the review starts
   there), `review-guess-tally`, `review-marks` with
-  `review-marks-<w|b>-<!!|!|?!|?|??>` and `review-accuracy-<w|b>`; and,
+  `review-marks-<w|b>-<!!|!|?!|?|??>`, `review-accuracy-<w|b>` and
+  `review-hardest-find`, `review-badges` with `review-badge-<kind>`,
+  `momentum-rope` with `momentum-replay` (Replay, or Stop while it
+  plays), `momentum-knot` and `momentum-caption`, and
+  `review-share` beside `review-start` (the off-screen
+  `review-share-card` it captures); and,
   for a live game, `review-time` with `time-graph`
   (`time-graph-bar-<i>`, `time-graph-cursor`). Stepping in it,
   `review-chapter-strip` ("Chapter 2 of 4 · Move 14") sits over the move
@@ -431,7 +455,8 @@ resign or abort from the app (see `examples/resign.yaml` /
   pieces movable, and `review-next` reads Reveal (Continue once found).
   Stepping
   (`game-review-stepping`): `eval-bar`, `review-bubble` with
-  `-title`, `-score`, `-text`, `-line` (`-line-current`, the move of
+  `-title`, `-tag` (cchess: "Hard to find", "Only move"), `-score`,
+  `-text`, `-line` (`-line-current`, the move of
   Show's line on the board); `review-board` with
   `square-badge-<square>` and `move-class-<class>` marks (also in the
   move list); `review-back` / `review-forward` beside the `move-list`;

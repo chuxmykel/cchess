@@ -5,7 +5,7 @@ import GameTypeIcon from '../GameTypeIcon';
 import Icon from '../Icon';
 import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import { GameType } from '../../domain/types';
-import { UserRating } from '../../network/restClient';
+import { UserProfile, UserRating } from '../../network/restClient';
 import { formatRating } from '../../utils/rating';
 import { makeStyles, useTheme } from '../../theme';
 
@@ -13,6 +13,9 @@ interface RatingsListProps {
   ratings: UserRating[];
   /** Makes each rated category's row open its stats. */
   onSelect?: (category: GameType) => void;
+  /** Their puzzle rating, a last row that opens nothing - there are no
+   * stats for it yet. Left out, there's no row. */
+  puzzleRating?: UserProfile['puzzleRating'];
 }
 
 const CATEGORIES: GameType[] = [
@@ -27,7 +30,15 @@ function gamesPlayedLabel(gamesPlayed: number): string {
   return gamesPlayed === 1 ? '1 game' : `${gamesPlayed} games`;
 }
 
-const RatingsList: React.FC<RatingsListProps> = ({ ratings, onSelect }) => {
+function puzzlesLabel(attempts: number): string {
+  return attempts === 1 ? '1 puzzle' : `${attempts} puzzles`;
+}
+
+const RatingsList: React.FC<RatingsListProps> = ({
+  ratings,
+  onSelect,
+  puzzleRating,
+}) => {
   const styles = useStyles();
   const { colors } = useTheme();
   return (
@@ -65,6 +76,28 @@ const RatingsList: React.FC<RatingsListProps> = ({ ratings, onSelect }) => {
           </Fragment>
         );
       })}
+      {puzzleRating !== undefined && (
+        <>
+          <View style={styles.divider} />
+          <View style={styles.row} testID="rating-puzzles">
+            <Icon name="puzzle" size={18} color={colors.accent} />
+            <Text style={styles.category}>Puzzles</Text>
+            <Text style={styles.gamesPlayed}>
+              {puzzleRating
+                ? puzzlesLabel(puzzleRating.attempts)
+                : 'No puzzles yet'}
+            </Text>
+            <Text style={styles.rating}>
+              {puzzleRating
+                ? formatRating(puzzleRating.rating, puzzleRating.provisional)
+                : '—'}
+            </Text>
+            {onSelect && (
+              <Icon name="chevron-right" size={18} color="transparent" />
+            )}
+          </View>
+        </>
+      )}
     </View>
   );
 };

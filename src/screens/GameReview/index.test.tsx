@@ -9,6 +9,9 @@ import {
 } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { captureRef } from 'react-native-view-shot';
+import { shareAsync } from 'expo-sharing';
+
 import GameReview from '.';
 import { REVIEW_FACT_MS } from '../../constants/review';
 import { EngineContext, EngineStatus } from '../../context/EngineContext';
@@ -37,6 +40,8 @@ jest.mock('../../network/restClient', () => ({
   getGame: jest.fn(),
   getGameReview: jest.fn(),
   saveGameReview: jest.fn(() => Promise.resolve({})),
+  saveReviewDigests: jest.fn(() => Promise.resolve()),
+  addMyPuzzles: jest.fn(() => Promise.resolve(0)),
 }));
 
 // 1. e4 e5 2. Ba6?? bxa6 - white, me, blunders a bishop.
@@ -708,6 +713,32 @@ describe('GameReview', () => {
         'Chapter 2 of 3 · Move 2',
       );
       expect(screen.getByTestId('move-4')).toBeTruthy();
+    });
+
+    it('shares a picture of the decisive moment', async () => {
+      const { screen } = await renderCchess();
+      expect(screen.getByTestId('review-share-card')).toHaveTextContent(
+        /Decided at move 2.*White · \d+\.\d% accuracy/,
+      );
+
+      // The sheet open until it's closed: Share says so meanwhile.
+      let closeSheet: () => void = () => {};
+      (shareAsync as jest.Mock).mockImplementationOnce(
+        () => new Promise<void>((resolve) => (closeSheet = resolve)),
+      );
+      await fireEvent.press(screen.getByTestId('review-share'));
+      await act(async () => {});
+
+      expect(captureRef).toHaveBeenCalled();
+      expect(shareAsync).toHaveBeenCalledWith(
+        'file:///tmp/card.png',
+        expect.objectContaining({ mimeType: 'image/png' }),
+      );
+      expect(screen.getByTestId('review-share')).toHaveTextContent('Sharing…');
+      expect(screen.getByTestId('review-share')).toBeDisabled();
+
+      await act(async () => closeSheet());
+      expect(screen.getByTestId('review-share')).toHaveTextContent('Share');
     });
 
     it('starts the review at a chapter tapped', async () => {

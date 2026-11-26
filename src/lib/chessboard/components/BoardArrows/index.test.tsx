@@ -41,4 +41,16 @@ describe('BoardArrows', () => {
       y1: 75,
     });
   });
+
+  it('draws a dashed arrow in dashes, a plain one solid', async () => {
+    const screen = await render(
+      <BoardArrows
+        arrows={[arrow, { ...arrow, from: 'g1', to: 'f3', dashed: true }]}
+        boardWidth={boardWidth}
+      />,
+    );
+
+    expect(screen.getByTestId('arrow-e2e4').props.strokeDasharray).toBeFalsy();
+    expect(screen.getByTestId('arrow-g1f3').props.strokeDasharray).toBeTruthy();
+  });
 });

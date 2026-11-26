@@ -26,7 +26,7 @@ export function moveTimes(clock: ReviewClock, colors: Color[]): number[] {
 }
 
 // The mover's time left before each move.
-function timeLeftBefore(clock: ReviewClock, colors: Color[]): number[] {
+export function timeLeftBefore(clock: ReviewClock, colors: Color[]): number[] {
   const left: Record<Color, number> = {
     w: clock.initialMs,
     b: clock.initialMs,

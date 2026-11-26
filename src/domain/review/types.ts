@@ -86,9 +86,13 @@ export type ReviewedMove = {
   uci: string;
   fenBefore: string;
   fenAfter: string;
-  // Best play's score before the move, and the score the move left.
+  // Best play's score before the move, and the score the move left - and
+  // the next best move's, for how hard the best was to find.
   scoreBefore: EngineScore;
   scoreAfter: EngineScore;
+  secondScore: EngineScore | null;
+  // Taking back on the square the opponent just took on.
+  isRecapture: boolean;
   // The best move here, and its line, in UCI - and the line that answered
   // the move played.
   bestLine: string[];

@@ -17,6 +17,9 @@ const HEAD_LENGTH = 2.4;
 const HEAD_HALF_WIDTH = 0.55;
 // The tip stops this far short of the square's centre, as on lichess.
 const TIP_INSET = 0.1;
+// A dashed arrow's dashes and gaps, as many times the shaft's thickness.
+const DASH = 1.2;
+const DASH_GAP = 0.8;
 
 function arrowShape(arrow: BoardArrow, square: number, orientation: Color) {
   const centre = (at: Square) => {
@@ -83,7 +86,12 @@ const BoardArrows: React.FC<BoardArrowsProps> = ({
               y2={shape.base.y}
               stroke={arrow.color}
               strokeWidth={shape.stroke}
-              strokeLinecap="round"
+              strokeLinecap={arrow.dashed ? 'butt' : 'round'}
+              strokeDasharray={
+                arrow.dashed
+                  ? [shape.stroke * DASH, shape.stroke * DASH_GAP]
+                  : undefined
+              }
               testID={`arrow-${arrow.from}${arrow.to}`}
             />
             <Polygon points={shape.head} fill={arrow.color} />
