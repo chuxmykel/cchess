@@ -307,12 +307,22 @@ resign or abort from the app (see `examples/resign.yaml` /
   Its `rating-<category>` rows open the rating stats; `rating-puzzles`,
   the puzzle rating, opens nothing. Your own is the
   same screen, with none of those actions, and `profile-add-friends` on
-  its Friends section. Below Friends: `badge-shelf` with
-  `badge-shelf-<kind>` and its `-count` (anyone's with a badge; your own
-  shows every kind) and, on your own with reviewed games,
-  `profile-patterns`: `patterns-weakest` with `patterns-practise` (opens
-  that theme's puzzles), `patterns-hanging-<phase>` (or
-  `patterns-hanging-none`), `patterns-clock`, `patterns-openings`.
+  its Friends section. Below Friends, on your own with reviewed games this month,
+  `profile-patterns` (`patterns-accuracy`, `patterns-weakest` with
+  `patterns-practise`, `patterns-clock`) under `profile-patterns-view-all`
+  (opening `patterns-screen`: the period tabs, `patterns-games`,
+  `-accuracy`, `-missed`, `-results-<w|b>`, `-trend`, `-phase-<phase>`,
+  `-mark-<glyph>`, `-converting`, `-saving`, `-slips-<phase>`,
+  `-theme-<theme>` with `patterns-practise-<theme>`, `-time-trouble`, or
+  `patterns-empty`); then `profile-badges-view-all` (opening
+  `badges-screen`: `badges-earned` and a tile a badge, `badges-<kind>` or
+  `badges-<gamesPlayed|ratingReached>-[<category>-]<value>`, with
+  `-count` and, yours unclaimed, `-new`) over `badge-shelf` with the same
+  tiles as `badge-shelf-...`, or on your own with none
+  `badge-shelf-empty`. A tile opens `badge-card` (`badge-card-title`,
+  `-earned`, `-games` with `badge-card-game-<gameId>`, and
+  `badge-card-claim` or `badge-card-close`) - the same card that comes up
+  when a badge is earned (`badge-card-new`).
 - **Rating stats**: `rating-stats-screen`, `rating-stats-rating`,
   `rating-stats-change` (the ▲/▼ points for the period), the period tabs
   `tab-1w` / `tab-1m` / `tab-3m` / `tab-1y` / `tab-all`, `rating-chart`
@@ -320,7 +330,11 @@ resign or abort from the app (see `examples/resign.yaml` /
   `category-stats` with `stats-games`, `stats-wins`, `stats-draws`,
   `stats-losses`, `stats-time-played`, `stats-best-win` /
   `stats-worst-loss` (open the game), `stats-win-streak`,
-  `stats-losing-streak`. The header title is `rating-category-picker`,
+  `stats-losing-streak` - or, for puzzles (`rating-puzzles` on a profile,
+  `rating-category-puzzles` in the header), `puzzle-stats` with
+  `puzzle-stats-attempts`, `-solved`, `-missed`, `-best-solve`,
+  `-solved-streak`, `-missed-streak`, `-strongest-themes` and
+  `-weakest-themes`. The header title is `rating-category-picker`,
   opening `rating-category-<category>` options.
 - **Messages** (the tab): `messages-screen`, `messages-search`,
   `online-friends` with `online-friend-<id>`, `conversation-list` with

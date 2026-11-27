@@ -251,18 +251,24 @@ lib/chessboard/  the board, written as a package of its own: outside the
       style's: `difficulty.ts` - how hard a good move was to find, from the
       gap to the next best (`ReviewedMove`'s `secondScore`): an only move,
       hard to find, or nothing said (forced, a recapture), and
-      `hardestFind`, the side's hardest; `badges.ts` - what a side's game
-      earned (`badgesOf`: a swindle, a comeback, a held draw, a clean game,
-      a sacrifice that worked), read off the winning chances and the
-      result, each bar in `thresholds.ts`.
+      `hardestFind`, the side's hardest; `domain/badges.ts` (outside `review/`) -
+      the badges, as the server awards them (see cchess-be's
+      `docs/features.md`, "Badges"): the 25 game badges' names,
+      descriptions and `BADGE_GROUPS`, the milestones (games played, a
+      rating line first crossed), the `Badge` an award comes as - with the
+      game that earned it - and the tiles the shelf and grid show
+      (`earnedTiles`, `allTiles`). The device decides none of them: a
+      review sends each move's class and what it did (`moveClassesOf` in
+      `useGameReview`), and the server's rules read those.
     - Across games: `digest.ts` - `reviewDigests`, each side's review in a
       few hundred bytes (accuracy, result, opening, each slip's mark, facts,
-      phase and clock, accuracy on the clock, badges), saved with the
-      review - the only part of it the server reads; `patterns.ts` -
-      `patternsOf`, a player's recent digests read for what keeps
-      happening (pieces left hanging by phase, accuracy short of time,
-      openings' results, `weakThemes` - the puzzle themes their slips come
-      down to); `missedTactics.ts` - `missedTactics(review, side)`, the
+      phase and clock, accuracy on the clock and by phase, the marks
+      counted, the highest and lowest winning chances after the book),
+      saved with the review; `patterns.ts` - `patternsOf`, a player's
+      digests over a period read for what keeps happening (accuracy, game
+      by game and by phase; marks a game; winning positions won and losing
+      ones saved; slips and pieces left hanging by phase; tactics missed
+      and `weakThemes`; the clock; results and openings by color); `missedTactics.ts` - `missedTactics(review, side)`, the
       wins and mates a side let go, as puzzles (the position, the engine's
       line cut to 5 plies and ending on the side's move, the themes).
   - `puzzles/` - `themes.ts`: lichess's puzzle themes the app offers, their
@@ -511,8 +517,13 @@ lib/chessboard/  the board, written as a package of its own: outside the
     themes your patterns suggest, reloaded each time the tab's shown) and
     `usePuzzleRun(deck)` (the pool's next puzzle, or your due ones in turn,
     and each result sent - the rating change back for a pool puzzle);
-    `usePlayerPatterns(username)` - a profile's patterns (yours only) and
-    badges.
+    `usePatterns(username, period)` - your patterns (the server sends no
+    one else's); `useBadges(username)` - a player's badges, and claiming
+    your own; `useBadgeAwards` - the badges to announce, one at a time:
+    those the server pushes as they're earned (`badge:awarded`) and those
+    not claimed when the app starts, held while a game's open
+    (`context/BadgeAwardsContext.tsx`, in `HomeStack`, with the card;
+    `useHoldBadgeCards` in `LiveGame` and `DailyGame`).
   - Friends and everything around them: `useSocial` (backs
     `SocialContext`: friends with their live status, friend requests,
     challenges and unread message counts, kept current from the
@@ -908,10 +919,14 @@ lib/chessboard/  the board, written as a package of its own: outside the
   `ActionList` row while they aren't in a game - and Message only to
   friends; your own - the same screen, opened from Home's avatar or the
   Menu - offers none of them. Its `RatingsList` rows
-  open `RatingStats` for that category (a last row, Puzzles, shows the
-  puzzle rating - the profile's `puzzleRating` - and opens nothing):
-  the rating with what it gained or lost over the period, a 1W/1M/3M/1Y/All
-  `SegmentedTabs`, the chart, and the two cards. Once a game is over,
+  open `RatingStats` for that category - a last row, Puzzles, the puzzle
+  rating (the profile's `puzzleRating`), once there is one: the rating with
+  what it gained or lost over the period, a 1W/1M/3M/1Y/All
+  `SegmentedTabs`, the chart, and the two cards - for puzzles
+  (`RatingCategory`, `constants/ratingCategories.ts`; `usePuzzleStats`)
+  `PuzzleStatsCard` in place of the games': tried, solved and missed, the
+  best solve, the streaks, and the strongest and weakest themes
+  (`themeStrengths`, of those tried at least 3 times). Once a game is over,
   the ☰ of `LiveGame` and `GameViewer` offers Analyse, opening
   `AnalysisBoard` at the move shown - the result card offers the game's
   review instead, whose header has its own. `Settings` (from the Menu)
@@ -936,9 +951,16 @@ lib/chessboard/  the board, written as a package of its own: outside the
   on the next Start of that theme (`network/puzzleProgressStorage.ts`, by
   account and theme, until it's tried); your own come back by themselves,
   still due. See cchess-be's `docs/features.md`, "Puzzles". A profile has
-  a Badges shelf (anyone's - your own shows those still to earn, faded)
-  and, on your own, Patterns (`PatternsCard`), whose Practise opens the
-  theme you keep missing.
+  a Badges shelf - a grid of the badges earned, the most first, then
+  milestones, the newest first, eight at most, a dot on yours not yet
+  claimed (on your own with none, how to earn them) - whose View All opens
+  `Badges`: every badge as a grid in its group, faded until earned, with
+  the next games milestone to reach. A tap opens its `BadgeCard`: what it's
+  for, when and how often it was earned, each game that earned it (opening
+  it), and Claim on your own while unclaimed - the same card announcing a
+  badge just earned. On your own, Patterns (`PatternsSummary`: the month's
+  accuracy, the theme you keep missing with Practise, the clock) whose View
+  All opens `Patterns`: those stats over a period (1W-All).
 
 - **Game review** - the `GameReview` screen (from a finished game's
   result card - `GameOverCard`'s `onReview`, "Game review" - or ☰
