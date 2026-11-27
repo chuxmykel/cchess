@@ -2,9 +2,9 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Color } from 'chess.js';
 
+import type { RatingCategory } from '../../constants/ratingCategories';
 import { Seek } from '../../constants/seek';
 import type { HomeTabsParamList } from '../HomeTabs/types';
-import { GameType } from '../../domain/types';
 import { AnalysisSource } from '../../hooks/useAnalysisSource';
 import { ExplorerLine } from '../../hooks/useExplorerLine';
 import type { ImportedReview } from '../../hooks/useGameReview';
@@ -67,7 +67,12 @@ export type HomeStackParamList = {
   /** Every daily game of yours in progress, and seeks still waiting. */
   DailyGamesList: undefined;
   /** A player's rating history and results in one category. */
-  RatingStats: { username: string; displayName: string; category: GameType };
+  /** A player's rating in one category - a game type, or puzzles. */
+  RatingStats: {
+    username: string;
+    displayName: string;
+    category: RatingCategory;
+  };
   SignIn: undefined;
   CreateAccount: undefined;
   /** Every setting, from the Menu tab. */

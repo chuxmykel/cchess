@@ -712,6 +712,42 @@ export async function getUserActivity(
   ).data;
 }
 
+/** A player's puzzle rating and their tries at pool puzzles over a period. */
+export type PuzzleStats = {
+  period: RatingPeriod;
+  /** The puzzle rating right now. */
+  rating: { rating: number; attempts: number; provisional: boolean };
+  /** The rating going into the period's first try, then each day's
+   * closing rating, oldest first. */
+  history: RatingPoint[];
+  highest: RatingPoint | null;
+  lowest: RatingPoint | null;
+  /** Points gained over the period, negative when lost. */
+  ratingChange: number | null;
+  attempts: number;
+  solved: number;
+  missed: number;
+  /** The highest-rated puzzle solved. */
+  bestSolve: { puzzleId: string; rating: number; at: string } | null;
+  longestSolvedStreak: number;
+  longestMissedStreak: number;
+  /** Each theme tried - lichess's names - the most tried first. */
+  themes: { theme: string; attempts: number; solved: number }[];
+};
+
+export async function getPuzzleStats(
+  username: string,
+  period: RatingPeriod,
+  accessToken: string,
+): Promise<PuzzleStats> {
+  return (
+    await apiClient.get<PuzzleStats>(`${userPath(username)}/puzzles/stats`, {
+      ...bearer(accessToken),
+      params: { period },
+    })
+  ).data;
+}
+
 export async function getRatingStats(
   username: string,
   category: GameType,

@@ -7,20 +7,23 @@ import { makeStyles } from '../../theme';
 interface RatingHighLowCardProps {
   highest: RatingPoint | null;
   lowest: RatingPoint | null;
+  /** Said where there's no point: no rated games, say. */
+  emptyLabel?: string;
 }
 
 const HighLow: React.FC<{
   label: string;
   point: RatingPoint | null;
+  emptyLabel: string;
   testID: string;
-}> = ({ label, point, testID }) => {
+}> = ({ label, point, emptyLabel, testID }) => {
   const styles = useStyles();
   return (
     <View style={styles.half} testID={testID}>
       <Text style={styles.label}>{label}</Text>
       <Text style={styles.rating}>{point ? point.rating : '—'}</Text>
       <Text style={styles.date}>
-        {point ? format(parseISO(point.at), 'MMM d, yyyy') : 'No rated games'}
+        {point ? format(parseISO(point.at), 'MMM d, yyyy') : emptyLabel}
       </Text>
     </View>
   );
@@ -30,13 +33,24 @@ const HighLow: React.FC<{
 const RatingHighLowCard: React.FC<RatingHighLowCardProps> = ({
   highest,
   lowest,
+  emptyLabel = 'No rated games',
 }) => {
   const styles = useStyles();
   return (
     <View style={styles.card}>
-      <HighLow label="Highest rating" point={highest} testID="rating-highest" />
+      <HighLow
+        label="Highest rating"
+        point={highest}
+        emptyLabel={emptyLabel}
+        testID="rating-highest"
+      />
       <View style={styles.divider} />
-      <HighLow label="Lowest rating" point={lowest} testID="rating-lowest" />
+      <HighLow
+        label="Lowest rating"
+        point={lowest}
+        emptyLabel={emptyLabel}
+        testID="rating-lowest"
+      />
     </View>
   );
 };

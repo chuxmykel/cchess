@@ -2,8 +2,9 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 
 import RatingStats from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
-import { getRatingStats } from '../../network/restClient';
+import { getPuzzleStats, getRatingStats } from '../../network/restClient';
 import { makeAuthSession } from '../../testUtils/authSession';
+import { makePuzzleStats } from '../../testUtils/puzzleStats';
 import { makeRatingStats } from '../../testUtils/ratingStats';
 
 jest.mock('../../context/AuthSessionContext', () => ({
@@ -15,10 +16,11 @@ jest.mock('../../hooks/usePopoverMenu', () =>
 jest.mock('../../network/restClient', () => ({
   ...jest.requireActual('../../network/restClient'),
   getRatingStats: jest.fn(),
+  getPuzzleStats: jest.fn(),
 }));
 
 describe('RatingStats', () => {
-  async function renderScreen() {
+  async function renderScreen(category: string = 'blitz') {
     (useAuthSession as jest.Mock).mockReturnValue(makeAuthSession());
     const navigation = {
       navigate: jest.fn(),
@@ -34,7 +36,7 @@ describe('RatingStats', () => {
           params: {
             username: 'judit',
             displayName: 'Judit Polgar',
-            category: 'blitz',
+            category: category as never,
           },
         }}
       />,
@@ -182,5 +184,75 @@ describe('RatingStats', () => {
     await act(async () => refreshControl.props.onRefresh());
 
     expect(getRatingStats).toHaveBeenCalledTimes(2);
+  });
+
+  describe('puzzles', () => {
+    it('charts the puzzle rating, with the tries, solves and themes', async () => {
+      (getPuzzleStats as jest.Mock).mockResolvedValue(makePuzzleStats());
+
+      const { screen } = await renderScreen('puzzles');
+
+      expect(getPuzzleStats).toHaveBeenCalledWith(
+        'judit',
+        '1m',
+        'access-token',
+      );
+      expect(getRatingStats).not.toHaveBeenCalled();
+      expect(screen.getByText('Judit Polgar · Puzzles')).toBeTruthy();
+      expect(screen.getByTestId('rating-stats-rating')).toHaveTextContent(
+        '1588',
+      );
+      expect(screen.getByLabelText('Up 88 points')).toBeTruthy();
+      expect(screen.getByTestId('rating-chart')).toBeTruthy();
+      expect(screen.getByTestId('puzzle-stats-attempts')).toHaveTextContent(
+        '12',
+      );
+      expect(screen.getByTestId('puzzle-stats-solved')).toHaveTextContent(
+        /9\s*Solved · 75%/,
+      );
+      expect(screen.getByTestId('puzzle-stats-best-solve')).toHaveTextContent(
+        /Rated 1840/,
+      );
+      expect(
+        screen.getByTestId('puzzle-stats-strongest-themes'),
+      ).toHaveTextContent(/Forks · 100% of 6/);
+      expect(
+        screen.getByTestId('puzzle-stats-weakest-themes'),
+      ).toHaveTextContent(/Pins · 25% of 4/);
+    });
+
+    it('asks for another period from its tabs', async () => {
+      (getPuzzleStats as jest.Mock).mockResolvedValue(makePuzzleStats());
+      const { screen } = await renderScreen('puzzles');
+
+      await fireEvent.press(screen.getByTestId('tab-1y'));
+      await act(async () => {});
+
+      expect(getPuzzleStats).toHaveBeenLastCalledWith(
+        'judit',
+        '1y',
+        'access-token',
+      );
+    });
+
+    it('says when none were tried in all time', async () => {
+      (getPuzzleStats as jest.Mock).mockResolvedValue(
+        makePuzzleStats({
+          period: 'all',
+          history: [],
+          highest: null,
+          lowest: null,
+          ratingChange: null,
+        }),
+      );
+      const { screen } = await renderScreen('puzzles');
+
+      expect(screen.getByTestId('rating-chart-empty')).toHaveTextContent(
+        /No puzzles tried/,
+      );
+      expect(screen.getByTestId('rating-highest')).toHaveTextContent(
+        /No puzzles tried/,
+      );
+    });
   });
 });
