@@ -103,8 +103,11 @@ export function useReviewSession({
       ? { san: found.move.san, label: DIFFICULTY_LABELS[found.difficulty] }
       : null;
   }, [review, side]);
-  // What the game earned the side, as the server awarded it (cchess).
-  const badges = cchess ? game.badges[side] : NO_BADGES;
+  // What the game earned you, as the server awarded it (cchess) - yours
+  // whichever side's moves are reviewed, and none in a game you didn't
+  // play.
+  const badges =
+    cchess && viewerColor !== null ? game.badges[viewerColor] : NO_BADGES;
   const decisive = useMemo(
     () => decisiveMoment(review, names),
     [review, names],

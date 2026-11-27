@@ -74,7 +74,9 @@ async function renderReview({
   voice = false,
   params = { gameId: 'game-1' },
   style = 'classic',
+  reviewAs = 'me',
 }: {
+  reviewAs?: 'me' | 'white' | 'black';
   status?: EngineStatus;
   voice?: boolean;
   params?: { gameId: string } | { imported: ImportedReview };
@@ -82,7 +84,7 @@ async function renderReview({
 } = {}) {
   await AsyncStorage.setItem(
     'cchess.reviewSettings',
-    JSON.stringify({ voice, style }),
+    JSON.stringify({ voice, style, reviewAs }),
   );
   const main = makeFakeEngine();
   const threat = makeFakeEngine();
@@ -613,6 +615,38 @@ describe('GameReview', () => {
     beforeEach(() => (getGame as jest.Mock).mockResolvedValue(CLOCKED));
 
     const renderCchess = () => renderReview({ style: 'cchess' });
+
+    describe('its badges', () => {
+      // White, me, earned one; black another.
+      const BADGES = { w: ['comeback'], b: ['giantKiller'] };
+      beforeEach(() =>
+        (getGameReview as jest.Mock).mockResolvedValue({
+          ...STORED,
+          badges: BADGES,
+        }),
+      );
+
+      it("shows yours, whichever side's moves are reviewed", async () => {
+        const { screen } = await renderReview({
+          style: 'cchess',
+          reviewAs: 'black',
+        });
+
+        expect(screen.getByTestId('review-badge-comeback')).toBeTruthy();
+        expect(screen.queryByTestId('review-badge-giantKiller')).toBeNull();
+      });
+
+      it("shows none in a game you didn't play", async () => {
+        (getGame as jest.Mock).mockResolvedValue({
+          ...CLOCKED,
+          white: { ...CLOCKED.white, id: 'someone' },
+        });
+        const { screen } = await renderCchess();
+
+        expect(screen.getByTestId('cchess-summary')).toBeTruthy();
+        expect(screen.queryByTestId('review-badges')).toBeNull();
+      });
+    });
 
     it('opens on the decisive move, the chapters and the marks - no rating', async () => {
       const { screen } = await renderCchess();
