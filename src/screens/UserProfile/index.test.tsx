@@ -14,7 +14,6 @@ import {
   getUserGames,
   getPatterns,
   getBadges,
-  claimBadge,
   getUserProfile,
   UserProfile as Profile,
 } from '../../network/restClient';
@@ -47,7 +46,6 @@ jest.mock('../../network/restClient', () => ({
   getUserFriends: jest.fn(),
   getPatterns: jest.fn(),
   getBadges: jest.fn(),
-  claimBadge: jest.fn(),
   blockUser: jest.fn(),
   unblockUser: jest.fn(),
 }));
@@ -497,7 +495,6 @@ describe('UserProfile', () => {
       category: null,
       value: null,
       awardedAt: '2026-11-05T10:00:00.000Z',
-      claimedAt: null,
       ...overrides,
     });
 
@@ -530,7 +527,7 @@ describe('UserProfile', () => {
       });
     });
 
-    it('shows your badges, most earned first, then milestones; a tap opens the card to claim', async () => {
+    it('shows your badges, most earned first, then milestones; a tap opens the card', async () => {
       const mine = [
         badge({ id: 'm1', kind: 'gamesPlayed', value: 10, game: null }),
         badge({ id: 'c1', kind: 'clean' }),
@@ -547,12 +544,6 @@ describe('UserProfile', () => {
           },
         }),
       ];
-      (claimBadge as jest.Mock).mockImplementation((id: string) =>
-        Promise.resolve({
-          ...mine.find((b) => b.id === id),
-          claimedAt: '2026-11-06T00:00:00.000Z',
-        }),
-      );
       const { screen, navigation } = await renderScreen(
         makeUserProfile({ friendship: SELF }),
         makeSocial(),
@@ -567,7 +558,7 @@ describe('UserProfile', () => {
       expect(
         screen
           .getAllByTestId(/^badge-shelf-[a-z0-9-]+$/i)
-          .filter((t) => !/-(count|new|empty)$/.test(t.props.testID))
+          .filter((t) => !/-(count|empty)$/.test(t.props.testID))
           .map((t) => t.props.testID),
       ).toEqual([
         'badge-shelf-comeback',
@@ -577,7 +568,6 @@ describe('UserProfile', () => {
       expect(
         screen.getByTestId('badge-shelf-comeback-count'),
       ).toHaveTextContent('2');
-      expect(screen.getByTestId('badge-shelf-comeback-new')).toBeTruthy();
 
       await fireEvent.press(screen.getByTestId('badge-shelf-comeback'));
       expect(screen.getByTestId('badge-card-title')).toHaveTextContent(
@@ -586,11 +576,6 @@ describe('UserProfile', () => {
       expect(screen.getByTestId('badge-card-earned')).toHaveTextContent(
         /Earned 2 times/,
       );
-      await fireEvent.press(screen.getByTestId('badge-card-claim'));
-      await act(async () => {});
-      expect(claimBadge).toHaveBeenCalledWith('b1', 'access-token');
-      expect(claimBadge).toHaveBeenCalledWith('b2', 'access-token');
-      expect(screen.queryByTestId('badge-card-claim')).toBeNull();
 
       await fireEvent.press(screen.getByTestId('badge-card-game-game-1'));
       expect(navigation.navigate).toHaveBeenCalledWith('GameViewer', {
@@ -613,7 +598,7 @@ describe('UserProfile', () => {
       );
     });
 
-    it("shows someone else's badges, without Claim, and no patterns", async () => {
+    it("shows someone else's badges, and none of their patterns", async () => {
       const { screen } = await renderScreen(
         makeUserProfile(),
         makeSocial(),
@@ -624,9 +609,10 @@ describe('UserProfile', () => {
       );
 
       expect(screen.queryByTestId('profile-patterns')).toBeNull();
-      expect(screen.queryByTestId('badge-shelf-comeback-new')).toBeNull();
       await fireEvent.press(screen.getByTestId('badge-shelf-comeback'));
-      expect(screen.queryByTestId('badge-card-claim')).toBeNull();
+      expect(screen.getByTestId('badge-card-title')).toHaveTextContent(
+        'Comeback',
+      );
     });
 
     it('leaves the badges out for someone with none', async () => {

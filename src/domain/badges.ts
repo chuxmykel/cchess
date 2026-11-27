@@ -158,8 +158,6 @@ export type Badge = {
   /** A milestone's number: games played, or the rating crossed. */
   value: number | null;
   awardedAt: string;
-  /** When its owner claimed it - null until they do, and to anyone else. */
-  claimedAt: string | null;
 };
 
 export const isMilestone = (badge: Badge): boolean =>

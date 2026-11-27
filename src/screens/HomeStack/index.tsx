@@ -6,6 +6,8 @@ import {
 } from '@react-navigation/native-stack';
 
 import { AnalysisSettingsProvider } from '../../context/AnalysisSettingsContext';
+import { useAuthSession } from '../../context/AuthSessionContext';
+import { EarnedBadgesProvider } from '../../context/EarnedBadgesContext';
 import { DailyGameSettingsProvider } from '../../context/DailyGameSettingsContext';
 import { DailyGamePositionsProvider } from '../../context/DailyGamePositionsContext';
 import { ReviewSettingsProvider } from '../../context/ReviewSettingsContext';
@@ -20,7 +22,6 @@ import GameViewer from '../GameViewer';
 import AnalysisBoard from '../AnalysisBoard';
 import Puzzle from '../Puzzle';
 import Badges from '../Badges';
-import { BadgeAwardsProvider } from '../../context/BadgeAwardsContext';
 import Patterns from '../Patterns';
 import AnalysisSettings from '../AnalysisSettings';
 import DailyGameSettings from '../DailyGameSettings';
@@ -70,6 +71,15 @@ const HomeStack: React.FC = () => {
     [navigation],
   );
   useResumeActiveGame(openGame);
+  const session = useAuthSession();
+  const me = session.isReady ? session.user : null;
+  const seeAllBadges = useCallback(() => {
+    if (!me) return;
+    navigation.navigate('HomeStack', {
+      screen: 'Badges',
+      params: { username: me.username, displayName: me.displayName },
+    });
+  }, [navigation, me]);
 
   return (
     <ServerMaintenanceProvider>
@@ -78,14 +88,7 @@ const HomeStack: React.FC = () => {
           <DailyGameSettingsProvider>
             <DailyGamePositionsProvider>
               <ReviewSettingsProvider>
-                <BadgeAwardsProvider
-                  onOpenGame={(gameId) =>
-                    navigation.navigate('HomeStack', {
-                      screen: 'GameViewer',
-                      params: { gameId },
-                    })
-                  }
-                >
+                <EarnedBadgesProvider onSeeAll={seeAllBadges}>
                   <Navigator
                     id="HomeStack"
                     initialRouteName="HomeTabs"
@@ -361,7 +364,7 @@ const HomeStack: React.FC = () => {
                       })}
                     />
                   </Navigator>
-                </BadgeAwardsProvider>
+                </EarnedBadgesProvider>
                 <TermsPrompt />
               </ReviewSettingsProvider>
             </DailyGamePositionsProvider>

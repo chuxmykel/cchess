@@ -9,7 +9,6 @@ export const SHELF_SHOWN = 8;
 
 interface BadgeShelfProps {
   badges: Badge[];
-  isOwn: boolean;
   onOpen: (tile: BadgeTile) => void;
   // Said when there's nothing yet - on your own profile.
   emptyMessage?: string;
@@ -19,7 +18,6 @@ interface BadgeShelfProps {
 // most first, then milestones, the newest first.
 const BadgeShelf: React.FC<BadgeShelfProps> = ({
   badges,
-  isOwn,
   onOpen,
   emptyMessage,
 }) => {
@@ -40,7 +38,6 @@ const BadgeShelf: React.FC<BadgeShelfProps> = ({
         <BadgeTileView
           key={tile.key}
           tile={tile}
-          isOwn={isOwn}
           onPress={() => onOpen(tile)}
           testID={`badge-shelf-${tile.key.replace(/:+$/, '').replace(/:+/g, '-')}`}
         />

@@ -83,7 +83,7 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
   );
   const patterns =
     patternsState.status === 'ready' ? patternsState.patterns : null;
-  const { badges, reload: reloadBadges, claim } = useBadges(username);
+  const { badges, reload: reloadBadges } = useBadges(username);
   const [openBadgeKey, setOpenBadgeKey] = useState<string | null>(null);
   const openBadge =
     earnedTiles(badges).find((tile) => tile.key === openBadgeKey) ?? null;
@@ -438,7 +438,6 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
             </View>
             <BadgeShelf
               badges={badges}
-              isOwn={isSelf}
               onOpen={(tile) => setOpenBadgeKey(tile.key)}
               emptyMessage={
                 isSelf
@@ -504,7 +503,6 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
       </ScrollView>
       <BadgeCard
         tile={openBadge}
-        onClaim={isSelf ? (ids) => claim(ids).catch(() => {}) : undefined}
         onOpenGame={(gameId) => {
           setOpenBadgeKey(null);
           navigation.navigate('GameViewer', { gameId });

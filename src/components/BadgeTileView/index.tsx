@@ -7,19 +7,15 @@ import { makeStyles } from '../../theme';
 // Three to a row on a phone, wide enough for the longest name in a line.
 export const TILE_WIDTH = 92;
 
-// One badge in a grid: its mark - faded until earned - its name, how many
-// times when more than once, and a dot while one of yours waits to be
-// claimed. A tap opens its card.
+// One badge in a grid: its mark - faded until earned - its name, and how
+// many times when more than once. A tap opens its card.
 const BadgeTileView: React.FC<{
   tile: BadgeTile;
-  // Yours: unclaimed ones are marked new.
-  isOwn?: boolean;
   onPress: () => void;
   testID: string;
-}> = ({ tile, isOwn = false, onPress, testID }) => {
+}> = ({ tile, onPress, testID }) => {
   const styles = useStyles();
   const earned = tile.awards.length > 0;
-  const isNew = isOwn && tile.awards.some((badge) => !badge.claimedAt);
   return (
     <Pressable
       style={styles.tile}
@@ -37,7 +33,6 @@ const BadgeTileView: React.FC<{
             <Text style={styles.countText}>{tile.awards.length}</Text>
           </View>
         )}
-        {isNew && <View style={styles.new} testID={`${testID}-new`} />}
       </View>
       <Text
         style={[styles.label, !earned && styles.unearnedLabel]}
@@ -80,16 +75,5 @@ const useStyles = makeStyles((t) => ({
     fontSize: t.fontSize.xs,
     fontWeight: t.fontWeight.bold,
     color: t.colors.background,
-  },
-  new: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: t.colors.background,
-    backgroundColor: t.colors.danger,
   },
 }));

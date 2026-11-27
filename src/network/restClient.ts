@@ -1251,20 +1251,6 @@ export async function getBadges(
   ).data;
 }
 
-/** Claims a badge of your own, shown you. */
-export async function claimBadge(
-  id: string,
-  accessToken: string,
-): Promise<Badge> {
-  return (
-    await apiClient.post<Badge>(
-      `/badges/${encodeURIComponent(id)}/claim`,
-      undefined,
-      bearer(accessToken),
-    )
-  ).data;
-}
-
 /** A puzzle from the pool - lichess's: `fen` before the opponent's move,
  * `moves` that move and then the solution. */
 export type PoolPuzzle = {

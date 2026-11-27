@@ -2,7 +2,7 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 
 import Badges from '.';
 import { useAuthSession } from '../../context/AuthSessionContext';
-import { claimBadge, getBadges } from '../../network/restClient';
+import { getBadges } from '../../network/restClient';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { makeBadge } from '../../testUtils/badges';
 import { withSafeArea } from '../../testUtils/safeArea';
@@ -13,7 +13,6 @@ jest.mock('../../context/AuthSessionContext', () => ({
 jest.mock('../../network/restClient', () => ({
   ...jest.requireActual('../../network/restClient'),
   getBadges: jest.fn(),
-  claimBadge: jest.fn(),
 }));
 
 describe('Badges', () => {
@@ -59,34 +58,22 @@ describe('Badges', () => {
     expect(screen.getByText('Checkmates')).toBeTruthy();
   });
 
-  it('opens a badge card: its games, and Claim on your own', async () => {
+  it('opens a badge card with its games, and closes it', async () => {
     (getBadges as jest.Mock).mockResolvedValue([makeBadge()]);
-    (claimBadge as jest.Mock).mockResolvedValue(
-      makeBadge({ claimedAt: '2026-11-06T00:00:00.000Z' }),
-    );
     const { screen, navigation } = await renderBadges();
 
     await fireEvent.press(screen.getByTestId('badges-comeback'));
     expect(screen.getByTestId('badge-card-games')).toHaveTextContent(
       /Won vs Magnus/,
     );
-    await fireEvent.press(screen.getByTestId('badge-card-claim'));
-    await act(async () => {});
-    expect(claimBadge).toHaveBeenCalledWith('badge-1', 'access-token');
-    expect(screen.getByTestId('badge-card-close')).toBeTruthy();
-
     await fireEvent.press(screen.getByTestId('badge-card-game-game-1'));
     expect(navigation.navigate).toHaveBeenCalledWith('GameViewer', {
       gameId: 'game-1',
     });
-  });
-
-  it("never offers Claim on someone else's", async () => {
-    (getBadges as jest.Mock).mockResolvedValue([makeBadge()]);
-    const { screen } = await renderBadges('judit');
 
     await fireEvent.press(screen.getByTestId('badges-comeback'));
-    expect(screen.queryByTestId('badge-card-claim')).toBeNull();
+    await fireEvent.press(screen.getByTestId('badge-card-close'));
+    expect(screen.queryByTestId('badge-card')).toBeNull();
   });
 
   it('opens a badge not earned yet, saying so', async () => {

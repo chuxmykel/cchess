@@ -4,7 +4,6 @@ import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import BadgeCard from '../../components/BadgeCard';
 import BadgeTileView from '../../components/BadgeTileView';
 import SectionHeader from '../../components/SectionHeader';
-import { useAuthSession } from '../../context/AuthSessionContext';
 import { allTiles, type BadgeTile, earnedCount } from '../../domain/badges';
 import { useBadges } from '../../hooks/useBadges';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
@@ -13,21 +12,18 @@ import type { HomeStackScreenProps } from '../HomeStack/types';
 
 // Every badge there is, for one player, as a grid in its groups: the
 // milestones reached - and the next games one to reach - then each group's
-// badges, earned or faded. A tap opens a badge's card: the games that
-// earned it, and on your own, Claim while it's unclaimed.
+// badges, earned or faded. A tap opens a badge's card: what it's for, and
+// the games that earned it.
 const Badges: React.FC<HomeStackScreenProps<'Badges'>> = ({
   navigation,
   route,
 }) => {
   const styles = useStyles();
   const { username } = route.params;
-  const session = useAuthSession();
-  const isOwn = session.isReady && session.user.username === username;
-  const { badges, reload, claim } = useBadges(username);
+  const { badges, reload } = useBadges(username);
   const refresh = usePullToRefresh(reload);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const groups = allTiles(badges);
-  // The card shows the badge as it now stands - claimed, once it is.
   const open: BadgeTile | null =
     groups
       .flatMap((group) => group.tiles)
@@ -55,7 +51,6 @@ const Badges: React.FC<HomeStackScreenProps<'Badges'>> = ({
                 <BadgeTileView
                   key={tile.key}
                   tile={tile}
-                  isOwn={isOwn}
                   onPress={() => setOpenKey(tile.key)}
                   testID={`badges-${tile.key.replace(/:+$/, '').replace(/:+/g, '-')}`}
                 />
@@ -66,7 +61,6 @@ const Badges: React.FC<HomeStackScreenProps<'Badges'>> = ({
       </ScrollView>
       <BadgeCard
         tile={open}
-        onClaim={isOwn ? (ids) => claim(ids).catch(() => {}) : undefined}
         onOpenGame={(gameId) => {
           setOpenKey(null);
           navigation.navigate('GameViewer', { gameId });

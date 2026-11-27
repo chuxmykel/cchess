@@ -15,7 +15,6 @@ export function makeBadge(overrides: Partial<Badge> = {}): Badge {
     category: null,
     value: null,
     awardedAt: '2026-11-05T10:00:00.000Z',
-    claimedAt: null,
     ...overrides,
   };
 }

@@ -15,20 +15,20 @@ import {
   useGameSnapshot,
 } from '../../hooks/useGameSnapshot';
 import { useAuthSession } from '../../context/AuthSessionContext';
+import { useHoldEarnedBadges } from '../../context/EarnedBadgesContext';
 import { HomeStackParamList } from '../HomeStack/types';
 import { OnlineChessGameProvider } from '../../context/LiveGame/OnlineChessGameContext';
 import LiveGameContent from './LiveGameContent';
 import SeekingContent from './SeekingContent';
-import { useHoldBadgeCards } from '../../context/BadgeAwardsContext';
 
 type LiveGameProps = NativeStackScreenProps<HomeStackParamList, 'LiveGame'>;
 
 const LiveGame: React.FC<LiveGameProps> = ({ navigation, route }) => {
-  // A badge earned meanwhile is announced once the game's left.
-  useHoldBadgeCards();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const authSession = useAuthSession();
+  // The badges its games earn show once you've left.
+  useHoldEarnedBadges();
   const isAuthReady = authSession.isReady;
   const socket = isAuthReady ? authSession.socket : null;
   const toast = useToast();

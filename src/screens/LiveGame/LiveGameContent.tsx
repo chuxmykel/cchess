@@ -50,6 +50,8 @@ import {
   reviewAction,
 } from '../gameMenuActions';
 import EarlierPositionOverlay from './EarlierPositionOverlay';
+import { useGameBadges } from '../../hooks/useGameBadges';
+import { useReportEarnedBadges } from '../../context/EarnedBadgesContext';
 
 export type LiveGameContentNavigation = Pick<
   NativeStackNavigationProp<HomeStackParamList, 'LiveGame'>,
@@ -250,6 +252,8 @@ const LiveGameContent: React.FC<LiveGameContentProps> = ({
   });
 
   const myPlayer = playerOf(snapshot, myColor);
+  // The badges the game earned you, shown once you've left the game.
+  useReportEarnedBadges(useGameBadges(snapshot.id, gameStatus === 'completed'));
   useGameFinishedEvent({
     isGameOver,
     gameStatus,
