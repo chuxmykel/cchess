@@ -110,9 +110,11 @@ lib/chessboard/  the board, written as a package of its own: outside the
   - `castlingSquares.ts` - castling rook from/to squares.
   - `kingInDanger.ts` - `kingInDanger(fen, defeated)`: the king a board
     marks in danger - the side that lost the game, however it lost,
-    fallen; or else the side to move's king in check, fallen only on mate
-    - for the boards to make it glow red and tip over (the board's `check`).
-      `players.ts`' `defeatedColor(result)` gives the side that lost.
+    fallen (a game's own screens pass it: `LiveGame`, `DailyGame`,
+    `GameViewer`); or else the side to move's king in check, fallen only on
+    mate - all the review and analysis boards ever show - for the boards to
+    make it glow red and tip over (the board's `check`).
+    `players.ts`' `defeatedColor(result)` gives the side that lost.
   - `material.ts` - `capturedMaterial(fen, moves)`: every piece each side
     has captured, from the moves, least valuable first, and the score - how far ahead in
     material, counted on the board so promotions count - for the side
@@ -518,12 +520,10 @@ lib/chessboard/  the board, written as a package of its own: outside the
     `usePuzzleRun(deck)` (the pool's next puzzle, or your due ones in turn,
     and each result sent - the rating change back for a pool puzzle);
     `usePatterns(username, period)` - your patterns (the server sends no
-    one else's); `useBadges(username)` - a player's badges, and claiming
-    your own; `useBadgeAwards` - the badges to announce, one at a time:
-    those the server pushes as they're earned (`badge:awarded`) and those
-    not claimed when the app starts, held while a game's open
-    (`context/BadgeAwardsContext.tsx`, in `HomeStack`, with the card;
-    `useHoldBadgeCards` in `LiveGame` and `DailyGame`).
+    one else's); `useBadges(username)` - a player's badges;
+    `useGameBadges(gameId, isOver)` - those a finished game earned you:
+    fetched once it's over, and those the server pushes as it ends
+    (`badge:awarded`), handed to `EarnedBadgesContext`.
   - Friends and everything around them: `useSocial` (backs
     `SocialContext`: friends with their live status, friend requests,
     challenges and unread message counts, kept current from the
@@ -619,7 +619,9 @@ lib/chessboard/  the board, written as a package of its own: outside the
   - `AnalysisSettingsContext.tsx` - wraps `useAnalysisSettings`, mounted
     in `HomeStack`, so the analysis board and the settings screen over it
     share one set. `ReviewSettingsContext.tsx` does the same for
-    `useReviewSettings`.
+    `useReviewSettings`. `EarnedBadgesContext.tsx` - the card of the
+    badges a game earned, mounted in `HomeStack` and shown once the game's
+    screen is left.
   - `EngineContext.tsx` - `EngineProvider`, mounted in `App.tsx`, and
     `useEngine()`: the analysis engine for the whole app, started while a
     screen uses it (downloading its files the first time, with progress),
@@ -952,13 +954,17 @@ lib/chessboard/  the board, written as a package of its own: outside the
   account and theme, until it's tried); your own come back by themselves,
   still due. See cchess-be's `docs/features.md`, "Puzzles". A profile has
   a Badges shelf - a grid of the badges earned, the most first, then
-  milestones, the newest first, eight at most, a dot on yours not yet
-  claimed (on your own with none, how to earn them) - whose View All opens
-  `Badges`: every badge as a grid in its group, faded until earned, with
-  the next games milestone to reach. A tap opens its `BadgeCard`: what it's
-  for, when and how often it was earned, each game that earned it (opening
-  it), and Claim on your own while unclaimed - the same card announcing a
-  badge just earned. On your own, Patterns (`PatternsSummary`: the month's
+  milestones, the newest first, eight at most (on your own with none, how
+  to earn them) - whose View All opens `Badges`: every badge as a grid in
+  its group, faded until earned, with the next games milestone to reach. A
+  tap opens its `BadgeCard`, a card over the screen: what it's for, when
+  and how often it was earned, and each game that earned it (opening it).
+  A game's own show in a card of their own (`EarnedBadgesCard`, with See
+  all badges) once you've left its screen - not on the result card, nor
+  while you play on: `EarnedBadgesContext`, in `HomeStack`, is held back
+  by `LiveGame` and `DailyGame` (`useHoldEarnedBadges`) while open, their
+  games reporting what they earned (`useReportEarnedBadges`). Nothing to
+  claim; ✕ or a tap outside puts it away. On your own, Patterns (`PatternsSummary`: the month's
   accuracy, the theme you keep missing with Practise, the clock) whose View
   All opens `Patterns`: those stats over a period (1W-All).
 

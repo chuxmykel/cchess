@@ -317,12 +317,14 @@ resign or abort from the app (see `examples/resign.yaml` /
   `patterns-empty`); then `profile-badges-view-all` (opening
   `badges-screen`: `badges-earned` and a tile a badge, `badges-<kind>` or
   `badges-<gamesPlayed|ratingReached>-[<category>-]<value>`, with
-  `-count` and, yours unclaimed, `-new`) over `badge-shelf` with the same
+  `-count`) over `badge-shelf` with the same
   tiles as `badge-shelf-...`, or on your own with none
   `badge-shelf-empty`. A tile opens `badge-card` (`badge-card-title`,
-  `-earned`, `-games` with `badge-card-game-<gameId>`, and
-  `badge-card-claim` or `badge-card-close`) - the same card that comes up
-  when a badge is earned (`badge-card-new`).
+  `-earned`, `-games` with `badge-card-game-<gameId>`, `badge-card-close`,
+  and `badge-card-backdrop` around it). Leaving a finished game's screen
+  shows what it earned in `earned-badges-card` (`earned-badges-title`,
+  `earned-badge-<kind>`, `earned-badges-see-all`, `earned-badges-close`,
+  `earned-badges-backdrop`).
 - **Rating stats**: `rating-stats-screen`, `rating-stats-rating`,
   `rating-stats-change` (the ▲/▼ points for the period), the period tabs
   `tab-1w` / `tab-1m` / `tab-3m` / `tab-1y` / `tab-all`, `rating-chart`
