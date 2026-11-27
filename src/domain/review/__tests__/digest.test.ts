@@ -1,4 +1,3 @@
-import { badgesOf } from '../badges';
 import { reviewDigests, sideDigest } from '../digest';
 import { patternsOf } from '../patterns';
 import {
@@ -8,59 +7,8 @@ import {
   makeReviewedMove as move,
 } from '../../../testUtils/reviewedMove';
 
-// A game of white's - scores after each move, from white's side.
-function gameOf(after: number[], extra: Parameters<typeof move>[1][] = []) {
-  return makeReview(
-    after.map((score, i) => move(i, { after: score, ...(extra[i] ?? {}) })),
-    { scores: [cp(0), ...after.map(cp)] },
-  );
-}
-
-describe('badgesOf', () => {
-  it('calls a game all but lost and not lost a swindle', () => {
-    const review = gameOf([0, -900, -900, 500]);
-    expect(badgesOf(review, 'w', 'white')).toContain('swindle');
-    expect(badgesOf(review, 'w', 'draw')).toContain('swindle');
-    expect(badgesOf(review, 'w', 'black')).not.toContain('swindle');
-  });
-
-  it('calls a win from a losing position a comeback, a draw one held', () => {
-    const review = gameOf([0, -300, -300, 400]);
-    expect(badgesOf(review, 'w', 'white')).toEqual(['comeback']);
-    expect(badgesOf(review, 'w', 'draw')).toEqual(['heldDraw']);
-  });
-
-  it('calls an accurate game with no ? or ?? clean, long enough', () => {
-    const long = makeReview(
-      Array.from({ length: 40 }, (_, i) => move(i)),
-      { scores: [cp(0)] },
-    );
-    expect(badgesOf(long, 'w', 'draw')).toContain('clean');
-
-    const slipped = makeReview(
-      Array.from({ length: 40 }, (_, i) =>
-        move(i, { moveClass: i === 10 ? 'mistake' : 'good' }),
-      ),
-      { scores: [cp(0)] },
-    );
-    expect(badgesOf(slipped, 'w', 'draw')).not.toContain('clean');
-    expect(
-      badgesOf(makeReview([move(0)], { scores: [cp(0)] }), 'w', 'draw'),
-    ).not.toContain('clean');
-  });
-
-  it('marks a sacrifice that won', () => {
-    const review = makeReview(
-      [move(0, { facts: [{ kind: 'sacrifice', piece: 'knight' }] })],
-      { scores: [cp(0)] },
-    );
-    expect(badgesOf(review, 'w', 'white')).toContain('sacrifice');
-    expect(badgesOf(review, 'w', 'draw')).not.toContain('sacrifice');
-  });
-});
-
 describe('digest', () => {
-  it("boils a side's review down: its slips by phase and clock, missed tactics, badges", () => {
+  it("boils a side's review down: its slips by phase and clock, missed tactics", () => {
     const review = makeReview(
       [
         move(0, { moveClass: 'book' }),
@@ -103,6 +51,7 @@ describe('digest', () => {
         clockShare: 0.8,
       },
     ]);
+    expect(digest).not.toHaveProperty('badges');
     expect(Object.keys(reviewDigests(review, 'black', null))).toEqual([
       'w',
       'b',
@@ -110,6 +59,41 @@ describe('digest', () => {
     expect(
       sideDigest(review, 'w', 'black', null).slips[0].clockShare,
     ).toBeNull();
+  });
+});
+
+describe('digest: the figures patterns read', () => {
+  it('averages accuracy by phase, counts the marks and the chances after the book', () => {
+    const review = makeReview(
+      [
+        move(0, { moveClass: 'book', accuracy: 100 }),
+        move(1, { moveClass: 'book' }),
+        // Out of the book: white +300, then black's slip lets in +900.
+        move(2, { moveClass: 'great', accuracy: 98, after: 300 }),
+        move(3, { moveClass: 'mistake', after: 900 }),
+        move(4, {
+          moveClass: 'blunder',
+          accuracy: 20,
+          fen: ENDGAME,
+          after: -400,
+        }),
+      ],
+      { scores: [cp(0)] },
+    );
+
+    const white = sideDigest(review, 'w', 'black', null);
+    // Ten moves either side of the book still count as the opening.
+    expect(white.accuracyByPhase).toEqual({
+      opening: 72.7,
+      middlegame: null,
+      endgame: null,
+    });
+    expect(white.marks).toEqual({ '!!': 0, '!': 1, '?!': 0, '?': 0, '??': 1 });
+    expect(white.chances.high).toBeGreaterThan(90);
+    expect(white.chances.low).toBeLessThan(35);
+    const black = sideDigest(review, 'b', 'black', null);
+    expect(black.marks['?']).toBe(1);
+    expect(black.chances.low).toBeLessThan(10);
   });
 });
 
@@ -139,7 +123,15 @@ describe('patternsOf', () => {
     expect(patterns.slipsByPhase.opening).toBe(2);
     expect(patterns.weakThemes).toEqual([{ theme: 'fork', count: 2 }]);
     expect(patterns.openings).toEqual([
-      { name: 'Four Knights Game', games: 2, wins: 0, draws: 0, losses: 2 },
+      {
+        name: 'Four Knights Game',
+        color: 'w',
+        games: 2,
+        wins: 0,
+        draws: 0,
+        losses: 2,
+        accuracy: 90,
+      },
     ]);
   });
 

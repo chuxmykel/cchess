@@ -5,7 +5,7 @@ import { Color, Square } from 'chess.js';
 import AppLogo from '../AppLogo';
 import BadgeIcon from '../BadgeIcon';
 import { PositionBoard } from '../Board';
-import { BADGE_LABELS, type BadgeKind } from '../../domain/review/badges';
+import { BADGE_LABELS, type GameBadgeKind } from '../../domain/badges';
 import {
   COLOR_THEMES,
   fontSize,
@@ -31,7 +31,7 @@ interface ReviewShareCardProps {
   // The side reviewed: its name and accuracy.
   name: string;
   accuracy: number;
-  badge: BadgeKind | null;
+  badge: GameBadgeKind | null;
 }
 
 // A review's best moment, as a picture to share: the decisive move on a

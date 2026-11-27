@@ -54,4 +54,18 @@ describe('RatingCategoryPicker', () => {
 
     expect(onSelect).not.toHaveBeenCalled();
   });
+
+  it('offers puzzles too, with their own name', async () => {
+    const onSelect = jest.fn();
+    const screen = await render(
+      <RatingCategoryPicker category="puzzles" onSelect={onSelect} />,
+    );
+
+    expect(screen.getByTestId('rating-category-picker')).toHaveTextContent(
+      /Puzzle rating/,
+    );
+    expect(screen.getByTestId('rating-category-puzzles')).toBeSelected();
+    await fireEvent.press(screen.getByTestId('rating-category-blitz'));
+    expect(onSelect).toHaveBeenCalledWith('blitz');
+  });
 });

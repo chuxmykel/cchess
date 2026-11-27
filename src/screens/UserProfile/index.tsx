@@ -20,6 +20,7 @@ import { format, parseISO } from 'date-fns';
 
 import ActionList, { ActionListItem } from '../../components/ActionList';
 import ActivityList from '../../components/ActivityList';
+import BadgeCard from '../../components/BadgeCard';
 import BadgeShelf from '../../components/BadgeShelf';
 import Avatar from '../../components/Avatar';
 import BotTag from '../../components/BotTag';
@@ -27,7 +28,7 @@ import Button from '../../components/Button';
 import ChallengeSheet from '../../components/ChallengeSheet';
 import EmptyState from '../../components/EmptyState';
 import Placeholder from '../../components/Placeholder';
-import PatternsCard from '../../components/PatternsCard';
+import PatternsSummary from '../../components/PatternsSummary';
 import ProfileFriends from '../../components/ProfileFriends';
 import RatingsList from '../../components/RatingsList';
 import GameRow from '../../components/RecentGamesList/GameRow';
@@ -40,7 +41,9 @@ import { usePagedGames } from '../../hooks/usePagedGames';
 import { usePullToRefresh } from '../../hooks/usePullToRefresh';
 import { useToast } from '../../hooks/useToast';
 import { useUserFriends } from '../../hooks/useUserFriends';
-import { usePlayerPatterns } from '../../hooks/usePlayerPatterns';
+import { earnedTiles } from '../../domain/badges';
+import { useBadges } from '../../hooks/useBadges';
+import { usePatterns } from '../../hooks/usePatterns';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { getUserGames, GamesPage, UserProfile } from '../../network/restClient';
 import { presenceLabel } from '../../utils/presence';
@@ -72,11 +75,18 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
   const { state, reload: reloadProfile } = useUserProfile(username);
   const { state: friendsState, reload: reloadFriends } =
     useUserFriends(username);
-  const {
-    patterns,
-    badges,
-    reload: reloadPatterns,
-  } = usePlayerPatterns(username);
+  // Your own patterns, over the last month - the server sends no one
+  // else's.
+  const { state: patternsState, reload: reloadPatterns } = usePatterns(
+    username,
+    '1m',
+  );
+  const patterns =
+    patternsState.status === 'ready' ? patternsState.patterns : null;
+  const { badges, reload: reloadBadges } = useBadges(username);
+  const [openBadgeKey, setOpenBadgeKey] = useState<string | null>(null);
+  const openBadge =
+    earnedTiles(badges).find((tile) => tile.key === openBadgeKey) ?? null;
   const reload = useCallback(() => {
     reloadProfile();
     reloadFriends();
@@ -103,6 +113,7 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
     reloadProfile,
     reloadFriends,
     reloadPatterns,
+    reloadBadges,
     recentGames.reload,
   );
   // The username goes in the header only once the avatar block showing it
@@ -388,9 +399,18 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
         {isSelf && patterns && (
           <>
             <View style={styles.section}>
-              <SectionHeader title="Patterns" />
+              <SectionHeader
+                title="Patterns"
+                actionLabel="View All"
+                onActionPress={() =>
+                  navigation.navigate('Patterns', {
+                    username: profile.username,
+                  })
+                }
+                testID="profile-patterns-view-all"
+              />
             </View>
-            <PatternsCard
+            <PatternsSummary
               patterns={patterns}
               onPractise={(theme) =>
                 navigation.navigate('Puzzle', {
@@ -401,12 +421,30 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
           </>
         )}
 
-        {(isSelf || Object.values(badges).some((count) => count > 0)) && (
+        {(isSelf || badges.length > 0) && (
           <>
             <View style={styles.section}>
-              <SectionHeader title="Badges" />
+              <SectionHeader
+                title="Badges"
+                actionLabel="View All"
+                onActionPress={() =>
+                  navigation.navigate('Badges', {
+                    username: profile.username,
+                    displayName: profile.displayName,
+                  })
+                }
+                testID="profile-badges-view-all"
+              />
             </View>
-            <BadgeShelf badges={badges} showUnearned={isSelf} />
+            <BadgeShelf
+              badges={badges}
+              onOpen={(tile) => setOpenBadgeKey(tile.key)}
+              emptyMessage={
+                isSelf
+                  ? 'Play and review your games to earn badges.'
+                  : undefined
+              }
+            />
           </>
         )}
 
@@ -463,6 +501,14 @@ const UserProfileScreen: React.FC<UserProfileProps> = ({
           )}
         </View>
       </ScrollView>
+      <BadgeCard
+        tile={openBadge}
+        onOpenGame={(gameId) => {
+          setOpenBadgeKey(null);
+          navigation.navigate('GameViewer', { gameId });
+        }}
+        onClose={() => setOpenBadgeKey(null)}
+      />
       <ChallengeSheet
         opponentName={friendActions.challengeTarget?.displayName ?? null}
         canPlayRated={friendActions.canPlayRated}

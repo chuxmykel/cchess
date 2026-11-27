@@ -6,8 +6,8 @@ import { PositionBoard } from '../Board';
 import {
   BADGE_DESCRIPTIONS,
   BADGE_LABELS,
-  type BadgeKind,
-} from '../../domain/review/badges';
+  type GameBadgeKind,
+} from '../../domain/badges';
 import {
   MARK_CLASSES,
   MARK_GLYPHS,
@@ -32,7 +32,7 @@ interface CchessReviewSummaryProps {
   // The side's hardest find: its move, and how hard ("Only move").
   hardest?: { san: string; label: string } | null;
   // What the game earned the side reviewed.
-  badges?: BadgeKind[];
+  badges?: GameBadgeKind[];
   // A tap on the decisive moment goes to its move; on a chapter, starts the
   // review there.
   onSelectMove: (index: number) => void;

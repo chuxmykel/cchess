@@ -55,3 +55,44 @@ const FACT_THEMES: Partial<Record<MoveFact['kind'], PuzzleTheme>> = {
 export function themeOfFact(kind: MoveFact['kind']): PuzzleTheme | null {
   return FACT_THEMES[kind] ?? null;
 }
+
+/** Tries at a theme before it's said to be one of your strongest or
+ * weakest. */
+export const THEME_STRENGTH_MIN_ATTEMPTS = 3;
+const STRENGTHS_SHOWN = 3;
+
+export type ThemeRecord = { theme: string; attempts: number; solved: number };
+export type ThemeStrength = {
+  theme: PuzzleTheme;
+  attempts: number;
+  solved: number;
+  // The share solved, 0 to 1.
+  rate: number;
+};
+
+/** Your strongest and weakest of the app's themes - those tried often
+ * enough - by the share solved, the more tried first on a tie: the better
+ * half the strongest, the rest the weakest, the worst first; at most a few
+ * of each. */
+export function themeStrengths(records: ThemeRecord[]): {
+  strongest: ThemeStrength[];
+  weakest: ThemeStrength[];
+} {
+  const known = records
+    .filter(
+      (record): record is ThemeRecord & { theme: PuzzleTheme } =>
+        (PUZZLE_THEMES as readonly string[]).includes(record.theme) &&
+        record.attempts >= THEME_STRENGTH_MIN_ATTEMPTS,
+    )
+    .map((record) => ({ ...record, rate: record.solved / record.attempts }))
+    .sort((a, b) => b.rate - a.rate || b.attempts - a.attempts);
+  const strongest = known.slice(
+    0,
+    Math.min(STRENGTHS_SHOWN, Math.ceil(known.length / 2)),
+  );
+  const weakest = known
+    .slice(strongest.length)
+    .reverse()
+    .slice(0, STRENGTHS_SHOWN);
+  return { strongest, weakest };
+}

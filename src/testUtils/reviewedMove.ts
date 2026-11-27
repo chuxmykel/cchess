@@ -26,6 +26,8 @@ export function makeReviewedMove(
     after = before,
     second = null,
     fen = MIDGAME,
+    fenAfter = fen,
+    san = `M${index + 1}`,
     accuracy = 90,
     best = false,
     facts = [],
@@ -41,6 +43,9 @@ export function makeReviewedMove(
     // The next best move's score, from white's side.
     second?: number | null;
     fen?: string;
+    // The position after it - the one before, unless given.
+    fenAfter?: string;
+    san?: string;
     accuracy?: number;
     // The move played was the engine's own.
     best?: boolean;
@@ -55,10 +60,10 @@ export function makeReviewedMove(
   return {
     ply: index + 1,
     color,
-    san: `M${index + 1}`,
+    san,
     uci,
     fenBefore: fen,
-    fenAfter: fen,
+    fenAfter,
     scoreBefore: cp(before),
     scoreAfter: cp(after),
     secondScore: second === null ? null : cp(second),

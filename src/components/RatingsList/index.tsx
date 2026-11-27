@@ -3,6 +3,7 @@ import { Pressable, View, Text, StyleSheet } from 'react-native';
 
 import GameTypeIcon from '../GameTypeIcon';
 import Icon from '../Icon';
+import type { RatingCategory } from '../../constants/ratingCategories';
 import { GAME_TYPE_LABELS } from '../../constants/timeControls';
 import { GameType } from '../../domain/types';
 import { UserProfile, UserRating } from '../../network/restClient';
@@ -11,10 +12,10 @@ import { makeStyles, useTheme } from '../../theme';
 
 interface RatingsListProps {
   ratings: UserRating[];
-  /** Makes each rated category's row open its stats. */
-  onSelect?: (category: GameType) => void;
-  /** Their puzzle rating, a last row that opens nothing - there are no
-   * stats for it yet. Left out, there's no row. */
+  /** Makes each rated category's row open its stats - puzzles too. */
+  onSelect?: (category: RatingCategory) => void;
+  /** Their puzzle rating, a last row - opening its stats once there's a
+   * rating. Left out, there's no row. */
   puzzleRating?: UserProfile['puzzleRating'];
 }
 
@@ -79,7 +80,15 @@ const RatingsList: React.FC<RatingsListProps> = ({
       {puzzleRating !== undefined && (
         <>
           <View style={styles.divider} />
-          <View style={styles.row} testID="rating-puzzles">
+          <Pressable
+            style={styles.row}
+            onPress={
+              puzzleRating && onSelect ? () => onSelect('puzzles') : undefined
+            }
+            disabled={!puzzleRating || !onSelect}
+            accessibilityRole={puzzleRating && onSelect ? 'button' : undefined}
+            testID="rating-puzzles"
+          >
             <Icon name="puzzle" size={18} color={colors.accent} />
             <Text style={styles.category}>Puzzles</Text>
             <Text style={styles.gamesPlayed}>
@@ -93,9 +102,13 @@ const RatingsList: React.FC<RatingsListProps> = ({
                 : '—'}
             </Text>
             {onSelect && (
-              <Icon name="chevron-right" size={18} color="transparent" />
+              <Icon
+                name="chevron-right"
+                size={18}
+                color={puzzleRating ? colors.textMuted : 'transparent'}
+              />
             )}
-          </View>
+          </Pressable>
         </>
       )}
     </View>

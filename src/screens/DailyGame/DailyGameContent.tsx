@@ -53,6 +53,8 @@ import {
   reviewAction,
 } from '../gameMenuActions';
 import EarlierPositionOverlay from '../LiveGame/EarlierPositionOverlay';
+import { useGameBadges } from '../../hooks/useGameBadges';
+import { useReportEarnedBadges } from '../../context/EarnedBadgesContext';
 
 // A daily game's clock counts days and minutes - it needs no more than a
 // tick a second.
@@ -362,6 +364,8 @@ const DailyGameContent: React.FC<DailyGameContentProps> = ({
   });
 
   const myPlayer = playerOf(snapshot, myColor);
+  // The badges the game earned you, shown once you've left the game.
+  useReportEarnedBadges(useGameBadges(snapshot.id, gameStatus === 'completed'));
   const myRatingDiff = ratingDiffOf(
     { whiteRatingDiff, blackRatingDiff },
     myColor,

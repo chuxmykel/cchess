@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Color } from 'chess.js';
 
 import { ReviewSettings } from '../constants/review';
-import { badgesOf } from '../domain/review/badges';
+import type { GameBadgeKind } from '../domain/badges';
 import { DIFFICULTY_LABELS, hardestFind } from '../domain/review/difficulty';
 import {
   formatSpent,
@@ -26,6 +26,8 @@ import {
 import { useRetryJudge } from './useRetryJudge';
 import { useReviewStepper } from './useReviewStepper';
 import { useReviewVoice } from './useReviewVoice';
+
+const NO_BADGES: GameBadgeKind[] = [];
 
 export type ReviewSessionInput = {
   game: ReviewedGame;
@@ -101,10 +103,11 @@ export function useReviewSession({
       ? { san: found.move.san, label: DIFFICULTY_LABELS[found.difficulty] }
       : null;
   }, [review, side]);
-  const badges = useMemo(
-    () => (cchess ? badgesOf(review, side, game.result) : []),
-    [cchess, review, side, game.result],
-  );
+  // What the game earned you, as the server awarded it (cchess) - yours
+  // whichever side's moves are reviewed, and none in a game you didn't
+  // play.
+  const badges =
+    cchess && viewerColor !== null ? game.badges[viewerColor] : NO_BADGES;
   const decisive = useMemo(
     () => decisiveMoment(review, names),
     [review, names],

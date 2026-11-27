@@ -17,6 +17,10 @@ import { boardTester } from '../../components/Board/boardTester';
 import { settleAnimations } from '../../testUtils/pieceGestures';
 import { makeChallenge, makeSocial } from '../../testUtils/social';
 
+// The badges a game earned come from the server: none here.
+jest.mock('../../hooks/useGameBadges', () => ({
+  useGameBadges: () => [],
+}));
 jest.mock('../../components/ConnectionStrengthIndicator', () =>
   jest.requireActual('../../testUtils/ConnectionStrengthIndicatorStub'),
 );

@@ -12,6 +12,7 @@ import { useAuthSession } from '../context/AuthSessionContext';
 import { useEngineWhen } from '../context/EngineContext';
 import type { ImportedGame, ImportedPlayer } from '../domain/pgnImport';
 import { buildReview } from '../domain/review/buildReview';
+import type { GameBadgeKind } from '../domain/badges';
 import { reviewDigests } from '../domain/review/digest';
 import { missedTactics } from '../domain/review/missedTactics';
 import { colorPlayedBy } from '../domain/players';
@@ -23,7 +24,6 @@ import {
   getGame,
   getGameReview,
   saveGameReview,
-  saveReviewDigests,
 } from '../network/restClient';
 import type { GameSnapshot, GameUserSummary } from '../network/socketEvents';
 import { useAppIsActive } from './useAppIsActive';
@@ -43,7 +43,23 @@ export type ReviewedGame = {
   black: GameUserSummary;
   result: GameSnapshot['result'];
   clock: ReviewClock | null;
+  // The badges the server awarded each side for this game, its review's
+  // included - none for a game brought in.
+  badges: Record<Color, GameBadgeKind[]>;
 };
+
+const NO_BADGES: Record<Color, GameBadgeKind[]> = { w: [], b: [] };
+
+// Each move's class and what it did, for the server's badges: a fact's
+// piece after a colon ("fork:knight").
+export function moveClassesOf(review: GameReview) {
+  return review.moves.map((move) => ({
+    moveClass: move.moveClass,
+    facts: move.facts.map((fact) =>
+      'piece' in fact ? `${fact.kind}:${fact.piece}` : fact.kind,
+    ),
+  }));
+}
 
 // A live game's clock, as the server recorded it; a daily game's is days.
 function clockOf(snapshot: GameSnapshot): ReviewClock | null {
@@ -103,8 +119,6 @@ type Loaded = {
   // anchored on - none for a guest.
   ratings: Record<Color, number | null>;
   stored: PositionEval[] | null;
-  // Whether the review kept already came with its digests.
-  storedDigests: boolean;
 };
 
 // What's been worked out of each game so far, by game and strength - so
@@ -238,6 +252,10 @@ export function useGameReview(
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
   const [failed, setFailed] = useState(false);
+  // The badges the server awarded once the review was saved.
+  const [awarded, setAwarded] = useState<Record<Color, GameBadgeKind[]> | null>(
+    null,
+  );
 
   const retry = useCallback(() => {
     setFailed(false);
@@ -268,6 +286,7 @@ export function useGameReview(
             black: fetched.black,
             result: fetched.result,
             clock: clockOf(fetched),
+            badges: stored?.badges ?? NO_BADGES,
           },
           startFen: DEFAULT_POSITION,
           positions,
@@ -277,7 +296,6 @@ export function useGameReview(
             stored && stored.evals.length === positions.length
               ? stored.evals
               : null,
-          storedDigests: !!stored?.digests,
         });
       })
       .catch(() => {
@@ -312,10 +330,14 @@ export function useGameReview(
             digests: loaded
               ? reviewDigests(built, loaded.game.result, loaded.game.clock)
               : undefined,
+            moveClasses: moveClassesOf(built),
           },
           token,
         ),
-      ).catch(() => {});
+      )
+        // The badges the review earned, awarded by the server.
+        .then((saved) => setAwarded(saved.badges ?? null))
+        .catch(() => {});
     },
     [authorized, gameId, strength, loaded],
   );
@@ -327,24 +349,14 @@ export function useGameReview(
     save,
   );
 
-  // Once the review's ready: the digests of one kept without them, and the
-  // tactics the player missed, kept to practise - each sent once, and
-  // nothing lost if it fails (the next look sends it again).
+  // Once the review's ready: the tactics the player missed, kept to
+  // practise - sent once, and nothing lost if it fails (the next look sends
+  // them again).
   const ready = analysis.review;
   const sentFor = useRef<GameReview | null>(null);
   useEffect(() => {
     if (!loaded || !ready || unavailable || sentFor.current === ready) return;
     sentFor.current = ready;
-    if (loaded.stored && !loaded.storedDigests) {
-      const digests = reviewDigests(
-        ready,
-        loaded.game.result,
-        loaded.game.clock,
-      );
-      authorized((token) => saveReviewDigests(gameId, digests, token)).catch(
-        () => {},
-      );
-    }
     const color = userId ? colorPlayedBy(loaded.game, userId) : null;
     const missed = color ? missedTactics(ready, color) : [];
     if (missed.length > 0) {
@@ -357,8 +369,14 @@ export function useGameReview(
   return useMemo((): GameReviewState => {
     if (failed) return { status: 'error', retry };
     if (!loaded) return { status: 'loading' };
-    return reviewState(loaded, unavailable, analysis);
-  }, [failed, retry, loaded, unavailable, analysis]);
+    return reviewState(
+      awarded
+        ? { ...loaded, game: { ...loaded.game, badges: awarded } }
+        : loaded,
+      unavailable,
+      analysis,
+    );
+  }, [failed, retry, loaded, unavailable, analysis, awarded]);
 }
 
 // A side of a game brought in, as a player: named by its tag, or by its
@@ -417,13 +435,13 @@ export function useImportedGameReview(
         black: importedPlayer(game.black, 'Black'),
         result: game.result,
         clock: null,
+        badges: NO_BADGES,
       },
       startFen,
       positions,
       uciMoves,
       ratings: { w: game.white.rating, b: game.black.rating },
       stored: null,
-      storedDigests: false,
     };
   }, [startFen, uciMoves, game, seed]);
   const unavailable = uciMoves.length === 0 ? 'no-moves' : null;

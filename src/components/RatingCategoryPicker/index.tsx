@@ -1,25 +1,21 @@
 import { Pressable, StyleSheet, Text, useWindowDimensions } from 'react-native';
 
-import GameTypeIcon from '../GameTypeIcon';
 import Icon from '../Icon';
 import Popover, { POPOVER_TRIGGER_HIT_SLOP } from '../Popover';
-import { GAME_TYPE_LABELS } from '../../constants/timeControls';
-import { GameType } from '../../domain/types';
+import RatingCategoryIcon from '../RatingCategoryIcon';
+import {
+  RATING_CATEGORIES,
+  type RatingCategory,
+  ratingCategoryLabel,
+} from '../../constants/ratingCategories';
 import { usePopoverMenu } from '../../hooks/usePopoverMenu';
 import { makeStyles, useTheme } from '../../theme';
 
 interface RatingCategoryPickerProps {
-  category: GameType;
-  onSelect: (category: GameType) => void;
+  category: RatingCategory;
+  onSelect: (category: RatingCategory) => void;
 }
 
-const CATEGORIES: GameType[] = [
-  'bullet',
-  'blitz',
-  'rapid',
-  'classical',
-  'daily',
-];
 const MENU_WIDTH = 180;
 
 /** The rating stats header's title: the category shown, opening a
@@ -41,7 +37,7 @@ const RatingCategoryPicker: React.FC<RatingCategoryPickerProps> = ({
     left: (windowWidth - MENU_WIDTH) / 2,
   };
 
-  function select(selected: GameType) {
+  function select(selected: RatingCategory) {
     close();
     if (selected !== category) onSelect(selected);
   }
@@ -57,8 +53,12 @@ const RatingCategoryPicker: React.FC<RatingCategoryPickerProps> = ({
         accessibilityHint="Switches to another category"
         testID="rating-category-picker"
       >
-        <GameTypeIcon type={category} />
-        <Text style={styles.title}>{GAME_TYPE_LABELS[category]} rating</Text>
+        <RatingCategoryIcon category={category} />
+        <Text style={styles.title}>
+          {category === 'puzzles'
+            ? 'Puzzle rating'
+            : `${ratingCategoryLabel(category)} rating`}
+        </Text>
         <Icon name="chevron-down" size={18} color={colors.textMuted} />
       </Pressable>
       <Popover
@@ -69,7 +69,7 @@ const RatingCategoryPicker: React.FC<RatingCategoryPickerProps> = ({
         contentStyle={styles.menu}
         testID="rating-category-menu"
       >
-        {CATEGORIES.map((each) => {
+        {RATING_CATEGORIES.map((each) => {
           const isSelected = each === category;
           return (
             <Pressable
@@ -80,11 +80,11 @@ const RatingCategoryPicker: React.FC<RatingCategoryPickerProps> = ({
               accessibilityState={{ selected: isSelected }}
               testID={`rating-category-${each}`}
             >
-              <GameTypeIcon type={each} />
+              <RatingCategoryIcon category={each} />
               <Text
                 style={[styles.optionLabel, isSelected && styles.selectedLabel]}
               >
-                {GAME_TYPE_LABELS[each]}
+                {ratingCategoryLabel(each)}
               </Text>
               {isSelected && (
                 <Icon name="check" size={18} color={colors.accent} />

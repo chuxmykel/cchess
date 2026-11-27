@@ -13,9 +13,11 @@ import {
   getUserFriends,
   getUserGames,
   getPatterns,
+  getBadges,
   getUserProfile,
   UserProfile as Profile,
 } from '../../network/restClient';
+import type { Badge } from '../../domain/badges';
 import type { SideDigest } from '../../domain/review/digest';
 import { makeAuthSession } from '../../testUtils/authSession';
 import { makeGameSummary } from '../../testUtils/gameSummary';
@@ -43,6 +45,7 @@ jest.mock('../../network/restClient', () => ({
   getUserGames: jest.fn(),
   getUserFriends: jest.fn(),
   getPatterns: jest.fn(),
+  getBadges: jest.fn(),
   blockUser: jest.fn(),
   unblockUser: jest.fn(),
 }));
@@ -54,15 +57,15 @@ describe('UserProfile', () => {
     games = [makeGameSummary({ id: 'their-game' })],
     friends = [makeUserFriend({ id: 'their-friend', username: 'zsuzsa' })],
     activity: ActivityDay[] = [],
-    patterns: {
-      games: {
+    extras: {
+      patternGames?: {
         gameId: string;
         color: 'w' | 'b';
         endedAt: null;
         digest: SideDigest;
       }[];
-      badges: Record<string, number>;
-    } = { games: [], badges: {} },
+      badges?: Badge[];
+    } = {},
   ) {
     (useAuthSession as jest.Mock).mockReturnValue(
       makeAuthSession({ user: { isGuest: false } }),
@@ -72,7 +75,10 @@ describe('UserProfile', () => {
     (getUserActivity as jest.Mock).mockResolvedValue(activity);
     (getUserGames as jest.Mock).mockResolvedValue(games);
     (getUserFriends as jest.Mock).mockResolvedValue(friends);
-    (getPatterns as jest.Mock).mockResolvedValue(patterns);
+    (getPatterns as jest.Mock).mockResolvedValue({
+      games: extras.patternGames ?? [],
+    });
+    (getBadges as jest.Mock).mockResolvedValue(extras.badges ?? []);
     const navigation = {
       navigate: jest.fn(),
       push: jest.fn(),
@@ -465,7 +471,9 @@ describe('UserProfile', () => {
         },
       ],
       accuracyByClock: { plenty: 85, short: 62 },
-      badges: [],
+      accuracyByPhase: { opening: 90, middlegame: 75, endgame: null },
+      marks: { '!!': 0, '!': 0, '?!': 1, '?': 0, '??': 1 },
+      chances: { high: 60, low: 30 },
       ...overrides,
     });
     const game = (d: SideDigest) => ({
@@ -474,71 +482,137 @@ describe('UserProfile', () => {
       endedAt: null,
       digest: d,
     });
+    const badge = (overrides: Partial<Badge> = {}): Badge => ({
+      id: 'b1',
+      kind: 'comeback',
+      game: {
+        gameId: 'game-1',
+        opponentUsername: 'magnus',
+        opponentDisplayName: 'Magnus',
+        result: 'win',
+        endedAt: '2026-11-05T10:00:00.000Z',
+      },
+      category: null,
+      value: null,
+      awardedAt: '2026-11-05T10:00:00.000Z',
+      ...overrides,
+    });
 
-    it('shows your own patterns, and practises what you keep missing', async () => {
+    it('sums up your month, practises what you keep missing, and opens the rest', async () => {
       const { screen, navigation } = await renderScreen(
         makeUserProfile({ friendship: SELF }),
         makeSocial(),
         [],
         [],
         [],
-        { games: [game(digest()), game(digest())], badges: {} },
+        { patternGames: [game(digest()), game(digest({ accuracy: 90 }))] },
       );
 
-      expect(screen.getByTestId('profile-patterns')).toHaveTextContent(
-        /From your last 2 reviewed games/,
-      );
+      expect(getPatterns).toHaveBeenCalledWith('judit', '1m', 'access-token');
+      expect(screen.getByTestId('patterns-accuracy')).toHaveTextContent('85%');
       expect(screen.getByTestId('patterns-weakest')).toHaveTextContent(
         /You keep missing hanging pieces/,
       );
-      expect(
-        screen.getByTestId('patterns-hanging-middlegame'),
-      ).toHaveTextContent('2');
       expect(screen.getByTestId('patterns-clock')).toHaveTextContent(
-        /85% with time to spare, 62% when short of it/,
-      );
-      expect(screen.getByTestId('patterns-openings')).toHaveTextContent(
-        /Sicilian Defense\s*0W 0D 2L/,
+        /drops by 23 points/,
       );
 
       await fireEvent.press(screen.getByTestId('patterns-practise'));
       expect(navigation.navigate).toHaveBeenCalledWith('Puzzle', {
         deck: { deck: 'pool', theme: 'hangingPiece' },
       });
+      await fireEvent.press(screen.getByTestId('profile-patterns-view-all'));
+      expect(navigation.navigate).toHaveBeenCalledWith('Patterns', {
+        username: 'judit',
+      });
     });
 
-    it('shows your badges, with those still to earn', async () => {
-      const { screen } = await renderScreen(
+    it('shows your badges, most earned first, then milestones; a tap opens the card', async () => {
+      const mine = [
+        badge({ id: 'm1', kind: 'gamesPlayed', value: 10, game: null }),
+        badge({ id: 'c1', kind: 'clean' }),
+        badge({ id: 'b1' }),
+        badge({
+          id: 'b2',
+          awardedAt: '2026-11-01T10:00:00.000Z',
+          game: {
+            gameId: 'game-2',
+            opponentUsername: 'hikaru',
+            opponentDisplayName: 'Hikaru',
+            result: 'win',
+            endedAt: '2026-11-01T10:00:00.000Z',
+          },
+        }),
+      ];
+      const { screen, navigation } = await renderScreen(
         makeUserProfile({ friendship: SELF }),
         makeSocial(),
         [],
         [],
         [],
-        { games: [], badges: { comeback: 3 } },
+        {
+          badges: mine,
+        },
       );
 
-      expect(screen.queryByTestId('profile-patterns')).toBeNull();
+      expect(
+        screen
+          .getAllByTestId(/^badge-shelf-[a-z0-9-]+$/i)
+          .filter((t) => !/-(count|empty)$/.test(t.props.testID))
+          .map((t) => t.props.testID),
+      ).toEqual([
+        'badge-shelf-comeback',
+        'badge-shelf-clean',
+        'badge-shelf-gamesPlayed-10',
+      ]);
       expect(
         screen.getByTestId('badge-shelf-comeback-count'),
-      ).toHaveTextContent('×3');
-      expect(screen.getByTestId('badge-shelf-swindle-count')).toHaveTextContent(
-        '-',
+      ).toHaveTextContent('2');
+
+      await fireEvent.press(screen.getByTestId('badge-shelf-comeback'));
+      expect(screen.getByTestId('badge-card-title')).toHaveTextContent(
+        'Comeback',
+      );
+      expect(screen.getByTestId('badge-card-earned')).toHaveTextContent(
+        /Earned 2 times/,
+      );
+
+      await fireEvent.press(screen.getByTestId('badge-card-game-game-1'));
+      expect(navigation.navigate).toHaveBeenCalledWith('GameViewer', {
+        gameId: 'game-1',
+      });
+      await fireEvent.press(screen.getByTestId('profile-badges-view-all'));
+      expect(navigation.navigate).toHaveBeenCalledWith('Badges', {
+        username: 'judit',
+        displayName: expect.any(String),
+      });
+    });
+
+    it('says how to earn badges on your own profile with none', async () => {
+      const { screen } = await renderScreen(
+        makeUserProfile({ friendship: SELF }),
+      );
+
+      expect(screen.getByTestId('badge-shelf-empty')).toHaveTextContent(
+        /Play and review your games/,
       );
     });
 
-    it('shows only the badges someone else has earned, and none of their patterns', async () => {
+    it("shows someone else's badges, and none of their patterns", async () => {
       const { screen } = await renderScreen(
         makeUserProfile(),
         makeSocial(),
         [],
         [],
         [],
-        { games: [], badges: { clean: 1 } },
+        { badges: [badge()] },
       );
 
-      expect(screen.getByTestId('badge-shelf-clean')).toBeTruthy();
-      expect(screen.queryByTestId('badge-shelf-swindle')).toBeNull();
       expect(screen.queryByTestId('profile-patterns')).toBeNull();
+      await fireEvent.press(screen.getByTestId('badge-shelf-comeback'));
+      expect(screen.getByTestId('badge-card-title')).toHaveTextContent(
+        'Comeback',
+      );
     });
 
     it('leaves the badges out for someone with none', async () => {

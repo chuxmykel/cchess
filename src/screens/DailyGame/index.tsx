@@ -11,6 +11,7 @@ import {
 } from '../../hooks/useGameSnapshot';
 import { useAuthSession } from '../../context/AuthSessionContext';
 import { useDailyGameSettingsContext } from '../../context/DailyGameSettingsContext';
+import { useHoldEarnedBadges } from '../../context/EarnedBadgesContext';
 import { OnlineChessGameProvider } from '../../context/LiveGame/OnlineChessGameContext';
 import { colorPlayedBy } from '../../domain/players';
 import { HomeStackParamList } from '../HomeStack/types';
@@ -29,6 +30,8 @@ const DailyGame: React.FC<DailyGameProps> = ({ navigation, route }) => {
   const toast = useToast();
   const snapshotResult = useGameSnapshot(socket, gameId);
   const { settings } = useDailyGameSettingsContext();
+  // The badges its games earn show once you've left.
+  useHoldEarnedBadges();
 
   function renderContent() {
     if (

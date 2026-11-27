@@ -3,7 +3,7 @@ import type { Color, Square } from 'chess.js';
 
 import type { LichessRating, LichessSpeed } from '../constants/explorer';
 import type { ReviewDigests, SideDigest } from '../domain/review/digest';
-import type { BadgeCounts } from '../domain/review/patterns';
+import type { Badge, GameBadgeKind } from '../domain/badges';
 import type { PositionEval } from '../domain/review/types';
 import { GameType } from '../domain/types';
 import { SERVER_URL } from './env';
@@ -414,6 +414,8 @@ export type StoredGameReview = {
   evals: PositionEval[];
   /** Each side's review boiled down - none until the app's sent them. */
   digests?: ReviewDigests | null;
+  /** The badges the game earned each side, its review's included. */
+  badges?: Record<Color, GameBadgeKind[]>;
   createdAt: string;
 };
 
@@ -444,7 +446,10 @@ export async function getGameReview(
  * already, which comes back instead. */
 export async function saveGameReview(
   gameId: string,
-  review: Omit<StoredGameReview, 'gameId' | 'createdAt'>,
+  review: Omit<StoredGameReview, 'gameId' | 'createdAt' | 'badges'> & {
+    /** Each move's class and what it did, for the server's badges. */
+    moveClasses?: { moveClass: string; facts: string[] }[];
+  },
   accessToken: string,
 ): Promise<StoredGameReview> {
   return (
@@ -709,6 +714,42 @@ export async function getUserActivity(
       `${userPath(username)}/activity`,
       bearer(accessToken),
     )
+  ).data;
+}
+
+/** A player's puzzle rating and their tries at pool puzzles over a period. */
+export type PuzzleStats = {
+  period: RatingPeriod;
+  /** The puzzle rating right now. */
+  rating: { rating: number; attempts: number; provisional: boolean };
+  /** The rating going into the period's first try, then each day's
+   * closing rating, oldest first. */
+  history: RatingPoint[];
+  highest: RatingPoint | null;
+  lowest: RatingPoint | null;
+  /** Points gained over the period, negative when lost. */
+  ratingChange: number | null;
+  attempts: number;
+  solved: number;
+  missed: number;
+  /** The highest-rated puzzle solved. */
+  bestSolve: { puzzleId: string; rating: number; at: string } | null;
+  longestSolvedStreak: number;
+  longestMissedStreak: number;
+  /** Each theme tried - lichess's names - the most tried first. */
+  themes: { theme: string; attempts: number; solved: number }[];
+};
+
+export async function getPuzzleStats(
+  username: string,
+  period: RatingPeriod,
+  accessToken: string,
+): Promise<PuzzleStats> {
+  return (
+    await apiClient.get<PuzzleStats>(`${userPath(username)}/puzzles/stats`, {
+      ...bearer(accessToken),
+      params: { period },
+    })
   ).data;
 }
 
@@ -1172,21 +1213,8 @@ export async function reportUser(
   await apiClient.post('/reports', report, bearer(accessToken));
 }
 
-/** The digests of a review kept without them (see StoredGameReview). */
-export async function saveReviewDigests(
-  gameId: string,
-  digests: ReviewDigests,
-  accessToken: string,
-): Promise<void> {
-  await apiClient.put(
-    `/games/${encodeURIComponent(gameId)}/review/digests`,
-    { digests },
-    bearer(accessToken),
-  );
-}
-
-/** A player's last reviewed games' digests - their own alone, for others
- * none - and the badges their reviewed games earned them. */
+/** Your reviewed games' digests over a period, newest first - to you
+ * alone: anyone else's come back empty. */
 export type PlayerPatterns = {
   games: {
     gameId: string;
@@ -1194,16 +1222,30 @@ export type PlayerPatterns = {
     endedAt: string | null;
     digest: SideDigest;
   }[];
-  badges: BadgeCounts;
 };
 
 export async function getPatterns(
   username: string,
+  period: RatingPeriod,
   accessToken: string,
 ): Promise<PlayerPatterns> {
   return (
     await apiClient.get<PlayerPatterns>(
       `/users/${encodeURIComponent(username)}/patterns`,
+      { ...bearer(accessToken), params: { period } },
+    )
+  ).data;
+}
+
+/** A player's badges, the newest first, each with the game that earned
+ * it. */
+export async function getBadges(
+  username: string,
+  accessToken: string,
+): Promise<Badge[]> {
+  return (
+    await apiClient.get<Badge[]>(
+      `/users/${encodeURIComponent(username)}/badges`,
       bearer(accessToken),
     )
   ).data;

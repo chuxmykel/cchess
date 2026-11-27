@@ -1,5 +1,6 @@
 import { Color, PieceSymbol, Square } from 'chess.js';
 
+import type { Badge } from '../domain/badges';
 import { GameType } from '../domain/types';
 import type { Challenge, DirectMessage, FriendRequest } from './restClient';
 
@@ -247,6 +248,8 @@ export interface ServerToClientEvents {
   'game:state': (payload: GameSnapshot) => void;
   'game:move': (payload: GameMovePushPayload) => void;
   'game:over': (payload: GameSnapshot) => void;
+  /** Badges just earned - told at once, wherever you are in the app. */
+  'badge:awarded': (payload: { badges: Badge[] }) => void;
   'game:drawOffered': (payload: DrawOfferedPayload) => void;
   'game:drawDeclined': (payload: { gameId: string }) => void;
   'game:rematchOffered': (payload: RematchPayload) => void;

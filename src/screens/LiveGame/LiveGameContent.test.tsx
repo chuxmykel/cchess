@@ -17,6 +17,10 @@ import { waitForSheetToClose } from '../../testUtils/modal';
 import { boardTester } from '../../components/Board/boardTester';
 import { useServerMaintenanceStartsAt } from '../../context/ServerMaintenanceContext';
 
+// The badges a game earned come from the server: none here.
+jest.mock('../../hooks/useGameBadges', () => ({
+  useGameBadges: () => [],
+}));
 jest.mock('../../components/ConnectionStrengthIndicator', () =>
   jest.requireActual('../../testUtils/ConnectionStrengthIndicatorStub'),
 );

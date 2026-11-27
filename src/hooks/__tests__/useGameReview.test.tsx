@@ -9,7 +9,6 @@ import {
   addMyPuzzles,
   getGameReview,
   saveGameReview,
-  saveReviewDigests,
   StoredGameReview,
 } from '../../network/restClient';
 import { missedTactics } from '../../domain/review/missedTactics';
@@ -32,7 +31,6 @@ jest.mock('../../network/restClient', () => ({
   getGame: jest.fn(),
   getGameReview: jest.fn(),
   saveGameReview: jest.fn(),
-  saveReviewDigests: jest.fn(() => Promise.resolve()),
   addMyPuzzles: jest.fn(() => Promise.resolve(0)),
 }));
 jest.mock('../../domain/review/missedTactics', () => ({
@@ -102,7 +100,10 @@ describe('useGameReview', () => {
     (useAuthSession as jest.Mock).mockReturnValue(makeAuthSession());
     (getGame as jest.Mock).mockResolvedValue(GAME);
     (getGameReview as jest.Mock).mockResolvedValue(null);
-    (saveGameReview as jest.Mock).mockResolvedValue(STORED);
+    (saveGameReview as jest.Mock).mockResolvedValue({
+      ...STORED,
+      badges: { w: [], b: ['miniature'] },
+    });
   });
   afterEach(() => jest.clearAllMocks());
 
@@ -122,27 +123,18 @@ describe('useGameReview', () => {
     expect(acquire).not.toHaveBeenCalled();
   });
 
-  it('sends the digests a review was kept without, and none it has', async () => {
-    (getGameReview as jest.Mock).mockResolvedValue(STORED);
-    await renderReview();
-    await flush();
-    expect(saveReviewDigests).toHaveBeenCalledWith(
-      'game-1',
-      expect.objectContaining({
-        w: expect.objectContaining({ v: 1 }),
-        b: expect.objectContaining({ v: 1 }),
-      }),
-      expect.any(String),
-    );
-
-    jest.mocked(saveReviewDigests).mockClear();
+  it('shows the badges the server awarded the game, from a review kept', async () => {
     (getGameReview as jest.Mock).mockResolvedValue({
       ...STORED,
-      digests: { w: {}, b: {} },
+      badges: { w: ['comeback'], b: [] },
     });
-    await renderReview();
+    const { result } = await renderReview();
     await flush();
-    expect(saveReviewDigests).not.toHaveBeenCalled();
+
+    expect(result.current).toMatchObject({
+      status: 'ready',
+      game: { badges: { w: ['comeback'], b: [] } },
+    });
   });
 
   it('keeps the tactics the player missed in their own game, to practise', async () => {
@@ -235,6 +227,15 @@ describe('useGameReview', () => {
     // With each side's digest: white blundered the bishop and lost.
     expect(saved.digests.w).toMatchObject({ v: 1, result: 'loss' });
     expect(saved.digests.w.slips[0]).toMatchObject({ mark: '??' });
+    // And each move's class, for the server's badges.
+    expect(saved.moveClasses).toHaveLength(4);
+    expect(saved.moveClasses[2]).toEqual(
+      expect.objectContaining({ moveClass: 'blunder' }),
+    );
+    // The badges it awarded, shown once they come back.
+    expect(result.current).toMatchObject({
+      game: { badges: { w: [], b: ['miniature'] } },
+    });
   });
 
   it('says how the engine is coming along while it downloads', async () => {

@@ -123,7 +123,7 @@ describe('RatingsList', () => {
   });
 
   describe('the puzzle rating', () => {
-    it('comes last, with the puzzles tried, and opens nothing', async () => {
+    it('comes last, with the puzzles tried, opening its stats', async () => {
       const onSelect = jest.fn();
       const screen = await render(
         <RatingsList
@@ -141,17 +141,18 @@ describe('RatingsList', () => {
       expect(row.getByText('4 puzzles')).toBeTruthy();
       expect(row.getByText('1352?')).toBeTruthy();
       await fireEvent.press(screen.getByTestId('rating-puzzles'));
-      expect(onSelect).not.toHaveBeenCalled();
+      expect(onSelect).toHaveBeenCalledWith('puzzles');
     });
 
     it('says when none have been tried', async () => {
       const screen = await render(
-        <RatingsList ratings={[]} puzzleRating={null} />,
+        <RatingsList ratings={[]} puzzleRating={null} onSelect={jest.fn()} />,
       );
 
       const row = within(screen.getByTestId('rating-puzzles'));
       expect(row.getByText('No puzzles yet')).toBeTruthy();
       expect(row.getByText('—')).toBeTruthy();
+      expect(screen.getByTestId('rating-puzzles')).toBeDisabled();
     });
 
     it('has no row when left out', async () => {
