@@ -12,7 +12,6 @@ import {
   useGameReviewLoad,
   useReviewSessionContext,
 } from '../../context/GameReview/GameReviewContext';
-import { defeatedColor } from '../../domain/players';
 import { type Chapter, chapterAt } from '../../domain/review/story';
 import { isSlip } from '../../domain/review/types';
 import { makeStyles, useTheme } from '../../theme';
@@ -84,7 +83,6 @@ const ReviewMovesScreen: React.FC<Props> = ({ navigation }) => {
   if (!session) return null;
   const {
     review,
-    game,
     side,
     settings,
     cchess,
@@ -99,7 +97,6 @@ const ReviewMovesScreen: React.FC<Props> = ({ navigation }) => {
     guesses,
     setScrubbing,
   } = session;
-  const atLastMove = shownIndex === lastIndex;
   const slipShown = !!stepper.move && isSlip(stepper.move.moveClass);
   // The list stops before the next move it'll ask for - while asking, or
   // on the way there - since showing it, or what followed, would give it
@@ -156,11 +153,6 @@ const ReviewMovesScreen: React.FC<Props> = ({ navigation }) => {
           arrows={arrows}
           movableColor={view.movableColor}
           onMove={stepper.tryMove}
-          defeated={
-            atLastMove && stepper.lineStep === null
-              ? defeatedColor(game.result)
-              : null
-          }
         />
         <View
           style={[styles.bubble, { minHeight: topRoom }]}

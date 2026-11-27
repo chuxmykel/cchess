@@ -572,7 +572,7 @@ describe('GameReview', () => {
       expect(saveGameReview).not.toHaveBeenCalled();
     });
 
-    it('tips over the king of the side its result says lost', async () => {
+    it("leaves the losing side's king standing when it wasn't mated", async () => {
       const { screen } = await analyseImported();
       await fireEvent.press(screen.getByTestId('review-start'));
       for (let i = 0; i < 4; i++) {
@@ -580,10 +580,7 @@ describe('GameReview', () => {
       }
       await settleAnimations();
 
-      expect(boardTester(screen, 'review').kingInDanger()).toEqual({
-        square: 'e1',
-        fallen: true,
-      });
+      expect(boardTester(screen, 'review').kingInDanger()).toBeNull();
     });
 
     it('opens the analysis board on the pasted game, at the move shown', async () => {
