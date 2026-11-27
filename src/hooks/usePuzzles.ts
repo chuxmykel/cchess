@@ -52,7 +52,10 @@ export function usePuzzleHome(): PuzzleHome {
     return Promise.all([
       authorized((token) => getMyPuzzles(token)),
       authorized((token) => getPuzzleRating(token)),
-      authorized((token) => getPatterns(username, token)).catch(() => null),
+      // The themes your last three months' reviewed games slip on.
+      authorized((token) => getPatterns(username, '3m', token)).catch(
+        () => null,
+      ),
     ])
       .then(([own, puzzleRating, patterns]) => {
         setMine({

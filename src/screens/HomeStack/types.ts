@@ -67,6 +67,10 @@ export type HomeStackParamList = {
   /** Every daily game of yours in progress, and seeks still waiting. */
   DailyGamesList: undefined;
   /** A player's rating history and results in one category. */
+  /** Your patterns over a period, from your reviewed games. */
+  Patterns: { username: string };
+  /** Every badge there is, and which a player has earned. */
+  Badges: { username: string; displayName: string };
   /** A player's rating in one category - a game type, or puzzles. */
   RatingStats: {
     username: string;

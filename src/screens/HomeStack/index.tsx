@@ -19,6 +19,9 @@ import DailyAnalysis from '../DailyAnalysis';
 import GameViewer from '../GameViewer';
 import AnalysisBoard from '../AnalysisBoard';
 import Puzzle from '../Puzzle';
+import Badges from '../Badges';
+import { BadgeAwardsProvider } from '../../context/BadgeAwardsContext';
+import Patterns from '../Patterns';
 import AnalysisSettings from '../AnalysisSettings';
 import DailyGameSettings from '../DailyGameSettings';
 import ReviewSettings from '../ReviewSettings';
@@ -75,259 +78,290 @@ const HomeStack: React.FC = () => {
           <DailyGameSettingsProvider>
             <DailyGamePositionsProvider>
               <ReviewSettingsProvider>
-                <Navigator
-                  id="HomeStack"
-                  initialRouteName="HomeTabs"
-                  screenOptions={{
-                    headerShown: false,
-                  }}
+                <BadgeAwardsProvider
+                  onOpenGame={(gameId) =>
+                    navigation.navigate('HomeStack', {
+                      screen: 'GameViewer',
+                      params: { gameId },
+                    })
+                  }
                 >
-                  <Screen name="HomeTabs" component={HomeTabs} />
-                  <Screen
-                    name="LiveGame"
-                    component={LiveGame}
-                    options={{ gestureEnabled: false }}
-                  />
-                  <Screen name="DailyGame" component={DailyGame} />
-                  <Screen
-                    name="DailyAnalysis"
-                    component={DailyAnalysis}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Analysis',
-                    })}
-                  />
-                  <Screen name="GameViewer" component={GameViewer} />
-                  <Screen
-                    name="GameReview"
-                    component={GameReview}
-                    // Its summary and its moves are a stack of its own, each
-                    // with its header.
-                    options={{ headerShown: false }}
-                  />
-                  <Screen
-                    name="Puzzle"
-                    component={Puzzle}
-                    // Over the tabs, like the analysis board: its toolbar
-                    // is the only one at the bottom.
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Puzzle',
-                    })}
-                  />
-                  <Screen
-                    name="AnalysisBoard"
-                    component={AnalysisBoard}
-                    // Over the tabs, so its own toolbar is the only one at the bottom,
-                    // and Back returns to wherever it was opened from - the Analysis
-                    // tab, or a game.
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Analysis',
-                    })}
-                  />
-                  <Screen
-                    name="UserProfile"
-                    component={UserProfile}
-                    // The profile shows the username in its title itself, once the
-                    // avatar block scrolls away.
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: '',
-                    })}
-                  />
-                  <Screen
-                    name="Conversation"
-                    component={Conversation}
-                    options={({ navigation }) => plainHeaderOptions(navigation)}
-                  />
-                  <Screen
-                    name="FindFriends"
-                    component={Friends}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Friends',
-                    })}
-                  />
-                  <Screen
-                    name="UserFriends"
-                    component={UserFriends}
-                    options={({ navigation }) => plainHeaderOptions(navigation)}
-                  />
-                  <Screen
-                    name="GamesList"
-                    component={GamesList}
-                    options={({ navigation }) => plainHeaderOptions(navigation)}
-                  />
-                  <Screen
-                    name="DailyGamesList"
-                    component={DailyGamesList}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Daily games',
-                    })}
-                  />
-                  <Screen
-                    name="RatingStats"
-                    component={RatingStats}
-                    options={({ navigation, route }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: `${GAME_TYPE_LABELS[route.params.category]} rating`,
-                    })}
-                  />
-                  <Screen
-                    name="SignIn"
-                    component={SignIn}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Sign in',
-                    })}
-                  />
-                  <Screen
-                    name="CreateAccount"
-                    component={CreateAccount}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Create account',
-                    })}
-                  />
-                  <Screen
-                    name="AnalysisSettings"
-                    component={AnalysisSettings}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Analysis Settings',
-                    })}
-                  />
-                  <Screen
-                    name="OpeningExplorer"
-                    component={OpeningExplorer}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Opening explorer',
-                    })}
-                  />
-                  <Screen
-                    name="ConditionalMoves"
-                    component={ConditionalMoves}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Conditional moves',
-                    })}
-                  />
-                  <Screen
-                    name="GameNotes"
-                    component={GameNotes}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Notes',
-                    })}
-                  />
-                  <Screen
-                    name="DailyGameSettings"
-                    component={DailyGameSettings}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Daily Game Settings',
-                    })}
-                  />
-                  <Screen
-                    name="ReviewSettings"
-                    component={ReviewSettings}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Review Settings',
-                    })}
-                  />
-                  <Screen
-                    name="Settings"
-                    component={Settings}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Settings',
-                    })}
-                  />
-                  <Screen
-                    name="Appearance"
-                    component={Appearance}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Appearance',
-                    })}
-                  />
-                  <Screen
-                    name="Account"
-                    component={Account}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Account',
-                    })}
-                  />
-                  <Screen
-                    name="DeleteAccount"
-                    component={DeleteAccount}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Delete Account',
-                    })}
-                  />
-                  <Screen
-                    name="ForgotPassword"
-                    component={ForgotPassword}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Forgot Password',
-                    })}
-                  />
-                  <Screen
-                    name="ResetPassword"
-                    component={ResetPassword}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'New Password',
-                    })}
-                  />
-                  <Screen
-                    name="VerifyEmail"
-                    component={VerifyEmail}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Confirm Email',
-                    })}
-                  />
-                  <Screen
-                    name="ChangeEmail"
-                    component={ChangeEmail}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Change Email',
-                    })}
-                  />
-                  <Screen
-                    name="BlockedPlayers"
-                    component={BlockedPlayers}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Blocked Players',
-                    })}
-                  />
-                  <Screen
-                    name="Report"
-                    component={Report}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Report',
-                    })}
-                  />
-                  <Screen
-                    name="Licenses"
-                    component={Licenses}
-                    options={({ navigation }) => ({
-                      ...plainHeaderOptions(navigation),
-                      title: 'Licenses',
-                    })}
-                  />
-                </Navigator>
+                  <Navigator
+                    id="HomeStack"
+                    initialRouteName="HomeTabs"
+                    screenOptions={{
+                      headerShown: false,
+                    }}
+                  >
+                    <Screen name="HomeTabs" component={HomeTabs} />
+                    <Screen
+                      name="LiveGame"
+                      component={LiveGame}
+                      options={{ gestureEnabled: false }}
+                    />
+                    <Screen name="DailyGame" component={DailyGame} />
+                    <Screen
+                      name="DailyAnalysis"
+                      component={DailyAnalysis}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Analysis',
+                      })}
+                    />
+                    <Screen name="GameViewer" component={GameViewer} />
+                    <Screen
+                      name="GameReview"
+                      component={GameReview}
+                      // Its summary and its moves are a stack of its own, each
+                      // with its header.
+                      options={{ headerShown: false }}
+                    />
+                    <Screen
+                      name="Patterns"
+                      component={Patterns}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Your patterns',
+                      })}
+                    />
+                    <Screen
+                      name="Badges"
+                      component={Badges}
+                      options={({ navigation, route }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: `${route.params.displayName}'s badges`,
+                      })}
+                    />
+                    <Screen
+                      name="Puzzle"
+                      component={Puzzle}
+                      // Over the tabs, like the analysis board: its toolbar
+                      // is the only one at the bottom.
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Puzzle',
+                      })}
+                    />
+                    <Screen
+                      name="AnalysisBoard"
+                      component={AnalysisBoard}
+                      // Over the tabs, so its own toolbar is the only one at the bottom,
+                      // and Back returns to wherever it was opened from - the Analysis
+                      // tab, or a game.
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Analysis',
+                      })}
+                    />
+                    <Screen
+                      name="UserProfile"
+                      component={UserProfile}
+                      // The profile shows the username in its title itself, once the
+                      // avatar block scrolls away.
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: '',
+                      })}
+                    />
+                    <Screen
+                      name="Conversation"
+                      component={Conversation}
+                      options={({ navigation }) =>
+                        plainHeaderOptions(navigation)
+                      }
+                    />
+                    <Screen
+                      name="FindFriends"
+                      component={Friends}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Friends',
+                      })}
+                    />
+                    <Screen
+                      name="UserFriends"
+                      component={UserFriends}
+                      options={({ navigation }) =>
+                        plainHeaderOptions(navigation)
+                      }
+                    />
+                    <Screen
+                      name="GamesList"
+                      component={GamesList}
+                      options={({ navigation }) =>
+                        plainHeaderOptions(navigation)
+                      }
+                    />
+                    <Screen
+                      name="DailyGamesList"
+                      component={DailyGamesList}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Daily games',
+                      })}
+                    />
+                    <Screen
+                      name="RatingStats"
+                      component={RatingStats}
+                      options={({ navigation, route }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: `${GAME_TYPE_LABELS[route.params.category]} rating`,
+                      })}
+                    />
+                    <Screen
+                      name="SignIn"
+                      component={SignIn}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Sign in',
+                      })}
+                    />
+                    <Screen
+                      name="CreateAccount"
+                      component={CreateAccount}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Create account',
+                      })}
+                    />
+                    <Screen
+                      name="AnalysisSettings"
+                      component={AnalysisSettings}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Analysis Settings',
+                      })}
+                    />
+                    <Screen
+                      name="OpeningExplorer"
+                      component={OpeningExplorer}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Opening explorer',
+                      })}
+                    />
+                    <Screen
+                      name="ConditionalMoves"
+                      component={ConditionalMoves}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Conditional moves',
+                      })}
+                    />
+                    <Screen
+                      name="GameNotes"
+                      component={GameNotes}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Notes',
+                      })}
+                    />
+                    <Screen
+                      name="DailyGameSettings"
+                      component={DailyGameSettings}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Daily Game Settings',
+                      })}
+                    />
+                    <Screen
+                      name="ReviewSettings"
+                      component={ReviewSettings}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Review Settings',
+                      })}
+                    />
+                    <Screen
+                      name="Settings"
+                      component={Settings}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Settings',
+                      })}
+                    />
+                    <Screen
+                      name="Appearance"
+                      component={Appearance}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Appearance',
+                      })}
+                    />
+                    <Screen
+                      name="Account"
+                      component={Account}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Account',
+                      })}
+                    />
+                    <Screen
+                      name="DeleteAccount"
+                      component={DeleteAccount}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Delete Account',
+                      })}
+                    />
+                    <Screen
+                      name="ForgotPassword"
+                      component={ForgotPassword}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Forgot Password',
+                      })}
+                    />
+                    <Screen
+                      name="ResetPassword"
+                      component={ResetPassword}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'New Password',
+                      })}
+                    />
+                    <Screen
+                      name="VerifyEmail"
+                      component={VerifyEmail}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Confirm Email',
+                      })}
+                    />
+                    <Screen
+                      name="ChangeEmail"
+                      component={ChangeEmail}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Change Email',
+                      })}
+                    />
+                    <Screen
+                      name="BlockedPlayers"
+                      component={BlockedPlayers}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Blocked Players',
+                      })}
+                    />
+                    <Screen
+                      name="Report"
+                      component={Report}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Report',
+                      })}
+                    />
+                    <Screen
+                      name="Licenses"
+                      component={Licenses}
+                      options={({ navigation }) => ({
+                        ...plainHeaderOptions(navigation),
+                        title: 'Licenses',
+                      })}
+                    />
+                  </Navigator>
+                </BadgeAwardsProvider>
                 <TermsPrompt />
               </ReviewSettingsProvider>
             </DailyGamePositionsProvider>

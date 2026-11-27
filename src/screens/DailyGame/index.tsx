@@ -15,12 +15,15 @@ import { OnlineChessGameProvider } from '../../context/LiveGame/OnlineChessGameC
 import { colorPlayedBy } from '../../domain/players';
 import { HomeStackParamList } from '../HomeStack/types';
 import DailyGameContent from './DailyGameContent';
+import { useHoldBadgeCards } from '../../context/BadgeAwardsContext';
 
 type DailyGameProps = NativeStackScreenProps<HomeStackParamList, 'DailyGame'>;
 
 // One of your daily games, to play a move in whenever you like: unlike a
 // live game, it's left and come back to - Back and swipe-back always work.
 const DailyGame: React.FC<DailyGameProps> = ({ navigation, route }) => {
+  // A badge earned meanwhile is announced once the game's left.
+  useHoldBadgeCards();
   const { gameId } = route.params;
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();

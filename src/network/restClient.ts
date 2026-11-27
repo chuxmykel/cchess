@@ -3,7 +3,7 @@ import type { Color, Square } from 'chess.js';
 
 import type { LichessRating, LichessSpeed } from '../constants/explorer';
 import type { ReviewDigests, SideDigest } from '../domain/review/digest';
-import type { BadgeCounts } from '../domain/review/patterns';
+import type { Badge, GameBadgeKind } from '../domain/badges';
 import type { PositionEval } from '../domain/review/types';
 import { GameType } from '../domain/types';
 import { SERVER_URL } from './env';
@@ -414,6 +414,8 @@ export type StoredGameReview = {
   evals: PositionEval[];
   /** Each side's review boiled down - none until the app's sent them. */
   digests?: ReviewDigests | null;
+  /** The badges the game earned each side, its review's included. */
+  badges?: Record<Color, GameBadgeKind[]>;
   createdAt: string;
 };
 
@@ -444,7 +446,10 @@ export async function getGameReview(
  * already, which comes back instead. */
 export async function saveGameReview(
   gameId: string,
-  review: Omit<StoredGameReview, 'gameId' | 'createdAt'>,
+  review: Omit<StoredGameReview, 'gameId' | 'createdAt' | 'badges'> & {
+    /** Each move's class and what it did, for the server's badges. */
+    moveClasses?: { moveClass: string; facts: string[] }[];
+  },
   accessToken: string,
 ): Promise<StoredGameReview> {
   return (
@@ -1208,21 +1213,8 @@ export async function reportUser(
   await apiClient.post('/reports', report, bearer(accessToken));
 }
 
-/** The digests of a review kept without them (see StoredGameReview). */
-export async function saveReviewDigests(
-  gameId: string,
-  digests: ReviewDigests,
-  accessToken: string,
-): Promise<void> {
-  await apiClient.put(
-    `/games/${encodeURIComponent(gameId)}/review/digests`,
-    { digests },
-    bearer(accessToken),
-  );
-}
-
-/** A player's last reviewed games' digests - their own alone, for others
- * none - and the badges their reviewed games earned them. */
+/** Your reviewed games' digests over a period, newest first - to you
+ * alone: anyone else's come back empty. */
 export type PlayerPatterns = {
   games: {
     gameId: string;
@@ -1230,16 +1222,44 @@ export type PlayerPatterns = {
     endedAt: string | null;
     digest: SideDigest;
   }[];
-  badges: BadgeCounts;
 };
 
 export async function getPatterns(
   username: string,
+  period: RatingPeriod,
   accessToken: string,
 ): Promise<PlayerPatterns> {
   return (
     await apiClient.get<PlayerPatterns>(
       `/users/${encodeURIComponent(username)}/patterns`,
+      { ...bearer(accessToken), params: { period } },
+    )
+  ).data;
+}
+
+/** A player's badges, the newest first, each with the game that earned
+ * it. */
+export async function getBadges(
+  username: string,
+  accessToken: string,
+): Promise<Badge[]> {
+  return (
+    await apiClient.get<Badge[]>(
+      `/users/${encodeURIComponent(username)}/badges`,
+      bearer(accessToken),
+    )
+  ).data;
+}
+
+/** Claims a badge of your own, shown you. */
+export async function claimBadge(
+  id: string,
+  accessToken: string,
+): Promise<Badge> {
+  return (
+    await apiClient.post<Badge>(
+      `/badges/${encodeURIComponent(id)}/claim`,
+      undefined,
       bearer(accessToken),
     )
   ).data;

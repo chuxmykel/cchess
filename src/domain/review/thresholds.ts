@@ -138,12 +138,3 @@ export const MOMENTUM = {
   betterFrom: 0.2,
   winningFrom: 0.5,
 } as const;
-
-// Badges (badges.ts): a swindle - the game all but lost, and not lost; a
-// comeback or a draw held - from a losing position (STANDING.losing); a
-// clean game - no ? or ??, this accurate, over this many moves of its own.
-export const BADGES = {
-  swindleBelow: 10,
-  cleanAccuracy: 90,
-  cleanMoves: 20,
-} as const;

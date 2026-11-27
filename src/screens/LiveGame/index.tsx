@@ -19,10 +19,13 @@ import { HomeStackParamList } from '../HomeStack/types';
 import { OnlineChessGameProvider } from '../../context/LiveGame/OnlineChessGameContext';
 import LiveGameContent from './LiveGameContent';
 import SeekingContent from './SeekingContent';
+import { useHoldBadgeCards } from '../../context/BadgeAwardsContext';
 
 type LiveGameProps = NativeStackScreenProps<HomeStackParamList, 'LiveGame'>;
 
 const LiveGame: React.FC<LiveGameProps> = ({ navigation, route }) => {
+  // A badge earned meanwhile is announced once the game's left.
+  useHoldBadgeCards();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const authSession = useAuthSession();
